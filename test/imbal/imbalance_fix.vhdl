@@ -1,7 +1,7 @@
 library ieee;
   use ieee.numeric_std.all;
 
-package Average is
+package ImbalanceFix is
 
   type self_t is record
     phase_h: real;
@@ -10,11 +10,11 @@ package Average is
     -- 90% sure that i have to add reset values here aswell.
   end record;
 
-  procedure main (self_p: inout self_t; new_sample: real; ret_0: out real);
+  procedure main(self_p: inout self_t; i,q: real; ret_0, ret_1: out real);
 end package;
 
 
-package body Average is
+package body ImbalanceFix is
 
   -- Remove magnitude imbalance
   procedure mag_fix(self_p: inout self_t; i,q: real; ret_0, ret_1: out real) is
