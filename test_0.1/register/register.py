@@ -1,3 +1,6 @@
+from common.register import clock_tick
+
+
 class Register(object):
     def __init__(self):
         self.my_reg = 0
@@ -18,26 +21,14 @@ class Register2(object):
 
 
 
-def clock_tick(func):
-    def wrap(*args, **kwargs):
-        from copy import deepcopy
 
-        # first time, create the .next elem
-        if 'next' not in args[0].__dict__:
-            args[0].__dict__['next'] = deepcopy(args[0])
 
-        args[0].__dict__.update(args[0].__dict__['next'].__dict__)
-        const_self = deepcopy(args[0].__dict__)
-        ret = func(*args, **kwargs)
+def class_deco(cls):
 
-        # ghetto code to alert when current value of reg is assigned
-        const_self['next'] = args[0].__dict__['next']
-        if const_self != args[0].__dict__:
-            raise  Exception('You wrote to the current value of register, assure all writes go to self.next!')
+    pass
 
-        return ret
-
-    return wrap
+# TODO: use metaclass instead of this horrid decoratro
+# http://eli.thegreenplace.net/2011/08/14/python-metaclasses-by-example
 
 class Register3(object):
     def __init__(self):
@@ -46,7 +37,7 @@ class Register3(object):
     @clock_tick
     def main(self, new_value):
         self.next.my_reg = new_value
-        self.my_reg = 2
+        # self.my_reg = 2
         print(self.my_reg)
         return self.my_reg
 
