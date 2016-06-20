@@ -1,11 +1,10 @@
-from scipy import signal
+import numpy as np
 
 from common.register import disable_reg_delay, clock_tick
 from test_1.avg.main import Average
-import matplotlib.pyplot as plt
-import numpy as np
 
-# TODO: BUG when register turned ON (extra delay from Average module)
+
+# TODO: BUG when register turned ON (extra delay from Average module), Make register off mode for Average??
 class Casc(object):
     def __init__(self, window_pow, casc=2):
         self.casc = casc
