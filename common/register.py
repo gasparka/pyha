@@ -23,17 +23,20 @@ def clock_tick(func):
             args[0].__dict__['next'] = deepcopy(args[0])
 
         if not REG_DELAY_ENABLED:
+            # registers disabled set next equal to q.
+            # clearly also have to disable q write check
             args[0].__dict__['next'] = args[0]
+            ret = func(*args, **kwargs)
+        else:
+            args[0].__dict__.update(deepcopy(args[0].__dict__['next'].__dict__))
+            const_self = deepcopy(args[0].__dict__)
 
-        args[0].__dict__.update(deepcopy(args[0].__dict__['next'].__dict__))
-        const_self = deepcopy(args[0].__dict__)
-        ret = func(*args, **kwargs)
+            ret = func(*args, **kwargs)
 
-        # ghetto code to alert when current value of reg is assigned
-
-        const_self['next'] = args[0].__dict__['next']
-        if const_self != args[0].__dict__:
-            raise Exception('You wrote to the current value of register, assure all writes go to self.next!')
+            # ghetto code to alert when current value of reg is assigned
+            const_self['next'] = args[0].__dict__['next']
+            if const_self != args[0].__dict__:
+                raise Exception('You wrote to the current value of register, assure all writes go to self.next!')
 
         return ret
 
@@ -43,10 +46,8 @@ def clock_tick(func):
 def test():
     class S(object):
         def __init__(self):
-            self.tmp = 0;
+            self.tmp = 0
             self.list = [x for x in range(128)]
-
-            self.taps = signal.remez(16, [0, 0.1, 0.2, 0.5], [1, 0])
 
         @clock_tick
         def main_ok(self):
@@ -83,7 +84,7 @@ def test():
     # TODO: THIS FAILS
     class B(object):
         def __init__(self):
-            self.taps = signal.remez(16, [0, 0.1, 0.2, 0.5], [1, 0])
+            self.taps = signal.remez(16, [0, 0.1, 0.2, 0.5], [1, 0]).tolist()
 
         @clock_tick
         def main(self):
@@ -92,5 +93,4 @@ def test():
     dut = B()
     dut.main()
 
-
-test()
+# test()
