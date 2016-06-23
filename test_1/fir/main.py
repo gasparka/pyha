@@ -42,5 +42,4 @@ def test():
 
     np.testing.assert_almost_equal(abs_result, rtl_result)
 
-
-test()
+# test()
