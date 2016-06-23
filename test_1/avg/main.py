@@ -1,12 +1,14 @@
 from common.register import disable_reg_delay, clock_tick
+from common.sfix import Sfix
 
+bits = -17
 
 class Average(object):
     def __init__(self, window_pow):
         self.window_pow = window_pow
         self.window = 2 ** window_pow
-        self.in_sr = [0] * self.window
-        self.sum = 0
+        self.in_sr = [Sfix(0, 0, bits)] * self.window
+        self.sum = Sfix(0)
         self.old = 0
 
     @clock_tick
@@ -14,8 +16,11 @@ class Average(object):
         old = self.in_sr[-1]
         self.next.in_sr = [new_sample] + self.in_sr[:-1]
 
-        self.next.sum += new_sample - old
-        return self.sum / self.window
+        # self.next.sum = (self.sum + new_sample - old).resize(math.log2(self.window), bits)
+        self.next.sum = (self.sum + new_sample - old).resize(4, bits)
+        out = (self.sum >> self.window_pow).resize(0, bits)
+        return out
+        # return old
 
     def abstract(self, x):
         import numpy as np
@@ -26,12 +31,13 @@ def test():
     import numpy as np
     import matplotlib.pyplot as plt
     disable_reg_delay()
+    Sfix.set_float_mode(True)
     inp = np.random.uniform(-1, 1, 1000)
     # inp = range(128)
-    av = Average(8)
+    av = Average(4)
     ab = av.abstract(inp)
 
-    rl = [av.main(x) for x in inp]
+    rl = [float(av.main(Sfix(x, 0, bits))) for x in inp]
 
     # rl = []
     # for x in inp:

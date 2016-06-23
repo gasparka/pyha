@@ -58,7 +58,7 @@ class Sfix(object):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
 
     def __float__(self):
-        return self.val
+        return float(self.val)
 
     def resize(self, left, right):
         return Sfix(self.val, left, right)
