@@ -1,0 +1,21 @@
+Info: Start Nativelink Simulation process
+
+========= EDA Simulation Settings =====================
+
+Sim Mode              :  Gate
+Family                :  cyclonev
+Quartus root          :  /media/gaspar/BACKUP/altera16/quartus/linux64/
+Quartus sim root      :  /media/gaspar/BACKUP/altera16/quartus/eda/sim_lib
+Simulation Tool       :  modelsim-altera
+Simulation Language   :  vhdl
+Version               :  93
+Simulation Mode       :  Script Only
+Sim Output File       :  avg.vho
+Sim SDF file          :  avg__vhdl.sdo
+Sim dir               :  simulation/modelsim
+
+=======================================================
+
+Info: Starting NativeLink simulation with ModelSim-Altera software
+Sourced NativeLink script /media/gaspar/BACKUP/altera16/quartus/common/tcl/internal/nativelink/modelsim.tcl
+Info: NativeLink simulation flow was successful

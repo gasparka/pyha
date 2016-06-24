@@ -22,11 +22,16 @@ class Casc(object):
         old = self.in_sr[-1]
         self.next.in_sr = [new_sample] + self.in_sr[:-1]
 
+        # TODO: THIS IS WRONG, must use self.NEXT
+        # for x in self.av:
+        #     r = x.main(r)
+
         r = new_sample
-        for x in self.av:
+        for x in self.next.av:
             r = x.main(r)
 
-        out = old - r
+        out = (old - r).resize(0, bits)
+        # out = old
         return out
 
     def abstract(self, x):
@@ -91,5 +96,4 @@ def test2():
     plt.show()
     np.testing.assert_almost_equal(ab[:-av.group_delay], rl[av.group_delay:])
 
-
-test()
+# test()
