@@ -19,6 +19,7 @@ class Average(object):
         # self.next.sum = (self.sum + new_sample - old).resize(math.log2(self.window), bits)
         self.next.sum = (self.sum + new_sample - old).resize(4, bits)
         out = (self.sum >> self.window_pow).resize(0, bits)
+        # out = (self.next.sum >> self.window_pow).resize(0, bits)
         return out
         # return old
 
