@@ -50,6 +50,9 @@ def link_to_model(dut, input):
 
     hdl_out = yield run_dut(dut, input, 18)
 
+    # plt.plot(hdl_out)
+    # plt.plot(model_out)
+    # plt.show()
     if (model_out != hdl_out).any():
         raise TestFailure()
 

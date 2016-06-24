@@ -7,8 +7,8 @@ module top_sv #()
 
 
 // VHDL DUT
-  top_vhdl #()
-  top_vhdl (
+  top #()
+  top (
     .clk(clk),
     .rst_n(rst_n),
     .x      (x),

@@ -63,9 +63,16 @@ $(info WPWD=$(WPWD))
 $(info SIM_BUILD=$(SIM_BUILD))
 
 
-VHDL_SOURCES += $(WPWD)/../average.vhd
-VHDL_SOURCES += $(WPWD)/../top.vhd
+# VHDL_SOURCES += $(WPWD)/../average.vhd
+# VHDL_SOURCES += $(WPWD)/../top.vhd
 
+# FOR FUNCTIONAL GATE SIM
+# set this shit in quartus .qsf:
+# set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST ON -section_id eda_simulation
+# set_global_assignment -name EDA_NATIVELINK_GENERATE_SCRIPT_ONLY ON -section_id eda_simulation
+# Then run synth and eda netlist
+VHDL_SOURCES += $(WPWD)/../../synth/simulation/modelsim/avg.vho
+VSIM_ARGS := -t ps
 
 # VCOM_ARGS = -mixedsvvh -2008
 VERILOG_SOURCES = $(WPWD)/../top.sv

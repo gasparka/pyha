@@ -1,14 +1,13 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use ieee.fixed_float_types.all;
     use ieee.fixed_pkg.all;
     use ieee.math_real.all;
 
 library work;
 use work.all;
 
-entity  top_vhdl is
+entity  top is
   port (
     clk, rst_n : in std_logic;
     x :  in std_logic_vector(17 downto 0);
@@ -49,7 +48,7 @@ end entity;
 -- end architecture;
 
 
-architecture arch of top_vhdl is
+architecture arch of top is
   -- signal mv: average.self_t;
 begin
     process(clk, rst_n)
