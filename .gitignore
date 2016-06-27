@@ -66,3 +66,5 @@ incremental_db/
 output_files/
 sim_envs/
 work/
+gate_sim/
+rtl_sim/
