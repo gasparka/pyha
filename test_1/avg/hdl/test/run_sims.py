@@ -1,13 +1,16 @@
 import os
 
-from sim_automation.main import run_sim
+from sim_automation.main import generate_sim_stuff, run_rtl_sim, run_gate_sim
 
-vhdl_sources = ['../average.vhd',
-                '../top.vhd']
+vhdl_sources = ['../average.vhd']
+
+dut_name = 'average'
+input_ports = ['x']
+output_ports = ['y']
 
 base_path = os.path.dirname(os.path.realpath(__file__))
 
 if __name__ == "__main__":
-    run_sim(base_path, vhdl_sources)
-    # run_sim(base_path, vhdl_sources, 'GATE', generate_gate_netlist=True)
-    # run_sim(base_path, vhdl_sources, 'GATE')
+    generate_sim_stuff(base_path, dut_name, input_ports, output_ports, vhdl_sources)
+    run_rtl_sim(base_path, vhdl_sources)
+    run_gate_sim(base_path)
