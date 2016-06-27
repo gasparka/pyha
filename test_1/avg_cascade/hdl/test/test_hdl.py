@@ -8,7 +8,7 @@ from cocotb.triggers import RisingEdge, Timer, FallingEdge
 
 from common.sfix import Sfix
 from common.sfixed import to_sfixed_real, to_real
-from test_1.dcrem.casc import Casc
+from test_1.avg_cascade.casc import Casc
 
 
 @cocotb.coroutine

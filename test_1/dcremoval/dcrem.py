@@ -5,7 +5,7 @@ from common.register import disable_reg_delay, clock_tick
 # NB! when comparing main and abstract, delete group delay from abs end and main start
 # idea: just use delayless dc removal?
 from common.sfix import Sfix
-from test_1.dcrem.casc import Casc
+from test_1.avg_cascade.casc import Casc
 
 bits = -17
 class DCRemoval(object):

@@ -15,7 +15,7 @@ src_dir = '/..'
 def generate_sim_stuff(base_dir, dut_name, input_ports, output_ports, vhdl_sources):
     logger.info('Generating top.vhdl and top.sv')
     TopMaker(base_dir + src_dir, dut_name, input_ports, output_ports).make()
-    vhdl_sources.append(base_dir + src_dir + '/top.vhd')
+    # vhdl_sources.append(base_dir + src_dir + '/top.vhd')
 
     logger.info('Creating quartus project and running map, netlist writer....')
     make_gate_vhdl(base_dir + gate_sim_folder + 'quartus/', vhdl_sources)
