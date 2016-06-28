@@ -1,5 +1,6 @@
 import os
 import subprocess
+from contextlib import suppress
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -35,21 +36,24 @@ include $(COCOTB)/makefiles/Makefile.sim
 """
 
 class CocotbAuto(object):
-    def __init__(self, base_path, sim_folder='coco_sim', test_file='test_hdl', top_level_entity='top_sv'):
+    def __init__(self, base_path, sim_folder='coco_sim', test_file='hdl_tests', top_level_entity='top_sv'):
         self.top_level_entity = top_level_entity
         self.test_file = test_file
         self.base_path = base_path
         self.sim_folder = sim_folder
-        self.path = base_path + 'Makefile'
-        if not os.path.exists(base_path):
-            os.makedirs(base_path)
+        self.path = base_path / 'Makefile'
+        if not base_path.exists():
+            base_path.mkdir()
+
+        with suppress(Exception):
+            (base_path / sim_folder / 'results.xml').unlink()
 
         self.vhdl_source_files = []
         self.verilog_source_files = []
         self.environment = os.environ.copy()
 
         self.default_assignments()
-        self.default_files()
+        # self.default_files()
 
     def default_assignments(self):
         # TODO: cocotb should probably be submodule
@@ -73,7 +77,7 @@ class CocotbAuto(object):
         self.environment['VCOM_ARGS'] = '-2008'
 
         # this path is quite fucked up
-        self.environment["PYTHONPATH"] = self.base_path + '../:' + self.environment["PYTHONPATH"]
+        self.environment["PYTHONPATH"] = str(self.base_path.parent) + ':' + self.environment["PYTHONPATH"]
 
         self.environment['TOPLEVEL'] = self.top_level_entity
         self.environment['MODULE'] = self.test_file
@@ -81,29 +85,26 @@ class CocotbAuto(object):
         self.environment['VHDL_SOURCES'] = ''
         self.environment['VERILOG_SOURCES'] = ''
 
-    def default_files(self):
-        self.verilog_source_files += [os.path.abspath('../top.sv')]
 
     def run(self):
         for file in self.vhdl_source_files:
-            file = os.path.abspath(file)
-            if not os.path.isfile(file):
+            if not file.is_file():
                 raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
-            self.environment['VHDL_SOURCES'] += file + ' '
+            self.environment['VHDL_SOURCES'] += str(file) + ' '
 
         for file in self.verilog_source_files:
-            file = os.path.abspath(file)
-            if not os.path.isfile(file):
+            if not file.is_file():
                 raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
-            self.environment['VERILOG_SOURCES'] += file
+            self.environment['VERILOG_SOURCES'] += str(file)
 
         # write makefile template
-        with open(self.path, 'w') as f:
+        with self.path.open('w') as f:
             f.write(COCOTB_MAKEFILE_TEMPLATE)
 
-        make_process = subprocess.call("make", env=self.environment, cwd=self.base_path)
+        make_process = subprocess.call("make", env=self.environment, cwd=str(self.base_path))
         assert make_process == 0
 
         # check that all tests passed
-        with open(self.base_path + self.sim_folder + '/results.xml', 'r') as f:
+        resf = self.base_path / self.sim_folder / 'results.xml'
+        with resf.open('r') as f:
             assert f.read().find('failure') == -1

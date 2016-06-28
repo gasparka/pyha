@@ -1,23 +1,23 @@
-import os
 import subprocess
 from collections import OrderedDict
+from pathlib import Path
 
-
-# mostly stolen from POC
 import common
 
 
 class QuartusException(Exception):
     pass
 
+
+# mostly stolen from POC
 class QuartusProject(object):
     def __init__(self, base_path):
         self.name = 'qpro'
 
-        if not os.path.exists(base_path):
-            os.makedirs(base_path)
+        if not base_path.exists():
+            base_path.mkdir()
 
-        self.path = base_path + self.name + '.qsf'
+        self.path = base_path / (self.name + '.qsf')
         self.source_files = []
         self.assignments = OrderedDict()
 
@@ -38,9 +38,9 @@ class QuartusProject(object):
         self.assignments['VHDL_SHOW_LMF_MAPPING_MESSAGES'] = 'OFF'
 
     def default_files(self):
-        common_path = os.path.dirname(common.__file__)
-        self.source_files += [common_path + '/hdl/fixed_pkg/fixed_pkg_c.vhd']
-        self.source_files += [common_path + '/hdl/fixed_pkg/fixed_float_types_c.vhd']
+        common_path = Path(common.__file__).parent / 'hdl/fixed_pkg/'
+        self.source_files += [common_path / 'fixed_pkg_c.vhd']
+        self.source_files += [common_path / 'fixed_float_types_c.vhd']
 
     def make(self):
         buffer = ""
@@ -49,13 +49,13 @@ class QuartusProject(object):
 
         buffer += "\n"
         for file in self.source_files:
-            file = os.path.abspath(file)
-            if not os.path.isfile(file):
+            # file = os.path.abspath(file)
+            if not file.is_file():
                 raise QuartusException("Cannot add '{0!s}' to Quartus settings file.".
                                        format(file)) from FileNotFoundError(file)
             buffer += "set_global_assignment -name VHDL_FILE {}\n".format(file)
 
-        with open(self.path, 'w') as f:
+        with self.path.open('w') as f:
             f.write(buffer)
 
 
@@ -65,8 +65,8 @@ def make_gate_vhdl(base_path, vhdl_sources):
     d.source_files.extend(vhdl_sources)
 
     d.make()
-    make_process = subprocess.call(['quartus_map', d.name], cwd=cwd)
+    make_process = subprocess.call(['quartus_map', d.name], cwd=str(cwd))
     assert make_process == 0
 
-    make_process = subprocess.call(['quartus_eda', d.name], cwd=cwd)
+    make_process = subprocess.call(['quartus_eda', d.name], cwd=str(cwd))
     assert make_process == 0

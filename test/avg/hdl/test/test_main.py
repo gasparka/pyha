@@ -2,7 +2,8 @@ import os
 
 from sim_automation.main import generate_sim_stuff, run_rtl_sim, run_gate_sim
 
-vhdl_sources = ['../average.vhd']
+vhdl_sources = ['../average.vhd',
+                '../top.vhd']
 
 dut_name = 'average'
 input_ports = ['x']

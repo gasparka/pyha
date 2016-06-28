@@ -58,7 +58,7 @@ class TopMaker(object):
         subs = dict()
         subs['INPUT_SIGNALS'] = ','.join(self.inputs)
         subs['OUTPUT_SIGNALS'] = ','.join(self.outputs)
-        with open(self.base_dir + '/top.sv', 'w') as f:
+        with (self.base_dir / 'top.sv').open('w') as f:
             f.write(VERILOG_TOP_TEMPLATE.format(**subs))
 
     def _make_vhdl_top(self):
@@ -76,7 +76,7 @@ class TopMaker(object):
         out_slv = ['{va} <= to_slv(return_{va});\n'.format(va=x) for x in self.outputs]
         subs['OUTPUT_VARIABLES_TO_SLV'] = ''.join(out_slv)
 
-        with open(self.base_dir + '/top.vhd', 'w') as f:
+        with (self.base_dir / 'top.vhd').open('w') as f:
             f.write(VHDL_TOP_TEMPLATE.format(**subs))
 
     def make(self):
