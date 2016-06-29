@@ -13,6 +13,7 @@ src_dir = '..'
 
 
 def generate_sim_stuff(base_dir, dut_name, input_ports, output_ports, vhdl_sources):
+    vhdl_sources = [base_dir / x for x in vhdl_sources]
     if not (base_dir / rtl_sim_folder).exists():
         (base_dir / rtl_sim_folder).mkdir()
 
@@ -31,6 +32,7 @@ def generate_sim_stuff(base_dir, dut_name, input_ports, output_ports, vhdl_sourc
 
 def run_rtl_sim(base_path, vhdl_sources):
     logger.info('Running RTL simulation')
+    vhdl_sources = [base_path / x for x in vhdl_sources]
     path = base_path / rtl_sim_folder
 
     d = CocotbAuto(path)
@@ -54,3 +56,9 @@ def run_gate_sim(base_path):
     # need only verilog top (all vhdl is not in .vho file)
     d.verilog_source_files.extend([base_path / '../top.sv'])
     d.run()
+
+
+def basic_hdl_test(base_path, vhdl_sources, dut_name, input_ports, output_ports):
+    generate_sim_stuff(base_path, dut_name, input_ports, output_ports, vhdl_sources)
+    run_rtl_sim(base_path, vhdl_sources)
+    run_gate_sim(base_path)

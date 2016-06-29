@@ -33,6 +33,7 @@ def run_dut(dut, x1, x2, data_width):
 
     y1 = []
     y2 = []
+    print(type(dut))
     for xi1, xi2 in zip(x1, x2):
         dut.x1 = xi1.astype(int)
         dut.x2 = xi2.astype(int)
@@ -85,50 +86,3 @@ def test_main(dut):
     x1 = np.random.uniform(-1, 1, 64)
     x2 = np.random.uniform(-1, 1, 64)
     yield link_to_model(dut, x1, x2)
-
-# @cocotb.test()
-# def test_pos_avg(dut):
-#     """ DUT gives the same avg when inputs positive """
-#     x = [i for i in range(128)]
-#     yield link_to_model(dut, x)
-#
-#
-# @cocotb.test()
-# def test_neg_avg(dut):
-#     """ DUT gives the same avg when inputs negative """
-#     x = [i for i in range(0, -128, -1)]
-#     yield link_to_model(dut, x)
-#
-#
-# @cocotb.test()
-# def test_pos_sum_overflow(dut):
-#     """ DUT should never overflow +SUM """
-#     windowPow = int(os.environ['GENERIC_WINDOW_POW'])
-#     dataWidth = int(os.environ['GENERIC_DATA_WIDTH'])
-#
-#     maxElems = 2 ** windowPow
-#     maxInput = (2 ** (dataWidth - 1)) - 1
-#     x = [maxInput for _ in range(maxElems + 10)]
-#
-#     yield link_to_model(dut, x)
-#
-#
-# @cocotb.test()
-# def test_neg_sum_overflow(dut):
-#     """ DUT should never overflow -SUM """
-#     windowPow = int(os.environ['GENERIC_WINDOW_POW'])
-#     dataWidth = int(os.environ['GENERIC_DATA_WIDTH'])
-#
-#     maxElems = 2 ** windowPow
-#     minInput = (2 ** (dataWidth - 1))
-#     x = [-minInput for _ in range(maxElems + 10)]
-#
-#     yield link_to_model(dut, x)
-#
-#
-# @cocotb.test()
-# def test_sin(dut):
-#     """ Sine input, DUT matches model """
-#     x = 1024 * np.sin(2 * np.pi * 10 * np.arange(256) / float(60))
-#     x = x.astype(int)
-#     yield link_to_model(dut, x)

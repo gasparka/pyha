@@ -3,6 +3,8 @@ from common.sfix import Sfix
 
 bits = -17
 
+
+# TODO: implement using shift_reg component?
 class Average(object):
     def __init__(self, window_pow):
         self.window_pow = window_pow
@@ -16,12 +18,9 @@ class Average(object):
         old = self.in_sr[-1]
         self.next.in_sr = [new_sample] + self.in_sr[:-1]
 
-        # self.next.sum = (self.sum + new_sample - old).resize(math.log2(self.window), bits)
         self.next.sum = (self.sum + new_sample - old).resize(4, bits)
         out = (self.sum >> self.window_pow).resize(0, bits)
-        # out = (self.next.sum >> self.window_pow).resize(0, bits)
         return out
-        # return old
 
     def abstract(self, x):
         import numpy as np

@@ -1,5 +1,4 @@
 import cocotb
-import matplotlib.pyplot as plt
 import numpy as np
 from cocotb.clock import Clock
 from cocotb.result import TestFailure, ReturnValue
@@ -41,15 +40,12 @@ def run_dut(dut, x, data_width):
 
 @cocotb.coroutine
 def link_to_model(dut, input, model):
-    # cocotb.fork(Clock(dut.clk, 5000).start())
-    # yield reset(dut)
-
     model_out = [float(model.main(Sfix(x, 0, -17))) for x in input]
 
     hdl_out = yield run_dut(dut, input, 18)
 
-    plt.plot(hdl_out)
-    plt.plot(model_out)
-    plt.show()
+    # plt.plot(hdl_out)
+    # plt.plot(model_out)
+    # plt.show()
     if (model_out != hdl_out).any():
         raise TestFailure()
