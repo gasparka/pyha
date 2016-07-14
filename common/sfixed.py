@@ -4,6 +4,7 @@ import math
 import numpy as np
 
 
+# TODO: this file is deprecated as fuck, but used in some places
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
