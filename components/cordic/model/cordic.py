@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class CORDIC():
+class CORDIC(object):
     def __init__(self, iterations=18):
         self.iterations = iterations
         self.phase_lut = [np.arctan(2 ** -i) for i in range(iterations)]

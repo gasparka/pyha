@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from common.cordic import CORDIC
+from components.cordic.model.cordic import CORDIC
 
 loom = CORDIC()
 

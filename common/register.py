@@ -29,7 +29,7 @@ def clock_tick(func):
             ret = func(*args, **kwargs)
         else:
             args[0].__dict__.update(deepcopy(args[0].__dict__['next'].__dict__))
-            const_self = deepcopy(args[0].__dict__)
+            # const_self = deepcopy(args[0].__dict__)
 
             ret = func(*args, **kwargs)
 
