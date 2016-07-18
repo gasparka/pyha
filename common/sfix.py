@@ -7,9 +7,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# TODO: Verify stuff against VHDL library
 class Sfix(object):
     # Disables all quantization and saturating stuff
     _float_mode = False
+
+    @staticmethod
+    def auto_size(val, bits):
+        # FIXME: int_bits possibly not correct, since we cannot reporesent max positive value, actuall maximum value is (max_int) - (frac_min)
+        # calculates for signed type
+        if type(val) is list:
+            maxabs = max(abs(x) for x in val)
+            int_bits = np.floor(np.log2(np.abs(maxabs))) + 1
+            fract_bits = -bits + int_bits + 1
+            ret = [Sfix(x, int_bits, fract_bits) for x in val]
+            return [Sfix(x, int_bits, fract_bits) for x in val]
+        else:
+            int_bits = np.floor(np.log2(np.abs(val))) + 1
+            fract_bits = -bits + int_bits + 1
+            return Sfix(val, int_bits, fract_bits)
 
     @staticmethod
     def set_float_mode(x):
@@ -29,8 +45,19 @@ class Sfix(object):
         else:
             self.quantize()
 
+    # FIXME: THESE ARE FUCKED UP
     def max_representable(self):
-        return 2 ** self.left - 2 ** self.right
+        if self.left < 0:
+            # FIXME: I am not sure how to handle this when negative index
+            assert 0
+
+            if self.right == 0:
+                return 2 ** self.left
+            else:
+                return 2 ** self.left - 2 ** self.right
+        else:
+            return 2 ** self.left - 2 ** self.right
+
 
     def min_representable(self):
         return -2 ** self.left
@@ -48,6 +75,9 @@ class Sfix(object):
         else:
             assert False
         logger.warning('Saturation {} -> {}'.format(old, self.val))
+
+        # TODO: tests break
+        raise Exception('Saturation {} -> {}'.format(old, self.val))
 
     def quantize(self):
         fix = self.val / 2 ** self.right
@@ -98,3 +128,7 @@ class Sfix(object):
                     self.left + 1,
                     self.right,
                     init_only=True)
+
+    # TODO: add tests
+    def __lt__(self, other):
+        return self.val < other

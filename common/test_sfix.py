@@ -1,5 +1,7 @@
 from decimal import *
 
+import numpy as np
+
 from common.sfix import Sfix
 
 getcontext().prec = 128
@@ -194,5 +196,141 @@ def test_non_unit_resize():
     a = Sfix(1.5, 1, -12)
     b = a.resize(-1, -12)
     assert b.val == 0.499755859375
+
+
+def test_auto_size_bits_single():
+    a = 0.9
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == 0
+    assert b.right == -17
+
+    a = 1.54
+    b = Sfix.auto_size(a, 18)
+
+    np.isclose(b.val, a)
+    assert b.left == 1
+    assert b.right == -16
+
+    a = -a
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == 1
+    assert b.right == -16
+
+    a = np.pi
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == 2
+    assert b.right == -15
+
+    a = np.pi / 2
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == 1
+    assert b.right == -16
+
+    a = -np.pi * 2
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == 3
+    assert b.right == -14
+
+
+def test_BROKEN_SHIT():
+    # this could pass if number negative, but since it is so close to MAX
+    # it cannot pass as positive value, need extra bit here
+    # is this same for VHDL implementation??
+    assert 0
+    a = 0.00390623013197
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == -7
+    assert b.right == -24
+
+
+def test_auto_size_negative_int_bits():
+    a = 0.00390623013197
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == -7
+    assert b.right == -24
+
+    a = 0.45
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == -2
+    assert b.right == -19
+
+    a = 0.25
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == -1
+    assert b.right == -18
+
+    a = -0.000000025124
+    b = Sfix.auto_size(a, 18)
+    np.isclose(b.val, a)
+    assert b.left == -25
+    assert b.right == -42
+
+
+def test_auto_size_bits_list():
+    a = [0.5, 1.2, 3.2]
+    b = Sfix.auto_size(a, 18)
+    for x, y in zip(a, b):
+        np.isclose(y.val, x)
+        assert y.left == 2
+        assert y.right == -15
+
+    a = [np.arctan(2 ** -i) for i in range(8)]
+    b = Sfix.auto_size(a, 18)
+    for x, y in zip(a, b):
+        np.isclose(y.val, x)
+        assert y.left == 0
+        assert y.right == -17
+
+    a = [np.arctan(2 ** -i) for i in range(8, 12)]
+    b = Sfix.auto_size(a, 18)
+    for x, y in zip(a, b):
+        np.isclose(y.val, x)
+        assert y.left == -8
+        assert y.right == -25
+
+
+def test_max_representable():
+    # TODO: unknown case
+    # a = Sfix(0, 0, 0)
+    # assert a.max_representable() == 0
+
+    a = Sfix(0, 1, 0)
+    assert a.max_representable() == 1
+
+    a = Sfix(0, 1, -1)
+    assert a.max_representable() == 1.5
+
+    a = Sfix(0, 1, -2)
+    assert a.max_representable() == 1.75
+
+    a = Sfix(0, 2, -2)
+    assert a.max_representable() == 3.75
+
+    a = Sfix(0, -1, 0)
+    assert a.max_representable() == 0.5
+
+    a = Sfix(0, -2, 0)
+    assert a.max_representable() == 0.25
+
+    # TODO: unknown case
+    # a = Sfix(0, -1, -1)
+    # assert a.max_representable() == 0.5 ??
+
+    # FIXME: BULLSHIT, 0.25 is correct??
+    a = Sfix(0, -1, -2)
+    assert a.max_representable() == 0.75
+
+    a = Sfix(0, -2, -3)
+    assert a.max_representable() == 0.25 + 0.25 / 2
+
 
 # TODO: test restricted arguments

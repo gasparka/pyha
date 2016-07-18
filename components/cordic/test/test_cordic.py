@@ -30,45 +30,9 @@ def exp(request):
         return cord.exp
     elif request.param == 'HW-MODEL':
         from components.cordic.hw.cordic import Exp
+        # assert 0
         cord = Exp(iterations)
         return cord.test_interface
-
-
-@pytest.fixture(params=['MODEL', 'HW-MODEL'])
-def kernel(request):
-    iterations = 18
-    if request.param == 'MODEL':
-        from components.cordic.model.cordic import CORDIC
-        cord = CORDIC(iterations)
-        return cord.kernel
-    elif request.param == 'HW-MODEL':
-        from components.cordic.hw.cordic import CORDICKernel
-        cord = CORDICKernel(iterations)
-        return cord.test_interface
-
-
-def test_kernel_rot(kernel):
-    x = 1 / 1.646760
-    y = 0
-    phase = 0
-
-    x, y, phase = kernel(x, y, phase, mode='ROTATE')
-
-    np.testing.assert_almost_equal(x, np.cos(phase), decimal=3)
-    np.testing.assert_almost_equal(y, np.sin(phase), decimal=3)
-
-
-def test_kernel_vec(kernel):
-    x = 0.3
-    y = 1.0
-    phase = 0
-    inp = x + y * 1j
-    x, y, phase = kernel(x, y, phase, mode='VECTOR')
-
-    # print(x,y,phase)
-    np.testing.assert_almost_equal(1 / 1.646760 * x, np.abs(inp), decimal=3)
-    np.testing.assert_almost_equal(phase, np.angle(inp), decimal=3)
-
 
 def test_exp(exp):
     fs = 1e3
