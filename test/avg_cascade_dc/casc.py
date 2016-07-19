@@ -31,6 +31,7 @@ class Casc(object):
             r = x.main(r)
 
         out = (old - r).resize(0, bits)
+
         # out = old
         return out
 
