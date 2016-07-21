@@ -84,6 +84,10 @@ class Sfix(object):
         fix = np.round(fix)
         self.val = fix * 2 ** self.right
 
+    # TODO: test, rounding not needed?
+    def fixed_value(self):
+        return int(np.round(self.val / 2 ** self.right))
+
     def __str__(self):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
 
