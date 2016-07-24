@@ -1,10 +1,11 @@
+import logging
 import subprocess
 from collections import OrderedDict
 from pathlib import Path
 
 import common
 
-
+logger = logging.getLogger(__name__)
 class QuartusException(Exception):
     pass
 
@@ -59,14 +60,20 @@ class QuartusProject(object):
             f.write(buffer)
 
 
-def make_gate_vhdl(base_path, vhdl_sources):
-    cwd = base_path
+def make_gate_vhdl(generated_hdl):
+    cwd = generated_hdl.base_path / 'quartus'
     d = QuartusProject(cwd)
-    d.source_files.extend(vhdl_sources)
-
+    d.source_files.extend(generated_hdl.vhdl_src)
+    # no need for verilog top
     d.make()
+
+    logger.info('Running quartus map...will take time.')
     make_process = subprocess.call(['quartus_map', d.name], cwd=str(cwd))
     assert make_process == 0
 
+    logger.info('Running netlist writer.')
     make_process = subprocess.call(['quartus_eda', d.name], cwd=str(cwd))
     assert make_process == 0
+
+    logger.info('Successfully generated gate-level hdl!')
+    return cwd / 'simulation/modelsim/qpro.vho'

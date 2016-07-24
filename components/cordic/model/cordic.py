@@ -19,6 +19,8 @@ class CORDIC(object):
             x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
         return x, y, phase
 
+    def __call__(self, *args, **kwargs):
+        return self.kernel(*args, **kwargs)
     # NB THIS IS BETTER FOR HARDWARE
     # def exp(self, phase_inc, samples):
     #     phase_acc = 0

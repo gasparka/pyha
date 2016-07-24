@@ -6,6 +6,8 @@ from common.sfix import Sfix
 
 class CORDICKernel(object):
     def __init__(self, iterations=18, mode='ROTATE'):
+        self.input_sfix = [Sfix(left=2, right=-17)] * 3
+
         # FIXME: +1 due to pipeline for structure!, this acts as output register
         self.iterations = iterations + 1
         self.phase_lut = Sfix.auto_size([np.arctan(2 ** -i) for i in range(self.iterations)], bits=32)
@@ -18,7 +20,8 @@ class CORDICKernel(object):
 
     @property
     def delay(self):
-        return self.iterations + 1
+        # return self.iterations + 1
+        return self.iterations
 
     def rotate(self, i, x, y, phase):
         if self.mode == 'ROTATE':
@@ -39,7 +42,7 @@ class CORDICKernel(object):
         return next_x.resize(2, -17), next_y.resize(2, -17), next_phase.resize(2, -17)
 
     @clock_tick
-    def __call__(self, x, y, phase):
+    def __call__(self, x, y, phase, mode=None):
         next = self.next
         next.x[0], next.y[0], next.phase[0] = x, y, phase
 

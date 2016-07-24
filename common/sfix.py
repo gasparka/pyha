@@ -1,4 +1,3 @@
-import copy
 import logging
 
 import numpy as np
@@ -104,9 +103,10 @@ class Sfix(object):
                     init_only=True)
 
     def __sub__(self, other):
-        o = copy.copy(other)
-        o.val = -other.val  # ok to "overflow"
-        return self.__add__(o)
+        return Sfix(self.val - other.val,
+                    max(self.left, other.left) + 1,
+                    min(self.right, other.right),
+                    init_only=True)
 
     def __mul__(self, other):
         return Sfix(self.val * other.val,

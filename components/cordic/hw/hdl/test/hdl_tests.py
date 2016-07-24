@@ -51,12 +51,12 @@ def run_dut(dut, in_data, out_count):
 def test_main(dut):
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')
-    in_data = np.transpose(in_data)
+    # in_data = np.transpose(in_data)
     # print(in_data)
 
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
-    hdl_out = np.transpose(hdl_out)
+    # hdl_out = np.transpose(hdl_out)
     # print(hdl_out)
 
     np.save(os.getcwd() + '/../output.npy', hdl_out)

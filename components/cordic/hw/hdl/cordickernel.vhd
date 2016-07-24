@@ -90,6 +90,7 @@ package body CORDICKernel is
   begin
     self_next := self;
 
+    self_next.phase_lut := self.phase_lut;
     -- next.x[0], next.y[0], next.phase[0] = x, y, phase
     -- NOT correct to unroll this statement, python solution avoids temp varibles
     self_next.x(0) := x;
