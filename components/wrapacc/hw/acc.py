@@ -1,29 +1,27 @@
-class WrapAcc():
+from common.register import clock_tick
+from common.sfix import resize, Sfix
+
+
+class WrapAcc:
     def __init__(self, bits):
+        self.input_sfix = [Sfix(0, 0, -bits)]
         self.bits = bits
-        self.counter = -1.0
+        self.counter = Sfix(-1.0, 0, -bits)
+        self.is_wrap = False
 
-    # @property
-    # def max(self):
-    #     return 1 - 2 ** -self.bits
-    #
-    # @property
-    # def min(self):
-    #     return -1
-    #
-    # def freq_to_step(self, freq, fs):
-    #     return freq * (self.max - self.min) / fs
+    @property
+    def delay(self):
+        # 0 matches NUMPY (last element not included)
+        # delay is actually 1, but the default value is relavant in this case
+        return 0
 
+    @clock_tick
     def __call__(self, step):
-        # fmin = self.min
-        # fmax = self.max
+        val = self.counter + step
 
-        val = resize(self.counter + step, self.counter)
+        self.next.is_wrap = val > self.counter.max_representable() or \
+                            val < self.counter.min_representable()
 
-        is_wrap = val > self.max or val < self.min
+        self.next.counter = resize(val, self.counter, overflow_style='WRAP')
 
-
-        # # wrap logic
-        # self.counter = (val - fmin) % (fmax - fmin) + fmin
-
-        # return resl
+        return self.counter, self.is_wrap

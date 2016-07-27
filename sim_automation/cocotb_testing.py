@@ -16,11 +16,13 @@ def reset(dut, duration=10000):
     dut.rst_n = 1
     dut.log.debug("Out of reset")
 
+
 @cocotb.coroutine
 def run_dut(dut, in_data, out_count):
     cocotb.fork(Clock(dut.clk, 5000).start())
     yield reset(dut)
 
+    # FIXME: test input and output names and report error
     ret = []
     # print('Input data: {}'.format(in_data))
     for x in in_data:

@@ -6,6 +6,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def resize(fix, type, overflow_style='SATURATE'):
+    return fix.resize(type=type, overflow_style=overflow_style)
+
+
+
 # TODO: Verify stuff against VHDL library
 class Sfix(object):
     # Disables all quantization and saturating stuff
@@ -30,7 +35,7 @@ class Sfix(object):
     def set_float_mode(x):
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False):
+    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
         self.right = right
         self.left = left
         self.val = val
@@ -39,10 +44,16 @@ class Sfix(object):
         if init_only or Sfix._float_mode:
             return
 
-        if self.overflows():
-            self.saturate()
-        else:
+        if overflow_style is 'SATURATE':
+            if self.overflows() and overflow_style:
+                self.saturate()
+            else:
+                self.quantize()
+        elif overflow_style is 'WRAP':  # TODO: add tests
             self.quantize()
+            self.wrap()
+        else:
+            raise Exception('Wtf')
 
     # FIXME: THESE ARE FUCKED UP
     def max_representable(self):
@@ -76,12 +87,13 @@ class Sfix(object):
         logger.warning('Saturation {} -> {}'.format(old, self.val))
 
         # TODO: tests break
-        # raise Exception('Saturation {} -> {}'.format(old, self.val))
+        raise Exception('Saturation {} -> {}'.format(old, self.val))
 
+    # TODO: add tests
     def wrap(self):
-        self.val = (self.val - self.min_representable()) % (
-        self.max_representable() - self.min_representable()) + self.min_representable()
-        return self
+        fmin = self.min_representable()
+        fmax = self.max_representable()
+        self.val = (self.val - fmin) % (fmax - fmin) + fmin
 
     def quantize(self):
         fix = self.val / 2 ** self.right
@@ -98,10 +110,11 @@ class Sfix(object):
     def __float__(self):
         return float(self.val)
 
-    def resize(self, left=0, right=0, type=None):
+    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE'):
         if type is not None:  # TODO: add tests
-            return Sfix(self.val, type.left, type.right)
-        return Sfix(self.val, left, right)
+            left = type.left
+            right = type.right
+        return Sfix(self.val, left, right, overflow_style=overflow_style)
 
     def __add__(self, other):
         return Sfix(self.val + other.val,

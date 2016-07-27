@@ -81,6 +81,10 @@ class Testing(object):
             return out
 
     def add_dummy_pipeline_samples(self, args):
+        # arg = getattr(self.hw_model, 'delay', None)
+        # if arg is None:
+        #     raise Exception('HW model is missing DELAY attribute')
+
         if len(np.array(args).shape) == 1:
             args = [[x] for x in args]
         args = [np.append(x, [0.0] * self.hw_model.delay) for x in args]
