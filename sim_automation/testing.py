@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 import numpy as np
 
 from common.sfix import Sfix
@@ -18,27 +20,31 @@ class Testing(object):
 
         # self.original_input = np.copy(args)
         if self.request.param == 'MODEL':
-            trans = np.transpose(args)
-            is_singe_call = len(trans.shape) == 1
-            if is_singe_call:
-                trans = [trans]
-            outl = []
-            for x in trans:
-                out = self.model(*x, **kwargs)
-                outl.append(out)
+            # trans = np.transpose(args)
+            # is_singe_call = len(trans.shape) == 1
+            # if is_singe_call:
+            #     trans = [trans]
+            # outl = []
+            # for x in trans:
+            #     out = self.model(*x, **kwargs)
+            #     outl.append(out)
+            out = self.model(*args, **kwargs)
 
-            self.original_output = np.copy(outl)
-            return np.transpose(outl)
+            self.original_output = np.copy(out)
+            return np.transpose(out)
 
         elif self.request.param == 'HW-MODEL':
-
+            with suppress(Exception):
+                args = self.hw_model.test_adaptor(*args, **kwargs)
             # flush pipeline
             args = self.add_dummy_pipeline_samples(args)
+
 
             # fixed conversion
             for i, (values, type) in enumerate(zip(args, self.hw_model.input_sfix)):
                 args[i] = [Sfix(x, type.left, type.right) for x in values]
 
+            # Sfix.set_float_mode(True)
             trans = np.transpose(args)
             outl = []
             for x in trans:

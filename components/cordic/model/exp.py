@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class CORDIC(object):
+class Exp(object):
     def __init__(self, iterations=18):
         self.iterations = iterations
         self.phase_lut = [np.arctan(2 ** -i) for i in range(iterations)]
@@ -19,11 +19,10 @@ class CORDIC(object):
             x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
         return x, y, phase
 
-    def __call__(self, *args, **kwargs):
-        return self.kernel(*args, **kwargs)
-
     def exp(self, phase_list):
-        # remove 1j from input. just to make calling comatible wiht numpy
+
+        if len(phase_list) == 1:
+            phase_list = [phase_list]
         phase_list = [x / 1j for x in phase_list]
         # phase_list /= 1j
         sign = 1
@@ -43,9 +42,12 @@ class CORDIC(object):
                 phase_acc += np.pi
 
             x, y, _ = self.kernel(x=1 / 1.646760, y=0, phase=phase_acc, mode='ROTATE')
-            res += [sign * x + sign * y * 1j]
+            res.append([sign * x, sign * y])
 
         return res
+
+    def __call__(self, *args, **kwargs):
+        return self.exp(*args, **kwargs)
 
     def to_polar(self, x_list, y_list):
         abs_list = []

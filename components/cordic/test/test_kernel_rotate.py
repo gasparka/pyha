@@ -34,15 +34,15 @@ def generated_hdl(tmpdir_factory):
     # tmpdir = Path(str(tmpdir))
 
     # copy cocotb python file to temp folder
-    coco_py = '/home/gaspar/git/hwpy/components/cordic/hw/hdl/test/hdl_tests.py'
+    coco_py = '/home/gaspar/git/hwpy/sim_automation/cocotb_testing.py'
     shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
 
     # not implemented simulate by copying files to tmpdir
-    vhdl_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/cordickernel.vhd',
-                '/home/gaspar/git/hwpy/components/cordic/hw/hdl/top.vhd']
+    vhdl_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd',
+                '/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
 
-    verilog_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/top.sv']
+    verilog_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/top.sv']
     verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
 
     from common.sfix import Sfix
@@ -59,12 +59,6 @@ def gate_hdl(shared_dir):
     gate_vhdl = make_gate_vhdl(hdl)
     hdl.vhdl_src = [gate_vhdl]
     return hdl
-
-
-@pytest.fixture(scope='session')
-def shared_tmpdir(tmpdir_factory):
-    tmpdir = tmpdir_factory.mktemp('src')  # this returns some retarded path class
-    return Path(str(tmpdir))
 
 
 @pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
@@ -96,7 +90,6 @@ def kernel(request, tmpdir, shared_tmpdir):
         return dut
 
 
-
 def test_kernel_first_out_rot(kernel):
     rx, ry, rphase = kernel(1, 1, 0, mode='ROTATE')
     assert np.isclose(rx, [1.6467515412835914], atol=1e-3)
@@ -121,8 +114,6 @@ def test_kernel_rot(kernel):
     # print(ref, x, y)
     np.testing.assert_almost_equal(rx, np.cos(phase), decimal=3)
     np.testing.assert_almost_equal(ry, np.sin(phase), decimal=3)
-
-
 
 
 if __name__ == "__main__":

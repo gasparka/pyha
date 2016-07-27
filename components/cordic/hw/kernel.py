@@ -6,11 +6,12 @@ from common.sfix import Sfix
 
 class CORDICKernel(object):
     def __init__(self, iterations=18, mode='ROTATE'):
+        # self.frac_bits = -24
         self.input_sfix = [Sfix(left=2, right=-17)] * 3
 
-        # FIXME: +1 due to pipeline for structure!, this acts as output register
+        # NOTE: +1 due to pipeline for structure!, this acts as output register
         self.iterations = iterations + 1
-        self.phase_lut = Sfix.auto_size([np.arctan(2 ** -i) for i in range(self.iterations)], bits=32)
+        self.phase_lut = Sfix.auto_size([np.arctan(2 ** -i) for i in range(self.iterations)], bits=18)
         self.mode = mode
 
         # pipeline registers
@@ -39,7 +40,7 @@ class CORDICKernel(object):
             next_x = x + (y >> i)
             next_y = y - (x >> i)
             next_phase = phase + self.phase_lut[i]
-        return next_x.resize(2, -17), next_y.resize(2, -17), next_phase.resize(2, -17)
+        return next_x.resize(type=x), next_y.resize(type=y), next_phase.resize(type=phase)
 
     @clock_tick
     def __call__(self, x, y, phase, mode=None):
@@ -52,13 +53,13 @@ class CORDICKernel(object):
 
         return self.x[-1], self.y[-1], self.phase[-1]
 
-    def test_interface(self, x, y, phase, mode):
-        self.mode = mode
-
-        x = Sfix(x, 2, -17)
-        y = Sfix(y, 2, -17)
-        phase = Sfix(phase, 2, -17)
-        for i in range(self.delay):
-            rx, ry, rphase = self(x, y, phase)
-
-        return float(rx), float(ry), float(rphase)
+        # def test_interface(self, x, y, phase, mode):
+        #     self.mode = mode
+        #
+        #     x = Sfix(x, 2, -17)
+        #     y = Sfix(y, 2, -17)
+        #     phase = Sfix(phase, 2, -17)
+        #     for i in range(self.delay):
+        #         rx, ry, rphase = self(x, y, phase)
+        #
+        #     return float(rx), float(ry), float(rphase)

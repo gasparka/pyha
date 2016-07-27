@@ -34,15 +34,15 @@ def generated_hdl(tmpdir_factory):
     # tmpdir = Path(str(tmpdir))
 
     # copy cocotb python file to temp folder
-    coco_py = '/home/gaspar/git/hwpy/components/cordic/hw/hdl/test/hdl_tests.py'
+    coco_py = '/home/gaspar/git/hwpy/sim_automation/cocotb_testing.py'
     shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
 
     # not implemented simulate by copying files to tmpdir
-    vhdl_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/cordickernel.vhd',
-                '/home/gaspar/git/hwpy/components/cordic/hw/hdl/top.vhd']
+    vhdl_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_vector/cordickernel.vhd',
+                '/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_vector/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
 
-    verilog_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/top.sv']
+    verilog_src = ['/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_vector/top.sv']
     verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
 
     from common.sfix import Sfix
@@ -80,49 +80,46 @@ def kernel(request, tmpdir, shared_tmpdir):
         return dut
 
     elif request.param == 'HW-MODEL':
-        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations), None)
+        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations, mode='VECTOR'), None)
         return dut
 
     elif request.param == 'HW-RTL':
         src = generated_hdl(shared_tmpdir)
         coco_sim = CocotbAuto(tmpdir, src)
-        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations), coco_sim)
+        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations, mode='VECTOR'), coco_sim)
         return dut
 
     elif request.param == 'HW-GATE':
         src = gate_hdl(shared_tmpdir)
         coco_sim = CocotbAuto(tmpdir, src)
-        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations), coco_sim)
+        dut = Testing(request, CORDIC(iterations), CORDICKernel(iterations, mode='VECTOR'), coco_sim)
         return dut
 
 
-
-def test_kernel_first_out_rot(kernel):
-    rx, ry, rphase = kernel(1, 1, 0, mode='ROTATE')
-    assert np.isclose(rx, [1.6467515412835914], atol=1e-3)
-    assert np.isclose(ry, [1.6467689748804477], atol=1e-3)
-    assert np.isclose(rphase, [-5.2933e-6], atol=1e-3)
-
-
-def test_kernel_first_out_rot2(kernel):
-    rx, ry, rphase = kernel(0.2, -0.01, np.pi, mode='ROTATE')
-    assert np.isclose(rx, [-0.0403], atol=1e-3)
-    assert np.isclose(ry, [0.3272], atol=1e-3)
-    assert np.isclose(rphase, [1.3983], atol=1e-3)
+def test_kernel_first_out_vec(kernel):
+    rx, ry, rphase = kernel(1, 1, 0, mode='VECTOR')
+    assert np.isclose(rx, [2.3288], atol=1e-3)
+    assert np.isclose(ry, [1.7139e-05], atol=1e-3)
+    assert np.isclose(rphase, [0.7853], atol=1e-3)
 
 
-def test_kernel_rot(kernel):
-    x = 1 / 1.646760
-    y = 0
-    phase = 0.5
-    ref = np.exp(phase * 1j)
-
-    rx, ry, rphase = kernel(x, y, phase, mode='ROTATE')
-    # print(ref, x, y)
-    np.testing.assert_almost_equal(rx, np.cos(phase), decimal=3)
-    np.testing.assert_almost_equal(ry, np.sin(phase), decimal=3)
+def test_kernel_first_out_vec2(kernel):
+    rx, ry, rphase = kernel(-0.456, -0.89, -np.pi / 2, mode='VECTOR')
+    assert np.isclose(rx, [1.5727], atol=1e-3)
+    assert np.isclose(ry, [-0.4882], atol=1e-3)
+    assert np.isclose(rphase, [-3.31407], atol=1e-3)
 
 
+def test_kernel_vec(kernel):
+    x = 0.3
+    y = 1.0
+    phase = 0
+    inp = x + y * 1j
+    rx, ry, rphase = kernel(x, y, phase, mode='VECTOR')
+
+    # print(x,y,phase)
+    np.testing.assert_almost_equal(1 / 1.646760 * rx, np.abs(inp), decimal=3)
+    np.testing.assert_almost_equal(rphase, np.angle(inp), decimal=3)
 
 
 if __name__ == "__main__":

@@ -78,6 +78,11 @@ class Sfix(object):
         # TODO: tests break
         # raise Exception('Saturation {} -> {}'.format(old, self.val))
 
+    def wrap(self):
+        self.val = (self.val - self.min_representable()) % (
+        self.max_representable() - self.min_representable()) + self.min_representable()
+        return self
+
     def quantize(self):
         fix = self.val / 2 ** self.right
         fix = np.round(fix)
@@ -93,7 +98,9 @@ class Sfix(object):
     def __float__(self):
         return float(self.val)
 
-    def resize(self, left, right):
+    def resize(self, left=0, right=0, type=None):
+        if type is not None:  # TODO: add tests
+            return Sfix(self.val, type.left, type.right)
         return Sfix(self.val, left, right)
 
     def __add__(self, other):
@@ -103,6 +110,8 @@ class Sfix(object):
                     init_only=True)
 
     def __sub__(self, other):
+        if type(other) == float:
+            other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
                     max(self.left, other.left) + 1,
                     min(self.right, other.right),
@@ -136,3 +145,14 @@ class Sfix(object):
     # TODO: add tests
     def __lt__(self, other):
         return self.val < other
+
+    # TODO: add tests
+    def __gt__(self, other):
+        return self.val > other
+
+    # TODO: add tests
+    def __neg__(self):
+        return Sfix(-self.val,
+                    self.left + 1,
+                    self.right,
+                    init_only=True)

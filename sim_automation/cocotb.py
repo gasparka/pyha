@@ -35,7 +35,7 @@ include $(COCOTB)/makefiles/Makefile.sim
 """
 
 class CocotbAuto(object):
-    def __init__(self, base_path, source_files, sim_folder='coco_sim', test_file='hdl_tests',
+    def __init__(self, base_path, source_files, sim_folder='coco_sim', test_file='cocotb_testing',
                  top_level_entity='top_sv'):
         self.source_files = source_files
         self.top_level_entity = top_level_entity
