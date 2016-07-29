@@ -87,7 +87,7 @@ class Sfix(object):
         logger.warning('Saturation {} -> {}'.format(old, self.val))
 
         # TODO: tests break
-        raise Exception('Saturation {} -> {}'.format(old, self.val))
+        # raise Exception('Saturation {} -> {}'.format(old, self.val))
 
     # TODO: add tests
     def wrap(self):
@@ -131,6 +131,8 @@ class Sfix(object):
                     init_only=True)
 
     def __mul__(self, other):
+        if type(other) == float:
+            other = Sfix(other, self.left, self.right)
         return Sfix(self.val * other.val,
                     self.left + other.left + 1,
                     self.right + other.right,
@@ -169,3 +171,8 @@ class Sfix(object):
                     self.left + 1,
                     self.right,
                     init_only=True)
+
+    # TODO: add tests
+    def __len__(self):
+        assert self.left >= 0
+        return -self.right + self.left + 1

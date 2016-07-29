@@ -34,11 +34,11 @@ def generated_hdl(tmpdir_factory):
     shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
 
     # not implemented simulate by copying files to tmpdir
-    vhdl_src = ['/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd',
-                '/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/top.vhd']
+    vhdl_src = ['/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd',
+                '/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
 
-    verilog_src = ['/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/top.sv']
+    verilog_src = ['/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/top.sv']
     verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
 
     from common.sfix import Sfix
@@ -65,34 +65,38 @@ def shared_tmpdir(tmpdir_factory):
     return Path(str(tmpdir))
 
 
+scale = np.pi / 2
+
+
 @pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
 def dut(request, tmpdir, shared_tmpdir):
     from sim_automation.cocotb import CocotbAuto
+    # FIXME: this name clash is bullshit
+    import wrapacc.hw.acc
     limit = int(os.environ['TEST_DEPTH'])
     if request.param_index > limit:
         pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
 
     bits = 31
     if request.param == 'MODEL':
-        dut = Testing(request, WrapAcc(bits), None, None)
+        dut = Testing(request, WrapAcc(bits, scale), None, None)
         return dut
 
     elif request.param == 'HW-MODEL':
-        # FIXME: this name clash is bullshit
-        import wrapacc.hw.acc
-        dut = Testing(request, WrapAcc(bits), hw.acc.WrapAcc(bits), None)
+
+        dut = Testing(request, WrapAcc(bits, scale), hw.acc.WrapAcc(bits, scale), None)
         return dut
 
     elif request.param == 'HW-RTL':
         src = generated_hdl(shared_tmpdir)
         coco_sim = CocotbAuto(tmpdir, src)
-        dut = Testing(request, WrapAcc(bits), hw.acc.WrapAcc(bits), coco_sim)
+        dut = Testing(request, WrapAcc(bits, scale), hw.acc.WrapAcc(bits, scale), coco_sim)
         return dut
 
     elif request.param == 'HW-GATE':
         src = gate_hdl(shared_tmpdir)
         coco_sim = CocotbAuto(tmpdir, src)
-        dut = Testing(request, WrapAcc(bits), hw.acc.WrapAcc(bits), coco_sim)
+        dut = Testing(request, WrapAcc(bits, scale), hw.acc.WrapAcc(bits, scale), coco_sim)
         return dut
 
 
@@ -101,12 +105,13 @@ def dut(request, tmpdir, shared_tmpdir):
 #     return WrapAcc(bits=32)
 
 
-@pytest.fixture
+# @pytest.fixture(params=[0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8])
+@pytest.fixture(params=[2])
 def stimul(dut, request):
     fs = 128
-    freq = 3
+    freq = request.param
     t = np.linspace(0, 1, fs, endpoint=False)
-    ref = signal.sawtooth(2 * np.pi * freq * t)
+    ref = signal.sawtooth(2 * np.pi * freq * t) * scale
 
     # dut stuff
     step = dut.model.freq_to_step(freq, fs)
@@ -117,7 +122,7 @@ def stimul(dut, request):
 
 
 def test_first(stimul):
-    assert stimul[0][0] == -1.0
+    assert np.isclose(stimul[0][0], -scale)
 
 
 def test_end(stimul):
@@ -134,12 +139,12 @@ def test_step(stimul):
 def test_wrap_output(stimul):
     c = stimul[2].astype(bool).tolist().count(True)
     # c = stimul[2].count(True)
-    assert c == stimul[3] - 1
+    assert c == int(stimul[3] - 1)
 
 
 def test_samples(stimul):
-    import matplotlib.pyplot as plt
-    plt.plot(stimul[0])
-    plt.plot(stimul[1])
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.plot(stimul[0])
+    # plt.plot(stimul[1])
+    # plt.show()
     assert np.allclose(stimul[0], stimul[1])

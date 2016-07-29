@@ -75,7 +75,7 @@ class Testing(object):
 
             # convert fixed values to float
             out = out.astype(float)
-            for i, (values, type) in enumerate(zip(out, self.hw_model.input_sfix)):
+            for i, (values, type) in enumerate(zip(out, self.hw_model.output_sfix)):
                 out[i] = (values * 2 ** type.right)
 
             return out
