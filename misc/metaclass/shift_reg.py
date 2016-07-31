@@ -12,6 +12,7 @@ class ShiftReg(object):
         self.next.shr = [new_sample] + self.shr[:-1]
         return out
 
+
 def test():
     size = 8
     dut = ShiftReg(size)
@@ -25,5 +26,6 @@ def test():
     assert out[:size] == [0] * size
     assert out[size:] == stimul[:-size]
     # assert dut.next.shift_reg == list(reversed(stimul[-size:]))
+
 
 test()
