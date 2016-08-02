@@ -9,42 +9,33 @@ library ieee;
 library work;
   use work.all;
 
-package WrapAcc is
+package Register is
 
   type self_t is record
-    counter: sfixed(0 downto - 31);
-    is_wrap: boolean;
+    a: sfixed(0 downto -27);
   end record;
 
   procedure call (self: inout self_t; step: sfixed; ret_0: out sfixed; ret_1: out boolean);
   procedure reset(self: inout self_t);
 end package;
 
-
-package body WrapAcc is
+package body Register is
 
   procedure reset(self: inout self_t) is
   begin
-self.counter := to_sfixed(-1.0, self.counter);
-    self.is_wrap := False;
+    self.a := to_sfixed(0.0, self.a);
   end procedure;
 
-procedure call (self: inout self_t; step: sfixed; ret_0: out sfixed; ret_1: out boolean) is
+procedure call (self: inout self_t;
+                in_next: sfixed;
+                ret_0: out sfixed) is
     variable self_next: self_t;
-    variable val: sfixed(1 downto -31);
   begin
     self_next := self;
 
-    val := self.counter + step;
+    self_next.a := in_next;
 
-
-    self_next.is_wrap := val > to_sfixed(1.0, self.counter) or val < to_sfixed(-1.0, self.counter);
-
-    self_next.counter := resize(val, self.counter, overflow_style => FIXED_WRAP);
-
-    ret_0 := self.counter;
-    ret_1 := self.is_wrap;
-
+    ret_0 := self.a;
     self := self_next;
   end procedure;
 

@@ -1,0 +1,1364 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+resize	/home/gaspar/git/hwpy/doc/tst.py	/^def resize(param, x):$/;"	function	line:9
+logger	/home/gaspar/git/hwpy/doc/tst.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:14
+Polar	/home/gaspar/git/hwpy/doc/tst.py	/^class Polar(object):$/;"	class	line:17
+__init__	/home/gaspar/git/hwpy/doc/tst.py	/^    def __init__(self, cordic_length=18, phase_unit='rad'):$/;"	member	line:18	class:Polar
+delay	/home/gaspar/git/hwpy/doc/tst.py	/^    def delay(self):$/;"	member	line:35	class:Polar
+cordic_rotate_vector	/home/gaspar/git/hwpy/doc/tst.py	/^    def cordic_rotate_vector(self, i, direction, x, y, phase):$/;"	member	line:38	class:Polar
+main	/home/gaspar/git/hwpy/doc/tst.py	/^    def main(self, x, y):$/;"	member	line:61	class:Polar
+_implementation_abstract	/home/gaspar/git/hwpy/doc/tst.py	/^    def _implementation_abstract(self, x, y):$/;"	member	line:91	class:Polar
+_abstract	/home/gaspar/git/hwpy/doc/tst.py	/^    def _abstract(self, x, y):$/;"	member	line:107	class:Polar
+test_abstract	/home/gaspar/git/hwpy/doc/tst.py	/^def test_abstract():$/;"	function	line:114
+test_main	/home/gaspar/git/hwpy/doc/tst.py	/^def test_main():$/;"	function	line:127
+test_chirp	/home/gaspar/git/hwpy/doc/tst.py	/^def test_chirp():$/;"	function	line:145
+ShiftReg	/home/gaspar/git/hwpy/test/shift_reg/shift_reg.py	/^class ShiftReg(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/test/shift_reg/shift_reg.py	/^    def __init__(self, size):$/;"	member	line:5	class:ShiftReg
+main	/home/gaspar/git/hwpy/test/shift_reg/shift_reg.py	/^    def main(self, new_sample):$/;"	member	line:9	class:ShiftReg
+test	/home/gaspar/git/hwpy/test/shift_reg/shift_reg.py	/^def test():$/;"	function	line:15
+test_main	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:9
+vhdl_sources	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/test_main.py	/^vhdl_sources = ['..\/shift_reg.vhd']$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/test_main.py	/^dut_name = 'ShiftReg'$/;"	variable	line:7
+input_ports	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/test_main.py	/^input_ports = ['x']$/;"	variable	line:8
+output_ports	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/test_main.py	/^output_ports = ['y']$/;"	variable	line:9
+test	/home/gaspar/git/hwpy/test/shift_reg/hdl/test/test_main.py	/^def test():$/;"	function	line:12
+ShiftReg	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^package ShiftReg is$/;"	package	line:8
+sfixed_list	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:9
+self_t	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^  type self_t is record$/;"	type	line:10
+shr	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^  type self_t is record$/;"	record	line:10
+ShiftReg	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^package body ShiftReg is$/;"	package	line:19
+reset	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:21
+main	/home/gaspar/git/hwpy/test/shift_reg/hdl/shift_reg.vhd	/^  procedure main (self: inout self_t; new_sample: sfixed; ret_0: out sfixed) is$/;"	procedure	line:26
+top	/home/gaspar/git/hwpy/test/shift_reg/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+bits	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^bits = -17$/;"	variable	line:7
+Casc	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^class Casc(object):$/;"	class	line:11
+__init__	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^    def __init__(self, window_pow, casc=2):$/;"	member	line:12	class:Casc
+main	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^    def main(self, new_sample):$/;"	member	line:21	class:Casc
+abstract	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^    def abstract(self, x):$/;"	member	line:38	class:Casc
+sin_real	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^def sin_real(freq, amp=1, phase=0):$/;"	function	line:54
+test	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^def test():$/;"	function	line:64
+test2	/home/gaspar/git/hwpy/test/avg_cascade_dc/casc.py	/^def test2():$/;"	function	line:82
+test_main	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:9
+vhdl_sources	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/test_main.py	/^vhdl_sources = ['..\/..\/..\/avg\/hdl\/average.vhd',$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/test_main.py	/^dut_name = 'casc'$/;"	variable	line:8
+input_ports	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/test_main.py	/^input_ports = ['x']$/;"	variable	line:9
+output_ports	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/test_main.py	/^output_ports = ['y']$/;"	variable	line:10
+test	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/test/test_main.py	/^def test():$/;"	function	line:13
+top	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+Casc	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^package Casc is$/;"	package	line:11
+sfixed_list	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:12
+average_list	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  type average_list is array (natural range <>) of average.self_t;$/;"	type	line:13
+self_t	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  type self_t is record$/;"	type	line:15
+av	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  type self_t is record$/;"	record	line:15
+in_sr	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^    av: average_list(0 to 2-1);$/;"	record	line:16
+Casc	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^package body Casc is$/;"	package	line:25
+reset	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:27
+main	/home/gaspar/git/hwpy/test/avg_cascade_dc/hdl/casc.vhd	/^  procedure main (self: inout self_t; new_sample: sfixed; ret_0: out sfixed) is$/;"	procedure	line:37
+bits	/home/gaspar/git/hwpy/test/avg/main.py	/^bits = -17$/;"	variable	line:4
+Average	/home/gaspar/git/hwpy/test/avg/main.py	/^class Average(object):$/;"	class	line:8
+__init__	/home/gaspar/git/hwpy/test/avg/main.py	/^    def __init__(self, window_pow):$/;"	member	line:9	class:Average
+main	/home/gaspar/git/hwpy/test/avg/main.py	/^    def main(self, new_sample):$/;"	member	line:17	class:Average
+abstract	/home/gaspar/git/hwpy/test/avg/main.py	/^    def abstract(self, x):$/;"	member	line:25	class:Average
+test	/home/gaspar/git/hwpy/test/avg/main.py	/^def test():$/;"	function	line:30
+Average	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^package Average is$/;"	package	line:8
+sfixed_list	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:9
+self_t	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^  type self_t is record$/;"	type	line:10
+in_sr	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^  type self_t is record$/;"	record	line:10
+sum	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^    in_sr: sfixed_list(0 to 15)(0 downto - 17);$/;"	record	line:13
+Average	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^package body Average is$/;"	package	line:23
+reset	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:25
+main	/home/gaspar/git/hwpy/test/avg/hdl/average.vhd	/^  procedure main (self: inout self_t; new_sample: sfixed; ret_0: out sfixed) is$/;"	procedure	line:31
+test_main	/home/gaspar/git/hwpy/test/avg/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:10
+vhdl_sources	/home/gaspar/git/hwpy/test/avg/hdl/test/test_main.py	/^vhdl_sources = ['..\/average.vhd']$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/avg/hdl/test/test_main.py	/^dut_name = 'average'$/;"	variable	line:7
+input_ports	/home/gaspar/git/hwpy/test/avg/hdl/test/test_main.py	/^input_ports = ['x']$/;"	variable	line:8
+output_ports	/home/gaspar/git/hwpy/test/avg/hdl/test/test_main.py	/^output_ports = ['y']$/;"	variable	line:9
+test	/home/gaspar/git/hwpy/test/avg/hdl/test/test_main.py	/^def test():$/;"	function	line:12
+top	/home/gaspar/git/hwpy/test/avg/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+test_main	/home/gaspar/git/hwpy/test/prototyping/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:9
+vhdl_sources	/home/gaspar/git/hwpy/test/prototyping/hdl/test/test_main.py	/^vhdl_sources = ['..\/shift_reg.vhd']$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/prototyping/hdl/test/test_main.py	/^dut_name = 'ShiftReg'$/;"	variable	line:7
+input_ports	/home/gaspar/git/hwpy/test/prototyping/hdl/test/test_main.py	/^input_ports = ['x']$/;"	variable	line:8
+output_ports	/home/gaspar/git/hwpy/test/prototyping/hdl/test/test_main.py	/^output_ports = ['y']$/;"	variable	line:9
+test	/home/gaspar/git/hwpy/test/prototyping/hdl/test/test_main.py	/^def test():$/;"	function	line:12
+ShiftReg	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^package ShiftReg is$/;"	package	line:8
+sfixed_list	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:9
+self_t	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^  type self_t is record$/;"	type	line:10
+shr	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^  type self_t is record$/;"	record	line:10
+ShiftReg	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^package body ShiftReg is$/;"	package	line:19
+reset	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:21
+main	/home/gaspar/git/hwpy/test/prototyping/hdl/shift_reg.vhd	/^  procedure main (self: inout self_t; new_sample: sfixed; ret_0: out sfixed) is$/;"	procedure	line:26
+top	/home/gaspar/git/hwpy/test/prototyping/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+bits	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^bits = -17$/;"	variable	line:10
+DCRemoval	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^class DCRemoval(object):$/;"	class	line:11
+__init__	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^    def __init__(self, window_pow, cascade):$/;"	member	line:12	class:DCRemoval
+main	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^    def main(self, new_i, new_q):$/;"	member	line:17	class:DCRemoval
+abstract	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^    def abstract(self, new_i, new_q):$/;"	member	line:22	class:DCRemoval
+csin	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^def csin(samples, wave_freq, fs):$/;"	function	line:29
+test	/home/gaspar/git/hwpy/test/dcremoval/dcrem.py	/^def test():$/;"	function	line:38
+DCRemoval	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^package DCRemoval is$/;"	package	line:11
+self_t	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^  type self_t is record$/;"	type	line:13
+iav	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^  type self_t is record$/;"	record	line:13
+qav	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^    iav: casc.self_t;$/;"	record	line:14
+DCRemoval	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^package body DCRemoval is$/;"	package	line:23
+reset	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:25
+main	/home/gaspar/git/hwpy/test/dcremoval/hdl/dcremoval.vhd	/^  procedure main (self: inout self_t; new_i, new_q: sfixed; ret_0, ret_1: out sfixed) is$/;"	procedure	line:31
+reset	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/hdl_tests.py	/^def reset(dut, duration=10000):$/;"	function	line:14
+run_dut	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/hdl_tests.py	/^def run_dut(dut, x1, x2, data_width):$/;"	function	line:24
+link_to_model	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/hdl_tests.py	/^def link_to_model(dut, x1, x2):$/;"	function	line:56
+test_main	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:85
+vhdl_sources	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/test_main.py	/^vhdl_sources = ['..\/..\/..\/avg\/hdl\/average.vhd',$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/test_main.py	/^dut_name = 'dcremoval'$/;"	variable	line:9
+input_ports	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/test_main.py	/^input_ports = ['x1', 'x2']$/;"	variable	line:10
+output_ports	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/test_main.py	/^output_ports = ['y1', 'y2']$/;"	variable	line:11
+test	/home/gaspar/git/hwpy/test/dcremoval/hdl/test/test_main.py	/^def test():$/;"	function	line:14
+top	/home/gaspar/git/hwpy/test/dcremoval/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+test_abstract	/home/gaspar/git/hwpy/test/cordic/test/test_model.py	/^def test_abstract():$/;"	function	line:6
+test_main	/home/gaspar/git/hwpy/test/cordic/test/test_model.py	/^def test_main():$/;"	function	line:19
+test_chirp_envelope	/home/gaspar/git/hwpy/test/cordic/test/test_model.py	/^def test_chirp_envelope():$/;"	function	line:37
+test_chirp_phase	/home/gaspar/git/hwpy/test/cordic/test/test_model.py	/^def test_chirp_phase():$/;"	function	line:82
+resize	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^def resize(param, x):$/;"	function	line:9
+logger	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:14
+Polar	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^class Polar(object):$/;"	class	line:17
+__init__	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def __init__(self, cordic_length=18, phase_unit='rad'):$/;"	member	line:18	class:Polar
+delay	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def delay(self):$/;"	member	line:35	class:Polar
+cordic_rotate_vector	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def cordic_rotate_vector(self, i, direction, x, y, phase):$/;"	member	line:38	class:Polar
+main	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def main(self, x, y):$/;"	member	line:61	class:Polar
+_implementation_abstract	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def _implementation_abstract(self, x, y):$/;"	member	line:82	class:Polar
+_abstract	/home/gaspar/git/hwpy/test/cordic/model/main.py	/^    def _abstract(self, x, y):$/;"	member	line:98	class:Polar
+test_main	/home/gaspar/git/hwpy/test/cordic/hdl/test/hdl_tests.py	/^def test_main(dut):$/;"	function	line:9
+vhdl_sources	/home/gaspar/git/hwpy/test/cordic/hdl/test/test_main.py	/^vhdl_sources = ['..\/shift_reg.vhd']$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/test/cordic/hdl/test/test_main.py	/^dut_name = 'ShiftReg'$/;"	variable	line:7
+input_ports	/home/gaspar/git/hwpy/test/cordic/hdl/test/test_main.py	/^input_ports = ['x']$/;"	variable	line:8
+output_ports	/home/gaspar/git/hwpy/test/cordic/hdl/test/test_main.py	/^output_ports = ['y']$/;"	variable	line:9
+test	/home/gaspar/git/hwpy/test/cordic/hdl/test/test_main.py	/^def test():$/;"	function	line:12
+ShiftReg	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^package ShiftReg is$/;"	package	line:8
+sfixed_list	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:9
+self_t	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^  type self_t is record$/;"	type	line:10
+shr	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^  type self_t is record$/;"	record	line:10
+ShiftReg	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^package body ShiftReg is$/;"	package	line:19
+reset	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:21
+main	/home/gaspar/git/hwpy/test/cordic/hdl/shift_reg.vhd	/^  procedure main (self: inout self_t; new_sample: sfixed; ret_0: out sfixed) is$/;"	procedure	line:26
+top	/home/gaspar/git/hwpy/test/cordic/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+dut	/home/gaspar/git/hwpy/test/conversion/test_sim.py	/^dut = FIR(32)$/;"	variable	line:7
+inp	/home/gaspar/git/hwpy/test/conversion/test_sim.py	/^inp = np.random.uniform(-1, 1, 1000)$/;"	variable	line:8
+rl	/home/gaspar/git/hwpy/test/conversion/test_sim.py	/^rl = [dut.filter(x) for x in inp]$/;"	variable	line:9
+ReuseFIR	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/main.py	/^class ReuseFIR(object):$/;"	class	line:8
+__init__	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/main.py	/^    def __init__(self):$/;"	member	line:9	class:ReuseFIR
+filter	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/main.py	/^    def filter(self, x1, x2):$/;"	member	line:14	class:ReuseFIR
+tst	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/main.py	/^tst = Enum('Animal', 'ant bee cat dog')$/;"	variable	line:24
+FIR	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/fir.py	/^class FIR(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/fir.py	/^    def __init__(self, order):$/;"	member	line:5	class:FIR
+filter	/home/gaspar/git/hwpy/test/TODO/fir_share_todo/fir.py	/^    def filter(self, x):$/;"	member	line:11	class:FIR
+PreRecv	/home/gaspar/git/hwpy/test/TODO/full_channel/main.py	/^class PreRecv(object):$/;"	class	line:7
+__init__	/home/gaspar/git/hwpy/test/TODO/full_channel/main.py	/^    def __init__(self):$/;"	member	line:8	class:PreRecv
+main	/home/gaspar/git/hwpy/test/TODO/full_channel/main.py	/^    def main(self, i, q):$/;"	member	line:14	class:PreRecv
+PreRecv	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^package PreRecv is$/;"	package	line:9
+self_t	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^  type self_t is record$/;"	type	line:11
+i_fir	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^  type self_t is record$/;"	record	line:11
+q_fir	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^    i_fir: FIR.self_t;$/;"	record	line:12
+dc_rem	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^    q_fir: FIR.self_t;$/;"	record	line:13
+imbal	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^    dc_rem: DCRemoval.self_t;$/;"	record	line:14
+PreRecv	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^package body PreRecv is$/;"	package	line:23
+main	/home/gaspar/git/hwpy/test/TODO/full_channel/main.vhdl	/^  procedure main(self_p: inout self_t; i,q: real; ret_0, ret_1: out real) is$/;"	procedure	line:25
+Register	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^class Register(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def __init__(self):$/;"	member	line:5	class:Register
+main	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def main(self, new_value):$/;"	member	line:8	class:Register
+Register2	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^class Register2(object):$/;"	class	line:13
+__init__	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def __init__(self):$/;"	member	line:14	class:Register2
+main	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def main(self, new_value):$/;"	member	line:17	class:Register2
+class_deco	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^def class_deco(cls):$/;"	function	line:26
+Register3	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^class Register3(object):$/;"	class	line:33
+__init__	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def __init__(self):$/;"	member	line:34	class:Register3
+main	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^    def main(self, new_value):$/;"	member	line:38	class:Register3
+r	/home/gaspar/git/hwpy/test/TODO/register/register.py	/^r = Register3()$/;"	variable	line:47
+LMS	/home/gaspar/git/hwpy/test/TODO/lms_todo/lms.py	/^class LMS:$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/test/TODO/lms_todo/lms.py	/^    def __init__(self, mu_pow, order):$/;"	member	line:5	class:LMS
+mag_fix	/home/gaspar/git/hwpy/test/TODO/lms_todo/lms.py	/^    def mag_fix(self, x, desired):$/;"	member	line:10	class:LMS
+ListTst	/home/gaspar/git/hwpy/test/TODO/elem_list/main.py	/^class ListTst(object):$/;"	class	line:1
+__init__	/home/gaspar/git/hwpy/test/TODO/elem_list/main.py	/^    def __init__(self, window_pow):$/;"	member	line:2	class:ListTst
+main	/home/gaspar/git/hwpy/test/TODO/elem_list/main.py	/^    def main(self, new_sample):$/;"	member	line:6	class:ListTst
+abstract	/home/gaspar/git/hwpy/test/TODO/elem_list/main.py	/^    def abstract(self, x):$/;"	member	line:12	class:ListTst
+FIR	/home/gaspar/git/hwpy/test/TODO/fir/main.py	/^class FIR(object):$/;"	class	line:9
+__init__	/home/gaspar/git/hwpy/test/TODO/fir/main.py	/^    def __init__(self, order):$/;"	member	line:10	class:FIR
+filter	/home/gaspar/git/hwpy/test/TODO/fir/main.py	/^    def filter(self, x):$/;"	member	line:17	class:FIR
+abstract	/home/gaspar/git/hwpy/test/TODO/fir/main.py	/^    def abstract(self, x):$/;"	member	line:27	class:FIR
+test	/home/gaspar/git/hwpy/test/TODO/fir/main.py	/^def test():$/;"	function	line:31
+FIR	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^package FIR is$/;"	package	line:4
+self_t	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^  type self_t is record$/;"	type	line:6
+order	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^  type self_t is record$/;"	record	line:6
+taps	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^    order: real;$/;"	record	line:7
+mul	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^    taps: real_list(16);$/;"	record	line:8
+sm	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^    mul: real_list(16);$/;"	record	line:9
+FIR	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^package body FIR is$/;"	package	line:19
+filter	/home/gaspar/git/hwpy/test/TODO/fir/expected.vhdl	/^  procedure filter (self_p: inout self_t; x: real; ret_0: out real) is$/;"	procedure	line:21
+ImbalanceFix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.py	/^class ImbalanceFix:$/;"	class	line:2
+__init__	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.py	/^    def __init__(self, mu_pow):$/;"	member	line:5	class:ImbalanceFix
+mag_fix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.py	/^    def mag_fix(self, i, q):$/;"	member	line:10	class:ImbalanceFix
+phase_fix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.py	/^    def phase_fix(self, i, q):$/;"	member	line:21	class:ImbalanceFix
+main	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.py	/^    def main(self, i, q):$/;"	member	line:32	class:ImbalanceFix
+ImbalanceFix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^package ImbalanceFix is$/;"	package	line:4
+self_t	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^  type self_t is record$/;"	type	line:6
+phase_h	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^  type self_t is record$/;"	record	line:6
+mag_g	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^    phase_h: real;$/;"	record	line:7
+mu_pow	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^    mag_g: real;$/;"	record	line:8
+ImbalanceFix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^package body ImbalanceFix is$/;"	package	line:17
+mag_fix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^  procedure mag_fix(self_p: inout self_t; i,q: real; ret_0, ret_1: out real) is$/;"	procedure	line:20
+phase_fix	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^  procedure phase_fix(self_p: inout self_t; i,q: real; ret_0, ret_1: out real) is$/;"	procedure	line:41
+main	/home/gaspar/git/hwpy/test/TODO/imbal/imbalance_fix.vhdl	/^  procedure main(self_p: inout self_t; i,q: real; ret_0, ret_1: out real) is$/;"	procedure	line:60
+root_pathss	/home/gaspar/git/hwpy/config.py	/^root_pathss = Path(__file__)$/;"	variable	line:3
+reset	/home/gaspar/git/hwpy/sim_automation/cocotb_testing.py	/^def reset(dut, duration=10000):$/;"	function	line:11
+run_dut	/home/gaspar/git/hwpy/sim_automation/cocotb_testing.py	/^def run_dut(dut, in_data, out_count):$/;"	function	line:21
+test_main	/home/gaspar/git/hwpy/sim_automation/cocotb_testing.py	/^def test_main(dut):$/;"	function	line:53
+logger	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:15
+HDLStuff	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^class HDLStuff(object):$/;"	class	line:18
+__init__	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:19	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:29
+gate_hdl	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def gate_hdl(shared_dir):$/;"	function	line:56
+shared_tmpdir	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:65
+kernel	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def kernel(request, tmpdir, shared_tmpdir):$/;"	function	line:71
+test_kernel_first_out_rot	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def test_kernel_first_out_rot(kernel):$/;"	function	line:100
+test_kernel_first_out_rot2	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def test_kernel_first_out_rot2(kernel):$/;"	function	line:107
+test_kernel_rot	/home/gaspar/git/hwpy/sim_automation/test_newcoco.py	/^def test_kernel_rot(kernel):$/;"	function	line:114
+TopMaker	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^class TopMaker(object):$/;"	class	line:50
+__init__	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    def __init__(self, base_dir, dut_name, inputs, outputs):$/;"	member	line:51	class:TopMaker
+_make_verilog_top	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    def _make_verilog_top(self):$/;"	member	line:57	class:TopMaker
+_make_vhdl_top	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    def _make_vhdl_top(self):$/;"	member	line:64	class:TopMaker
+make	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    def make(self):$/;"	member	line:82	class:TopMaker
+in_sig	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    in_sig = ['x']$/;"	variable	line:88
+out_sig	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    out_sig = ['y']$/;"	variable	line:89
+d	/home/gaspar/git/hwpy/sim_automation/vhdl_top_generator.py	/^    d = TopMaker('.', 'average', in_sig, out_sig)$/;"	variable	line:90
+logger	/home/gaspar/git/hwpy/sim_automation/main.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:8
+rtl_sim_folder	/home/gaspar/git/hwpy/sim_automation/main.py	/^rtl_sim_folder = 'rtl_sim'$/;"	variable	line:10
+gate_sim_folder	/home/gaspar/git/hwpy/sim_automation/main.py	/^gate_sim_folder = 'gate_sim'$/;"	variable	line:11
+src_dir	/home/gaspar/git/hwpy/sim_automation/main.py	/^src_dir = '..'$/;"	variable	line:12
+generate_sim_stuff	/home/gaspar/git/hwpy/sim_automation/main.py	/^def generate_sim_stuff(base_dir, dut_name, input_ports, output_ports, vhdl_sources):$/;"	function	line:15
+run_rtl_sim	/home/gaspar/git/hwpy/sim_automation/main.py	/^def run_rtl_sim(base_path, vhdl_sources):$/;"	function	line:33
+run_gate_sim	/home/gaspar/git/hwpy/sim_automation/main.py	/^def run_gate_sim(base_path):$/;"	function	line:48
+basic_hdl_test	/home/gaspar/git/hwpy/sim_automation/main.py	/^def basic_hdl_test(base_path, vhdl_sources, dut_name, input_ports, output_ports):$/;"	function	line:61
+logger	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:8
+QuartusException	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^class QuartusException(Exception):$/;"	class	line:9
+QuartusProject	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^class QuartusProject(object):$/;"	class	line:14
+__init__	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^    def __init__(self, base_path):$/;"	member	line:15	class:QuartusProject
+default_assignments	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^    def default_assignments(self):$/;"	member	line:28	class:QuartusProject
+default_files	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^    def default_files(self):$/;"	member	line:41	class:QuartusProject
+make	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^    def make(self):$/;"	member	line:46	class:QuartusProject
+make_gate_vhdl	/home/gaspar/git/hwpy/sim_automation/quartus.py	/^def make_gate_vhdl(generated_hdl):$/;"	function	line:63
+get_iterable	/home/gaspar/git/hwpy/sim_automation/testing.py	/^def get_iterable(x):$/;"	function	line:11
+Testing	/home/gaspar/git/hwpy/sim_automation/testing.py	/^class Testing(object):$/;"	class	line:17
+__init__	/home/gaspar/git/hwpy/sim_automation/testing.py	/^    def __init__(self, request, model, hw_model, coco_sim):$/;"	member	line:18	class:Testing
+__call__	/home/gaspar/git/hwpy/sim_automation/testing.py	/^    def __call__(self, *args, **kwargs):$/;"	member	line:28	class:Testing	file:
+add_dummy_pipeline_samples	/home/gaspar/git/hwpy/sim_automation/testing.py	/^    def add_dummy_pipeline_samples(self, args):$/;"	member	line:92	class:Testing
+CocotbAuto	/home/gaspar/git/hwpy/sim_automation/cocotb.py	/^class CocotbAuto(object):$/;"	class	line:37
+__init__	/home/gaspar/git/hwpy/sim_automation/cocotb.py	/^    def __init__(self, base_path, source_files, sim_folder='coco_sim', test_file='cocotb_testing',$/;"	member	line:38	class:CocotbAuto
+default_assignments	/home/gaspar/git/hwpy/sim_automation/cocotb.py	/^    def default_assignments(self):$/;"	member	line:51	class:CocotbAuto
+run	/home/gaspar/git/hwpy/sim_automation/cocotb.py	/^    def run(self, input_data):$/;"	member	line:93	class:CocotbAuto
+test_default	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_default():$/;"	function	line:10
+test_init	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_init():$/;"	function	line:17
+test_converts	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_converts():$/;"	function	line:33
+test_resize	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_resize():$/;"	function	line:39
+test_add	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_add():$/;"	function	line:57
+test_sub	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_sub():$/;"	function	line:66
+test_sub_overlow	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_sub_overlow():$/;"	function	line:75
+test_mul	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_mul():$/;"	function	line:84
+test_arith	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_arith():$/;"	function	line:93
+test_arith_too_precise	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_arith_too_precise():$/;"	function	line:107
+test_sign_bit	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_sign_bit():$/;"	function	line:122
+test_shift_right	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_shift_right():$/;"	function	line:139
+test_abs	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_abs():$/;"	function	line:157
+test_repr_limits	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_repr_limits():$/;"	function	line:174
+test_non_unit_resize	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_non_unit_resize():$/;"	function	line:192
+test_auto_size_bits_single	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_auto_size_bits_single():$/;"	function	line:201
+test_BROKEN_SHIT	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_BROKEN_SHIT():$/;"	function	line:240
+test_auto_size_negative_int_bits	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_auto_size_negative_int_bits():$/;"	function	line:252
+test_auto_size_bits_list	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_auto_size_bits_list():$/;"	function	line:278
+test_max_representable	/home/gaspar/git/hwpy/common/test_sfix.py	/^def test_max_representable():$/;"	function	line:301
+reset	/home/gaspar/git/hwpy/common/sim/util.py	/^def reset(dut, duration=10000):$/;"	function	line:12
+run_dut	/home/gaspar/git/hwpy/common/sim/util.py	/^def run_dut(dut, x, data_width):$/;"	function	line:22
+link_to_model	/home/gaspar/git/hwpy/common/sim/util.py	/^def link_to_model(dut, input, model):$/;"	function	line:42
+logger	/home/gaspar/git/hwpy/common/sfix.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:6
+resize	/home/gaspar/git/hwpy/common/sfix.py	/^def resize(fix, type, overflow_style='SATURATE'):$/;"	function	line:9
+Sfix	/home/gaspar/git/hwpy/common/sfix.py	/^class Sfix(object):$/;"	class	line:15
+_float_mode	/home/gaspar/git/hwpy/common/sfix.py	/^    _float_mode = False$/;"	variable	line:17	class:Sfix
+auto_size	/home/gaspar/git/hwpy/common/sfix.py	/^    def auto_size(val, bits):$/;"	member	line:20	class:Sfix
+set_float_mode	/home/gaspar/git/hwpy/common/sfix.py	/^    def set_float_mode(x):$/;"	member	line:35	class:Sfix
+__init__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):$/;"	member	line:38	class:Sfix
+max_representable	/home/gaspar/git/hwpy/common/sfix.py	/^    def max_representable(self):$/;"	member	line:59	class:Sfix
+min_representable	/home/gaspar/git/hwpy/common/sfix.py	/^    def min_representable(self):$/;"	member	line:72	class:Sfix
+overflows	/home/gaspar/git/hwpy/common/sfix.py	/^    def overflows(self):$/;"	member	line:75	class:Sfix
+saturate	/home/gaspar/git/hwpy/common/sfix.py	/^    def saturate(self):$/;"	member	line:79	class:Sfix
+wrap	/home/gaspar/git/hwpy/common/sfix.py	/^    def wrap(self):$/;"	member	line:93	class:Sfix
+quantize	/home/gaspar/git/hwpy/common/sfix.py	/^    def quantize(self):$/;"	member	line:98	class:Sfix
+fixed_value	/home/gaspar/git/hwpy/common/sfix.py	/^    def fixed_value(self):$/;"	member	line:104	class:Sfix
+__str__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __str__(self):$/;"	member	line:107	class:Sfix	file:
+__float__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __float__(self):$/;"	member	line:110	class:Sfix	file:
+resize	/home/gaspar/git/hwpy/common/sfix.py	/^    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE'):$/;"	member	line:113	class:Sfix
+__add__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __add__(self, other):$/;"	member	line:119	class:Sfix	file:
+__sub__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __sub__(self, other):$/;"	member	line:125	class:Sfix	file:
+__mul__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __mul__(self, other):$/;"	member	line:133	class:Sfix	file:
+sign_bit	/home/gaspar/git/hwpy/common/sfix.py	/^    def sign_bit(self):$/;"	member	line:141	class:Sfix
+__rshift__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __rshift__(self, other):$/;"	member	line:147	class:Sfix	file:
+__abs__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __abs__(self):$/;"	member	line:154	class:Sfix	file:
+__lt__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __lt__(self, other):$/;"	member	line:161	class:Sfix	file:
+__gt__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __gt__(self, other):$/;"	member	line:165	class:Sfix	file:
+__neg__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __neg__(self):$/;"	member	line:169	class:Sfix	file:
+__len__	/home/gaspar/git/hwpy/common/sfix.py	/^    def __len__(self):$/;"	member	line:176	class:Sfix	file:
+Fixed	/home/gaspar/git/hwpy/common/sfixed.py	/^class Fixed:$/;"	class	line:12
+__init__	/home/gaspar/git/hwpy/common/sfixed.py	/^    def __init__(self):$/;"	member	line:13	class:Fixed
+real_max	/home/gaspar/git/hwpy/common/sfixed.py	/^def real_max(base):$/;"	function	line:17
+real_min	/home/gaspar/git/hwpy/common/sfixed.py	/^def real_min(base):$/;"	function	line:23
+saturate_sfixed	/home/gaspar/git/hwpy/common/sfixed.py	/^def saturate_sfixed(x, base):$/;"	function	line:27
+saturate_float	/home/gaspar/git/hwpy/common/sfixed.py	/^def saturate_float(x, base):$/;"	function	line:46
+saturate_real	/home/gaspar/git/hwpy/common/sfixed.py	/^def saturate_real(x, base):$/;"	function	line:59
+saturate	/home/gaspar/git/hwpy/common/sfixed.py	/^def saturate(x, base):$/;"	function	line:75
+to_sfixed_real	/home/gaspar/git/hwpy/common/sfixed.py	/^def to_sfixed_real(x, base):$/;"	function	line:103
+to_sfixed	/home/gaspar/git/hwpy/common/sfixed.py	/^def to_sfixed(x, base):$/;"	function	line:110
+to_real	/home/gaspar/git/hwpy/common/sfixed.py	/^def to_real(x, base):$/;"	function	line:124
+marker	/home/gaspar/git/hwpy/common/memoize.py	/^marker = object()$/;"	variable	line:3
+_memoize	/home/gaspar/git/hwpy/common/memoize.py	/^def _memoize(func, *args, **kw):$/;"	function	line:7
+memoize	/home/gaspar/git/hwpy/common/memoize.py	/^def memoize(f):$/;"	function	line:17
+fixed_float_types	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_float_types_c.vhd	/^package fixed_float_types is$/;"	package	line:16
+fixed_round_style_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_float_types_c.vhd	/^  type fixed_round_style_type is (fixed_round, fixed_truncate);$/;"	type	line:20
+fixed_overflow_style_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_float_types_c.vhd	/^  type fixed_overflow_style_type is (fixed_saturate, fixed_wrap);$/;"	type	line:22
+round_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_float_types_c.vhd	/^  type round_type is (round_nearest,    -- Default, nearest LSB '0'$/;"	type	line:29
+math_utility_pkg	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/math_utility_pkg.vhd	/^package math_utility_pkg is$/;"	package	line:42
+fixed_round_style_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/math_utility_pkg.vhd	/^  type fixed_round_style_type is (fixed_round, fixed_truncate);$/;"	type	line:46
+fixed_overflow_style_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/math_utility_pkg.vhd	/^  type fixed_overflow_style_type is (fixed_saturate, fixed_wrap);$/;"	type	line:48
+round_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/math_utility_pkg.vhd	/^  type round_type is (round_nearest,    -- Default, nearest LSB '0'$/;"	type	line:55
+fixed_pkg	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^package fixed_pkg is$/;"	package	line:25
+fixed_round_style	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant fixed_round_style    : fixed_round_style_type    := fixed_round;$/;"	constant	line:28
+fixed_overflow_style	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant fixed_overflow_style : fixed_overflow_style_type := fixed_saturate;$/;"	constant	line:30
+fixed_guard_bits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant fixed_guard_bits     : NATURAL                   := 3;$/;"	constant	line:32
+no_warning	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant no_warning           : BOOLEAN                   := (false$/;"	constant	line:34
+UNRESOLVED_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type UNRESOLVED_ufixed is array (INTEGER range <>) of STD_ULOGIC;$/;"	type	line:40
+UNRESOLVED_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type UNRESOLVED_sfixed is array (INTEGER range <>) of STD_ULOGIC;$/;"	type	line:42
+U_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  subtype U_ufixed is UNRESOLVED_ufixed;$/;"	subtype	line:44
+U_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  subtype U_sfixed is UNRESOLVED_sfixed;$/;"	subtype	line:45
+ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  subtype ufixed is UNRESOLVED_ufixed;$/;"	subtype	line:47
+sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  subtype sfixed is UNRESOLVED_sfixed;$/;"	subtype	line:48
+fixed_pkg	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^package body fixed_pkg is$/;"	package	line:1466
+NAUF	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant NAUF : UNRESOLVED_ufixed (0 downto 1) := (others => '0');$/;"	constant	line:1470
+NASF	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant NASF : UNRESOLVED_sfixed (0 downto 1) := (others => '0');$/;"	constant	line:1471
+NSLV	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant NSLV : STD_ULOGIC_VECTOR (0 downto 1) := (others => '0');$/;"	constant	line:1472
+fixedsynth_or_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant fixedsynth_or_real : BOOLEAN := true;$/;"	constant	line:1476
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:1479
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:1488
+sra	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sra" (arg : SIGNED; count : INTEGER)$/;"	function	line:1497
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function or_reduce (arg : STD_ULOGIC_VECTOR)$/;"	function	line:1507
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function and_reduce (arg : STD_ULOGIC_VECTOR)$/;"	function	line:1534
+xor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xor_reduce (arg : STD_ULOGIC_VECTOR) return STD_ULOGIC is$/;"	function	line:1559
+nand_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nand_reduce(arg : std_ulogic_vector) return STD_ULOGIC is$/;"	function	line:1581
+nor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nor_reduce(arg : std_ulogic_vector) return STD_ULOGIC is$/;"	function	line:1585
+xnor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xnor_reduce(arg : std_ulogic_vector) return STD_ULOGIC is$/;"	function	line:1589
+stdlogic_table	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type stdlogic_table is array(STD_ULOGIC, STD_ULOGIC) of STD_ULOGIC;$/;"	type	line:1594
+match_logic_table	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant match_logic_table : stdlogic_table := ($/;"	constant	line:1595
+L_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant L_LEFT : INTEGER := L'LENGTH-1;$/;"	constant	line:1624
+R_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant R_LEFT : INTEGER := R'LENGTH-1;$/;"	constant	line:1625
+SIZE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant SIZE   : NATURAL := MAXIMUM(L'LENGTH, R'LENGTH);$/;"	constant	line:1628
+L_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant L_LEFT : INTEGER := L'LENGTH-1;$/;"	constant	line:1659
+R_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant R_LEFT : INTEGER := R'LENGTH-1;$/;"	constant	line:1660
+SIZE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant SIZE   : NATURAL := MAXIMUM(L'LENGTH, R'LENGTH);$/;"	constant	line:1663
+L_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant L_LEFT : INTEGER := L'LENGTH-1;$/;"	constant	line:1692
+R_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant R_LEFT : INTEGER := R'LENGTH-1;$/;"	constant	line:1693
+SIZE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant SIZE   : NATURAL := MAXIMUM(L'LENGTH, R'LENGTH);$/;"	constant	line:1696
+L_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant L_LEFT : INTEGER := L'LENGTH-1;$/;"	constant	line:1725
+R_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant R_LEFT : INTEGER := R'LENGTH-1;$/;"	constant	line:1726
+SIZE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant SIZE   : NATURAL := MAXIMUM(L'LENGTH, R'LENGTH);$/;"	constant	line:1729
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function Is_X ( s : UNSIGNED ) return BOOLEAN is$/;"	function	line:1756
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function Is_X ( s : SIGNED ) return BOOLEAN is$/;"	function	line:1761
+mins	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function mins (l, r : INTEGER)$/;"	function	line:2024
+mine	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function mine (l, r : INTEGER)$/;"	function	line:2034
+cleanvec	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function cleanvec ($/;"	function	line:2049
+cleanvec	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function cleanvec ($/;"	function	line:2064
+to_fixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_fixed ($/;"	function	line:2079
+to_fixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_fixed ($/;"	function	line:2091
+to_uns	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_uns ($/;"	function	line:2103
+t	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    subtype t is UNSIGNED(arg'high - arg'low downto 0);$/;"	subtype	line:2106
+to_s	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_s ($/;"	function	line:2114
+t	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    subtype t is SIGNED(arg'high - arg'low downto 0);$/;"	subtype	line:2117
+round_up	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure round_up (arg       : in  UNRESOLVED_ufixed;$/;"	procedure	line:2125
+round_up	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure round_up (arg       : in  UNRESOLVED_sfixed;$/;"	procedure	line:2139
+round_fixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function round_fixed (arg            : UNRESOLVED_ufixed;$/;"	function	line:2156
+round_fixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function round_fixed (arg            : UNRESOLVED_sfixed;$/;"	function	line:2188
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:2228
+to_sulv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sulv ($/;"	function	line:2251
+to_sulv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sulv ($/;"	function	line:2263
+to_slv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_slv ($/;"	function	line:2275
+to_slv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_slv ($/;"	function	line:2282
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:2289
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:2314
+abs	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "abs" ($/;"	function	line:2341
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:2359
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:2377
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:2401
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:2424
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:2448
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:2470
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:2490
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:2510
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:2517
+divide	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function divide ($/;"	function	line:2526
+divide	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function divide ($/;"	function	line:2567
+reciprocal	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function reciprocal ($/;"	function	line:2608
+reciprocal	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function reciprocal ($/;"	function	line:2622
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:2643
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:2653
+remainder	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function remainder ($/;"	function	line:2662
+remainder	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function remainder ($/;"	function	line:2718
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:2750
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:2759
+modulo	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function modulo ($/;"	function	line:2769
+modulo	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function modulo ($/;"	function	line:2783
+add_carry	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure add_carry ($/;"	procedure	line:2842
+add_carry	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure add_carry ($/;"	procedure	line:2872
+scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function scalb (y : UNRESOLVED_ufixed; N : INTEGER)$/;"	function	line:2905
+scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function scalb (y : UNRESOLVED_ufixed; N : SIGNED)$/;"	function	line:2917
+scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function scalb (y : UNRESOLVED_sfixed; N : INTEGER)$/;"	function	line:2924
+scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function scalb (y : UNRESOLVED_sfixed; N : SIGNED)$/;"	function	line:2936
+Is_Negative	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function Is_Negative (arg : UNRESOLVED_sfixed) return BOOLEAN is$/;"	function	line:2943
+find_rightmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function find_rightmost (arg : UNRESOLVED_ufixed; y : STD_ULOGIC)$/;"	function	line:2952
+find_leftmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function find_leftmost (arg : UNRESOLVED_ufixed; y : STD_ULOGIC)$/;"	function	line:2963
+find_rightmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function find_rightmost (arg : UNRESOLVED_sfixed; y : STD_ULOGIC)$/;"	function	line:2974
+find_leftmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function find_leftmost (arg : UNRESOLVED_sfixed; y : STD_ULOGIC)$/;"	function	line:2985
+sll	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sll" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:2996
+srl	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "srl" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:3007
+rol	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rol" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:3018
+ror	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "ror" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:3029
+sla	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sla" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:3040
+sra	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sra" (ARG : UNRESOLVED_ufixed; COUNT : INTEGER)$/;"	function	line:3052
+sll	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sll" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3064
+srl	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "srl" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3075
+rol	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rol" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3086
+ror	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "ror" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3097
+sla	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sla" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3108
+sra	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "sra" (ARG : UNRESOLVED_sfixed; COUNT : INTEGER)$/;"	function	line:3124
+SHIFT_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function SHIFT_LEFT (ARG : UNRESOLVED_ufixed; COUNT : NATURAL)$/;"	function	line:3141
+SHIFT_RIGHT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function SHIFT_RIGHT (ARG : UNRESOLVED_ufixed; COUNT : NATURAL)$/;"	function	line:3150
+SHIFT_LEFT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function SHIFT_LEFT (ARG : UNRESOLVED_sfixed; COUNT : NATURAL)$/;"	function	line:3159
+SHIFT_RIGHT	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function SHIFT_RIGHT (ARG : UNRESOLVED_sfixed; COUNT : NATURAL)$/;"	function	line:3168
+not	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "not" (L : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3180
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3187
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3202
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3217
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3232
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3247
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L, R : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:3262
+not	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "not" (L : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3277
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3284
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3299
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3314
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3329
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3344
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L, R : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:3359
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3375
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3385
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3395
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3405
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3415
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3425
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3435
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3445
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3455
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3465
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L : STD_ULOGIC; R : UNRESOLVED_ufixed)$/;"	function	line:3475
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L : UNRESOLVED_ufixed; R : STD_ULOGIC)$/;"	function	line:3485
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3495
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "and" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3505
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3515
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "or" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3525
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3535
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nand" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3545
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3555
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "nor" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3565
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3575
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xor" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3585
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L : STD_ULOGIC; R : UNRESOLVED_sfixed)$/;"	function	line:3595
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "xnor" (L : UNRESOLVED_sfixed; R : STD_ULOGIC)$/;"	function	line:3605
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function and_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3616
+nand_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nand_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3621
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function or_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3626
+nor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nor_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3631
+xor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xor_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3636
+xnor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xnor_reduce (l : UNRESOLVED_ufixed) return STD_ULOGIC is$/;"	function	line:3641
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function and_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3646
+nand_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nand_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3651
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function or_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3656
+nor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function nor_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3661
+xor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xor_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3666
+xnor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function xnor_reduce (l : UNRESOLVED_sfixed) return STD_ULOGIC is$/;"	function	line:3671
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3678
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3679
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3699
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3700
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3720
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3721
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3741
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3742
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3762
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3763
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3783
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3784
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3804
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3805
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3825
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3826
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3846
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3847
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3867
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3868
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3888
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3889
+left_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant left_index       : INTEGER := maximum(l'high, r'high);$/;"	constant	line:3909
+right_index	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    constant right_index      : INTEGER := mins(l'low, r'low);$/;"	constant	line:3910
+std_match	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function std_match (L, R : UNRESOLVED_ufixed) return BOOLEAN is$/;"	function	line:3930
+std_match	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function std_match (L, R : UNRESOLVED_sfixed) return BOOLEAN is$/;"	function	line:3943
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:3957
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:3985
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:4013
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:4041
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:4069
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:4097
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:4125
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:4153
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:4181
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:4209
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:4237
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:4265
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum (l, r : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:4294
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum (l, r : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:4309
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum (l, r : UNRESOLVED_ufixed) return UNRESOLVED_ufixed is$/;"	function	line:4324
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum (l, r : UNRESOLVED_sfixed) return UNRESOLVED_sfixed is$/;"	function	line:4339
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4354
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4400
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4458
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4516
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4574
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4597
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4609
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4632
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed (arg : UNRESOLVED_ufixed) return UNRESOLVED_sfixed is$/;"	function	line:4644
+ufixed_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufixed_high (left_index, right_index   : INTEGER;$/;"	function	line:4665
+ufixed_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufixed_low (left_index, right_index   : INTEGER;$/;"	function	line:4681
+sfixed_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfixed_high (left_index, right_index   : INTEGER;$/;"	function	line:4697
+sfixed_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfixed_low (left_index, right_index   : INTEGER;$/;"	function	line:4715
+ufixed_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufixed_high (size_res  : UNRESOLVED_ufixed;$/;"	function	line:4735
+ufixed_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufixed_low (size_res  : UNRESOLVED_ufixed;$/;"	function	line:4747
+sfixed_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfixed_high (size_res  : UNRESOLVED_sfixed;$/;"	function	line:4759
+sfixed_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfixed_low (size_res  : UNRESOLVED_sfixed;$/;"	function	line:4771
+saturate	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function saturate ($/;"	function	line:4784
+saturate	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function saturate ($/;"	function	line:4795
+saturate	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function saturate ($/;"	function	line:4807
+saturate	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function saturate ($/;"	function	line:4814
+to_UFix	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_UFix ($/;"	function	line:4828
+to_SFix	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_SFix ($/;"	function	line:4850
+ufix_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufix_high ($/;"	function	line:4879
+ufix_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ufix_low ($/;"	function	line:4892
+sfix_high	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfix_high ($/;"	function	line:4905
+sfix_low	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function sfix_low ($/;"	function	line:4918
+to_unsigned	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_unsigned ($/;"	function	line:4931
+to_unsigned	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_unsigned ($/;"	function	line:4945
+to_signed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_signed ($/;"	function	line:4958
+to_signed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_signed ($/;"	function	line:4972
+to_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_real ($/;"	function	line:4985
+to_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_real ($/;"	function	line:5013
+to_integer	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_integer ($/;"	function	line:5043
+to_integer	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_integer ($/;"	function	line:5073
+to_01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_01 ($/;"	function	line:5103
+to_01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_01 ($/;"	function	line:5119
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function Is_X ($/;"	function	line:5135
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function Is_X ($/;"	function	line:5144
+To_X01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function To_X01 ($/;"	function	line:5153
+to_X01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_X01 ($/;"	function	line:5160
+To_X01Z	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function To_X01Z ($/;"	function	line:5167
+to_X01Z	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_X01Z ($/;"	function	line:5174
+To_UX01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function To_UX01 ($/;"	function	line:5181
+to_UX01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_UX01 ($/;"	function	line:5188
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function resize ($/;"	function	line:5195
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function resize ($/;"	function	line:5259
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:5359
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:5376
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:5393
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:5414
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:5435
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:5458
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:5481
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:5502
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function resize ($/;"	function	line:5523
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function resize ($/;"	function	line:5544
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5566
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5574
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5582
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5590
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5598
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5606
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5614
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5622
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5630
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5638
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5646
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5654
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5662
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5670
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5678
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5686
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5694
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5702
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5710
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5718
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5726
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5734
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5742
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5750
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5759
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5767
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5775
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "+" ($/;"	function	line:5783
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5792
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5800
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5808
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "-" ($/;"	function	line:5816
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5825
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5833
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5841
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "*" ($/;"	function	line:5849
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5858
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5866
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5874
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/" ($/;"	function	line:5882
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5890
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5898
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5906
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "rem" ($/;"	function	line:5914
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5922
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5930
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5938
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "mod" ($/;"	function	line:5946
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:5955
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:5963
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:5971
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:5979
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:5987
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:5995
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6051
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6059
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6068
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6076
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6084
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6092
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6100
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6108
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6164
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6172
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6181
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6189
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6197
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6205
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6213
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6221
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6277
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6285
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6294
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6302
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6310
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6318
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6326
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6334
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6390
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6398
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6407
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6415
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6423
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6431
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6439
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6447
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6503
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6511
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6520
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6528
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6536
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6544
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6552
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6560
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6616
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6624
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6633
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6641
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6649
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6657
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6665
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6673
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6729
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6737
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "=" ($/;"	function	line:6746
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "\/=" ($/;"	function	line:6754
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">=" ($/;"	function	line:6762
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<=" ($/;"	function	line:6770
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function ">" ($/;"	function	line:6778
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function "<" ($/;"	function	line:6786
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function maximum ($/;"	function	line:6842
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function minimum ($/;"	function	line:6850
+MVL9plus	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type MVL9plus is ('U', 'X', '0', '1', 'Z', 'W', 'L', 'H', '-', error);$/;"	type	line:6860
+char_indexed_by_MVL9	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type char_indexed_by_MVL9 is array (STD_ULOGIC) of CHARACTER;$/;"	type	line:6861
+MVL9_indexed_by_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type MVL9_indexed_by_char is array (CHARACTER) of STD_ULOGIC;$/;"	type	line:6862
+MVL9plus_indexed_by_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  type MVL9plus_indexed_by_char is array (CHARACTER) of MVL9plus;$/;"	type	line:6863
+MVL9_to_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant MVL9_to_char : char_indexed_by_MVL9 := "UX01ZWLH-";$/;"	constant	line:6865
+char_to_MVL9	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant char_to_MVL9 : MVL9_indexed_by_char :=$/;"	constant	line:6866
+char_to_MVL9plus	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant char_to_MVL9plus : MVL9plus_indexed_by_char :=$/;"	constant	line:6869
+NBSP	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant NBSP : CHARACTER      := CHARACTER'val(160);  -- space character$/;"	constant	line:6872
+NUS	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  constant NUS  : STRING(2 to 1) := (others => ' ');$/;"	constant	line:6873
+Char2TriBits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure Char2TriBits (C           :     CHARACTER;$/;"	procedure	line:6876
+Char2QuadBits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure Char2QuadBits (C           :     CHARACTER;$/;"	procedure	line:6905
+skip_whitespace	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure skip_whitespace ($/;"	procedure	line:6941
+to_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ostring (value     : STD_ULOGIC_VECTOR) return STRING is$/;"	function	line:6955
+to_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_hstring (value     : STD_ULOGIC_VECTOR) return STRING is$/;"	function	line:6990
+write	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure write ($/;"	procedure	line:7037
+write	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure write ($/;"	procedure	line:7058
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure READ(L     : inout LINE;$/;"	procedure	line:7078
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure READ(L     : inout LINE;$/;"	procedure	line:7151
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure READ(L     : inout LINE;$/;"	procedure	line:7207
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure READ(L     : inout LINE;$/;"	procedure	line:7278
+owrite	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure owrite ($/;"	procedure	line:7288
+owrite	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure owrite ($/;"	procedure	line:7300
+OREAD_common	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure OREAD_common ($/;"	procedure	line:7313
+errmes	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    procedure errmes ($/;"	procedure	line:7323
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure OREAD (L     : inout LINE;$/;"	procedure	line:7407
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure OREAD(L     : inout LINE;$/;"	procedure	line:7443
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure OREAD(L     : inout LINE;$/;"	procedure	line:7472
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure OREAD(L     : inout LINE;$/;"	procedure	line:7511
+hwrite	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure hwrite ($/;"	procedure	line:7544
+hwrite	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure hwrite ($/;"	procedure	line:7557
+HREAD_common	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure HREAD_common ($/;"	procedure	line:7570
+errmes	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^    procedure errmes ($/;"	procedure	line:7580
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure HREAD(L     : inout LINE;$/;"	procedure	line:7661
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure HREAD(L     : inout LINE;$/;"	procedure	line:7697
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure HREAD(L     : inout LINE;$/;"	procedure	line:7726
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure HREAD(L     : inout LINE;$/;"	procedure	line:7765
+to_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_string (value : UNRESOLVED_ufixed) return STRING is$/;"	function	line:7797
+to_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_string (value : UNRESOLVED_sfixed) return STRING is$/;"	function	line:7834
+to_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ostring (value : UNRESOLVED_ufixed) return STRING is$/;"	function	line:7867
+to_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_hstring (value : UNRESOLVED_ufixed) return STRING is$/;"	function	line:7904
+to_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ostring (value : UNRESOLVED_sfixed) return STRING is$/;"	function	line:7941
+to_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_hstring (value : UNRESOLVED_sfixed) return STRING is$/;"	function	line:7977
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8021
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8042
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8060
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8078
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8096
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8114
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8133
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8141
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8149
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8157
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8165
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8173
+calculate_string_boundry	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  procedure calculate_string_boundry ($/;"	procedure	line:8182
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8232
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8245
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8254
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_string ($/;"	function	line:8263
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:8272
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:8281
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:8293
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:8305
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:8315
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:8327
+to_UFix	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_UFix ($/;"	function	line:8338
+to_SFix	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/fixed_pkg_c.vhd	/^  function to_SFix ($/;"	function	line:8351
+float_pkg	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^package float_pkg is$/;"	package	line:28
+float_exponent_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_exponent_width : NATURAL    := 8;$/;"	constant	line:32
+float_fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_fraction_width : NATURAL    := 23;$/;"	constant	line:33
+float_round_style	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_round_style    : round_type := round_nearest;$/;"	constant	line:37
+float_denormalize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_denormalize    : BOOLEAN    := true;$/;"	constant	line:39
+float_check_error	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_check_error    : BOOLEAN    := true;$/;"	constant	line:41
+float_guard_bits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant float_guard_bits     : NATURAL    := 3;$/;"	constant	line:44
+no_warning	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant no_warning : BOOLEAN := (false$/;"	constant	line:46
+UNRESOLVED_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type UNRESOLVED_float is array (INTEGER range <>) of STD_ULOGIC;  -- main type$/;"	type	line:53
+U_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype U_float is UNRESOLVED_float;$/;"	subtype	line:54
+float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype float is UNRESOLVED_float;$/;"	subtype	line:56
+UNRESOLVED_float32	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype UNRESOLVED_float32 is UNRESOLVED_float (8 downto -23);$/;"	subtype	line:66
+float32	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype float32 is float (8 downto -23);$/;"	subtype	line:68
+UNRESOLVED_float64	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype UNRESOLVED_float64 is UNRESOLVED_float (11 downto -52);$/;"	subtype	line:83
+float64	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype float64 is float (11 downto -52);$/;"	subtype	line:85
+UNRESOLVED_float128	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype UNRESOLVED_float128 is UNRESOLVED_float (15 downto -112);$/;"	subtype	line:100
+float128	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  subtype float128 is float (15 downto -112);$/;"	subtype	line:102
+valid_fpstate	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type valid_fpstate is (nan,           -- Signaling NaN (C FP_NAN)$/;"	type	line:112
+fphdlsynth_or_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant fphdlsynth_or_real : BOOLEAN;  -- deferred constant$/;"	constant	line:126
+float_pkg	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^package body float_pkg is$/;"	package	line:1006
+fphdlsynth_or_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant fphdlsynth_or_real : BOOLEAN := true;  -- deferred constant$/;"	constant	line:1015
+boundary_type	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type boundary_type is (normal, infinity, zero, denormal);$/;"	type	line:1018
+NAFP	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant NAFP : UNRESOLVED_float (0 downto 1)  := (others => '0');$/;"	constant	line:1021
+NSLV	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant NSLV : STD_ULOGIC_VECTOR (0 downto 1) := (others => '0');$/;"	constant	line:1022
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum ($/;"	function	line:1027
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum ($/;"	function	line:1036
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function or_reduce (arg : STD_ULOGIC_VECTOR)$/;"	function	line:1045
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function or_reduce (arg : UNSIGNED)$/;"	function	line:1070
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function or_reduce (arg : SIGNED)$/;"	function	line:1076
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function or_reduce (arg : STD_LOGIC_VECTOR)$/;"	function	line:1082
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function and_reduce (arg : STD_ULOGIC_VECTOR)$/;"	function	line:1090
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function and_reduce (arg : UNSIGNED)$/;"	function	line:1115
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function and_reduce (arg : SIGNED)$/;"	function	line:1121
+xor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function xor_reduce (arg : STD_ULOGIC_VECTOR) return STD_ULOGIC is$/;"	function	line:1127
+nand_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nand_reduce(arg : STD_ULOGIC_VECTOR) return STD_ULOGIC is$/;"	function	line:1149
+nor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nor_reduce(arg : STD_ULOGIC_VECTOR) return STD_ULOGIC is$/;"	function	line:1154
+xnor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function xnor_reduce(arg : STD_ULOGIC_VECTOR) return STD_ULOGIC is$/;"	function	line:1159
+find_leftmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function find_leftmost (ARG : UNSIGNED; Y : STD_ULOGIC)$/;"	function	line:1164
+stdlogic_table	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type stdlogic_table is array(STD_ULOGIC, STD_ULOGIC) of STD_ULOGIC;$/;"	type	line:1176
+match_logic_table	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant match_logic_table : stdlogic_table := ($/;"	constant	line:1177
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Is_X (s : UNSIGNED) return BOOLEAN is$/;"	function	line:1232
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Is_X (s : SIGNED) return BOOLEAN is$/;"	function	line:1237
+mine	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function mine (L, R : INTEGER)$/;"	function	line:1244
+gen_expon_base	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function gen_expon_base ($/;"	function	line:1257
+log2	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function log2 (A : NATURAL) return NATURAL is$/;"	function	line:1268
+log2	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function log2 (A : REAL) return INTEGER is$/;"	function	line:1281
+test_boundary	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure test_boundary ($/;"	procedure	line:1305
+check_round	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function check_round ($/;"	function	line:1360
+fp_round	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure fp_round ($/;"	procedure	line:1405
+break_number	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure break_number (              -- internal version$/;"	procedure	line:1421
+float_to_unsigned	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure float_to_unsigned ($/;"	procedure	line:1466
+smallfract	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function smallfract ($/;"	function	line:1531
+to_sulv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_sulv ($/;"	function	line:1551
+to_slv	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_slv (arg : UNRESOLVED_float) return STD_LOGIC_VECTOR is$/;"	function	line:1564
+normalize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function normalize ($/;"	function	line:1571
+normalize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function normalize ($/;"	function	line:1657
+normalize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function normalize ($/;"	function	line:1688
+normalize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function normalize ($/;"	function	line:1719
+Classfp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Classfp ($/;"	function	line:1742
+break_number	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure break_number ($/;"	procedure	line:1805
+break_number	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure break_number ($/;"	procedure	line:1825
+abs	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "abs" ($/;"	function	line:1848
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" ($/;"	function	line:1863
+add	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function add ($/;"	function	line:1878
+subtract	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function subtract ($/;"	function	line:2028
+multiply	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function multiply ($/;"	function	line:2047
+short_divide	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function short_divide ($/;"	function	line:2154
+reciprocal	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function reciprocal ($/;"	function	line:2183
+onedivy	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    function onedivy ($/;"	function	line:2193
+divide	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function divide ($/;"	function	line:2278
+dividebyp2	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function dividebyp2 ($/;"	function	line:2426
+mac	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function mac ($/;"	function	line:2550
+remainder	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function remainder ($/;"	function	line:2732
+modulo	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function modulo ($/;"	function	line:2836
+sqrt	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function sqrt ($/;"	function	line:2896
+Is_Negative	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Is_Negative (arg : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:2968
+eq	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function eq (                         -- equal =$/;"	function	line:2977
+lt	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function lt (                         -- less than <$/;"	function	line:3019
+gt	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function gt (                         -- greater than >$/;"	function	line:3082
+ne	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ne (                         -- not equal \/=$/;"	function	line:3147
+le	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function le (                               -- less than or equal to <=$/;"	function	line:3167
+ge	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ge (                               -- greater than or equal to >=$/;"	function	line:3187
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width         : NATURAL := -mine(l'low, r'low);  -- length of FP output fraction$/;"	constant	line:3208
+exponent_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant exponent_width         : NATURAL := maximum(l'high, r'high);  -- length of FP output exponent$/;"	constant	line:3209
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width         : NATURAL := -mine(l'low, r'low);  -- length of FP output fraction$/;"	constant	line:3250
+exponent_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant exponent_width         : NATURAL := maximum(l'high, r'high);  -- length of FP output exponent$/;"	constant	line:3251
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width : NATURAL := -mine(l'low, r'low);$/;"	constant	line:3292
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width : NATURAL := -mine(l'low, r'low);$/;"	constant	line:3324
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width : NATURAL := -mine(l'low, r'low);$/;"	constant	line:3356
+fraction_width	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    constant fraction_width : NATURAL := -mine(l'low, r'low);$/;"	constant	line:3388
+std_match	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function std_match (L, R : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3419
+find_rightmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function find_rightmost (arg : UNRESOLVED_float; y : STD_ULOGIC) return INTEGER is$/;"	function	line:3431
+find_leftmost	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function find_leftmost (arg : UNRESOLVED_float; y : STD_ULOGIC) return INTEGER is$/;"	function	line:3441
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "=" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3452
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/=" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3457
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">=" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3462
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<=" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3467
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3472
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<" (l, r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:3477
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum ($/;"	function	line:3483
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum ($/;"	function	line:3499
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function resize ($/;"	function	line:3520
+resize	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function resize ($/;"	function	line:3627
+to_float32	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float32 ($/;"	function	line:3651
+to_float64	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float64 ($/;"	function	line:3668
+to_float128	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float128 ($/;"	function	line:3685
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:3704
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:3793
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:3892
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:3916
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:3993
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4008
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4031
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4139
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4158
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4179
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4198
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4217
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4234
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:4255
+to_integer	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_integer ($/;"	function	line:4276
+to_unsigned	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_unsigned ($/;"	function	line:4349
+to_signed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_signed ($/;"	function	line:4380
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4433
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4505
+to_unsigned	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_unsigned ($/;"	function	line:4595
+to_signed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_signed ($/;"	function	line:4616
+to_ufixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_ufixed ($/;"	function	line:4637
+to_sfixed	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_sfixed ($/;"	function	line:4663
+to_real	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_real ($/;"	function	line:4690
+realtobits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function realtobits (arg : REAL) return STD_ULOGIC_VECTOR is$/;"	function	line:4741
+bitstoreal	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function bitstoreal (arg : STD_ULOGIC_VECTOR) return REAL is$/;"	function	line:4750
+to_01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_01 ($/;"	function	line:4760
+Is_X	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Is_X$/;"	function	line:4777
+to_X01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_X01 (arg : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4784
+to_X01Z	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_X01Z (arg : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4799
+to_UX01	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_UX01 (arg : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4814
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "+" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4831
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4836
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "*" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4841
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4846
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "rem" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4851
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "mod" (l, r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4856
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "+" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:4862
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "+" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4869
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "+" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:4876
++	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "+" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4883
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:4890
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4897
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:4904
+-	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "-" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4911
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "*" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:4918
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "*" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4925
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "*" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:4932
+*	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "*" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4939
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:4946
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4953
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:4960
+/	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4967
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "rem" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:4974
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "rem" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4981
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "rem" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:4988
+rem	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "rem" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:4995
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "mod" (l : UNRESOLVED_float; r : REAL) return UNRESOLVED_float is$/;"	function	line:5002
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "mod" (l : REAL; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5009
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "mod" (l : UNRESOLVED_float; r : INTEGER) return UNRESOLVED_float is$/;"	function	line:5016
+mod	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "mod" (l : INTEGER; r : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5023
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "=" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5030
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/=" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5037
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">=" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5044
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<=" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5051
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5058
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<" (l : UNRESOLVED_float; r : REAL) return BOOLEAN is$/;"	function	line:5065
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "=" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5072
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/=" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5079
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">=" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5086
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<=" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5093
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5100
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<" (l : REAL; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5107
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "=" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5114
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/=" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5121
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">=" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5128
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<=" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5135
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5142
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<" (l : UNRESOLVED_float; r : INTEGER) return BOOLEAN is$/;"	function	line:5149
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "=" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5156
+/=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "\/=" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5163
+>=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">=" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5170
+<=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<=" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5177
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function ">" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5184
+<	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "<" (l : INTEGER; r : UNRESOLVED_float) return BOOLEAN is$/;"	function	line:5191
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum (l : UNRESOLVED_float; r : REAL)$/;"	function	line:5371
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum (l : UNRESOLVED_float; r : REAL)$/;"	function	line:5379
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum (l : REAL; r : UNRESOLVED_float)$/;"	function	line:5387
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum (l : REAL; r : UNRESOLVED_float)$/;"	function	line:5395
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum (l : UNRESOLVED_float; r : INTEGER)$/;"	function	line:5403
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum (l : UNRESOLVED_float; r : INTEGER)$/;"	function	line:5411
+minimum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function minimum (l : INTEGER; r : UNRESOLVED_float)$/;"	function	line:5419
+maximum	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function maximum (l : INTEGER; r : UNRESOLVED_float)$/;"	function	line:5427
+not	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "not" (L : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5438
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "and" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5445
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "or" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5460
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nand" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5475
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nor" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5490
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xor" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5505
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xnor" (L, R : UNRESOLVED_float) return UNRESOLVED_float is$/;"	function	line:5520
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "and" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5536
+and	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "and" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5546
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "or" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5556
+or	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "or" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5566
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nand" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5576
+nand	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nand" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5586
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nor" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5596
+nor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "nor" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5606
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xor" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5616
+xor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xor" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5626
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xnor" (L : STD_ULOGIC; R : UNRESOLVED_float)$/;"	function	line:5636
+xnor	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function "xnor" (L : UNRESOLVED_float; R : STD_ULOGIC)$/;"	function	line:5646
+and_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function and_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5658
+nand_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nand_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5663
+or_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function or_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5668
+nor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nor_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5673
+xor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function xor_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5678
+xnor_reduce	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function xnor_reduce (l : UNRESOLVED_float) return STD_ULOGIC is$/;"	function	line:5683
+Copysign	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Copysign ($/;"	function	line:5692
+Scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Scalb ($/;"	function	line:5700
+Scalb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Scalb ($/;"	function	line:5749
+Logb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Logb ($/;"	function	line:5767
+Logb	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Logb ($/;"	function	line:5804
+Nextafter	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Nextafter ($/;"	function	line:5816
+=	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    function "=" ($/;"	function	line:5823
+>	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^    function ">" ($/;"	function	line:5831
+Unordered	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Unordered ($/;"	function	line:5999
+Finite	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Finite ($/;"	function	line:6015
+Isnan	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function Isnan ($/;"	function	line:6028
+zerofp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function zerofp ($/;"	function	line:6042
+nanfp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nanfp ($/;"	function	line:6052
+qnanfp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function qnanfp ($/;"	function	line:6069
+pos_inffp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function pos_inffp ($/;"	function	line:6083
+neg_inffp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function neg_inffp ($/;"	function	line:6094
+neg_zerofp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function neg_zerofp ($/;"	function	line:6105
+zerofp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function zerofp ($/;"	function	line:6117
+nanfp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function nanfp ($/;"	function	line:6126
+qnanfp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function qnanfp ($/;"	function	line:6135
+pos_inffp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function pos_inffp ($/;"	function	line:6144
+neg_inffp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function neg_inffp ($/;"	function	line:6153
+neg_zerofp	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function neg_zerofp ($/;"	function	line:6162
+MVL9plus	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type MVL9plus is ('U', 'X', '0', '1', 'Z', 'W', 'L', 'H', '-', error);$/;"	type	line:6177
+char_indexed_by_MVL9	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type char_indexed_by_MVL9 is array (STD_ULOGIC) of CHARACTER;$/;"	type	line:6178
+MVL9_indexed_by_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type MVL9_indexed_by_char is array (CHARACTER) of STD_ULOGIC;$/;"	type	line:6179
+MVL9plus_indexed_by_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  type MVL9plus_indexed_by_char is array (CHARACTER) of MVL9plus;$/;"	type	line:6180
+NBSP	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant NBSP         : CHARACTER            := CHARACTER'val(160);  -- space character$/;"	constant	line:6182
+MVL9_to_char	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant MVL9_to_char : char_indexed_by_MVL9 := "UX01ZWLH-";$/;"	constant	line:6183
+char_to_MVL9	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant char_to_MVL9 : MVL9_indexed_by_char :=$/;"	constant	line:6184
+char_to_MVL9plus	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant char_to_MVL9plus : MVL9plus_indexed_by_char :=$/;"	constant	line:6187
+NUS	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  constant NUS : STRING(2 to 1) := (others => ' ');$/;"	constant	line:6190
+skip_whitespace	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure skip_whitespace ($/;"	procedure	line:6193
+to_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_ostring (value : STD_LOGIC_VECTOR) return STRING is$/;"	function	line:6208
+to_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_hstring (value : STD_LOGIC_VECTOR) return STRING is$/;"	function	line:6243
+Char2TriBits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure Char2TriBits (C           :     CHARACTER;$/;"	procedure	line:6285
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure OREAD (L    : inout LINE; VALUE : out STD_LOGIC_VECTOR;$/;"	procedure	line:6312
+Char2QuadBits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure Char2QuadBits (C           :     CHARACTER;$/;"	procedure	line:6369
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure HREAD (L    : inout LINE; VALUE : out STD_LOGIC_VECTOR;$/;"	procedure	line:6404
+check_punctuation	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure check_punctuation ($/;"	procedure	line:6461
+fix_colon	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure fix_colon ($/;"	procedure	line:6498
+WRITE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure WRITE ($/;"	procedure	line:6515
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure READ (L : inout LINE; VALUE : out UNRESOLVED_float) is$/;"	procedure	line:6539
+READ	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure READ (L : inout LINE; VALUE : out UNRESOLVED_float; GOOD : out BOOLEAN) is$/;"	procedure	line:6612
+OWRITE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure OWRITE ($/;"	procedure	line:6662
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure OREAD (L : inout LINE; VALUE : out UNRESOLVED_float) is$/;"	procedure	line:6674
+OREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure OREAD(L : inout LINE; VALUE : out UNRESOLVED_float; GOOD : out BOOLEAN) is$/;"	procedure	line:6753
+HWRITE	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure HWRITE ($/;"	procedure	line:6811
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure HREAD (L : inout LINE; VALUE : out UNRESOLVED_float) is$/;"	procedure	line:6823
+HREAD	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  procedure HREAD (L : inout LINE; VALUE : out UNRESOLVED_float; GOOD : out BOOLEAN) is$/;"	procedure	line:6902
+to_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_string (value : UNRESOLVED_float) return STRING is$/;"	function	line:6960
+to_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_hstring (value : UNRESOLVED_float) return STRING is$/;"	function	line:6980
+to_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_ostring (value : UNRESOLVED_float) return STRING is$/;"	function	line:6989
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_string ($/;"	function	line:6998
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:7017
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:7036
+from_string	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_string ($/;"	function	line:7055
+from_ostring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_ostring ($/;"	function	line:7065
+from_hstring	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function from_hstring ($/;"	function	line:7075
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:7086
+to_float	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function to_float ($/;"	function	line:7098
+realtobits	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function realtobits (arg : REAL) return STD_LOGIC_VECTOR is$/;"	function	line:7109
+bitstoreal	/home/gaspar/git/hwpy/common/hdl/fixed_pkg/float_pkg_c.vhd	/^  function bitstoreal (arg : STD_LOGIC_VECTOR) return REAL is$/;"	function	line:7118
+REG_DELAY_ENABLED	/home/gaspar/git/hwpy/common/register.py	/^REG_DELAY_ENABLED = 1$/;"	variable	line:3
+enable_reg_delay	/home/gaspar/git/hwpy/common/register.py	/^def enable_reg_delay():$/;"	function	line:6
+disable_reg_delay	/home/gaspar/git/hwpy/common/register.py	/^def disable_reg_delay():$/;"	function	line:11
+deepish_copy	/home/gaspar/git/hwpy/common/register.py	/^def deepish_copy(org):$/;"	function	line:17
+clock_tick	/home/gaspar/git/hwpy/common/register.py	/^def clock_tick(func):$/;"	function	line:36
+clock_tick_wrap	/home/gaspar/git/hwpy/common/register.py	/^    def clock_tick_wrap(*args, **kwargs):$/;"	function	line:37	function:clock_tick
+dut	/home/gaspar/git/hwpy/components/register/test/test_reg.py	/^def dut(request):$/;"	function	line:12
+test_init_value	/home/gaspar/git/hwpy/components/register/test/test_reg.py	/^def test_init_value(dut):$/;"	function	line:25
+test_delay_attr	/home/gaspar/git/hwpy/components/register/test/test_reg.py	/^def test_delay_attr(dut):$/;"	function	line:30
+test_delay_one	/home/gaspar/git/hwpy/components/register/test/test_reg.py	/^def test_delay_one(dut):$/;"	function	line:33
+Register	/home/gaspar/git/hwpy/components/register/model/model.py	/^class Register(HW):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/components/register/model/model.py	/^    def __init__(self, init_value=0.):$/;"	member	line:6	class:Register
+delay	/home/gaspar/git/hwpy/components/register/model/model.py	/^    def delay(self):$/;"	member	line:10	class:Register
+__call__	/home/gaspar/git/hwpy/components/register/model/model.py	/^    def __call__(self, next):$/;"	member	line:13	class:Register	file:
+Register	/home/gaspar/git/hwpy/components/register/model/hw_model.py	/^class Register(HW):$/;"	class	line:5
+__init__	/home/gaspar/git/hwpy/components/register/model/hw_model.py	/^    def __init__(self, init_value=0.):$/;"	member	line:7	class:Register
+delay	/home/gaspar/git/hwpy/components/register/model/hw_model.py	/^    def delay(self):$/;"	member	line:12	class:Register
+__call__	/home/gaspar/git/hwpy/components/register/model/hw_model.py	/^    def __call__(self, next):$/;"	member	line:15	class:Register	file:
+logger	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:15
+HDLStuff	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^class HDLStuff(object):$/;"	class	line:18
+__init__	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:19	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:29
+gate_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def gate_hdl(shared_dir):$/;"	function	line:56
+kernel	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def kernel(request, tmpdir, shared_tmpdir):$/;"	function	line:65
+test_kernel_first_out_rot	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def test_kernel_first_out_rot(kernel):$/;"	function	line:93
+test_kernel_first_out_rot2	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def test_kernel_first_out_rot2(kernel):$/;"	function	line:100
+test_kernel_rot	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_rotate.py	/^def test_kernel_rot(kernel):$/;"	function	line:107
+logger	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:16
+base_path	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^base_path = Path(__file__).parent$/;"	variable	line:18
+HDLStuff	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^class HDLStuff(object):$/;"	class	line:21
+__init__	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:22	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:32
+gate_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def gate_hdl(shared_dir):$/;"	function	line:59
+shared_tmpdir	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:68
+exp	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def exp(request, tmpdir, shared_tmpdir):$/;"	function	line:74
+periodfix	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def periodfix(request):$/;"	function	line:105
+test_period	/home/gaspar/git/hwpy/components/cordic/test/test_exp_sincos.py	/^def test_period(periodfix, exp):$/;"	function	line:114
+kernel	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def kernel(request):$/;"	function	line:8
+test_delay	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_delay():$/;"	function	line:19
+report_delay	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^    def report_delay(cord):$/;"	function	line:23	function:test_delay
+test_kernel_first_out_rot	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_first_out_rot(kernel):$/;"	function	line:45
+test_kernel_first_out_rot2	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_first_out_rot2(kernel):$/;"	function	line:52
+test_kernel_first_out_vec	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_first_out_vec(kernel):$/;"	function	line:59
+test_kernel_first_out_vec2	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_first_out_vec2(kernel):$/;"	function	line:66
+test_kernel_rot	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_rot(kernel):$/;"	function	line:73
+test_kernel_vec	/home/gaspar/git/hwpy/components/cordic/test/test_kernel.py	/^def test_kernel_vec(kernel):$/;"	function	line:85
+logger	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:15
+HDLStuff	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^class HDLStuff(object):$/;"	class	line:18
+__init__	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:19	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:29
+gate_hdl	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def gate_hdl(shared_dir):$/;"	function	line:56
+shared_tmpdir	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:65
+kernel	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def kernel(request, tmpdir, shared_tmpdir):$/;"	function	line:71
+test_kernel_first_out_vec	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def test_kernel_first_out_vec(kernel):$/;"	function	line:99
+test_kernel_first_out_vec2	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def test_kernel_first_out_vec2(kernel):$/;"	function	line:106
+test_kernel_vec	/home/gaspar/git/hwpy/components/cordic/test/test_kernel_vectoring.py	/^def test_kernel_vec(kernel):$/;"	function	line:113
+base_path	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^base_path = Path(__file__).parent$/;"	variable	line:9
+params	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^                params=['MODEL'])$/;"	variable	line:13
+cord	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def cord(request):$/;"	function	line:14
+exp	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def exp(request):$/;"	function	line:25
+test_exp	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_exp(exp):$/;"	function	line:37
+test_exp_harmonic	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_exp_harmonic(exp):$/;"	function	line:51
+test_exp_harmonic_gain	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_exp_harmonic_gain(exp):$/;"	function	line:68
+test_exp_fm_mod	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_exp_fm_mod(exp):$/;"	function	line:85
+test_angle	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_angle(cord):$/;"	function	line:113
+test_angle_fm_demod	/home/gaspar/git/hwpy/components/cordic/test/test_cordic.py	/^def test_angle_fm_demod(cord, exp):$/;"	function	line:131
+CORDIC	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^class CORDIC(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def __init__(self, iterations=18):$/;"	member	line:5	class:CORDIC
+kernel	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def kernel(self, x, y, phase, mode='ROTATE'):$/;"	member	line:9	class:CORDIC
+__call__	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def __call__(self, *args, **kwargs):$/;"	member	line:22	class:CORDIC	file:
+exp	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def exp(self, phase_list):$/;"	member	line:25	class:CORDIC
+to_polar	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def to_polar(self, x_list, y_list):$/;"	member	line:50	class:CORDIC
+angle	/home/gaspar/git/hwpy/components/cordic/model/cordic.py	/^    def angle(self, xy):$/;"	member	line:69	class:CORDIC
+Exp	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^class Exp(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def __init__(self, iterations=18):$/;"	member	line:5	class:Exp
+kernel	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def kernel(self, x, y, phase, mode='ROTATE'):$/;"	member	line:9	class:Exp
+exp	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def exp(self, phase_list):$/;"	member	line:22	class:Exp
+__call__	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def __call__(self, *args, **kwargs):$/;"	member	line:49	class:Exp	file:
+to_polar	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def to_polar(self, x_list, y_list):$/;"	member	line:52	class:Exp
+angle	/home/gaspar/git/hwpy/components/cordic/model/exp.py	/^    def angle(self, xy):$/;"	member	line:71	class:Exp
+logger	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^logger = logging.getLogger(__name__)$/;"	variable	line:10
+Exp	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^class Exp(object):$/;"	class	line:13
+__init__	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^    def __init__(self, iterations=18):$/;"	member	line:14	class:Exp
+delay	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^    def delay(self):$/;"	member	line:23	class:Exp
+__call__	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^    def __call__(self, phase_inc):$/;"	member	line:28	class:Exp	file:
+test_adaptor	/home/gaspar/git/hwpy/components/cordic/hw/cordic.py	/^    def test_adaptor(self, *args, **kwargs):$/;"	member	line:52	class:Exp
+CORDICKernel	/home/gaspar/git/hwpy/components/cordic/hw/kernel.py	/^class CORDICKernel(object):$/;"	class	line:7
+__init__	/home/gaspar/git/hwpy/components/cordic/hw/kernel.py	/^    def __init__(self, iterations=18, mode='ROTATE'):$/;"	member	line:8	class:CORDICKernel
+delay	/home/gaspar/git/hwpy/components/cordic/hw/kernel.py	/^    def delay(self):$/;"	member	line:23	class:CORDICKernel
+rotate	/home/gaspar/git/hwpy/components/cordic/hw/kernel.py	/^    def rotate(self, i, x, y, phase):$/;"	member	line:27	class:CORDICKernel
+__call__	/home/gaspar/git/hwpy/components/cordic/hw/kernel.py	/^    def __call__(self, x, y, phase, mode=None):$/;"	member	line:46	class:CORDICKernel	file:
+CORDICKernel	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^package CORDICKernel is$/;"	package	line:11
+sfixed_list	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:12
+iterations	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  constant iterations: integer := 18 + 1;$/;"	constant	line:13
+mode	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  constant mode: string := "ROTATE";$/;"	constant	line:14
+self_t	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  type self_t is record$/;"	type	line:16
+phase_lut	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  type self_t is record$/;"	record	line:16
+x	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^    phase_lut: sfixed_list(0 to iterations-1)(0 downto - 31);$/;"	record	line:17
+y	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^    x: sfixed_list(0 to iterations-1)(2 downto - 17);$/;"	record	line:18
+phase	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^    y: sfixed_list(0 to iterations-1)(2 downto - 17);$/;"	record	line:19
+CORDICKernel	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^package body CORDICKernel is$/;"	package	line:32
+reset	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:34
+real_vector	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^    type real_vector is array (natural range <>) of real;$/;"	type	line:35
+rotate	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  procedure rotate (self: inout self_t;$/;"	procedure	line:53
+call	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/cordickernel.vhd	/^  procedure call (self: inout self_t; x, y, phase: sfixed; ret_0, ret_1, ret_2: out sfixed) is$/;"	procedure	line:88
+top	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_rotate/top.vhd	/^entity  top is$/;"	entity	line:11
+CORDICKernel	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^package CORDICKernel is$/;"	package	line:11
+sfixed_list	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  type sfixed_list is array (natural range <>) of sfixed;$/;"	type	line:12
+iterations	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  constant iterations: integer := 18 + 1;$/;"	constant	line:13
+mode	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  constant mode: string := "VECTOR";$/;"	constant	line:14
+self_t	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  type self_t is record$/;"	type	line:16
+phase_lut	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  type self_t is record$/;"	record	line:16
+x	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^    phase_lut: sfixed_list(0 to iterations-1)(0 downto -17);$/;"	record	line:17
+y	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^    x: sfixed_list(0 to iterations-1)(0 downto - 17);$/;"	record	line:18
+phase	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^    y: sfixed_list(0 to iterations-1)(0 downto - 17);$/;"	record	line:19
+CORDICKernel	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^package body CORDICKernel is$/;"	package	line:32
+reset	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:34
+real_vector	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^    type real_vector is array (natural range <>) of real;$/;"	type	line:35
+rotate	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  procedure rotate (self: inout self_t;$/;"	procedure	line:53
+call	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/cordickernel.vhd	/^  procedure call (self: inout self_t; x, y, phase: sfixed; ret_0, ret_1, ret_2: out sfixed) is$/;"	procedure	line:88
+top	/home/gaspar/git/hwpy/components/cordic/hw/hdl/exp_sincos/top.vhd	/^entity  top is$/;"	entity	line:11
+top	/home/gaspar/git/hwpy/components/cordic/hw/hdl/kernel_vector/top.vhd	/^entity  top is$/;"	entity	line:11
+HDLStuff	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^class HDLStuff(object):$/;"	class	line:14
+__init__	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:15	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:25
+gate_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def gate_hdl(shared_dir):$/;"	function	line:52
+shared_tmpdir	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:62
+scale	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^scale = np.pi \/ 2$/;"	variable	line:68
+dut	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def dut(request, tmpdir, shared_tmpdir):$/;"	function	line:72
+stimul	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def stimul(dut, request):$/;"	function	line:110
+test_first	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def test_first(stimul):$/;"	function	line:124
+test_end	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def test_end(stimul):$/;"	function	line:128
+test_step	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def test_step(stimul):$/;"	function	line:132
+test_wrap_output	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def test_wrap_output(stimul):$/;"	function	line:139
+test_samples	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled_alternative.py	/^def test_samples(stimul):$/;"	function	line:145
+HDLStuff	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^class HDLStuff(object):$/;"	class	line:14
+__init__	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:15	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:25
+gate_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def gate_hdl(shared_dir):$/;"	function	line:52
+shared_tmpdir	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:62
+dut	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def dut(request, tmpdir, shared_tmpdir):$/;"	function	line:69
+stimul	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def stimul(dut, request):$/;"	function	line:105
+test_first	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def test_first(stimul):$/;"	function	line:119
+test_end	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def test_end(stimul):$/;"	function	line:123
+test_step	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def test_step(stimul):$/;"	function	line:127
+test_wrap_output	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def test_wrap_output(stimul):$/;"	function	line:134
+test_samples	/home/gaspar/git/hwpy/components/wrapacc/test/test_phase_acc.py	/^def test_samples(stimul):$/;"	function	line:140
+HDLStuff	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^class HDLStuff(object):$/;"	class	line:14
+__init__	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):$/;"	member	line:15	class:HDLStuff
+generated_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def generated_hdl(tmpdir_factory):$/;"	function	line:25
+gate_hdl	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def gate_hdl(shared_dir):$/;"	function	line:52
+shared_tmpdir	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def shared_tmpdir(tmpdir_factory):$/;"	function	line:62
+scale	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^scale = np.pi \/ 2$/;"	variable	line:68
+dut	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def dut(request, tmpdir, shared_tmpdir):$/;"	function	line:72
+stimul	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def stimul(dut, request):$/;"	function	line:110
+test_first	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def test_first(stimul):$/;"	function	line:124
+test_end	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def test_end(stimul):$/;"	function	line:128
+test_step	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def test_step(stimul):$/;"	function	line:132
+test_wrap_output	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def test_wrap_output(stimul):$/;"	function	line:139
+test_samples	/home/gaspar/git/hwpy/components/wrapacc/test/test_pi_scaled.py	/^def test_samples(stimul):$/;"	function	line:145
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^class WrapAcc():$/;"	class	line:1
+__init__	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^    def __init__(self, bits, scale=None):$/;"	member	line:2	class:WrapAcc
+max	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^    def max(self):$/;"	member	line:11	class:WrapAcc
+min	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^    def min(self):$/;"	member	line:15	class:WrapAcc
+freq_to_step	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^    def freq_to_step(self, freq, fs):$/;"	member	line:18	class:WrapAcc
+__call__	/home/gaspar/git/hwpy/components/wrapacc/model/acc.py	/^    def __call__(self, step_list):$/;"	member	line:23	class:WrapAcc	file:
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/acc.py	/^class WrapAcc:$/;"	class	line:5
+__init__	/home/gaspar/git/hwpy/components/wrapacc/hw/acc.py	/^    def __init__(self, bits, scale=None, scalebits=27):$/;"	member	line:6	class:WrapAcc
+delay	/home/gaspar/git/hwpy/components/wrapacc/hw/acc.py	/^    def delay(self):$/;"	member	line:20	class:WrapAcc
+__call__	/home/gaspar/git/hwpy/components/wrapacc/hw/acc.py	/^    def __call__(self, step):$/;"	member	line:30	class:WrapAcc	file:
+vhdl_sources	/home/gaspar/git/hwpy/components/wrapacc/hw/convert.py	/^vhdl_sources = ['\/home\/gaspar\/git\/hwpy\/components\/wrapacc\/hw\/hdl\/wrapacc.vhd']$/;"	variable	line:5
+dut_name	/home/gaspar/git/hwpy/components/wrapacc/hw/convert.py	/^dut_name = 'WrapAcc'$/;"	variable	line:7
+input_ports	/home/gaspar/git/hwpy/components/wrapacc/hw/convert.py	/^input_ports = ['x']$/;"	variable	line:8
+output_ports	/home/gaspar/git/hwpy/components/wrapacc/hw/convert.py	/^output_ports = ['y1', 'y0']$/;"	variable	line:9
+base_dir	/home/gaspar/git/hwpy/components/wrapacc/hw/convert.py	/^    base_dir = Path(__file__).parent$/;"	variable	line:12
+top	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/top.vhd	/^entity  top is$/;"	entity	line:11
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^package WrapAcc is$/;"	package	line:12
+scalebits	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^  constant scalebits: integer := 27;$/;"	constant	line:13
+self_t	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^  type self_t is record$/;"	type	line:14
+counter	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^  type self_t is record$/;"	record	line:14
+is_wrap	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^    counter: sfixed(1 downto - 25);$/;"	record	line:15
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^package body WrapAcc is$/;"	package	line:24
+reset	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:26
+call	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc_alternative.vhd	/^procedure call (self: inout self_t; step: sfixed; ret_0: out sfixed; ret_1: out boolean) is$/;"	procedure	line:32
+top	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/top.vhd	/^entity  top is$/;"	entity	line:11
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^package WrapAcc is$/;"	package	line:12
+scalebits	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^  constant scalebits: integer := 27;$/;"	constant	line:13
+self_t	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^  type self_t is record$/;"	type	line:14
+counter	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^  type self_t is record$/;"	record	line:14
+is_wrap	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^    counter: sfixed(0 downto - 31);$/;"	record	line:15
+is_wrap_delay	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^    is_wrap: boolean;$/;"	record	line:16
+count_scaled	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^    is_wrap_delay: boolean;$/;"	record	line:17
+scale	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^    count_scaled: sfixed(1 downto -25);$/;"	record	line:18
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^package body WrapAcc is$/;"	package	line:27
+reset	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:29
+call	/home/gaspar/git/hwpy/components/wrapacc/hw/scaled/wrapacc.vhd	/^procedure call (self: inout self_t; step: sfixed; ret_0: out sfixed; ret_1: out boolean) is$/;"	procedure	line:37
+base_path	/home/gaspar/git/hwpy/Makefile	/^base_path = components\/cordic\/hw\/hdl\/test$/;"	macro	line:3
+hwpy	/home/gaspar/git/hwpy/README.md	/^# hwpy/;"	function	line:1
+path	/home/gaspar/git/hwpy/conversion/main.py	/^path = '\/home\/gaspar\/git\/hwpy\/conversion\/model.py'$/;"	variable	line:3
+file_content	/home/gaspar/git/hwpy/conversion/main.py	/^file_content = open(path).read()$/;"	variable	line:4
+red	/home/gaspar/git/hwpy/conversion/main.py	/^red = RedBaron(file_content)$/;"	variable	line:6
+lol	/home/gaspar/git/hwpy/misc/speed_test.py	/^class lol:$/;"	class	line:8
+__init__	/home/gaspar/git/hwpy/misc/speed_test.py	/^    def __init__(self, param):$/;"	member	line:9	class:lol
+dut	/home/gaspar/git/hwpy/misc/speed_test.py	/^def dut():$/;"	function	line:13
+main	/home/gaspar/git/hwpy/misc/speed_test.py	/^def main():$/;"	function	line:20
+loom	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^loom = CORDIC()$/;"	variable	line:6
+samp_rate	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^samp_rate = 1e3$/;"	variable	line:9
+time_end	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^time_end = 2$/;"	variable	line:10
+time	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^time = np.linspace(0, time_end, samp_rate * time_end, endpoint=False)  # NB! NOTICE ENDPOINT, TO MATCH GNURADIO$/;"	variable	line:11
+freq	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^freq = 1$/;"	variable	line:13
+phase_angle	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^phase_angle = 2 * np.pi * freq * time * 1j$/;"	variable	line:14
+ref	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^ref = np.exp(phase_angle)$/;"	variable	line:15
+cordic_exp	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^def cordic_exp(phase, phase_lut):$/;"	function	line:18
+cordic_len	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^cordic_len = 18$/;"	variable	line:28
+phase_lut	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^phase_lut = [np.arctan(2 ** -i) for i in range(cordic_len)]$/;"	variable	line:29
+res	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^res = []$/;"	variable	line:31
+phase_angle	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^phase_angle = 2 * np.pi * freq * time$/;"	variable	line:32
+phase_angle	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^phase_angle = [(x + np.pi \/ 2) % np.pi - np.pi \/ 2 for x in phase_angle]$/;"	variable	line:38
+fs	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^fs = 100$/;"	variable	line:42
+phase_incremet	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^phase_incremet = 2 * np.pi * freq \/ fs$/;"	variable	line:43
+ph	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^ph = 0$/;"	variable	line:45
+sign	/home/gaspar/git/hwpy/misc/fm_demod/playground.py	/^sign = 1$/;"	variable	line:46
+ShiftReg	/home/gaspar/git/hwpy/misc/metaclass/shift_reg.py	/^class ShiftReg(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/misc/metaclass/shift_reg.py	/^    def __init__(self, size):$/;"	member	line:5	class:ShiftReg
+main	/home/gaspar/git/hwpy/misc/metaclass/shift_reg.py	/^    def main(self, new_sample):$/;"	member	line:9	class:ShiftReg
+test	/home/gaspar/git/hwpy/misc/metaclass/shift_reg.py	/^def test():$/;"	function	line:16
+test_metaclass_assigned	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_metaclass_assigned():$/;"	function	line:4
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:5	function:test_metaclass_assigned
+test_call_decorated	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_call_decorated():$/;"	function	line:11
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:12	function:test_call_decorated
+__call__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __call__(self, *args, **kwargs):$/;"	member	line:13	class:test_call_decorated.A	file:
+test_next_init	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_next_init():$/;"	function	line:19
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:20	function:test_next_init
+__init__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __init__(self):$/;"	member	line:21	class:test_next_init.A
+test_float_register	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_float_register():$/;"	function	line:35
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:36	function:test_float_register
+__init__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __init__(self):$/;"	member	line:37	class:test_float_register.A
+__call__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __call__(self, next):$/;"	member	line:40	class:test_float_register.A	file:
+test_list_register	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_list_register():$/;"	function	line:51
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:52	function:test_list_register
+__init__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __init__(self):$/;"	member	line:53	class:test_list_register.A
+__call__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __call__(self, next):$/;"	member	line:56	class:test_list_register.A	file:
+test_list_cascade_register	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^def test_list_cascade_register():$/;"	function	line:67
+A	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class A(HW):$/;"	class	line:68	function:test_list_cascade_register
+__init__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __init__(self):$/;"	member	line:69	class:test_list_cascade_register.A
+__call__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __call__(self, next):$/;"	member	line:72	class:test_list_cascade_register.A	file:
+B	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^    class B(HW):$/;"	class	line:76	function:test_list_cascade_register
+__init__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __init__(self):$/;"	member	line:77	class:test_list_cascade_register.B
+__call__	/home/gaspar/git/hwpy/misc/metaclass/test_hwsim.py	/^        def __call__(self, next):$/;"	member	line:81	class:test_list_cascade_register.B	file:
+deepish_copy	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^def deepish_copy(org):$/;"	function	line:9
+clock_tick	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^def clock_tick(func):$/;"	function	line:30
+clock_tick_wrap	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^    def clock_tick_wrap(*args, **kwargs):$/;"	function	line:33	function:clock_tick
+Meta	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^class Meta(type):$/;"	class	line:46
+__new__	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^    def __new__(mcs, name, bases, attrs, **kwargs):$/;"	member	line:50	class:Meta	file:
+__call__	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^    def __call__(cls, *args, **kwargs):$/;"	member	line:61	class:Meta	file:
+HW	/home/gaspar/git/hwpy/misc/metaclass/hwsim.py	/^class HW(with_metaclass(Meta)):$/;"	class	line:68
+Reg	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^class Reg(object):$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __init__(self, val):$/;"	member	line:5	class:Reg
+__get__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __get__(self, obj, type=None):$/;"	member	line:9	class:Reg	file:
+__set__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __set__(self, obj, value):$/;"	member	line:13	class:Reg	file:
+Cont	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^class Cont(object):$/;"	class	line:17
+__init__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __init__(self, val):$/;"	member	line:18	class:Cont
+__getattribute__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __getattribute__(self, name):$/;"	member	line:23	class:Cont	file:
+__setattr__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __setattr__(self, key, value):$/;"	member	line:29	class:Cont	file:
+wrapper	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^def wrapper(f):$/;"	function	line:38
+wrap	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def wrap(*args, **kwargs):$/;"	function	line:41	function:wrapper
+Meta	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^class Meta(type):$/;"	class	line:49
+__init__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __init__(cls, name, bases, attrs, **kwargs):$/;"	member	line:52	class:Meta
+__call__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __call__(cls, *args, **kwargs):$/;"	member	line:66	class:Meta	file:
+Base	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^class Base(metaclass=Meta):$/;"	class	line:74
+Test	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^class Test(Base):$/;"	class	line:78
+__init__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __init__(self):$/;"	member	line:79	class:Test
+__call__	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def __call__(self, *args, **kwargs):$/;"	member	line:83	class:Test	file:
+random_function	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^    def random_function(self):$/;"	member	line:86	class:Test
+dut	/home/gaspar/git/hwpy/misc/metaclass/meta.py	/^dut = Test()$/;"	variable	line:90
+mytb	/home/gaspar/git/hwpy/misc/gr_fm_demod/fm_demod_example.py	/^class mytb(gr.top_block):$/;"	class	line:13
+__init__	/home/gaspar/git/hwpy/misc/gr_fm_demod/fm_demod_example.py	/^    def __init__(self, filename, fs):$/;"	member	line:14	class:mytb
+main	/home/gaspar/git/hwpy/misc/gr_fm_demod/fm_demod_example.py	/^def main():$/;"	function	line:58
+x11	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^            x11 = ctypes.cdll.LoadLibrary('libX11.so')$/;"	variable	line:15
+top_block	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^class top_block(gr.top_block, Qt.QWidget):$/;"	class	line:34
+__init__	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def __init__(self):$/;"	member	line:35	class:top_block
+closeEvent	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def closeEvent(self, event):$/;"	member	line:162	class:top_block
+get_samp_rate	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def get_samp_rate(self):$/;"	member	line:167	class:top_block
+set_samp_rate	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def set_samp_rate(self, samp_rate):$/;"	member	line:170	class:top_block
+get_deviation	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def get_deviation(self):$/;"	member	line:180	class:top_block
+set_deviation	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def set_deviation(self, deviation):$/;"	member	line:183	class:top_block
+get_data_freq	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def get_data_freq(self):$/;"	member	line:188	class:top_block
+set_data_freq	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def set_data_freq(self, data_freq):$/;"	member	line:191	class:top_block
+main	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^def main(top_block_cls=top_block, options=None):$/;"	function	line:196
+quitting	/home/gaspar/git/hwpy/misc/gr_fm_demod/top_block.py	/^    def quitting():$/;"	function	line:207	function:main
+Counter	/home/gaspar/git/hwpy/misc/lol.py	/^class Counter():$/;"	class	line:4
+__init__	/home/gaspar/git/hwpy/misc/lol.py	/^    def __init__(self, step):$/;"	member	line:5	class:Counter
+run	/home/gaspar/git/hwpy/misc/lol.py	/^    def run(self):$/;"	member	line:9	class:Counter
+dut	/home/gaspar/git/hwpy/misc/lol.py	/^dut = Counter(0.1)$/;"	variable	line:14
+res	/home/gaspar/git/hwpy/misc/lol.py	/^res = []$/;"	variable	line:16
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^package WrapAcc is$/;"	package	line:12
+self_t	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^  type self_t is record$/;"	type	line:14
+counter	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^  type self_t is record$/;"	record	line:14
+is_wrap	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^    counter: sfixed(0 downto - 31);$/;"	record	line:15
+WrapAcc	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^package body WrapAcc is$/;"	package	line:24
+reset	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:26
+call	/home/gaspar/git/hwpy/components/wrapacc/hw/hdl/wrapacc.vhd	/^procedure call (self: inout self_t; step: sfixed; ret_0: out sfixed; ret_1: out boolean) is$/;"	procedure	line:32
+self_t	/home/gaspar/git/hwpy/components/register/hw/hdl/wrapacc.vhd	/^  type self_t is record$/;"	type	line:14
+a	/home/gaspar/git/hwpy/components/register/hw/hdl/wrapacc.vhd	/^  type self_t is record$/;"	record	line:14
+Register	/home/gaspar/git/hwpy/components/register/hw/hdl/wrapacc.vhd	/^package body Register is$/;"	package	line:22
+reset	/home/gaspar/git/hwpy/components/register/hw/hdl/wrapacc.vhd	/^  procedure reset(self: inout self_t) is$/;"	procedure	line:24
+call	/home/gaspar/git/hwpy/components/register/hw/hdl/wrapacc.vhd	/^procedure call (self: inout self_t;$/;"	procedure	line:29
