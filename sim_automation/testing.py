@@ -5,6 +5,15 @@ import numpy as np
 from common.sfix import Sfix
 
 
+
+import collections
+
+def get_iterable(x):
+    if isinstance(x, collections.Iterable):
+        return x
+    else:
+        return [x]
+
 class Testing(object):
     def __init__(self, request, model, hw_model, coco_sim):
 
@@ -14,7 +23,7 @@ class Testing(object):
         self.model = model
 
         self.original_input = []
-        self.original_output = []
+        self.pure_output = []
 
     def __call__(self, *args, **kwargs):
 
@@ -30,7 +39,7 @@ class Testing(object):
             #     outl.append(out)
             out = self.model(*args, **kwargs)
 
-            self.original_output = np.copy(out)
+            self.pure_output = np.copy(out)
             return np.transpose(out)
 
         elif self.request.param == 'HW-MODEL':
@@ -49,9 +58,9 @@ class Testing(object):
             outl = []
             for x in trans:
                 out = self.hw_model(*x, **kwargs)
-                outl.append([float(x) for x in out])
+                outl.append([float(x) for x in get_iterable(out)])
 
-            # self.original_output = np.copy(outl)
+            self.pure_output = np.copy(outl)
 
             # remove pipeline flush samples
             outl = outl[self.hw_model.delay:]
@@ -68,7 +77,7 @@ class Testing(object):
 
             args = np.transpose(args)
             out = self.coco_sim.run(args)
-            self.original_output = np.copy(out)
+            self.pure_output = np.copy(out)
 
             out = out[self.hw_model.delay:]
             out = np.transpose(out)
