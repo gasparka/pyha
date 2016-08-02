@@ -3,16 +3,8 @@ from contextlib import suppress
 import numpy as np
 
 from common.sfix import Sfix
+from common.util import get_iterable
 
-
-
-import collections
-
-def get_iterable(x):
-    if isinstance(x, collections.Iterable):
-        return x
-    else:
-        return [x]
 
 class Testing(object):
     def __init__(self, request, model, hw_model, coco_sim):
