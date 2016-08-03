@@ -67,4 +67,7 @@ class Meta(type):
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
+
+    def reset(self):
+        pass
     pass

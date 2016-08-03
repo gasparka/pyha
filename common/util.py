@@ -10,4 +10,4 @@ def get_iterable(x):
 
 def tabber(str):
     """ Add tab infront of every line """
-    return ''.join(['\t{}'.format(x) for x in str.splitlines()])
+    return '\n'.join(['\t{}'.format(x) for x in str.splitlines()])

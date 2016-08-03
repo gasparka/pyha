@@ -11,12 +11,12 @@ library work;
     use work.all;
 
 package {NAME} is
-    {HEADER}
+{SELF_T}
+{HEADER}
 end package;
 
-
 package body {NAME} is
-    {BODY}
+{BODY}
 end package body;
 
 """
@@ -34,3 +34,16 @@ begin
 {BODY}
 end procedure;
 """
+
+PROCEDURE_PROTO_TEMPLATE = """
+procedure {NAME}({ARGUMENTS});
+"""
+
+# RESET_PROTO_TEMPLATE =
+#
+# RESET_TEMPLATE = """
+# procedure reset(self: inout self_t) is
+# begin
+# {BODY}
+# end procedure;
+# """

@@ -6,7 +6,7 @@ from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, Assignment
 from common.sfix import Sfix
 from common.util import tabber
 from components.register.model.hw_model import Register
-from conversion.templates import PACKAGE_TEMPLATE, RECORD_TEMPLATE, PROCEDURE_TEMPLATE
+from conversion.templates import PACKAGE_TEMPLATE, RECORD_TEMPLATE, PROCEDURE_TEMPLATE, PROCEDURE_PROTO_TEMPLATE
 from misc.metaclass.hwsim import HW
 
 # from register.model.hw_model import Register
@@ -31,7 +31,7 @@ class NameConv:
                            'transport', 'type', 'unaffected', 'units', 'until', 'use',
                            'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
 
-    def __init__(self, root, red_node: NameNode, explicit_name=None):
+    def __init__(self, root=None, red_node: NameNode = None, explicit_name=None):
         self.red_no = red_node
         self.root = root
         self.in_name = explicit_name or red_node.value
@@ -39,7 +39,8 @@ class NameConv:
 
     def parse_name(self):
         # vhdl is case insensitive
-        if self.in_name.lower() in NameConv.vhdl_reserved_names:
+        if self.in_name.lower() in NameConv.vhdl_reserved_names \
+                or self.in_name[0] == '_':  # first char is _
             return '\{}\\'.format(self.in_name)  # "escape" reserved name
         return self.in_name
 
@@ -99,14 +100,19 @@ class AssignmentConv:
 class FuncConv:
     def __init__(self, parent: 'ClassConv', red_node: DefNode):
         self.red_node = red_node
-        self.name = red_node.name
+
+        # special case name
+        if red_node.name == '__call__':
+            self.name = 'call'
+        else:
+            self.name = NameConv(explicit_name=red_node.name)
+
         self.parent = parent
 
         self.arguments = self.collect_arguments()
         self.code, self.variables = self.parse_body()
         self.arguments += [self.collect_return_arguments()]
 
-        str(self)
         pass
 
     def collect_arguments(self):
@@ -128,7 +134,7 @@ class FuncConv:
 
         tmpl = ['ret_{}'.format(i) for i in range(ret_vars)]
         # assume all outputs sfixed
-        return ','.join(tmpl) + ': sfixed'
+        return ','.join(tmpl) + ': out sfixed'
 
     def parse_body(self):
         # always make the self_next variable
@@ -146,6 +152,12 @@ class FuncConv:
         last_cmd = 'self := self_next;'
         cmds.append(last_cmd)
         return cmds, variables
+
+    def get_prototype(self):
+        slots = dict()
+        slots['NAME'] = self.name
+        slots['ARGUMENTS'] = '; '.join(self.arguments)
+        return PROCEDURE_PROTO_TEMPLATE.format(**slots)
 
     def __str__(self):
         slots = dict()
@@ -177,7 +189,7 @@ class ReturnConv:
 
 class ClassConv:
     def __init__(self, obj, ref_node: ClassNode):
-        self.name = obj.__class__.__name__
+        self.name = NameConv(None, None, explicit_name=obj.__class__.__name__)
         logger.info('Converting class: {}'.format(self.name))
 
         self.ref_node = ref_node
@@ -186,35 +198,44 @@ class ClassConv:
         self.self_t = []
         self.collect_self_t()
         # self.get_vhdl_self_t()
-        self.convert_functions()
+        self.functions = self.convert_functions()
 
     def collect_self_t(self):
         for key, val in self.obj.__dict__.items():
             if isinstance(val, Sfix):
                 name = NameConv(self, red_node=None, explicit_name=key)
-                self.self_t.append([key, 'sfixed({} downto {})'.format(val.left, val.right), val])
+                self.self_t += ['{}: sfixed({} downto {});'.format(name, val.left, val.right)]
             else:
                 logger.info('self_t ignoring {}:{}, not convertable'.format(key, val))
 
         logger.info('self_t collected following registers:{}'.format(self.self_t))
 
-    def get_vhdl_self_t(self):
-        slots = dict()
-        slots['NAME'] = 'self_t'
-        mems = ['\t{}: {};'.format(key, type) for key, type, _ in self.self_t]
-        slots['MEMBERS'] = ''.join(mems)
-        return RECORD_TEMPLATE.format(**slots)
-
     def convert_functions(self):
+        funcs = []
         for func in self.ref_node('def'):
             if func.name == '__call__':
-                f = FuncConv(self, func)
-            print(func)
+                funcs += [FuncConv(self, func)]
+
+        return funcs
+
+    def self_t_str(self):
+        slots = dict()
+        slots['NAME'] = 'self_t'
+        slots['MEMBERS'] = '\n'.join(tabber(x) for x in self.self_t)
+        return RECORD_TEMPLATE.format(**slots)
+
+    def make_reset_function(self):
+
+    def __str__(self):
+        slots = dict()
+        slots['NAME'] = self.name
+        slots['SELF_T'] = tabber(self.self_t_str())
+        slots['HEADER'] = '\n'.join(tabber(x.get_prototype()) for x in self.functions)
+        slots['BODY'] = '\n\n'.join(tabber(str(x)) for x in self.functions) + '\n'
+        return PACKAGE_TEMPLATE.format(**slots)
 
 
-def convert_class(node: ClassNode):
-    pass
-    # functions =
+
 
 
 def main(root_obj):
@@ -230,12 +251,15 @@ def main(root_obj):
     cls = cls[0]
 
     cls = ClassConv(root_obj, cls)
+    print(cls)
+    with open('converted.vhd', 'w') as f:
+        print(cls, file=f)
 
-    slots = dict()
-    slots['NAME'] = name
-    slots['HEADER'] = 'head'
-    slots['BODY'] = 'body'
-    print(PACKAGE_TEMPLATE.format(**slots))
+    # slots = dict()
+    # slots['NAME'] = name
+    # slots['HEADER'] = 'head'
+    # slots['BODY'] = 'body'
+    # print(PACKAGE_TEMPLATE.format(**slots))
 
     pass
 
