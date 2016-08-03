@@ -6,3 +6,8 @@ def get_iterable(x):
         return x
     else:
         return [x]
+
+
+def tabber(str):
+    """ Add tab infront of every line """
+    return ''.join(['\t{}'.format(x) for x in str.splitlines()])

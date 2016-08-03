@@ -20,3 +20,17 @@ package body {NAME} is
 end package body;
 
 """
+
+RECORD_TEMPLATE = """
+type {NAME} is record
+{MEMBERS}
+end record;
+"""
+
+PROCEDURE_TEMPLATE = """
+procedure {NAME}({ARGUMENTS}) is
+{VARIABLES}
+begin
+{BODY}
+end procedure;
+"""
