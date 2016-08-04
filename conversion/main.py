@@ -112,7 +112,10 @@ class FuncConv:
 
         self.arguments = self.collect_arguments()
         self.code, self.variables = self.parse_body()
-        self.arguments += [self.collect_return_arguments()]
+
+        ret_args = self.collect_return_arguments()
+        if ret_args is not None:
+            self.arguments.append(ret_args)
 
         pass
 
@@ -130,7 +133,8 @@ class FuncConv:
 
     def collect_return_arguments(self):
         rets = [x for x in self.code if isinstance(x, ReturnConv)]
-        if len(rets) == 0: return None
+        if len(rets) == 0:
+            return None
         assert len(rets) <= 1  # multiple returns or none?
         ret_vars = len(rets[0].ret_names)
 
@@ -190,6 +194,7 @@ class ReturnConv:
 
 
 class ClassConv:
+    init_prefix = 'init_reset'
     def __init__(self, obj, ref_node: ClassNode):
         self.name = NameConv(None, None, explicit_name=obj.__class__.__name__)
         logger.info('Converting class: {}'.format(self.name))
@@ -197,24 +202,27 @@ class ClassConv:
         self.ref_node = ref_node
         self.obj = obj
 
-        self.self_t = []
-        self.collect_self_t()
-        self.make_reset_function()
-        # self.get_vhdl_self_t()
+        self.registers, self.register_inits = self.collect_self_t()
         self.functions = self.convert_functions()
 
     def collect_self_t(self):
+        regs = []
+        reg_inits = []
         for key, val in self.obj.__dict__.items():
             if isinstance(val, Sfix):
                 name = NameConv(self, red_node=None, explicit_name=key)
-                self.self_t += ['{}: sfixed({} downto {});'.format(name, val.left, val.right)]
+                type = 'sfixed({} downto {})'.format(val.left, val.right)
+                regs += ['{}: {};'.format(name, type)]
+                reg_inits += ['{}_{}: {};'.format(self.init_prefix, name, type)]
             else:
                 logger.info('self_t ignoring {}:{}, not convertable'.format(key, val))
 
-        logger.info('self_t collected following registers:{}'.format(self.self_t))
+        logger.info('self_t collected following registers:{}'.format(regs))
+        return regs, reg_inits
 
     def convert_functions(self):
-        funcs = []
+        rst_func = self.make_reset_function()
+        funcs = [rst_func]
         for func in self.ref_node('def'):
             if func.name == '__call__':
                 funcs += [FuncConv(self, func)]
@@ -222,16 +230,18 @@ class ClassConv:
         return funcs
 
     def self_t_str(self):
-        slots = dict()
+        slots = {}
         slots['NAME'] = 'self_t'
-        slots['MEMBERS'] = '\n'.join(tabber(x) for x in self.self_t)
+        slots['MEMBERS'] = '\n'.join(tabber(x) for x in self.registers)
+        slots['MEMBERS'] += '\n\n'
+        slots['MEMBERS'] += '\n'.join(tabber(x) for x in self.register_inits)
         return RECORD_TEMPLATE.format(**slots)
 
     def make_reset_function(self):
         tmpl = []
         for key, val in self.obj.__dict__.items():
             if isinstance(val, Sfix):
-                tmpl += ['self.{name} = self.__init_{name}'.format(name=key)]
+                tmpl += ['self.{name} = self.{ip}_{name}'.format(ip=self.init_prefix, name=key)]
             elif key in ['next']:
                 continue
             else:
@@ -243,8 +253,8 @@ class ClassConv:
         slots['BODY'] = '\n'.join(tabber(x) for x in tmpl)
         pyfun = RED_DEF_TEMPLATE.format(**slots)
         red = RedBaron(pyfun)
-        fun = FuncConv(self, red.defnode)
-        pass
+        return FuncConv(self, red.defnode)
+
 
 
     def __str__(self):
