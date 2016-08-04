@@ -6,7 +6,8 @@ from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, Assignment
 from common.sfix import Sfix
 from common.util import tabber
 from components.register.model.hw_model import Register
-from conversion.templates import PACKAGE_TEMPLATE, RECORD_TEMPLATE, PROCEDURE_TEMPLATE, PROCEDURE_PROTO_TEMPLATE
+from conversion.templates import PACKAGE_TEMPLATE, RECORD_TEMPLATE, PROCEDURE_TEMPLATE, PROCEDURE_PROTO_TEMPLATE, \
+    RED_DEF_TEMPLATE
 from misc.metaclass.hwsim import HW
 
 # from register.model.hw_model import Register
@@ -129,7 +130,8 @@ class FuncConv:
 
     def collect_return_arguments(self):
         rets = [x for x in self.code if isinstance(x, ReturnConv)]
-        assert len(rets) == 1  # multiple returns or none?
+        if len(rets) == 0: return None
+        assert len(rets) <= 1  # multiple returns or none?
         ret_vars = len(rets[0].ret_names)
 
         tmpl = ['ret_{}'.format(i) for i in range(ret_vars)]
@@ -197,6 +199,7 @@ class ClassConv:
 
         self.self_t = []
         self.collect_self_t()
+        self.make_reset_function()
         # self.get_vhdl_self_t()
         self.functions = self.convert_functions()
 
@@ -225,6 +228,24 @@ class ClassConv:
         return RECORD_TEMPLATE.format(**slots)
 
     def make_reset_function(self):
+        tmpl = []
+        for key, val in self.obj.__dict__.items():
+            if isinstance(val, Sfix):
+                tmpl += ['self.{name} = self.__init_{name}'.format(name=key)]
+            elif key in ['next']:
+                continue
+            else:
+                raise Exception()
+
+        slots = {}
+        slots['NAME'] = 'reset'
+        slots['ARGUMENTS'] = 'self'
+        slots['BODY'] = '\n'.join(tabber(x) for x in tmpl)
+        pyfun = RED_DEF_TEMPLATE.format(**slots)
+        red = RedBaron(pyfun)
+        fun = FuncConv(self, red.defnode)
+        pass
+
 
     def __str__(self):
         slots = dict()

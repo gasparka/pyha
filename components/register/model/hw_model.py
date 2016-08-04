@@ -5,16 +5,9 @@ from misc.metaclass.hwsim import HW
 class Register(HW):
 
     def __init__(self, init_value=0.):
-        self.init_value = init_value
-        self.input_sfix = [Sfix(init_value, 0, -27)]
-
-        def reset():
-            self.a = Sfix(self.init_value, 0, -27)
-
-        reset()
-
-    def reset(self):
-        self.a = Sfix(self.init_value, 0, -27)
+        # self.init_value = init_value
+        # self.input_sfix = [Sfix(init_value, 0, -27)]
+        self.a = Sfix(init_value, 0, -27)
 
     @property
     def delay(self):

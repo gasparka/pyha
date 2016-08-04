@@ -47,3 +47,8 @@ procedure {NAME}({ARGUMENTS});
 # {BODY}
 # end procedure;
 # """
+
+RED_DEF_TEMPLATE = """
+def {NAME}({ARGUMENTS}):
+{BODY}
+"""
