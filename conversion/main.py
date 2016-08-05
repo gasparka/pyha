@@ -1,4 +1,4 @@
-import logging
+# import logging
 from copy import copy
 
 from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, AssignmentNode, AtomtrailersNode, ReturnNode
@@ -12,10 +12,15 @@ from misc.metaclass.hwsim import HW
 
 # from register.model.hw_model import Register
 
-logging.basicConfig(level=logging.INFO)
+import logging
+from autologging import TRACE, traced
+
+logging.basicConfig(level=TRACE,
+                    format="%(levelname)s:%(name)s:%(funcName)s:%(message)s")
 logger = logging.getLogger(__name__)
 
 
+@traced
 class NameConv:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
                            'array', 'assert', 'attribute', 'begin', 'block', 'body',
@@ -59,6 +64,7 @@ class NameConv:
 
 class AtomtrailersConv:
     def __init__(self, parent, red_node: AssignmentNode):
+        # logger.info('Atomtrailers conversion of {}'. format(red_node))
         self.red_node = red_node
         self.parent = parent
 
@@ -98,6 +104,7 @@ class AssignmentConv:
         return '{} := {};'.format(self.target, self.value)
 
 
+@traced
 class FuncConv:
     def __init__(self, parent: 'ClassConv', red_node: DefNode):
         self.red_node = red_node
@@ -197,7 +204,7 @@ class ClassConv:
     init_prefix = 'init_reset'
     def __init__(self, obj, ref_node: ClassNode):
         self.name = NameConv(None, None, explicit_name=obj.__class__.__name__)
-        logger.info('Converting class: {}'.format(self.name))
+        # logger.info('Converting class: {}'.format(self.name))
 
         self.ref_node = ref_node
         self.obj = obj
@@ -214,15 +221,16 @@ class ClassConv:
                 type = 'sfixed({} downto {})'.format(val.left, val.right)
                 regs += ['{}: {};'.format(name, type)]
                 reg_inits += ['{}_{}: {};'.format(self.init_prefix, name, type)]
-            else:
-                logger.info('self_t ignoring {}:{}, not convertable'.format(key, val))
+                # else:
+                # logger.info('self_t ignoring {}:{}, not convertable'.format(key, val))
 
-        logger.info('self_t collected following registers:{}'.format(regs))
+        # logger.info('self_t collected following registers:{}'.format(regs))
         return regs, reg_inits
 
     def convert_functions(self):
-        rst_func = self.make_reset_function()
-        funcs = [rst_func]
+        # rst_func = self.make_reset_function()
+        # funcs = [rst_func]
+        funcs = []
         for func in self.ref_node('def'):
             if func.name == '__call__':
                 funcs += [FuncConv(self, func)]
@@ -241,7 +249,8 @@ class ClassConv:
         tmpl = []
         for key, val in self.obj.__dict__.items():
             if isinstance(val, Sfix):
-                tmpl += ['self.{name} = self.{ip}_{name}'.format(ip=self.init_prefix, name=key)]
+                value = 'to_sfixed({}, {}, {})'.format(val, val.left, val.right)
+                tmpl += ['self.{} = {}'.format(key, value)]
             elif key in ['next']:
                 continue
             else:

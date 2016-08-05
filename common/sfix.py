@@ -1,9 +1,8 @@
-import logging
-
 import numpy as np
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 
 def resize(fix, type, overflow_style='SATURATE'):

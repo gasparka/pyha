@@ -18,21 +18,10 @@ package \Register\ is
 		init_reset_a: sfixed(0 downto -27);
 	end record;
 	
-	procedure reset(self: inout self_t);
-	
 	procedure call(self: inout self_t; \next\: sfixed; ret_0: out sfixed);
 end package;
 
 package body \Register\ is
-	
-	procedure reset(self: inout self_t) is
-		variable self_next: self_t;
-	begin
-		self_next := self;
-		self.a := self.init_reset_a;
-		self := self_next;
-	end procedure;
-
 	
 	procedure call(self: inout self_t; \next\: sfixed; ret_0: out sfixed) is
 		variable self_next: self_t;
