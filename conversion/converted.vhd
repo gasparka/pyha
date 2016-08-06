@@ -14,8 +14,6 @@ package \Register\ is
 	
 	type self_t is record
 		a: sfixed(0 downto -27);
-	
-		init_reset_a: sfixed(0 downto -27);
 	end record;
 	
 	procedure call(self: inout self_t; \next\: sfixed; ret_0: out sfixed);

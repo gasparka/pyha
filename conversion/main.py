@@ -1,11 +1,12 @@
 # import logging
 from copy import copy
 
-from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, AssignmentNode, AtomtrailersNode, ReturnNode
+from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, AssignmentNode, ReturnNode, \
+    Node, \
+    TupleNode
 
 from common.sfix import Sfix
-from common.util import tabber
-from components.register.model.hw_model import Register
+from common.util import tabber, get_iterable
 from conversion.templates import PACKAGE_TEMPLATE, RECORD_TEMPLATE, PROCEDURE_TEMPLATE, PROCEDURE_PROTO_TEMPLATE, \
     RED_DEF_TEMPLATE
 from misc.metaclass.hwsim import HW
@@ -13,15 +14,12 @@ from misc.metaclass.hwsim import HW
 # from register.model.hw_model import Register
 
 import logging
-from autologging import TRACE, traced
 
-logging.basicConfig(level=TRACE,
-                    format="%(levelname)s:%(name)s:%(funcName)s:%(message)s")
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@traced
-class NameConv:
+class NameNodeConv:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
                            'array', 'assert', 'attribute', 'begin', 'block', 'body',
                            'buffer', 'bus', 'case', 'component', 'configuration',
@@ -45,8 +43,8 @@ class NameConv:
 
     def parse_name(self):
         # vhdl is case insensitive
-        if self.in_name.lower() in NameConv.vhdl_reserved_names \
-                or self.in_name[0] == '_':  # first char is _
+        if self.in_name.lower() in self.vhdl_reserved_names \
+                or self.in_name[0] == '_':
             return '\{}\\'.format(self.in_name)  # "escape" reserved name
         return self.in_name
 
@@ -54,16 +52,8 @@ class NameConv:
         return self.valid_name
 
 
-# class VHDLObject:
-#     def __init__(self, name: str, type: str, direction=None, bit_range: Optional[tuple[int, int]] = None):
-#         self.bit_range = bit_range
-#         self.direction = direction
-#         self.type = type
-#         self.name = NameConv(name)
-
-
-class AtomtrailersConv:
-    def __init__(self, parent, red_node: AssignmentNode):
+class AtomtrailersNodeConv:
+    def __init__(self, red_node: AssignmentNode, parent=None):
         # logger.info('Atomtrailers conversion of {}'. format(red_node))
         self.red_node = red_node
         self.parent = parent
@@ -74,37 +64,37 @@ class AtomtrailersConv:
             tmpl[0].value = 'self_next'
             del tmpl[1]
 
-        self.nameconvs = []
-        for name in tmpl:
-            assert isinstance(name, NameNode)
-            name = NameConv(self, name)
-            self.nameconvs.append(name)
+        self.nodes = [red_to_conv_hub(x) for x in tmpl]
 
     def __str__(self):
-        return '.'.join(str(x) for x in self.nameconvs)
+        return '.'.join(str(x) for x in self.nodes)
 
 
-class AssignmentConv:
-    def __init__(self, parent: 'FuncConv', red_node: AssignmentNode):
+class TupleNodeConv:
+    def __init__(self, red_node: TupleNode, parent=None):
+        self.red_node = red_node
+        self.parent = parent
+        self.nodes = [red_to_conv_hub(x) for x in self.red_node]
+
+    def __iter__(self):
+        return iter(self.nodes)
+
+    def __str__(self):
+        return ','.join(str(x) for x in self.nodes)
+
+
+class AssignmentNodeConv:
+    def __init__(self, red_node: AssignmentNode, parent: 'FuncConv' = None):
         self.red_node = red_node
         self.parent = parent
 
-        self.target = self.name_like(self.red_node.target)
-        self.value = self.name_like(self.red_node.value)
-        pass
-
-    def name_like(self, node):
-        # example: self.next.a
-        if isinstance(node, AtomtrailersNode):
-            return AtomtrailersConv(self, node)
-        # NB: VARIABLE???
-        return NameConv(self, node)
+        self.target = red_to_conv_hub(self.red_node.target)
+        self.value = red_to_conv_hub(self.red_node.value)
 
     def __str__(self):
         return '{} := {};'.format(self.target, self.value)
 
 
-@traced
 class FuncConv:
     def __init__(self, parent: 'ClassConv', red_node: DefNode):
         self.red_node = red_node
@@ -113,7 +103,7 @@ class FuncConv:
         if red_node.name == '__call__':
             self.name = 'call'
         else:
-            self.name = NameConv(explicit_name=red_node.name)
+            self.name = NameNoneConv(explicit_name=red_node.name)
 
         self.parent = parent
 
@@ -129,7 +119,7 @@ class FuncConv:
     def collect_arguments(self):
         arguments = []
         for arg in self.red_node.arguments:
-            name = NameConv(self, arg.target)
+            name = NameNoneConv(self, arg.target)
             if str(name) == 'self':
                 arguments.append('{}: inout self_t'.format(name))
             else:
@@ -142,7 +132,7 @@ class FuncConv:
         rets = [x for x in self.code if isinstance(x, ReturnConv)]
         if len(rets) == 0:
             return None
-        assert len(rets) <= 1  # multiple returns or none?
+        assert len(rets) <= 1
         ret_vars = len(rets[0].ret_names)
 
         tmpl = ['ret_{}'.format(i) for i in range(ret_vars)]
@@ -181,51 +171,44 @@ class FuncConv:
         return PROCEDURE_TEMPLATE.format(**slots)
 
 
-class ReturnConv:
-    def __init__(self, parent: FuncConv, red_node: AssignmentNode):
+class ReturnNodeConv:
+    def __init__(self, red_node: AssignmentNode, parent: FuncConv = None):
         self.red_node = red_node
         self.parent = parent
 
-        self.ret_names = []
-        if isinstance(self.red_node.value, AtomtrailersNode):
-            self.ret_names += [AtomtrailersConv(self, self.red_node.value)]
-        else:
-            raise Exception()
+        self.ret_names = get_iterable(red_to_conv_hub(self.red_node.value))
 
     def __str__(self):
-        tmp = []
-        for i, ret in enumerate(self.ret_names):
-            str = 'ret_{} := {};'.format(i, ret)
-            tmp += [str]
-        return ''.join(tmp)
+        str = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(self.ret_names)]
+        return '\n'.join(str)
 
 
 class ClassConv:
     init_prefix = 'init_reset'
+
     def __init__(self, obj, ref_node: ClassNode):
-        self.name = NameConv(None, None, explicit_name=obj.__class__.__name__)
+        self.name = NameNoneConv(None, None, explicit_name=obj.__class__.__name__)
         # logger.info('Converting class: {}'.format(self.name))
 
         self.ref_node = ref_node
         self.obj = obj
 
-        self.registers, self.register_inits = self.collect_self_t()
+        self.registers = self.collect_self_t()
         self.functions = self.convert_functions()
 
     def collect_self_t(self):
         regs = []
-        reg_inits = []
         for key, val in self.obj.__dict__.items():
             if isinstance(val, Sfix):
-                name = NameConv(self, red_node=None, explicit_name=key)
+                name = NameNoneConv(self, red_node=None, explicit_name=key)
                 type = 'sfixed({} downto {})'.format(val.left, val.right)
-                regs += ['{}: {};'.format(name, type)]
-                reg_inits += ['{}_{}: {};'.format(self.init_prefix, name, type)]
-                # else:
-                # logger.info('self_t ignoring {}:{}, not convertable'.format(key, val))
+                regs.append('{}: {};'.format(name, type))
+            elif key in ['next']:
+                continue
+            else:
+                raise Exception()
 
-        # logger.info('self_t collected following registers:{}'.format(regs))
-        return regs, reg_inits
+        return regs
 
     def convert_functions(self):
         # rst_func = self.make_reset_function()
@@ -241,8 +224,6 @@ class ClassConv:
         slots = {}
         slots['NAME'] = 'self_t'
         slots['MEMBERS'] = '\n'.join(tabber(x) for x in self.registers)
-        slots['MEMBERS'] += '\n\n'
-        slots['MEMBERS'] += '\n'.join(tabber(x) for x in self.register_inits)
         return RECORD_TEMPLATE.format(**slots)
 
     def make_reset_function(self):
@@ -264,8 +245,6 @@ class ClassConv:
         red = RedBaron(pyfun)
         return FuncConv(self, red.defnode)
 
-
-
     def __str__(self):
         slots = dict()
         slots['NAME'] = self.name
@@ -273,9 +252,6 @@ class ClassConv:
         slots['HEADER'] = '\n'.join(tabber(x.get_prototype()) for x in self.functions)
         slots['BODY'] = '\n\n'.join(tabber(str(x)) for x in self.functions) + '\n'
         return PACKAGE_TEMPLATE.format(**slots)
-
-
-
 
 
 def main(root_obj):
@@ -304,8 +280,8 @@ def main(root_obj):
     pass
 
 
-r = Register()
-main(r)
+# r = Register()
+# main(r)
 # path = '/home/gaspar/git/hwpy/components/register/model/hw_model.py'
 # file_content = open(path).read()
 #
@@ -315,4 +291,91 @@ main(r)
 #
 # ret = convert_classnode(cls[0])
 
-pass
+class NodeConv:
+    def __init__(self, red_node, parent=None):
+        self.red_node = red_node
+        self.parent = parent
+        try:
+            self.nodes = [red_to_conv_hub(x) for x in self.red_node]
+        except TypeError:
+            self.nodes = None
+
+        for x in red_node._dict_keys:
+            self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x])
+
+        for x in red_node._list_keys:
+            if x == 'value':
+                self.__dict__[x] = []
+                for xj in red_node.__dict__[x]:
+                    self.__dict__[x].append(red_to_conv_hub(xj))
+
+        # FIXME: possible bug, need to process strgins?
+        for x in red_node._str_keys:
+            self.__dict__[x] = red_node.__dict__[x]
+
+    def __iter__(self):
+        return iter(self.nodes)
+
+    def __str__(self):
+        return str(self.red_node)
+
+
+class ComparisonNodeConv(NodeConv):
+    def __str__(self):
+        return '{} {} {}'.format(self.first, self.value, self.second)
+
+
+class BinaryOperatorNodeConv(ComparisonNodeConv):
+    pass
+
+
+class BooleanOperatorNodeConv(ComparisonNodeConv):
+    pass
+
+
+class ComparisonOperatorNodeConv(NodeConv):
+    def __str__(self):
+        # VHDL has  '=' for '=='
+        if self.first == '==':
+            return '='
+        # VHDL has retarded '/=' for '!='
+        elif self.first == '!=':
+            return '/='
+        else:
+            return super().__str__()
+
+
+class IfelseblockNodeConv(NodeConv):
+    def __str__(self):
+        body = '\n'.join(str(x) for x in self.value)
+        return body + '\nend if;'
+
+
+class IfNodeConv(NodeConv):
+    def __str__(self):
+        body = '\n'.join(tabber(str(x)) for x in self.value)
+        return 'if {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
+
+
+class ElseNodeConv(NodeConv):
+    def __str__(self):
+        body = '\n'.join(tabber(str(x)) for x in self.value)
+        return 'else\n{BODY}'.format(BODY=body)
+
+
+class DefNodeConv(NodeConv):
+    pass
+
+
+def red_to_conv_hub(red: Node):
+    """ Convert RedBaron class to conversion class
+    For example: red:NameNode returns NameNodeConv class
+    """
+    import sys
+
+    red_type = red.__class__.__name__
+    cls = getattr(sys.modules[__name__], red_type + 'Conv')
+    # if cls is None:
+    #     return NodeConv(red_node=red)
+
+    return cls(red_node=red)
