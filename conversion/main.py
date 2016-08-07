@@ -1,4 +1,5 @@
 # import logging
+import textwrap
 from copy import copy
 
 from redbaron import RedBaron, ClassNode, inspect, DefNode, NameNode, AssignmentNode, ReturnNode, \
@@ -295,16 +296,16 @@ class NodeConv:
     def __init__(self, red_node, parent=None):
         self.red_node = red_node
         self.parent = parent
-        try:
-            self.nodes = [red_to_conv_hub(x) for x in self.red_node]
-        except TypeError:
-            self.nodes = None
+        # try:
+        #     self.nodes = [red_to_conv_hub(x) for x in self.red_node]
+        # except TypeError:
+        #     self.nodes = None
 
         for x in red_node._dict_keys:
             self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x])
 
         for x in red_node._list_keys:
-            if x == 'value':
+            if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
                     self.__dict__[x].append(red_to_conv_hub(xj))
@@ -313,8 +314,8 @@ class NodeConv:
         for x in red_node._str_keys:
             self.__dict__[x] = red_node.__dict__[x]
 
-    def __iter__(self):
-        return iter(self.nodes)
+    # def __iter__(self):
+    #     return iter(self.nodes)
 
     def __str__(self):
         return str(self.red_node)
@@ -331,6 +332,11 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
 
 class BooleanOperatorNodeConv(ComparisonNodeConv):
     pass
+
+
+class AssociativeParenthesisNodeConv(NodeConv):
+    def __str__(self):
+        return '({})'.format(self.value)
 
 
 class ComparisonOperatorNodeConv(NodeConv):
@@ -363,8 +369,86 @@ class ElseNodeConv(NodeConv):
         return 'else\n{BODY}'.format(BODY=body)
 
 
+class ElifNodeConv(NodeConv):
+    def __str__(self):
+        body = '\n'.join(tabber(str(x)) for x in self.value)
+        return 'elseif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
+
+
 class DefNodeConv(NodeConv):
-    pass
+    def infer_variables(self):
+        assigns = self.red_node.value('assign')
+        self.variables = [VHDLVariable(NameNodeConv(red_node=x.target)) for x in assigns if
+                          isinstance(x.target, NameNode)]
+
+        # retarded code to eliminate duplicate names
+        tmp = []
+        for x in self.variables:
+            names = [str(x.name) for x in tmp]
+            if str(x.name) not in names:
+                tmp.append(x)
+        self.variables = tmp
+
+        # remove variables that are actually arguments
+        args = [str(x.target.name) for x in self.arguments]
+        self.variables = [x for x in self.variables if str(x.name) not in args]
+
+    def __str__(self):
+        PROCEDURE_TEMPLATE = textwrap.dedent("""\
+            procedure {NAME}{ARGUMENTS} is
+            {VARIABLES}
+            begin
+            {BODY}
+            end procedure;""")
+        sockets = {}
+        sockets['NAME'] = self.name
+
+        sockets['ARGUMENTS'] = ''
+        if len(self.arguments):
+            sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
+
+        self.infer_variables()
+        sockets['VARIABLES'] = ''
+        if len(self.variables):
+            sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
+
+        sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+        return PROCEDURE_TEMPLATE.format(**sockets)
+
+
+class VHDLType:
+    # TODO: All instances must be recorded for later type recovery
+    def __init__(self, name: NameNodeConv, type: str = None, dir: str = None):
+        self.dir = dir
+        self.type = type
+        self.name = name
+
+    def __str__(self):
+        type = self.type or 'unknown_type'
+        dir = self.dir or ''
+        str = '{}:{} {}'.format(self.name, dir, type)
+        return str
+
+
+class VHDLVariable(VHDLType):
+    def __str__(self):
+        sup = super().__str__()
+        return 'variable ' + sup + ';'
+
+
+class DefArgumentNodeConv(NodeConv):
+    def __init__(self, red_node, parent=None):
+        super().__init__(red_node, parent)
+        self.target = VHDLType(name=self.target)
+
+    def __str__(self):
+        return str(self.target)
+
+
+class PassNodeConv(NodeConv):
+    # thats not really working in vhdl i guess
+    def __str__(self):
+        return ''
 
 
 def red_to_conv_hub(red: Node):
@@ -373,9 +457,12 @@ def red_to_conv_hub(red: Node):
     """
     import sys
 
-    red_type = red.__class__.__name__
-    cls = getattr(sys.modules[__name__], red_type + 'Conv')
-    # if cls is None:
-    #     return NodeConv(red_node=red)
+    try:
+        red_type = red.__class__.__name__
+        cls = getattr(sys.modules[__name__], red_type + 'Conv')
+    except AttributeError:
+        if red_type == 'NoneType':
+            return None
+        raise
 
     return cls(red_node=red)

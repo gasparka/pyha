@@ -148,19 +148,43 @@ def test_or(converter):
     assert str(conv) == 'a or b'
 
 
+def test_assign_boolean(converter):
+    code = 'a = val < b or val > a'
+    conv = converter(code)
+    assert str(conv) == 'a := val < b or val > a;'
+
+
+def test_assign_associative_boolean(converter):
+    code = 'a = b == c and (val < b or val > a)'
+    conv = converter(code)
+    assert str(conv) == 'a := b = c and (val < b or val > a);'
+
+
 def test_if_single_body(converter):
     code = """if a:
         a = b"""
+    expect = """\
+        if a then
+            a := b;
+        end if;"""
+    expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == 'if a then\n\ta := b;\nend if;'
+    assert str(conv) == expect
 
 
 def test_if_two_statements(converter):
-    code = """if a:
-        a = b
-        b = a"""
+    code = """\
+        if a:
+            a = b
+            b = a"""
+    expect = """\
+        if a then
+            a := b;
+            b := a;
+        end if;"""
+    expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == 'if a then\n\ta := b;\n\tb := a;\nend if;'
+    assert str(conv) == expect
 
 
 def test_if_single_nested(converter):
@@ -170,12 +194,12 @@ def test_if_single_nested(converter):
             if b:
                 b = c"""
     expect = """\
-		if a then
-			a := b;
-			if b then
-				b := c;
-			end if;
-		end if;"""
+        if a then
+            a := b;
+            if b then
+                b := c;
+            end if;
+        end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
     assert str(conv) == expect
@@ -189,11 +213,261 @@ def test_if_else(converter):
             b = a"""
 
     expect = """\
-		if a then
-			a := b;
-		else
-			b := a;
-		end if;"""
+        if a then
+            a := b;
+        else
+            b := a;
+        end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
     assert str(conv) == expect
+
+
+def test_if_elif(converter):
+    code = """\
+        if a:
+            a = b
+        elif b:
+            b = a"""
+
+    expect = """\
+        if a then
+            a := b;
+        elseif b then
+            b := a;
+        end if;"""
+    expect = textwrap.dedent(expect)
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_if_complex(converter):
+    code = """\
+        if a == b and c != self.next.b:
+            if a != c:
+                b = a
+            elif next == c or a != b:
+                a = b
+            else:
+                next = a
+        else:
+            b = a"""
+
+    expect = """\
+        if a = b and c /= self_next.b then
+            if a /= c then
+                b := a;
+            elseif \\next\\ = c or a /= b then
+                a := b;
+            else
+                \\next\\ := a;
+            end if;
+        else
+            b := a;
+        end if;"""
+    expect = textwrap.dedent(expect)
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def(converter):
+    code = textwrap.dedent("""\
+        def a():
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_statements(converter):
+    code = textwrap.dedent("""\
+        def a():
+            a = b
+            if a == b:
+                c = a""")
+
+    # FIXME: variables missing
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            a := b;
+            if a = b then
+                c := a;
+            end if;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_argument(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+
+        begin
+
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_argument_multiple(converter):
+    code = textwrap.dedent("""\
+        def a(b, c, d):
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type; c: unknown_type; d: unknown_type) is
+
+        begin
+
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            a = b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+            variable a: unknown_type;
+        begin
+            a := b;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_reject_because_argument(converter):
+    # no variable infered because assignment is to argument
+    code = textwrap.dedent("""\
+        def a(b):
+            b = l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+
+        begin
+            b := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_reject_because_argument_reserved(converter):
+    # no variable infered because assignment is to argument
+    code = textwrap.dedent("""\
+        def a(next):
+            next = l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(\\next\\: unknown_type) is
+
+        begin
+            \\next\\ := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_reserved_name(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            next = l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+            variable \\next\\: unknown_type;
+        begin
+            \\next\\ := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_dublicate(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            x = l
+            x = b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+            variable x: unknown_type;
+        begin
+            x := l;
+            x := b;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_multiple(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            next = l
+            a = c
+            l = h""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+            variable \\next\\: unknown_type;
+            variable a: unknown_type;
+            variable l: unknown_type;
+        begin
+            \\next\\ := l;
+            a := c;
+            l := h;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_atomtrailer(converter):
+    # NOTE: trailered assigns are not converted to variables
+    # because the base unit should already exist
+    code = textwrap.dedent("""\
+        def a(b):
+            c.d = l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type) is
+
+        begin
+            c.d := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_atomtrailer_argument(converter):
+    # NOTE: trailered assigns are not converted to variables
+    # because the base unit should already exist
+    code = textwrap.dedent("""\
+        def a(self):
+            self.d = l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(self: unknown_type) is
+
+        begin
+            self.d := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+# TODO function calls
+# TODO for loops
