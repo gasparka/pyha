@@ -288,18 +288,17 @@ def test_def(converter):
 def test_def_statements(converter):
     code = textwrap.dedent("""\
         def a():
-            a = b
+            b
             if a == b:
-                c = a""")
+                b""")
 
-    # FIXME: variables missing
     expect = textwrap.dedent("""\
         procedure a is
 
         begin
-            a := b;
+            b
             if a = b then
-                c := a;
+                b
             end if;
         end procedure;""")
     conv = converter(code)
@@ -321,6 +320,20 @@ def test_def_argument(converter):
     assert str(conv) == expect
 
 
+def test_def_argument_default_value(converter):
+    code = textwrap.dedent("""\
+        def a(b=c):
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type:=c) is
+
+        begin
+
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 def test_def_argument_multiple(converter):
     code = textwrap.dedent("""\
         def a(b, c, d):
@@ -331,6 +344,38 @@ def test_def_argument_multiple(converter):
 
         begin
 
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_argument_return(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type) is
+
+        begin
+            ret_0 := b;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_argument_return_multiple(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return b, c, l < g""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type; ret_1:out unknown_type; ret_2:out unknown_type) is
+
+        begin
+            ret_0 := b;
+            ret_1 := c;
+            ret_2 := l < g;
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect
@@ -393,6 +438,22 @@ def test_def_infer_variable_reserved_name(converter):
             variable \\next\\: unknown_type;
         begin
             \\next\\ := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_infer_variable_return(converter):
+    # make sure return is not infered as variable
+    code = textwrap.dedent("""\
+        def a(b):
+            return l""")
+
+    expect = textwrap.dedent("""\
+        procedure a(b: unknown_type; ret_0:out unknown_type) is
+
+        begin
+            ret_0 := l;
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect
@@ -465,6 +526,26 @@ def test_def_infer_variable_atomtrailer_argument(converter):
 
         begin
             self.d := l;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_def_complex(converter):
+    code = textwrap.dedent("""\
+        def a(self, a, b=next):
+            o = h
+            self.a = l
+            return a, self.next.b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(self: unknown_type; a: unknown_type; b: unknown_type:=\\next\\; ret_0:out unknown_type; ret_1:out unknown_type) is
+            variable o: unknown_type;
+        begin
+            o := h;
+            self.a := l;
+            ret_0 := a;
+            ret_1 := self_next.b;
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect

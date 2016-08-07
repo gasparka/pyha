@@ -30,6 +30,9 @@
           <option value="conversion.main.IfNodeConv.*" />
           <option value="conversion.main.IfelseblockNodeConv.*" />
           <option value="conversion.main.DefNodeConv.*" />
+          <option value="conversion.main.AtomtrailersNodeConv.*" />
+          <option value="conversion.main.TupleNodeConv.*" />
+          <option value="conversion.main.AssignmentNodeConv.*" />
         </list>
       </option>
     </inspection_tool>
