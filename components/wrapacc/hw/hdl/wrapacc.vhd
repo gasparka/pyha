@@ -25,7 +25,7 @@ package body WrapAcc is
 
   procedure reset(self: inout self_t) is
   begin
-self.counter := to_sfixed(-1.0, self.counter);
+    self.counter := to_sfixed(-1.0, self.counter);
     self.is_wrap := False;
   end procedure;
 

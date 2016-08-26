@@ -5,8 +5,8 @@ import numpy as np
 # logger = logging.getLogger(__name__)
 
 
-def resize(fix, type, overflow_style='SATURATE'):
-    return fix.resize(type=type, overflow_style=overflow_style)
+def resize(fix, left=0, right=0, type=None, overflow_style='SATURATE'):
+    return fix.resize(left, right, type, overflow_style=overflow_style)
 
 
 

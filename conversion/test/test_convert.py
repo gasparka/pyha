@@ -550,5 +550,28 @@ def test_def_complex(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
+def test_call_resize(converter):
+    code = textwrap.dedent("""\
+            resize(self.counter, 0, -17)""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, 0, -17)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_resize_type(converter):
+    code = textwrap.dedent("""\
+            resize(self.counter, type=a)""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, a)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+
 # TODO function calls
-# TODO for loops
+
+# TODO for loops - seems quite rare element, so do later

@@ -21,9 +21,12 @@ end package;
 
 package body \Register\ is
 
-	procedure call(self: inout self_t; \next\: sfixed := 0; ret_0: out sfixed) is
+	procedure call(self: inout self_t; \next\: sfixed; ret_0: out sfixed) is
 		variable self_next: self_t;
 	begin
+    if True then
+
+    end if;
 		self_next := self;
 		self_next.a := \next\;
 		ret_0 := self.a;

@@ -24,7 +24,7 @@ class NodeConv:
                 for xj in red_node.__dict__[x]:
                     self.__dict__[x].append(red_to_conv_hub(xj))
 
-        # FIXME: possible bug, need to process strgins?
+        # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:
             self.__dict__[x] = red_node.__dict__[x]
 
@@ -64,6 +64,9 @@ class NameNodeConv(NodeConv):
 
 
 class AtomtrailersNodeConv(NodeConv):
+    def is_function_call(self):
+        return any(isinstance(x, CallNodeConv) for x in self.value)
+
     def __str__(self):
         # is 'self.next' -> convert to single 'self_next' name
         tmpl = [copy(x) for x in self.value]
@@ -71,6 +74,8 @@ class AtomtrailersNodeConv(NodeConv):
             tmpl[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
             del tmpl[1]
 
+        if self.is_function_call():
+            return ''.join(str(x) for x in tmpl)
         return '.'.join(str(x) for x in tmpl)
 
 
@@ -113,10 +118,8 @@ class AssociativeParenthesisNodeConv(NodeConv):
 
 class ComparisonOperatorNodeConv(NodeConv):
     def __str__(self):
-        # VHDL has  '=' for '=='
         if self.first == '==':
             return '='
-        # VHDL has retarded '/=' for '!='
         elif self.first == '!=':
             return '/='
         else:
@@ -192,8 +195,7 @@ class DefNodeConv(NodeConv):
             begin
             {BODY}
             end procedure;""")
-        sockets = {}
-        sockets['NAME'] = self.name
+        sockets = {'NAME': self.name}
 
         self.infer_return_arguments()
         sockets['ARGUMENTS'] = ''
@@ -249,9 +251,38 @@ class DefArgumentNodeConv(NodeConv):
 
 
 class PassNodeConv(NodeConv):
-    # thats not really working in vhdl i guess
     def __str__(self):
         return ''
+
+
+class CallNodeConv(NodeConv):
+    def __str__(self):
+        return '(' + ', '.join(str(x) for x in self.value) + ')'
+
+
+class CallArgumentNodeConv(NodeConv):
+    def function_name(self):
+        return self.red_node.parent.parent.value[0].value
+
+    def __str__(self):
+
+        # VHDL has function overloading, get rid of type keyword if present
+        try:
+            if self.function_name() == 'resize' and self.target.value == 'type':
+                return str(self.value)
+        except:
+            pass
+        return super().__str__()
+
+    pass
+
+
+class IntNodeConv(NodeConv):
+    pass
+
+
+class UnitaryOperatorNodeConv(NodeConv):
+    pass
 
 
 def red_to_conv_hub(red: Node):
