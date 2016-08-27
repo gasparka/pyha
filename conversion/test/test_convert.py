@@ -1,9 +1,8 @@
 import textwrap
 
 import pytest
-from redbaron import RedBaron
-
 from conversion.main import red_to_conv_hub
+from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -11,7 +10,7 @@ def converter():
     class Conv:
         def __call__(self, code):
             red = RedBaron(code)
-            return red_to_conv_hub(red[0])
+            return red_to_conv_hub(red[0], caller=self)
 
     return Conv()
 
@@ -561,17 +560,96 @@ def test_call_resize(converter):
     assert str(conv) == expect
 
 
-def test_call_resize_type(converter):
+def test_call_resize_keyword_params(converter):
     code = textwrap.dedent("""\
-            resize(self.counter, type=a)""")
+            resize(self.counter, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
 
     expect = textwrap.dedent("""\
-            resize(self.counter, a)""")
+            resize(self.counter, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
     conv = converter(code)
     assert str(conv) == expect
 
 
+def test_call_sfix(converter):
+    code = textwrap.dedent("""\
+            Sfix(0.95, 0, -17)""")
 
+    expect = textwrap.dedent("""\
+            to_sfixed(0.95, 0, -17)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_sfix_keyword_params(converter):
+    code = textwrap.dedent("""\
+            Sfix(0.95, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
+
+    expect = textwrap.dedent("""\
+            to_sfixed(0.95, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_resize_sfix_combined(converter):
+    code = textwrap.dedent("""\
+            counter_small = resize(Sfix(0, 0, -self.scalebits + 1), size_res=a)""")
+
+    expect = textwrap.dedent("""\
+            counter_small := resize(to_sfixed(0, 0, -self.scalebits + 1), size_res=>a);""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing(converter):
+    code = textwrap.dedent("""\
+            a[1]""")
+
+    expect = textwrap.dedent("""\
+            a(1)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_inc(converter):
+    code = textwrap.dedent("""\
+            a[b + 1]""")
+
+    expect = textwrap.dedent("""\
+            a(b + 1)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_negative_index(converter):
+    code = textwrap.dedent("""\
+            a[-1]""")
+
+    expect = textwrap.dedent("""\
+            a(a'length-1)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_negative_index2(converter):
+    code = textwrap.dedent("""\
+            self.var[-4]""")
+
+    expect = textwrap.dedent("""\
+            self.var(self.var'length-4)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_negative_index3(converter):
+    code = textwrap.dedent("""\
+            self.next.var[-4]""")
+
+    expect = textwrap.dedent("""\
+            self_next.var(self_next.var'length-4)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+# TODO class conversion
 # TODO function calls
 
 # TODO for loops - seems quite rare element, so do later

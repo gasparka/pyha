@@ -1,10 +1,8 @@
 import logging
 import textwrap
-from copy import copy
-
-from redbaron import NameNode, Node
 
 from common.util import tabber, get_iterable
+from redbaron import NameNode, Node
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,13 +14,13 @@ class NodeConv:
         self.parent = parent
 
         for x in red_node._dict_keys:
-            self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x])
+            self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x], caller=self)
 
         for x in red_node._list_keys:
             if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
-                    self.__dict__[x].append(red_to_conv_hub(xj))
+                    self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
         # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:
@@ -67,16 +65,47 @@ class AtomtrailersNodeConv(NodeConv):
     def is_function_call(self):
         return any(isinstance(x, CallNodeConv) for x in self.value)
 
+    def is_indexing(self):
+        return any(isinstance(x, GetitemNodeConv) for x in self.value)
+
     def __str__(self):
         # is 'self.next' -> convert to single 'self_next' name
-        tmpl = [copy(x) for x in self.value]
-        if str(tmpl[0]) == 'self' and str(tmpl[1]) == '\\next\\':
-            tmpl[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
-            del tmpl[1]
+        # tmpl = [copy(x) for x in self.value]
+        # if str(tmpl[0]) == 'self' and str(tmpl[1]) == '\\next\\':
+        #     tmpl[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
+        #     del tmpl[1]
+        #
+        # if self.is_function_call():
+        #     if tmpl[0].in_name == 'Sfix':
+        #         tmpl[0].in_name = 'to_sfixed'
+        #     # return ''.join(str(x) for x in tmpl)
+        #
+        # ret = str()
+        # for x in tmpl:
+        #     if isinstance(x, NameNodeConv):
+        #         ret += '.'
+        #     ret += str(x)
+        # if ret[0] == '.':
+        #     ret = ret[1:]
+
+        if str(self.value[0]) == 'self' and str(self.value[1]) == '\\next\\':
+            self.value[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
+            del self.value[1]
 
         if self.is_function_call():
-            return ''.join(str(x) for x in tmpl)
-        return '.'.join(str(x) for x in tmpl)
+            if self.value[0].in_name == 'Sfix':
+                self.value[0].in_name = 'to_sfixed'
+                # return ''.join(str(x) for x in tmpl)
+
+        ret = str()
+        for x in self.value:
+            if isinstance(x, NameNodeConv):
+                ret += '.'
+            ret += str(x)
+        if ret[0] == '.':
+            ret = ret[1:]
+
+        return ret
 
 
 class TupleNodeConv(NodeConv):
@@ -261,18 +290,16 @@ class CallNodeConv(NodeConv):
 
 
 class CallArgumentNodeConv(NodeConv):
-    def function_name(self):
-        return self.red_node.parent.parent.value[0].value
+    # def function_name(self):
+    #     return self.red_node.parent.parent.value[0].value
 
     def __str__(self):
+        # transform keyword arguments
+        # change = to =>
+        if self.target is not None:
+            return '{}=>{}'.format(self.target, self.value)
 
-        # VHDL has function overloading, get rid of type keyword if present
-        try:
-            if self.function_name() == 'resize' and self.target.value == 'type':
-                return str(self.value)
-        except:
-            pass
-        return super().__str__()
+        return str(self.value)
 
     pass
 
@@ -281,11 +308,30 @@ class IntNodeConv(NodeConv):
     pass
 
 
+class FloatNodeConv(NodeConv):
+    pass
+
+
 class UnitaryOperatorNodeConv(NodeConv):
     pass
 
 
-def red_to_conv_hub(red: Node):
+# this is mostly array indexing
+class GetitemNodeConv(NodeConv):
+    # turn python [] indexing to () indexing
+
+    def get_index_target(self):
+        return '.'.join(str(x) for x in self.parent.value[:-1])
+
+    def __str__(self):
+        if isinstance(self.value, UnitaryOperatorNodeConv) and int(str(self.value)) < 0:
+            target = self.get_index_target()
+            return "({}'length{})".format(target, self.value)
+
+        return '({})'.format(self.value)
+
+
+def red_to_conv_hub(red: Node, caller):
     """ Convert RedBaron class to conversion class
     For example: red:NameNode returns NameNodeConv class
     """
@@ -299,4 +345,4 @@ def red_to_conv_hub(red: Node):
             return None
         raise
 
-    return cls(red_node=red)
+    return cls(red_node=red, parent=caller)

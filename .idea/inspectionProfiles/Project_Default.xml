@@ -40,6 +40,8 @@
           <option value="conversion.main.CallNodeConv.*" />
           <option value="conversion.main.CallNodeConv.values" />
           <option value="conversion.main.CallNodeConv.value" />
+          <option value="conversion.main.CallArgumentNodeConv.*" />
+          <option value="conversion.main.GetitemNodeConv.*" />
         </list>
       </option>
     </inspection_tool>
