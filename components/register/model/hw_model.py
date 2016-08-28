@@ -16,3 +16,8 @@ class Register(HW):
     def __call__(self, next):
         self.next.a = next
         return self.a
+
+
+class Tc(HW):
+    def __call__(self):
+        return 0

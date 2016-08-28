@@ -68,34 +68,51 @@ class AtomtrailersNodeConv(NodeConv):
     def is_indexing(self):
         return any(isinstance(x, GetitemNodeConv) for x in self.value)
 
-    def __str__(self):
-        # is 'self.next' -> convert to single 'self_next' name
-        # tmpl = [copy(x) for x in self.value]
-        # if str(tmpl[0]) == 'self' and str(tmpl[1]) == '\\next\\':
-        #     tmpl[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
-        #     del tmpl[1]
-        #
-        # if self.is_function_call():
-        #     if tmpl[0].in_name == 'Sfix':
-        #         tmpl[0].in_name = 'to_sfixed'
-        #     # return ''.join(str(x) for x in tmpl)
-        #
-        # ret = str()
-        # for x in tmpl:
-        #     if isinstance(x, NameNodeConv):
-        #         ret += '.'
-        #     ret += str(x)
-        # if ret[0] == '.':
-        #     ret = ret[1:]
+    def convert_function_calls(self):
+        pass
 
+    def get_call(self):
+        return self.value[1]
+
+    def get_argument_pos(self, pos):
+        return self.get_call().value[pos].value
+
+    def get_argument_count(self):
+        return len(self.get_call().value)
+
+    def __str__(self):
         if str(self.value[0]) == 'self' and str(self.value[1]) == '\\next\\':
             self.value[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
             del self.value[1]
 
+        # TODO: good idea?
+        # idea: instead of transforming to vhdl style, create corresponding function mapping in vhdl.
+        # that is for range(0) just create vhdl function range(int)... problems with types.
         if self.is_function_call():
             if self.value[0].in_name == 'Sfix':
                 self.value[0].in_name = 'to_sfixed'
-                # return ''.join(str(x) for x in tmpl)
+            elif self.value[0].in_name == 'len':
+                return "{}'length".format('.'.join(str(x) for x in self.value[1:]))
+
+
+            elif self.value[0].in_name == 'range':
+                args = self.get_argument_count()
+                first_arg = self.get_argument_pos(0)
+                if args == 3 and self.get_argument_pos(2).value != '1':
+                    # could support, when implement in VHDL
+                    raise NotImplementedError('Range function not supported when step is not 1')
+                elif args == 3 or args == 2:
+                    second_arg = self.get_argument_pos(1)
+                    return '({} to {})'.format(first_arg, second_arg)
+                elif isinstance(first_arg, IntNodeConv):
+                    return '(0 to {})'.format(first_arg)
+                    # return True
+                elif self.get_argument_pos(0).value[0].value == 'len':  # hitler wrote this
+                    inner_atomtrailers = self.get_argument_pos(0)
+                    return "{}'range".format('.'.join(str(x) for x in inner_atomtrailers.value[1:]))
+                else:
+                    return "{}'range".format('.'.join(str(x) for x in self.value[1:]))
+
 
         ret = str()
         for x in self.value:
@@ -182,6 +199,7 @@ class ElifNodeConv(NodeConv):
 class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
+        self.name = NameNodeConv(red_node, explicit_name=self.name)
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -217,6 +235,15 @@ class DefNodeConv(NodeConv):
         args = [str(x.target.name) for x in self.arguments]
         return [x for x in variables if str(x.name) not in args]
 
+    def get_prototype(self):
+        sockets = {'NAME': self.name}
+        sockets['ARGUMENTS'] = ''
+        if len(self.arguments):
+            sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
+
+        return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
+
+
     def __str__(self):
         PROCEDURE_TEMPLATE = textwrap.dedent("""\
             procedure {NAME}{ARGUMENTS} is
@@ -226,12 +253,10 @@ class DefNodeConv(NodeConv):
             end procedure;""")
         sockets = {'NAME': self.name}
 
-        self.infer_return_arguments()
         sockets['ARGUMENTS'] = ''
         if len(self.arguments):
             sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
 
-        self.infer_variables()
         sockets['VARIABLES'] = ''
         if len(self.variables):
             sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
@@ -285,7 +310,14 @@ class PassNodeConv(NodeConv):
 
 
 class CallNodeConv(NodeConv):
+    # def function_name(self):
+    #     if isinstance(self.parent, AtomtrailersNodeConv):
+    #         return self.parent.value[0].value
+    #     assert 0
+
     def __str__(self):
+        # if self.function_name() == 'len':
+        #     return '(' + ', '.join(str(x) for x in self.value) + ')'
         return '(' + ', '.join(str(x) for x in self.value) + ')'
 
 
@@ -316,6 +348,9 @@ class UnitaryOperatorNodeConv(NodeConv):
     pass
 
 
+class EndlNodeConv(NodeConv):
+    pass
+
 # this is mostly array indexing
 class GetitemNodeConv(NodeConv):
     # turn python [] indexing to () indexing
@@ -330,6 +365,38 @@ class GetitemNodeConv(NodeConv):
 
         return '({})'.format(self.value)
 
+
+class ForNodeConv(NodeConv):
+    def __str__(self):
+        FOR_TEMPLATE = textwrap.dedent("""\
+                for {ITERATOR} in {RANGE} loop
+                {BODY}
+                end loop;""")
+        sockets = {'ITERATOR': str(self.iterator)}
+        sockets['RANGE'] = str(self.target)
+        sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+        return FOR_TEMPLATE.format(**sockets)
+
+
+class ClassNodeConv(NodeConv):
+    def __str__(self):
+        self.name = NameNodeConv(self.red_node, explicit_name=self.name)
+        CLASS_TEMPLATE = textwrap.dedent("""\
+            package {NAME} is
+            {SELF_T}
+            {FUNC_HEADERS}
+            end package;
+
+            package body {NAME} is
+            {BODY}
+            end package body;""")
+
+        sockets = {}
+        sockets['NAME'] = str(self.name)
+        sockets['SELF_T'] = ''
+        sockets['FUNC_HEADERS'] = '\n'.join(tabber(x.get_prototype()) for x in self.value)
+        sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+        return CLASS_TEMPLATE.format(**sockets)
 
 def red_to_conv_hub(red: Node, caller):
     """ Convert RedBaron class to conversion class

@@ -284,6 +284,21 @@ def test_def(converter):
     assert str(conv) == expect
 
 
+def test_def_reserver_name(converter):
+    code = textwrap.dedent("""\
+        def label():
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure \\label\\ is
+
+        begin
+
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
 def test_def_statements(converter):
     code = textwrap.dedent("""\
         def a():
@@ -560,6 +575,15 @@ def test_call_resize(converter):
     assert str(conv) == expect
 
 
+def test_call_resize_size_res(converter):
+    code = textwrap.dedent("""\
+            resize(self.counter, size_res=self.next.a)""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, size_res=>self_next.a)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 def test_call_resize_keyword_params(converter):
     code = textwrap.dedent("""\
             resize(self.counter, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
@@ -649,7 +673,219 @@ def test_indexing_negative_index3(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
+def test_builtin_length(converter):
+    code = textwrap.dedent("""\
+            len(self.taps)""")
+
+    expect = textwrap.dedent("""\
+            (self.taps)'length""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_builtin_range(converter):
+    code = textwrap.dedent("""\
+            range(self.taps)""")
+
+    expect = textwrap.dedent("""\
+            (self.taps)'range""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_builtin_range_int(converter):
+    code = textwrap.dedent("""\
+            range(10)""")
+
+    expect = textwrap.dedent("""\
+            (0 to 10)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_builtin_range_int_start(converter):
+    code = textwrap.dedent("""\
+            range(2, 5)""")
+
+    expect = textwrap.dedent("""\
+            (2 to 5)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_builtin_range_int_start_step(converter):
+    code = textwrap.dedent("""\
+            range(2, 5, 2)""")
+
+    expect = textwrap.dedent("""\
+            (2 to 9)""")
+    with pytest.raises(NotImplementedError):
+        conv = converter(code)
+        str(conv)
+
+
+def test_builtin_range_int_start_step_unit(converter):
+    code = textwrap.dedent("""\
+            range(2, 5, 1)""")
+
+    expect = textwrap.dedent("""\
+            (2 to 5)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_builtin_range_length(converter):
+    code = textwrap.dedent("""\
+            range(len(self.taps))""")
+
+    expect = textwrap.dedent("""\
+            (self.taps)'range""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+# TODO: reverse range stuffs
+def test_builtin_reverse_range_length(converter):
+    pytest.xfail('Not implemented')
+    code = textwrap.dedent("""\
+            reverse(range(len(self.taps)))""")
+
+    expect = textwrap.dedent("""\
+            (self.taps)'rrange""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_for(converter):
+    code = textwrap.dedent("""\
+            for i in range(10):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in (0 to 10) loop
+
+            end loop;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_for2(converter):
+    code = textwrap.dedent("""\
+            for ite in range(2, 5):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for ite in (2 to 5) loop
+
+            end loop;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_for_body(converter):
+    code = textwrap.dedent("""\
+            for i in range(len(a)):
+                a[i] = b
+                a[i + 1] = c""")
+
+    expect = textwrap.dedent("""\
+            for i in (a)'range loop
+                a(i) := b;
+                a(i + 1) := c;
+            end loop;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_for_complex(converter):
+    code = textwrap.dedent("""\
+        for i in range(len(self.taps)):
+            self.mul[i] = x * self.taps[i]
+            if i == 0:
+                self.sm[0] = self.mul[i]
+            else:
+                self.sm[i] = self.sm[i - 1] + self.mul[i]""")
+
+    expect = textwrap.dedent("""\
+            for i in (self.taps)'range loop
+                self.mul(i) := x * self.taps(i);
+                if i = 0 then
+                    self.sm(0) := self.mul(i);
+                else
+                    self.sm(i) := self.sm(i - 1) + self.mul(i);
+                end if;
+            end loop;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package Tc is
+
+            procedure \\__call__\\(self: unknown_type);
+        end package;
+
+        package body Tc is
+            procedure \\__call__\\(self: unknown_type) is
+            begin
+            end procedure;
+        end package body;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Register(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package \\Register\\ is
+
+            procedure \\__call__\\(self: unknown_type);
+        end package;
+
+        package body \\Register\\ is
+            procedure \\__call__\\(self: unknown_type) is
+            begin
+            end procedure;
+        end package body;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_with_init(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                def __init__(self):
+                    loll = loom
+
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package Tc is
+
+            procedure \\__call__\\(self: unknown_type);
+        end package;
+
+        package body Tc is
+            procedure \\__call__\\(self: unknown_type) is
+            begin
+            end procedure;
+        end package body;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 # TODO class conversion
 # TODO function calls
 
-# TODO for loops - seems quite rare element, so do later
