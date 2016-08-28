@@ -20,7 +20,8 @@ class NodeConv:
             if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
-                    self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
+                    if xj.name != '__init__':  # init functions are ignored!
+                        self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
         # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:
@@ -67,9 +68,6 @@ class AtomtrailersNodeConv(NodeConv):
 
     def is_indexing(self):
         return any(isinstance(x, GetitemNodeConv) for x in self.value)
-
-    def convert_function_calls(self):
-        pass
 
     def get_call(self):
         return self.value[1]

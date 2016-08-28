@@ -348,6 +348,7 @@ def test_def_argument_default_value(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
 def test_def_argument_multiple(converter):
     code = textwrap.dedent("""\
         def a(b, c, d):
@@ -584,6 +585,7 @@ def test_call_resize_size_res(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
 def test_call_resize_keyword_params(converter):
     code = textwrap.dedent("""\
             resize(self.counter, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
@@ -718,8 +720,6 @@ def test_builtin_range_int_start_step(converter):
     code = textwrap.dedent("""\
             range(2, 5, 2)""")
 
-    expect = textwrap.dedent("""\
-            (2 to 9)""")
     with pytest.raises(NotImplementedError):
         conv = converter(code)
         str(conv)
@@ -864,6 +864,7 @@ def test_class_reserved_name(converter):
 
 
 def test_class_with_init(converter):
+    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
                 def __init__(self):
@@ -888,4 +889,3 @@ def test_class_with_init(converter):
 
 # TODO class conversion
 # TODO function calls
-
