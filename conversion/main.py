@@ -111,7 +111,6 @@ class AtomtrailersNodeConv(NodeConv):
                 else:
                     return "{}'range".format('.'.join(str(x) for x in self.value[1:]))
 
-
         ret = str()
         for x in self.value:
             if isinstance(x, NameNodeConv):
@@ -241,7 +240,6 @@ class DefNodeConv(NodeConv):
 
         return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
 
-
     def __str__(self):
         PROCEDURE_TEMPLATE = textwrap.dedent("""\
             procedure {NAME}{ARGUMENTS} is
@@ -349,6 +347,7 @@ class UnitaryOperatorNodeConv(NodeConv):
 class EndlNodeConv(NodeConv):
     pass
 
+
 # this is mostly array indexing
 class GetitemNodeConv(NodeConv):
     # turn python [] indexing to () indexing
@@ -395,6 +394,7 @@ class ClassNodeConv(NodeConv):
         sockets['FUNC_HEADERS'] = '\n'.join(tabber(x.get_prototype()) for x in self.value)
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
         return CLASS_TEMPLATE.format(**sockets)
+
 
 def red_to_conv_hub(red: Node, caller):
     """ Convert RedBaron class to conversion class
