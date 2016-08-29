@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+from common.sfix import Sfix
 from conversion.main import red_to_conv_hub
 from redbaron import RedBaron
 
@@ -885,6 +886,28 @@ def test_class_with_init(converter):
             end procedure;
         end package body;""")
     conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_datamodel(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed(0 downto -27);
+            end record;
+
+            type self_t is record
+                a: sfixed(0 downto -27);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code)
+    conv.data = {'a': Sfix(0.0, 0, -27)}
+    conv = conv.get_datamodel_str()
     assert str(conv) == expect
 
 # TODO class conversion

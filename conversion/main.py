@@ -1,6 +1,7 @@
 import logging
 import textwrap
 
+from common.sfix import Sfix
 from common.util import tabber, get_iterable
 from redbaron import NameNode, Node
 
@@ -216,6 +217,7 @@ class DefNodeConv(NodeConv):
             return [get_type(0)]
 
     def infer_variables(self):
+        # TODO: maybe this is better to do after simulation?
         assigns = self.red_node.value('assign')
         variables = [VHDLVariable(NameNodeConv(red_node=x.target), red_node=x) for x in assigns if
                      isinstance(x.target, NameNode)]
@@ -376,6 +378,26 @@ class ForNodeConv(NodeConv):
 
 
 class ClassNodeConv(NodeConv):
+    def __init__(self, red_node, parent=None):
+        super().__init__(red_node, parent)
+        self.data = []
+
+    def get_datamodel_str(self):
+        DATA_TEMPLATE = textwrap.dedent("""\
+            type register_t is record
+            {DATA}
+            end record;
+
+            type self_t is record
+            {DATA}
+                \\next\\: register_t;
+            end record;""")
+        sockets = {'DATA': ''}
+        sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
+                     for key, val in self.data.items() if isinstance(val, Sfix)]
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in sfix_data))
+        return DATA_TEMPLATE.format(**sockets)
+
     def __str__(self):
         self.name = NameNodeConv(self.red_node, explicit_name=self.name)
         CLASS_TEMPLATE = textwrap.dedent("""\
