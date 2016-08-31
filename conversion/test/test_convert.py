@@ -1,4 +1,5 @@
 import textwrap
+from collections import OrderedDict
 
 import pytest
 from common.sfix import Sfix
@@ -889,12 +890,13 @@ def test_class_with_init(converter):
     assert str(conv) == expect
 
 
-def test_class_datamodel(converter):
+def test_class_datamodel_sfixed(converter):
     # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
                pass""")
 
+    data = {'a': Sfix(0.0, 0, -27)}
     expect = textwrap.dedent("""\
             type register_t is record
                 a: sfixed(0 downto -27);
@@ -906,8 +908,122 @@ def test_class_datamodel(converter):
             end record;""")
 
     conv = converter(code)
-    conv.data = {'a': Sfix(0.0, 0, -27)}
+    conv.data = data
     conv = conv.get_datamodel_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed2(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    data['b'] = Sfix(1.0, 3, -8)
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed(0 downto -27);
+                b: sfixed(3 downto -8);
+            end record;
+
+            type self_t is record
+                a: sfixed(0 downto -27);
+                b: sfixed(3 downto -8);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_datamodel_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed_make_self(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+
+    expect = textwrap.dedent("""\
+        procedure make_self(reg: register_t; self: out self_t) is
+        begin
+            self.a := reg.a;
+            self.\\next\\ := reg;
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_makeself_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed2_make_self(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    data['b'] = Sfix(1.0, 3, -8)
+
+    expect = textwrap.dedent("""\
+        procedure make_self(reg: register_t; self: out self_t) is
+        begin
+            self.a := reg.a;
+            self.b := reg.b;
+            self.\\next\\ := reg;
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_makeself_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed_reset(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+
+    expect = textwrap.dedent("""\
+        procedure reset(reg: inout register_t) is
+        begin
+            reg.a := to_sfixed(0.0, 0, -27);
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_reset_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed2_reset(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    data['b'] = Sfix(3.14, 3, -8)
+
+    expect = textwrap.dedent("""\
+        procedure reset(reg: inout register_t) is
+        begin
+            reg.a := to_sfixed(0.0, 0, -27);
+            reg.b := to_sfixed(3.14, 3, -);
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_reset_str()
     assert str(conv) == expect
 
 # TODO class conversion

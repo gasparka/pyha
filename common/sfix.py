@@ -38,6 +38,7 @@ class Sfix(object):
         self.right = right
         self.left = left
         self.val = val
+        self.init_val = val
 
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
         if init_only or Sfix._float_mode:

@@ -382,6 +382,32 @@ class ClassNodeConv(NodeConv):
         super().__init__(red_node, parent)
         self.data = []
 
+    def get_reset_str(self):
+        template = textwrap.dedent("""\
+        procedure reset(reg: inout register_t) is
+        begin
+        {DATA}
+        end procedure;""")
+
+        vars = ['reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+                for key, val in self.data.items() if isinstance(val, Sfix)]
+        sockets = {'DATA': ''}
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
+        return template.format(**sockets)
+
+    def get_makeself_str(self):
+        MAKE_TEMPLATE = textwrap.dedent("""\
+        procedure make_self(reg: register_t; self: out self_t) is
+        begin
+        {DATA}
+            self.\\next\\ := reg;
+        end procedure;""")
+
+        vars = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
+        sockets = {'DATA': ''}
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
+        return MAKE_TEMPLATE.format(**sockets)
+
     def get_datamodel_str(self):
         DATA_TEMPLATE = textwrap.dedent("""\
             type register_t is record
