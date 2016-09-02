@@ -80,9 +80,6 @@ class AtomtrailersNodeConv(NodeConv):
         return len(self.get_call().value)
 
     def __str__(self):
-        if str(self.value[0]) == 'self' and str(self.value[1]) == '\\next\\':
-            self.value[0] = NameNodeConv(explicit_name='self_next', red_node=self.red_node)
-            del self.value[1]
 
         # TODO: good idea?
         # idea: instead of transforming to vhdl style, create corresponding function mapping in vhdl.
@@ -389,6 +386,7 @@ class ClassNodeConv(NodeConv):
             defn = red_node.find('defnode', name='__call__')
             defn.arguments[0].target = 'reg'
             defn.value.insert(0, 'make_self(reg, self)')
+            defn.value.append('reg = self.next')
         except:
             pass
 
@@ -404,14 +402,6 @@ class ClassNodeConv(NodeConv):
 
     def get_call_str(self):
         return str(self.callf)
-        # callf = self.value[0]
-        #
-        # # def __init__(self, name: NameNodeConv, red_node, type: str = None, dir: str = None, value=None):
-        # #     self.value = value
-        # callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
-        # callf.arguments[0].target.type = 'register_t'
-        # callf.arguments[0].target.dir = 'inout'
-        # return self.value[0]
 
     def get_reset_str(self):
         template = textwrap.dedent("""\

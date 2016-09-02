@@ -44,7 +44,7 @@ def test_atomtrailers(converter):
 def test_atomtrailers_self_next(converter):
     code = 'self.next.a'
     conv = converter(code)
-    assert str(conv) == 'self_next.a'
+    assert str(conv) == 'self.\\next\\.a'
 
 
 def test_assign(converter):
@@ -56,7 +56,7 @@ def test_assign(converter):
 def test_assign_trailers(converter):
     code = 'self.next.reg = self.reg'
     conv = converter(code)
-    assert str(conv) == 'self_next.reg := self.reg;'
+    assert str(conv) == 'self.\\next\\.reg := self.reg;'
 
 
 def test_return(converter):
@@ -74,7 +74,7 @@ def test_return_multiple(converter):
 def test_return_self(converter):
     code = 'return self.a, self.next.b'
     conv = converter(code)
-    assert str(conv) == 'ret_0 := self.a;\nret_1 := self_next.b;'
+    assert str(conv) == 'ret_0 := self.a;\nret_1 := self.\\next\\.b;'
 
 
 def test_comp_greater(converter):
@@ -128,7 +128,7 @@ def test_sub(converter):
 def test_mult(converter):
     code = 'a * self.next.step'
     conv = converter(code)
-    assert str(conv) == 'a * self_next.step'
+    assert str(conv) == 'a * self.\\next\\.step'
 
 
 def test_assign_add(converter):
@@ -255,7 +255,7 @@ def test_if_complex(converter):
             b = a"""
 
     expect = """\
-        if a = b and c /= self_next.b then
+        if a = b and c /= self.\\next\\.b then
             if a /= c then
                 b := a;
             elseif \\next\\ = c or a /= b then
@@ -562,7 +562,7 @@ def test_def_complex(converter):
             o := h;
             self.a := l;
             ret_0 := a;
-            ret_1 := self_next.b;
+            ret_1 := self.\\next\\.b;
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect
@@ -583,7 +583,7 @@ def test_call_resize_size_res(converter):
             resize(self.counter, size_res=self.next.a)""")
 
     expect = textwrap.dedent("""\
-            resize(self.counter, size_res=>self_next.a)""")
+            resize(self.counter, size_res=>self.\\next\\.a)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -781,7 +781,7 @@ def test_indexing_negative_index3(converter):
             self.next.var[-4]""")
 
     expect = textwrap.dedent("""\
-            self_next.var(self_next.var'length-4)""")
+            self.\\next\\.var(self.\\next\\.var'length-4)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -1080,6 +1080,7 @@ def test_class_call_modifications(converter):
         begin
             make_self(reg, self);
 
+            reg := self.\\next\\;
         end procedure;""")
     conv = converter(code)
     conv = conv.get_call_str()
@@ -1103,6 +1104,7 @@ def test_class(converter):
                 variable self: self_t;
             begin
                 make_self(reg, self);
+                reg := self.\\next\\;
             end procedure;
         end package body;""")
     conv = converter(code)
@@ -1126,6 +1128,7 @@ def test_class_reserved_name(converter):
                 variable self: self_t;
             begin
                 make_self(reg, self);
+                reg := self.\\next\\;
             end procedure;
         end package body;""")
     conv = converter(code)
@@ -1153,6 +1156,7 @@ def test_class_with_init(converter):
                 variable self: self_t;
             begin
                 make_self(reg, self);
+                reg := self.\\next\\;
             end procedure;
         end package body;""")
     conv = converter(code)
