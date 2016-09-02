@@ -403,6 +403,9 @@ class ClassNodeConv(NodeConv):
     def get_call_str(self):
         return str(self.callf)
 
+    def get_reset_prototype(self):
+        return 'procedure reset(reg: inout register_t);'
+
     def get_reset_str(self):
         template = textwrap.dedent("""\
         procedure reset(reg: inout register_t) is
@@ -429,7 +432,7 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
         return MAKE_TEMPLATE.format(**sockets)
 
-    def get_datamodel_str(self):
+    def get_datamodel(self):
         DATA_TEMPLATE = textwrap.dedent("""\
             type register_t is record
             {DATA}
@@ -450,19 +453,27 @@ class ClassNodeConv(NodeConv):
         CLASS_TEMPLATE = textwrap.dedent("""\
             package {NAME} is
             {SELF_T}
+
             {FUNC_HEADERS}
             end package;
 
             package body {NAME} is
-            {BODY}
+            {RESET_FUNCTION}
+
+            {MAKE_SELF_FUNCTION}
+
+            {OTHER_FUNCTIONS}
             end package body;""")
 
         sockets = {}
         sockets['NAME'] = str(self.name)
-        sockets['SELF_T'] = ''
-        sockets['FUNC_HEADERS'] = '\n'.join(tabber(x.get_prototype()) for x in self.value)
+        sockets['SELF_T'] = tabber(self.get_datamodel())
+        sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
+        sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)
 
-        sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+        sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
+        sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
+        sockets['OTHER_FUNCTIONS'] = '\n'.join(tabber(str(x)) for x in self.value)
         return CLASS_TEMPLATE.format(**sockets)
 
 
