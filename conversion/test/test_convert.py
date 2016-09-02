@@ -628,6 +628,114 @@ def test_call_resize_sfix_combined(converter):
     assert str(conv) == expect
 
 
+def test_call_semicolon_def(converter):
+    code = textwrap.dedent("""\
+        def a():
+            a()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            a();
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_semicolon_def2(converter):
+    code = textwrap.dedent("""\
+        def a():
+            b
+            a()
+            c""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            b
+            a();
+            c
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_semicolon_if_condition(converter):
+    code = textwrap.dedent("""\
+        if a():
+            pass""")
+
+    expect = textwrap.dedent("""\
+        if a() then
+
+        end if;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_semicolon_if_body(converter):
+    code = textwrap.dedent("""\
+        if a():
+            a()""")
+
+    expect = textwrap.dedent("""\
+        if a() then
+            a();
+        end if;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_semicolon_for(converter):
+    code = textwrap.dedent("""\
+        for i in a():
+            a()""")
+
+    expect = textwrap.dedent("""\
+            for i in a() loop
+                a();
+            end loop;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_semicolon_multi(converter):
+    code = textwrap.dedent("""\
+        def a():
+            a()
+            o = a()
+            if a():
+                a()
+                for x in a():
+                    a()
+            else:
+                a()
+            self.lol = lol.a()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+            variable o: unknown_type;
+        begin
+            a();
+            o := a();
+            if a() then
+                a();
+                for x in a() loop
+                    a();
+                end loop;
+            else
+                a();
+            end if;
+            self.lol := lol.a();
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 def test_indexing(converter):
     code = textwrap.dedent("""\
             a[1]""")
@@ -823,78 +931,11 @@ def test_for_complex(converter):
     assert str(conv) == expect
 
 
-def test_class(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                def __call__(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        package Tc is
-
-            procedure \\__call__\\(self: unknown_type);
-        end package;
-
-        package body Tc is
-            procedure \\__call__\\(self: unknown_type) is
-            begin
-            end procedure;
-        end package body;""")
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_class_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def __call__(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        package \\Register\\ is
-
-            procedure \\__call__\\(self: unknown_type);
-        end package;
-
-        package body \\Register\\ is
-            procedure \\__call__\\(self: unknown_type) is
-            begin
-            end procedure;
-        end package body;""")
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_class_with_init(converter):
-    # init function shall be ignored
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                def __init__(self):
-                    loll = loom
-
-                def __call__(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        package Tc is
-
-            procedure \\__call__\\(self: unknown_type);
-        end package;
-
-        package body Tc is
-            procedure \\__call__\\(self: unknown_type) is
-            begin
-            end procedure;
-        end package body;""")
-    conv = converter(code)
-    assert str(conv) == expect
-
-
 def test_class_datamodel_sfixed(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = {'a': Sfix(0.0, 0, -27)}
     expect = textwrap.dedent("""\
@@ -914,10 +955,10 @@ def test_class_datamodel_sfixed(converter):
 
 
 def test_class_datamodel_sfixed2(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
@@ -942,10 +983,10 @@ def test_class_datamodel_sfixed2(converter):
 
 
 def test_class_datamodel_sfixed_make_self(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
@@ -963,10 +1004,10 @@ def test_class_datamodel_sfixed_make_self(converter):
 
 
 def test_class_datamodel_sfixed2_make_self(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
@@ -986,10 +1027,10 @@ def test_class_datamodel_sfixed2_make_self(converter):
 
 
 def test_class_datamodel_sfixed_reset(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
@@ -1006,10 +1047,10 @@ def test_class_datamodel_sfixed_reset(converter):
 
 
 def test_class_datamodel_sfixed2_reset(converter):
-    # init function shall be ignored
     code = textwrap.dedent("""\
             class Tc(HW):
-               pass""")
+               def __call__(self):
+                    pass""")
 
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
@@ -1019,11 +1060,102 @@ def test_class_datamodel_sfixed2_reset(converter):
         procedure reset(reg: inout register_t) is
         begin
             reg.a := to_sfixed(0.0, 0, -27);
-            reg.b := to_sfixed(3.14, 3, -);
+            reg.b := to_sfixed(3.14, 3, -8);
         end procedure;""")
     conv = converter(code)
     conv.data = data
     conv = conv.get_reset_str()
+    assert str(conv) == expect
+
+
+def test_class_call_modifications(converter):
+    code = textwrap.dedent("""\
+            class Register(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        procedure \\__call__\\(reg:inout register_t) is
+            variable self: self_t;
+        begin
+            make_self(reg, self);
+
+        end procedure;""")
+    conv = converter(code)
+    conv = conv.get_call_str()
+    assert str(conv) == expect
+
+
+def test_class(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package Tc is
+
+            procedure \\__call__\\(reg:inout register_t);
+        end package;
+
+        package body Tc is
+            procedure \\__call__\\(reg:inout register_t) is
+                variable self: self_t;
+            begin
+                make_self(reg, self);
+            end procedure;
+        end package body;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Register(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package \\Register\\ is
+
+            procedure \\__call__\\(reg:inout register_t);
+        end package;
+
+        package body \\Register\\ is
+            procedure \\__call__\\(reg:inout register_t) is
+                variable self: self_t;
+            begin
+                make_self(reg, self);
+            end procedure;
+        end package body;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_with_init(converter):
+    # init function shall be ignored
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                def __init__(self):
+                    loll = loom
+
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        package Tc is
+
+            procedure \\__call__\\(reg:inout register_t);
+        end package;
+
+        package body Tc is
+            procedure \\__call__\\(reg:inout register_t) is
+                variable self: self_t;
+            begin
+                make_self(reg, self);
+            end procedure;
+        end package body;""")
+    conv = converter(code)
     assert str(conv) == expect
 
 # TODO class conversion

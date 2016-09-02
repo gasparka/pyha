@@ -3,7 +3,7 @@ import textwrap
 
 from common.sfix import Sfix
 from common.util import tabber, get_iterable
-from redbaron import NameNode, Node
+from redbaron import NameNode, Node, EndlNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class AtomtrailersNodeConv(NodeConv):
         # idea: instead of transforming to vhdl style, create corresponding function mapping in vhdl.
         # that is for range(0) just create vhdl function range(int)... problems with types.
         if self.is_function_call():
+
             if self.value[0].in_name == 'Sfix':
                 self.value[0].in_name = 'to_sfixed'
             elif self.value[0].in_name == 'len':
@@ -119,6 +120,10 @@ class AtomtrailersNodeConv(NodeConv):
             ret += str(x)
         if ret[0] == '.':
             ret = ret[1:]
+
+        # add semicolon for function calls
+        if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
+            ret += ';'
 
         return ret
 
@@ -379,8 +384,34 @@ class ForNodeConv(NodeConv):
 
 class ClassNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
+        try:
+            # see def test_class_call_modifications(converter):
+            defn = red_node.find('defnode', name='__call__')
+            defn.arguments[0].target = 'reg'
+            defn.value.insert(0, 'make_self(reg, self)')
+        except:
+            pass
+
         super().__init__(red_node, parent)
+
+        # find /__call__/ function and add some stuff
+        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
+        self.callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
+        self.callf.arguments[0].target.type = 'register_t'
+        self.callf.arguments[0].target.dir = 'inout'
+
         self.data = []
+
+    def get_call_str(self):
+        return str(self.callf)
+        # callf = self.value[0]
+        #
+        # # def __init__(self, name: NameNodeConv, red_node, type: str = None, dir: str = None, value=None):
+        # #     self.value = value
+        # callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
+        # callf.arguments[0].target.type = 'register_t'
+        # callf.arguments[0].target.dir = 'inout'
+        # return self.value[0]
 
     def get_reset_str(self):
         template = textwrap.dedent("""\
@@ -440,6 +471,7 @@ class ClassNodeConv(NodeConv):
         sockets['NAME'] = str(self.name)
         sockets['SELF_T'] = ''
         sockets['FUNC_HEADERS'] = '\n'.join(tabber(x.get_prototype()) for x in self.value)
+
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
         return CLASS_TEMPLATE.format(**sockets)
 
