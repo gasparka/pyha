@@ -403,6 +403,18 @@ class ClassNodeConv(NodeConv):
     def get_call_str(self):
         return str(self.callf)
 
+    def get_imports(self):
+        return textwrap.dedent("""\
+            library ieee;
+                use ieee.std_logic_1164.all;
+                use ieee.numeric_std.all;
+                use ieee.fixed_float_types.all;
+                use ieee.fixed_pkg.all;
+                use ieee.math_real.all;
+
+            library work;
+                use work.all;""")
+
     def get_reset_prototype(self):
         return 'procedure reset(reg: inout register_t);'
 
@@ -451,6 +463,8 @@ class ClassNodeConv(NodeConv):
     def __str__(self):
         self.name = NameNodeConv(self.red_node, explicit_name=self.name)
         CLASS_TEMPLATE = textwrap.dedent("""\
+            {IMPORTS}
+
             package {NAME} is
             {SELF_T}
 
@@ -467,6 +481,7 @@ class ClassNodeConv(NodeConv):
 
         sockets = {}
         sockets['NAME'] = str(self.name)
+        sockets['IMPORTS'] = self.get_imports()
         sockets['SELF_T'] = tabber(self.get_datamodel())
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
         sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)

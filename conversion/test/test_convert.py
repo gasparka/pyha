@@ -1105,6 +1105,27 @@ def test_class_call_modifications(converter):
     assert str(conv) == expect
 
 
+def test_class_call_importlibs(converter):
+    code = textwrap.dedent("""\
+            class Register(HW):
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+            library ieee;
+                use ieee.std_logic_1164.all;
+                use ieee.numeric_std.all;
+                use ieee.fixed_float_types.all;
+                use ieee.fixed_pkg.all;
+                use ieee.math_real.all;
+
+            library work;
+                use work.all;""")
+
+    conv = converter(code)
+    conv = conv.get_imports()
+    assert str(conv) == expect
+
 # def test_class(converter):
 #     code = textwrap.dedent("""\
 #             class Tc(HW):
@@ -1189,6 +1210,16 @@ def test_class_full(converter):
     data = OrderedDict()
     data['a'] = Sfix(0.0, 0, -27)
     expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_float_types.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+
+        library work;
+            use work.all;
+
         package Tc is
             type register_t is record
                 a: sfixed(0 downto -27);
@@ -1222,6 +1253,9 @@ def test_class_full(converter):
                 reg := self.\\next\\;
             end procedure;
         end package body;""")
+
+    # with open('../sanity_check/tmp.vhd', 'w') as f:
+    #     print(expect, file=f)
     conv = converter(code)
     conv.data = data
     assert str(conv) == expect
