@@ -1260,5 +1260,111 @@ def test_class_full(converter):
     conv.data = data
     assert str(conv) == expect
 
+
+def test_call_self(converter):
+    code = textwrap.dedent("""\
+            def a():
+                self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d();
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d(a)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(a, ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return_no_args(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_keyword(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d(a=self.b)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(a=>self.b, ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return2(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b, c = self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(ret_0=>b, ret_1=>c);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+#
+#
+# def test_call_self_return2_arugments(converter):
+#     code = textwrap.dedent("""\
+#             def a():
+#                 b, c = self.d(loll, loom)""")
+#
+#     expect = textwrap.dedent("""\
+#         procedure a is
+#
+#         begin
+#             d(loll, loom, b, c);
+#         end procedure;""")
+#
+#     conv = converter(code)
+#     assert str(conv) == expect
 # TODO class conversion
 # TODO function calls
+
+def test_redbaron_bug120(converter):
+    # https: // github.com / PyCQA / redbaron / issues / 120
+    # adding new argumetn breaks help()
+    code = 'a(b)'
+    red = RedBaron(code)[0]
+    red.call.append('c')
+    with pytest.raises(Exception):
+        red.help(True)

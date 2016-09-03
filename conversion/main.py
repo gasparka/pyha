@@ -4,6 +4,7 @@ import textwrap
 from common.sfix import Sfix
 from common.util import tabber, get_iterable
 from redbaron import NameNode, Node, EndlNode
+from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -110,6 +111,10 @@ class AtomtrailersNodeConv(NodeConv):
                 else:
                     return "{}'range".format('.'.join(str(x) for x in self.value[1:]))
 
+        # remove 'self.' from function calls
+        if self.is_function_call() and str(self.value[0]) == 'self':
+            del self.value[0]
+
         ret = str()
         for x in self.value:
             if isinstance(x, NameNodeConv):
@@ -197,7 +202,28 @@ class ElifNodeConv(NodeConv):
 
 
 class DefNodeConv(NodeConv):
+    def function_calls_transform(self, red_node):
+        # find all assigment nodes, check if they contain 'self' function call
+        # -> transform
+        assigns = red_node.find_all('assign')
+        for i, x in enumerate(assigns):
+            if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
+                call = x('call')
+                if len(call) == 1:  # some function is called
+                    call = call[0]
+                    if len(x.target) == 1:
+                        call.append(str(x.target))
+                        call.value[-1].target = 'ret_0'
+                    else:
+                        for i, argx in enumerate(x.target):
+                            call.append(str(argx))
+                            call.value[-1].target = 'ret_{}'.format(i)
+
+                    x.replace(x.value)
+
     def __init__(self, red_node, parent=None):
+        self.function_calls_transform(red_node)
+
         super().__init__(red_node, parent)
         self.name = NameNodeConv(red_node, explicit_name=self.name)
         self.arguments.extend(self.infer_return_arguments())
