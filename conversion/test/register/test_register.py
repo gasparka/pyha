@@ -1,5 +1,5 @@
+from LEGACY.misc.metaclass.hwsim import HW
 from common.sfix import Sfix
-from misc.metaclass.hwsim import HW
 
 
 class Register(HW):
