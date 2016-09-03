@@ -14,6 +14,14 @@ class NodeConv:
     def __init__(self, red_node, parent=None):
         self.red_node = red_node
         self.parent = parent
+        self.target = None
+        self.value = None
+        self.first = None
+        self.second = None
+        self.test = None
+        self.arguments = None
+        self.name = None
+        self.iterator = None
 
         for x in red_node._dict_keys:
             self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x], caller=self)
@@ -58,11 +66,6 @@ class NameNodeConv(NodeConv):
                 or name[0] == '_':
             return '\{}\\'.format(name)  # "escape" reserved name
         return name
-
-    # def __init__(self, red_node, parent=None):
-    #     super().__init__(red_node, parent)
-    #     self.exp = explicit_name
-    #     self.name = explicit_name or red_node.value
 
     def __str__(self):
         return NameNodeConv.parse(self.red_node.value)
@@ -109,8 +112,8 @@ class AssignmentNodeConv(NodeConv):
 
 class ReturnNodeConv(NodeConv):
     def __str__(self):
-        str = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
-        return '\n'.join(str)
+        str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
+        return '\n'.join(str_ret)
 
 
 class ComparisonNodeConv(NodeConv):
@@ -167,7 +170,7 @@ class ElifNodeConv(NodeConv):
 
 class DefNodeConv(NodeConv):
     def function_calls_transform(self, red_node):
-        # find all assigment nodes, check if they contain 'self' function call
+        # find all assignment nodes, check if they contain 'self' function call
         # -> transform
         assigns = red_node.find_all('assign')
         for i, x in enumerate(assigns):
@@ -179,9 +182,9 @@ class DefNodeConv(NodeConv):
                         call.append(str(x.target))
                         call.value[-1].target = 'ret_0'
                     else:
-                        for i, argx in enumerate(x.target):
+                        for j, argx in enumerate(x.target):
                             call.append(str(argx))
-                            call.value[-1].target = 'ret_{}'.format(i)
+                            call.value[-1].target = 'ret_{}'.format(j)
 
                     x.replace(x.value)
 
@@ -201,7 +204,7 @@ class DefNodeConv(NodeConv):
 
         def get_type(i: int):
             name = NameNodeConv.parse('ret_' + str(i))
-            return VHDLType(name, dir='out', red_node=rets)
+            return VHDLType(name, port_direction='out', red_node=rets)
 
         try:
             return [get_type(i) for i, x in enumerate(rets.value)]
@@ -236,7 +239,7 @@ class DefNodeConv(NodeConv):
         return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
 
     def __str__(self):
-        PROCEDURE_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             procedure {NAME}{ARGUMENTS} is
             {VARIABLES}
             begin
@@ -253,16 +256,16 @@ class DefNodeConv(NodeConv):
             sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
 
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
-        return PROCEDURE_TEMPLATE.format(**sockets)
+        return template.format(**sockets)
 
 
 class VHDLType:
     # TODO: All instances must be recorded for later type recovery
-    def __init__(self, name: NameNodeConv, red_node, type: str = None, dir: str = None, value=None):
+    def __init__(self, name, red_node, var_type: str = None, port_direction: str = None, value=None):
         self.value = value
         self.red_node = red_node
-        self.dir = dir
-        self.type = type
+        self.dir = port_direction
+        self.type = var_type
         self.name = name
 
         # hack to make 'self.target.name' duck typing work
@@ -273,11 +276,11 @@ class VHDLType:
         self.target = Hack(self.name)
 
     def __str__(self):
-        type = self.type or 'unknown_type'
-        dir = self.dir or ''
+        var_type = self.type or 'unknown_type'
+        port_direction = self.dir or ''
         default_value = ':={}'.format(self.value) if self.value else ''
-        str = '{}:{} {}{}'.format(self.name, dir, type, default_value)
-        return str
+        tmp_str = '{}:{} {}{}'.format(self.name, port_direction, var_type, default_value)
+        return tmp_str
 
 
 class VHDLVariable(VHDLType):
@@ -361,14 +364,14 @@ class GetitemNodeConv(NodeConv):
 
 class ForNodeConv(NodeConv):
     def __str__(self):
-        FOR_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
                 for {ITERATOR} in {RANGE} loop
                 {BODY}
                 end loop;""")
         sockets = {'ITERATOR': str(self.iterator)}
         sockets['RANGE'] = str(self.target)
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
-        return FOR_TEMPLATE.format(**sockets)
+        return template.format(**sockets)
 
 
 class ClassNodeConv(NodeConv):
@@ -387,7 +390,7 @@ class ClassNodeConv(NodeConv):
         try:
             # find /__call__/ function and add some stuff
             self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
-            self.callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
+            self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
             self.callf.arguments[0].target.type = 'register_t'
             self.callf.arguments[0].target.dir = 'inout'
         except:
@@ -420,27 +423,27 @@ class ClassNodeConv(NodeConv):
         {DATA}
         end procedure;""")
 
-        vars = ['reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
-                for key, val in self.data.items() if isinstance(val, Sfix)]
+        variables = ['reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+                     for key, val in self.data.items() if isinstance(val, Sfix)]
         sockets = {'DATA': ''}
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
 
     def get_makeself_str(self):
-        MAKE_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
         procedure make_self(reg: register_t; self: out self_t) is
         begin
         {DATA}
             self.\\next\\ := reg;
         end procedure;""")
 
-        vars = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
+        variables = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
         sockets = {'DATA': ''}
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
-        return MAKE_TEMPLATE.format(**sockets)
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
+        return template.format(**sockets)
 
     def get_datamodel(self):
-        DATA_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             type register_t is record
             {DATA}
             end record;
@@ -453,10 +456,10 @@ class ClassNodeConv(NodeConv):
         sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
                      for key, val in self.data.items() if isinstance(val, Sfix)]
         sockets['DATA'] += ('\n'.join(tabber(x) for x in sfix_data))
-        return DATA_TEMPLATE.format(**sockets)
+        return template.format(**sockets)
 
     def __str__(self):
-        CLASS_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             {IMPORTS}
 
             package {NAME} is
@@ -485,7 +488,7 @@ class ClassNodeConv(NodeConv):
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
         sockets['OTHER_FUNCTIONS'] = '\n'.join(tabber(str(x)) for x in self.value)
 
-        return CLASS_TEMPLATE.format(**sockets)
+        return template.format(**sockets)
 
 
 def red_to_conv_hub(red: Node, caller):
@@ -494,8 +497,8 @@ def red_to_conv_hub(red: Node, caller):
     """
     import sys
 
+    red_type = red.__class__.__name__
     try:
-        red_type = red.__class__.__name__
         cls = getattr(sys.modules[__name__], red_type + 'Conv')
     except AttributeError:
         if red_type == 'NoneType':
