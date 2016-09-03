@@ -68,53 +68,13 @@ class AtomtrailersNodeConv(NodeConv):
     def is_function_call(self):
         return any(isinstance(x, CallNodeConv) for x in self.value)
 
-    def is_indexing(self):
-        return any(isinstance(x, GetitemNodeConv) for x in self.value)
-
-    def get_call(self):
-        return self.value[1]
-
-    def get_argument_pos(self, pos):
-        return self.get_call().value[pos].value
-
-    def get_argument_count(self):
-        return len(self.get_call().value)
-
     def __str__(self):
-
-        # TODO: good idea?
-        # idea: instead of transforming to vhdl style, create corresponding function mapping in vhdl.
-        # that is for range(0) just create vhdl function range(int)... problems with types.
-        if self.is_function_call():
-
-            if self.value[0].in_name == 'Sfix':
-                self.value[0].in_name = 'to_sfixed'
-            elif self.value[0].in_name == 'len':
-                return "{}'length".format('.'.join(str(x) for x in self.value[1:]))
-
-
-            elif self.value[0].in_name == 'range':
-                args = self.get_argument_count()
-                first_arg = self.get_argument_pos(0)
-                if args == 3 and self.get_argument_pos(2).value != '1':
-                    # could support, when implement in VHDL
-                    raise NotImplementedError('Range function not supported when step is not 1')
-                elif args == 3 or args == 2:
-                    second_arg = self.get_argument_pos(1)
-                    return '({} to {})'.format(first_arg, second_arg)
-                elif isinstance(first_arg, IntNodeConv):
-                    return '(0 to {})'.format(first_arg)
-                    # return True
-                elif self.get_argument_pos(0).value[0].value == 'len':  # hitler wrote this
-                    inner_atomtrailers = self.get_argument_pos(0)
-                    return "{}'range".format('.'.join(str(x) for x in inner_atomtrailers.value[1:]))
-                else:
-                    return "{}'range".format('.'.join(str(x) for x in self.value[1:]))
 
         # remove 'self.' from function calls
         if self.is_function_call() and str(self.value[0]) == 'self':
             del self.value[0]
 
+        # basically on some occasions, dont separate nodes with '.'
         ret = str()
         for x in self.value:
             if isinstance(x, NameNodeConv):

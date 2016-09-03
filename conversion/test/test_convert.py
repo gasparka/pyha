@@ -603,7 +603,7 @@ def test_call_sfix(converter):
             Sfix(0.95, 0, -17)""")
 
     expect = textwrap.dedent("""\
-            to_sfixed(0.95, 0, -17)""")
+            Sfix(0.95, 0, -17)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -613,7 +613,7 @@ def test_call_sfix_keyword_params(converter):
             Sfix(0.95, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
 
     expect = textwrap.dedent("""\
-            to_sfixed(0.95, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
+            Sfix(0.95, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -623,7 +623,7 @@ def test_call_resize_sfix_combined(converter):
             counter_small = resize(Sfix(0, 0, -self.scalebits + 1), size_res=a)""")
 
     expect = textwrap.dedent("""\
-            counter_small := resize(to_sfixed(0, 0, -self.scalebits + 1), size_res=>a);""")
+            counter_small := resize(Sfix(0, 0, -self.scalebits + 1), size_res=>a);""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -791,7 +791,7 @@ def test_builtin_length(converter):
             len(self.taps)""")
 
     expect = textwrap.dedent("""\
-            (self.taps)'length""")
+            len(self.taps)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -801,7 +801,7 @@ def test_builtin_range(converter):
             range(self.taps)""")
 
     expect = textwrap.dedent("""\
-            (self.taps)'range""")
+            \\range\\(self.taps)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -811,7 +811,7 @@ def test_builtin_range_int(converter):
             range(10)""")
 
     expect = textwrap.dedent("""\
-            (0 to 10)""")
+            \\range\\(10)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -821,7 +821,7 @@ def test_builtin_range_int_start(converter):
             range(2, 5)""")
 
     expect = textwrap.dedent("""\
-            (2 to 5)""")
+            \\range\\(2, 5)""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -830,9 +830,11 @@ def test_builtin_range_int_start_step(converter):
     code = textwrap.dedent("""\
             range(2, 5, 2)""")
 
-    with pytest.raises(NotImplementedError):
-        conv = converter(code)
-        str(conv)
+    expect = textwrap.dedent("""\
+            \\range\\(2, 5, 2)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
 
 
 def test_builtin_range_int_start_step_unit(converter):
@@ -840,7 +842,7 @@ def test_builtin_range_int_start_step_unit(converter):
             range(2, 5, 1)""")
 
     expect = textwrap.dedent("""\
-            (2 to 5)""")
+            \\range\\(2, 5, 1)""")
 
     conv = converter(code)
     assert str(conv) == expect
@@ -851,19 +853,17 @@ def test_builtin_range_length(converter):
             range(len(self.taps))""")
 
     expect = textwrap.dedent("""\
-            (self.taps)'range""")
+            \\range\\(len(self.taps))""")
     conv = converter(code)
     assert str(conv) == expect
 
 
-# TODO: reverse range stuffs
 def test_builtin_reverse_range_length(converter):
-    pytest.xfail('Not implemented')
     code = textwrap.dedent("""\
             reverse(range(len(self.taps)))""")
 
     expect = textwrap.dedent("""\
-            (self.taps)'rrange""")
+            reverse(\\range\\(len(self.taps)))""")
     conv = converter(code)
     assert str(conv) == expect
 
@@ -874,7 +874,7 @@ def test_for(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in (0 to 10) loop
+            for i in \\range\\(10) loop
 
             end loop;""")
     conv = converter(code)
@@ -887,7 +887,7 @@ def test_for2(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in (2 to 5) loop
+            for ite in \\range\\(2, 5) loop
 
             end loop;""")
     conv = converter(code)
@@ -901,7 +901,7 @@ def test_for_body(converter):
                 a[i + 1] = c""")
 
     expect = textwrap.dedent("""\
-            for i in (a)'range loop
+            for i in \\range\\(len(a)) loop
                 a(i) := b;
                 a(i + 1) := c;
             end loop;""")
@@ -919,7 +919,7 @@ def test_for_complex(converter):
                 self.sm[i] = self.sm[i - 1] + self.mul[i]""")
 
     expect = textwrap.dedent("""\
-            for i in (self.taps)'range loop
+            for i in \\range\\(len(self.taps)) loop
                 self.mul(i) := x * self.taps(i);
                 if i = 0 then
                     self.sm(0) := self.mul(i);
@@ -1341,22 +1341,20 @@ def test_call_self_return2(converter):
     assert str(conv) == expect
 
 
-#
-#
-# def test_call_self_return2_arugments(converter):
-#     code = textwrap.dedent("""\
-#             def a():
-#                 b, c = self.d(loll, loom)""")
-#
-#     expect = textwrap.dedent("""\
-#         procedure a is
-#
-#         begin
-#             d(loll, loom, b, c);
-#         end procedure;""")
-#
-#     conv = converter(code)
-#     assert str(conv) == expect
+def test_call_self_return2_arugments(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b, c = self.d(loll, loom)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(loll, loom, ret_0=>b, ret_1=>c);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
 # TODO class conversion
 # TODO function calls
 
