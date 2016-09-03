@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import pytest
 from common.sfix import Sfix
-from conversion.main import red_to_conv_hub
+from conversion.converter import red_to_conv_hub
 from redbaron import RedBaron
 
 
@@ -21,6 +21,13 @@ def test_name(converter):
     code = 'test'
     conv = converter(code)
     assert str(conv) == 'test'
+
+
+def test_name2(converter):
+    code = 'Register'
+    conv = converter(code)
+    str(conv)
+    assert str(conv) == '\\Register\\'
 
 
 def test_reserved_name(converter):
@@ -1254,12 +1261,111 @@ def test_class_full(converter):
             end procedure;
         end package body;""")
 
-    # with open('../sanity_check/tmp.vhd', 'w') as f:
-    #     print(expect, file=f)
     conv = converter(code)
     conv.data = data
     assert str(conv) == expect
 
+
+def test_class_full_name_bug(converter):
+    code = textwrap.dedent("""\
+            class Register():
+                def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+         library ieee;
+             use ieee.std_logic_1164.all;
+             use ieee.numeric_std.all;
+             use ieee.fixed_float_types.all;
+             use ieee.fixed_pkg.all;
+             use ieee.math_real.all;
+
+         library work;
+             use work.all;
+
+         package \\Register\\ is
+             type register_t is record
+             end record;
+             type self_t is record
+                 \\next\\: register_t;
+             end record;
+
+             procedure reset(reg: inout register_t);
+             procedure \\__call__\\(reg:inout register_t);
+         end package;
+
+         package body \\Register\\ is
+             procedure reset(reg: inout register_t) is
+             begin
+             end procedure;
+
+             procedure make_self(reg: register_t; self: out self_t) is
+             begin
+                 self.\\next\\ := reg;
+             end procedure;
+
+             procedure \\__call__\\(reg:inout register_t) is
+                 variable self: self_t;
+             begin
+                 make_self(reg, self);
+                 reg := self.\\next\\;
+             end procedure;
+         end package body;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_class_full_endl_bug(converter):
+    code = textwrap.dedent("""\
+            class Register():
+                def __call__(self):
+                    pass
+
+            """)
+
+    expect = textwrap.dedent("""\
+         library ieee;
+             use ieee.std_logic_1164.all;
+             use ieee.numeric_std.all;
+             use ieee.fixed_float_types.all;
+             use ieee.fixed_pkg.all;
+             use ieee.math_real.all;
+
+         library work;
+             use work.all;
+
+         package \\Register\\ is
+             type register_t is record
+             end record;
+             type self_t is record
+                 \\next\\: register_t;
+             end record;
+
+             procedure reset(reg: inout register_t);
+             procedure \\__call__\\(reg:inout register_t);
+         end package;
+
+         package body \\Register\\ is
+             procedure reset(reg: inout register_t) is
+             begin
+             end procedure;
+
+             procedure make_self(reg: register_t; self: out self_t) is
+             begin
+                 self.\\next\\ := reg;
+             end procedure;
+
+             procedure \\__call__\\(reg:inout register_t) is
+                 variable self: self_t;
+             begin
+                 make_self(reg, self);
+                 reg := self.\\next\\;
+             end procedure;
+         end package body;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
 
 def test_call_self(converter):
     code = textwrap.dedent("""\

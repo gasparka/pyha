@@ -52,16 +52,20 @@ class NameNodeConv(NodeConv):
                            'transport', 'type', 'unaffected', 'units', 'until', 'use',
                            'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
 
-    def __init__(self, red_node, parent=None, explicit_name=None):
-        super().__init__(red_node, parent)
-        self.in_name = explicit_name or red_node.value
+    @classmethod
+    def parse(cls, name: str):
+        if name.lower() in cls.vhdl_reserved_names \
+                or name[0] == '_':
+            return '\{}\\'.format(name)  # "escape" reserved name
+        return name
+
+    # def __init__(self, red_node, parent=None):
+    #     super().__init__(red_node, parent)
+    #     self.exp = explicit_name
+    #     self.name = explicit_name or red_node.value
 
     def __str__(self):
-        # vhdl is case insensitive
-        if self.in_name.lower() in self.vhdl_reserved_names \
-                or self.in_name[0] == '_':
-            return '\{}\\'.format(self.in_name)  # "escape" reserved name
-        return self.in_name
+        return NameNodeConv.parse(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
@@ -185,7 +189,7 @@ class DefNodeConv(NodeConv):
         self.function_calls_transform(red_node)
 
         super().__init__(red_node, parent)
-        self.name = NameNodeConv(red_node, explicit_name=self.name)
+        self.name = NameNodeConv.parse(self.name)
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -196,7 +200,8 @@ class DefNodeConv(NodeConv):
             return []
 
         def get_type(i: int):
-            return VHDLType(NameNodeConv(explicit_name='ret_' + str(i), red_node=rets), dir='out', red_node=rets)
+            name = NameNodeConv.parse('ret_' + str(i))
+            return VHDLType(name, dir='out', red_node=rets)
 
         try:
             return [get_type(i) for i, x in enumerate(rets.value)]
@@ -335,7 +340,8 @@ class UnitaryOperatorNodeConv(NodeConv):
 
 
 class EndlNodeConv(NodeConv):
-    pass
+    def __str__(self):
+        return ''
 
 
 # this is mostly array indexing
@@ -378,13 +384,16 @@ class ClassNodeConv(NodeConv):
 
         super().__init__(red_node, parent)
 
-        # find /__call__/ function and add some stuff
-        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
-        self.callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
-        self.callf.arguments[0].target.type = 'register_t'
-        self.callf.arguments[0].target.dir = 'inout'
+        try:
+            # find /__call__/ function and add some stuff
+            self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
+            self.callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
+            self.callf.arguments[0].target.type = 'register_t'
+            self.callf.arguments[0].target.dir = 'inout'
+        except:
+            pass
 
-        self.data = []
+        self.data = {}
 
     def get_call_str(self):
         return str(self.callf)
@@ -447,7 +456,6 @@ class ClassNodeConv(NodeConv):
         return DATA_TEMPLATE.format(**sockets)
 
     def __str__(self):
-        self.name = NameNodeConv(self.red_node, explicit_name=self.name)
         CLASS_TEMPLATE = textwrap.dedent("""\
             {IMPORTS}
 
@@ -466,15 +474,17 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = str(self.name)
+        sockets['NAME'] = NameNodeConv.parse(self.name)
         sockets['IMPORTS'] = self.get_imports()
         sockets['SELF_T'] = tabber(self.get_datamodel())
+
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
         sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
         sockets['OTHER_FUNCTIONS'] = '\n'.join(tabber(str(x)) for x in self.value)
+
         return CLASS_TEMPLATE.format(**sockets)
 
 
@@ -493,3 +503,7 @@ def red_to_conv_hub(red: Node, caller):
         raise
 
     return cls(red_node=red, parent=caller)
+
+
+def convert(red: Node):
+    return red_to_conv_hub(red, None)
