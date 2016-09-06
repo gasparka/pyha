@@ -1,4 +1,4 @@
-from LEGACY.misc.metaclass.hwsim import HW, Meta, clock_tick
+from common.hwsim import HW, Meta, clock_tick
 
 
 def test_metaclass_assigned():

@@ -1,6 +1,6 @@
 import textwrap
 
-from LEGACY.misc.metaclass.hwsim import HW
+from common.hwsim import HW
 from common.sfix import Sfix
 from conversion.converter import convert
 from redbaron import RedBaron
@@ -60,11 +60,4 @@ def test_conversion():
             end package body;""")
 
     conv = convert(reg_class)
-    print(str(conv))
     assert str(conv) == expect
-
-    # run code/tests
-    # run something that fills in types
-    # done
-    print(str(conv))
-    pass

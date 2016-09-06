@@ -743,6 +743,7 @@ def test_call_semicolon_multi(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
 def test_indexing(converter):
     code = textwrap.dedent("""\
             a[1]""")
@@ -1133,6 +1134,7 @@ def test_class_call_importlibs(converter):
     conv = conv.get_imports()
     assert str(conv) == expect
 
+
 # def test_class(converter):
 #     code = textwrap.dedent("""\
 #             class Tc(HW):
@@ -1367,6 +1369,7 @@ def test_class_full_endl_bug(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
 def test_call_self(converter):
     code = textwrap.dedent("""\
             def a():
@@ -1461,6 +1464,8 @@ def test_call_self_return2_arugments(converter):
 
     conv = converter(code)
     assert str(conv) == expect
+
+
 # TODO class conversion
 # TODO function calls
 
