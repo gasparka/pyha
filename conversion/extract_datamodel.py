@@ -8,22 +8,26 @@ from common.sfix import Sfix
 
 class persistent_locals2(object):
     def __init__(self, func):
+        self.tmp_locals = {}
         self._locals = {}
         self.func = func
         self._call_count = 0
 
     def __call__(self, *args, **kwargs):
         def tracer(frame, event, arg):
+            # Note: this runs for ALL returns, only the LAST frame is valid info
+            # TODO: filter to only run for wanted methods return? (tried -> failed)
             if event == 'return':
-                self._locals = frame.f_locals.copy()
-                del self._locals['self']
-                self._call_count += 1
+                self.tmp_locals = frame.f_locals.copy()
 
         # tracer is activated on next call, return or exception
         sys.setprofile(tracer)
         try:
             # trace the function call
             res = self.func(self, *args, **kwargs)
+            self._call_count += 1
+            del self.tmp_locals['self']
+            self._locals.update(self.tmp_locals)
         finally:
             # disable tracer and replace with old one
             sys.setprofile(None)
@@ -38,13 +42,14 @@ class persistent_locals2(object):
 
 
 def is_convertable(obj):
-    if isinstance(obj, Sfix) or isinstance(obj, int):
+    allowed_types = [Sfix, int, bool]
+    if type(obj) in allowed_types:
         return True
     elif isinstance(obj, List):
-        sfix_list = all([isinstance(x, Sfix) for x in obj])
-        int_list = all([isinstance(x, int) for x in obj])
-        if sfix_list or int_list:
-            return True
+        # To check whether all elements are of the same type
+        if len(set(map(type, obj))) == 1:
+            if all(type(x) in allowed_types for x in obj):
+                return True
 
     return False
 
