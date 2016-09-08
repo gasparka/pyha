@@ -1,6 +1,7 @@
 import pytest
+from common.hwsim import HW
 from common.sfix import Sfix
-from conversion.extract_datamodel import initial_values, persistent_locals2, extract_locals, VariableMultipleTypes, \
+from conversion.extract_datamodel import initial_values, locals_hack, extract_locals, VariableMultipleTypes, \
     VariableNotConvertable, FunctionNotSimulated
 
 
@@ -109,9 +110,6 @@ def test_initial_value_reject_numpy():
     assert result == expect
 
 
-class ExceptionHapy(Exception):
-    pass
-
 
 def test_initial_value_mixed():
     import numpy as np
@@ -128,46 +126,25 @@ def test_initial_value_mixed():
     assert result == expect
 
 
-def test_function_local_call_nosim():
-    class A:
-        @persistent_locals2
-        def __call__(self):
+def test_function_local1():
+    class A(HW):
+        def tst(self):
             b = 20
 
+    expect = {
+        'tst':
+            {
+                'b': 20
+            }
+    }
     dut = A()
-    with pytest.raises(FunctionNotSimulated):
-        extract_locals(dut)
+    dut.tst()
+    result = extract_locals(dut)
+    assert result == expect
 
 
-def test_function_local_call_bad_type():
-    class A:
-        @persistent_locals2
-        def __call__(self):
-            b = 20.5
-
-    dut = A()
-    dut()
-    with pytest.raises(VariableNotConvertable):
-        result = extract_locals(dut)
-
-
-def test_function_local_count():
-    class A:
-        @persistent_locals2
-        def __call__(self):
-            b = Sfix(0.1, 2, 3)
-            return 123, 0.4
-
-    dut = A()
-    dut()
-    assert dut.__call__._call_count == 1
-    dut()
-    assert dut.__call__._call_count == 2
-
-
-def test_function_local_call():
-    class A:
-        @persistent_locals2
+def test_function_local_special():
+    class A(HW):
         def __call__(self):
             b = 20
 
@@ -183,9 +160,47 @@ def test_function_local_call():
     assert result == expect
 
 
+def test_function_local_call_nosim():
+    class A(HW):
+        def __call__(self):
+            b = 20
+
+    dut = A()
+    with pytest.raises(FunctionNotSimulated):
+        extract_locals(dut)
+
+
+def test_function_local_call_bad_type():
+    class A(HW):
+        def __call__(self):
+            b = 20.5
+
+    dut = A()
+    dut()
+    with pytest.raises(VariableNotConvertable):
+        result = extract_locals(dut)
+
+
+def test_function_local_count():
+    class A:
+        @locals_hack
+        def __call__(self):
+            b = Sfix(0.1, 2, 3)
+            return 123, 0.4
+
+    dut = A()
+    dut()
+    assert dut.__call__._call_count == 1
+    dut()
+    assert dut.__call__._call_count == 2
+
+
+
+
+
 def test_function_local_call_sfix():
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self):
             b = Sfix(0.1, 2, 3)
 
@@ -203,7 +218,7 @@ def test_function_local_call_sfix():
 
 def test_function_local_call_boolean():
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self):
             b = True
 
@@ -221,7 +236,7 @@ def test_function_local_call_boolean():
 
 def test_function_local_call_arguments():
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self, a, c):
             b = Sfix(0.1, 2, 3)
 
@@ -241,7 +256,7 @@ def test_function_local_call_arguments():
 
 def test_function_local_call_iflocal():
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self, condition):
             if condition:
                 iflocal = 128
@@ -263,7 +278,7 @@ def test_function_local_call_iflocal():
 def test_function_local_call_multitype():
     # var should always be same type
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self, condition):
             if condition:
                 iflocal = 128
@@ -276,9 +291,34 @@ def test_function_local_call_multitype():
     with pytest.raises(VariableMultipleTypes):
         result = extract_locals(dut)
 
+
+def test_function_local_call_multitype_sfix_valid():
+    # valid if bounds are the same
+    class A:
+        @locals_hack
+        def __call__(self, condition):
+            if condition:
+                iflocal = Sfix(1.2, 12, -15)
+            else:
+                iflocal = Sfix(0.0, 12, -15)
+
+    expect = {
+        '__call__':
+            {
+                'condition': False,
+                'iflocal': Sfix(0.0, 12, -15)
+            }
+    }
+    dut = A()
+    dut(True)
+    dut(False)
+    result = extract_locals(dut)
+    assert result == expect
+
+
 def test_function_local_call_multitype_sfix():
     class A:
-        @persistent_locals2
+        @locals_hack
         def __call__(self, condition):
             if condition:
                 iflocal = Sfix(1.2, 0, -15)
@@ -294,12 +334,12 @@ def test_function_local_call_multitype_sfix():
 
 def test_function_multifunc():
     class A:
-        @persistent_locals2
+        @locals_hack
         def func2(self, o):
             loom = Sfix(o, 10, -10)
             return 12
 
-        @persistent_locals2
+        @locals_hack
         def __call__(self, a, c):
             b = Sfix(0.1, 2, 3)
 
