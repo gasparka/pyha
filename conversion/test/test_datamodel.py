@@ -260,7 +260,7 @@ def test_function_local_call_iflocal():
     assert result == expect
 
 
-def test_function_local_call_twotype():
+def test_function_local_call_multitype():
     # var should always be same type
     class A:
         @persistent_locals2
@@ -269,6 +269,21 @@ def test_function_local_call_twotype():
                 iflocal = 128
             else:
                 iflocal = True
+
+    dut = A()
+    dut(True)
+    dut(False)
+    with pytest.raises(VariableMultipleTypes):
+        result = extract_locals(dut)
+
+def test_function_local_call_multitype_sfix():
+    class A:
+        @persistent_locals2
+        def __call__(self, condition):
+            if condition:
+                iflocal = Sfix(1.2, 0, -15)
+            else:
+                iflocal = Sfix(0.0, 12, -1)
 
     dut = A()
     dut(True)

@@ -32,14 +32,25 @@ class persistent_locals2(object):
         self._call_count += 1
         self.tmp_locals.pop('self')
         # check multitype
-        for key, value in self.tmp_locals.items():
-            if key in self._locals:
-                if type(value) != type(self._locals[key]):
-                    self.multitype_vars = key
+        key = self.is_multitype()
 
-        self._locals.update(copy.deepcopy(self.tmp_locals))
+
+        self.multitype_vars = key
+
+        self._locals.update(self.tmp_locals)
 
         return res
+
+    def is_multitype(self):
+        for key, value in self.tmp_locals.items():
+            if key in self._locals:
+                if isinstance(value, Sfix):
+                    old = self._locals[key]
+                    if value.left == old.left and value.right == old.right:
+                        return key
+                elif type(value) != type(self._locals[key]):
+                    return key
+        return None
 
     def clear_locals(self):
         self._locals = {}
