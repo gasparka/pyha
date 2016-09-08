@@ -12,6 +12,7 @@ class persistent_locals2(object):
         self._locals = {}
         self.func = func
         self._call_count = 0
+        self.multitype_vars = None
 
     def __call__(self, *args, **kwargs):
         def tracer(frame, event, arg):
@@ -27,7 +28,15 @@ class persistent_locals2(object):
             res = self.func(self, *args, **kwargs)
             self._call_count += 1
             del self.tmp_locals['self']
+
+            for key, value in self.tmp_locals.items():
+                if key in self._locals:
+                    if type(value) != type(self.locals[key]):
+                        self.multitype_vars = key
+
+            # test about type changes
             self._locals.update(self.tmp_locals)
+
         finally:
             # disable tracer and replace with old one
             sys.setprofile(None)
@@ -71,6 +80,10 @@ def extract_locals(obj):
             if call._call_count == 0:
                 raise Exception('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
                                 .format(type(obj).__name__, call.func.__name__))
+
+            if call.multitype_vars is not None:
+                raise Exception('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
+                                .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
 
             for key, val in call.locals.items():
                 if not is_convertable(val):
