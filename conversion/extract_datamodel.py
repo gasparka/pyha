@@ -1,8 +1,10 @@
 # http://code.activestate.com/recipes/577283-decorator-to-expose-local-variables-of-a-function-/
 # persistent_locals2 has been co-authored with Andrea Maffezzoli
+import copy
 import sys
 from typing import List
 
+from common.hwsim import deepish_copy
 from common.sfix import Sfix
 
 
@@ -23,23 +25,20 @@ class persistent_locals2(object):
 
         # tracer is activated on next call, return or exception
         sys.setprofile(tracer)
-        try:
-            # trace the function call
-            res = self.func(self, *args, **kwargs)
-            self._call_count += 1
-            del self.tmp_locals['self']
+        # trace the function call
+        res = self.func(self, *args, **kwargs)
+        sys.setprofile(None)
 
-            for key, value in self.tmp_locals.items():
-                if key in self._locals:
-                    if type(value) != type(self.locals[key]):
-                        self.multitype_vars = key
+        self._call_count += 1
+        self.tmp_locals.pop('self')
+        # check multitype
+        for key, value in self.tmp_locals.items():
+            if key in self._locals:
+                if type(value) != type(self._locals[key]):
+                    self.multitype_vars = key
 
-            # test about type changes
-            self._locals.update(self.tmp_locals)
+        self._locals.update(copy.deepcopy(self.tmp_locals))
 
-        finally:
-            # disable tracer and replace with old one
-            sys.setprofile(None)
         return res
 
     def clear_locals(self):
@@ -72,23 +71,36 @@ def initial_values(obj):
     return ret
 
 
+class FunctionNotSimulated(Exception):
+    pass
+
+
+class VariableMultipleTypes(Exception):
+    pass
+
+
+class VariableNotConvertable(Exception):
+    pass
+
+
 def extract_locals(obj):
     ret = {}
     for method in dir(obj):
         call = getattr(obj, method)
         if type(call) == persistent_locals2:
             if call._call_count == 0:
-                raise Exception('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
-                                .format(type(obj).__name__, call.func.__name__))
+                raise FunctionNotSimulated('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
+                                           .format(type(obj).__name__, call.func.__name__))
 
             if call.multitype_vars is not None:
-                raise Exception('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
-                                .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
+                raise VariableMultipleTypes('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
+                                            .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
 
             for key, val in call.locals.items():
                 if not is_convertable(val):
-                    raise Exception('\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
-                                    .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
+                    raise VariableNotConvertable(
+                        '\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
+                        .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
 
             ret[call.func.__name__] = call.locals
 

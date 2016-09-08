@@ -1,6 +1,7 @@
 import pytest
 from common.sfix import Sfix
-from conversion.extract_datamodel import initial_values, persistent_locals2, extract_locals
+from conversion.extract_datamodel import initial_values, persistent_locals2, extract_locals, VariableMultipleTypes, \
+    VariableNotConvertable, FunctionNotSimulated
 
 
 def test_initial_value_sfix():
@@ -134,7 +135,7 @@ def test_function_local_call_nosim():
             b = 20
 
     dut = A()
-    with pytest.raises(Exception):
+    with pytest.raises(FunctionNotSimulated):
         extract_locals(dut)
 
 
@@ -146,7 +147,7 @@ def test_function_local_call_bad_type():
 
     dut = A()
     dut()
-    with pytest.raises(Exception):
+    with pytest.raises(VariableNotConvertable):
         result = extract_locals(dut)
 
 
@@ -272,8 +273,8 @@ def test_function_local_call_twotype():
     dut = A()
     dut(True)
     dut(False)
-    # with pytest.raises(Exception):
-    result = extract_locals(dut)
+    with pytest.raises(VariableMultipleTypes):
+        result = extract_locals(dut)
 
 
 def test_function_multifunc():
