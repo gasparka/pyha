@@ -65,17 +65,18 @@ def initial_values(obj):
 
 def extract_locals(obj):
     ret = {}
-    if hasattr(obj, '__call__'):
-        call = obj.__call__
-        if call._call_count == 0:
-            raise Exception('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
-                            .format(type(obj).__name__, call.func.__name__))
+    for method in dir(obj):
+        call = getattr(obj, method)
+        if type(call) == persistent_locals2:
+            if call._call_count == 0:
+                raise Exception('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
+                                .format(type(obj).__name__, call.func.__name__))
 
-        for key, val in call.locals.items():
-            if not is_convertable(val):
-                raise Exception('\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
-                                .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
+            for key, val in call.locals.items():
+                if not is_convertable(val):
+                    raise Exception('\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
+                                    .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
 
-        ret[call.func.__name__] = call.locals
+            ret[call.func.__name__] = call.locals
 
     return ret
