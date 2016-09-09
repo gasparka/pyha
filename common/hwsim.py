@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import wraps
 
 from conversion.extract_datamodel import locals_hack
 from six import iteritems, with_metaclass
@@ -46,6 +47,7 @@ def deepish_copy(org):
 def clock_tick(func):
     """ Update register values from "next" """
 
+    @wraps(func)
     def clock_tick_wrap(*args, **kwargs):
         now = args[0].__dict__
         next = args[0].__dict__['next'].__dict__

@@ -1,4 +1,5 @@
 import sys
+from functools import wraps
 from typing import List
 
 from common.sfix import Sfix
@@ -16,30 +17,48 @@ class VariableNotConvertable(Exception):
     pass
 
 
-def locals_hack(func):
-    """ Update register values from "next" """
-    func.tmp_locals = {}
-    func._locals = {}
 
+def locals_hack(func):
+    func.knows_locals = True
+    func.fdict = {'calls': 0, 'locals': {}, 'last_call_locals': {}}
+
+    @wraps(func)
     def locals_hack_wrap(*args, **kwargs):
         def tracer(frame, event, arg):
             # Note: this runs for ALL returns, only the LAST frame is valid info
-            # TODO: filter to only run for wanted methods return? (tried -> failed)
             if event == 'return':
-                func.tmp_locals = frame.f_locals.copy()
-
+                func.fdict['last_call_locals'] = frame.f_locals.copy()
 
         sys.setprofile(tracer)
         # trace the function call
         res = func(*args, **kwargs)
         sys.setprofile(None)
+        func.fdict['calls'] += 1
 
-        func.tmp_locals.pop('self')
+        func.fdict['last_call_locals'].pop('self')
+        multitype_check()
 
-        func._locals.update(func.tmp_locals)
+        func.fdict['locals'].update(func.fdict['last_call_locals'])
 
         return res
 
+    def multitype_check():
+        def bad(var_name, old, new):
+            raise VariableMultipleTypes(
+                'Variable with multiple types!\nClass: {}\nFunction: {}\nVariable: {}\n Old: {}\n New: {}'
+                    .format('WTF',
+                            func.__name__, var_name, old, new))
+
+        for key, value in func.fdict['last_call_locals'].items():
+            if key in func.fdict['locals']:
+                old = func.fdict['locals']
+                if isinstance(value, Sfix):
+                    if value.left != old.left or value.right != old.right:
+                        bad(key, old, value)
+                elif type(value) != type(old):
+                    bad(key, old, value)
+
+    locals_hack_wrap._inner = func
     return locals_hack_wrap
 
 
@@ -133,26 +152,25 @@ def initial_values(obj):
     return ret
 
 
-
 def extract_locals(obj):
     ret = {}
     for method in dir(obj):
         call = getattr(obj, method)
-        if type(call) == locals_hack:
-            if call._call_count == 0:
+        if hasattr(call, 'knows_locals'):
+            if call.fdict['calls'] == 0:
                 raise FunctionNotSimulated('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
-                                           .format(type(obj).__name__, call.func.__name__))
+                                           .format(type(obj).__name__, call.__name__))
 
-            if call.multitype_vars is not None:
-                raise VariableMultipleTypes('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
-                                            .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
+            # if call.multitype_vars is not None:
+            #     raise VariableMultipleTypes('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
+            #                                 .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
 
-            for key, val in call.locals.items():
+            for key, val in call.fdict['locals'].items():
                 if not is_convertable(val):
                     raise VariableNotConvertable(
                         '\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
-                        .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
+                            .format(type(obj).__name__, call.func.__name__, key, type(val).__name__, val))
 
-            ret[call.func.__name__] = call.locals
+            ret[call.__name__] = call.fdict['locals']
 
     return ret
