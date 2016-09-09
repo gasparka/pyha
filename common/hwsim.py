@@ -72,7 +72,7 @@ class Meta(type):
         # add profiler hack to access local variables of functions
         for attr in attrs:
             if callable(attrs[attr]):
-                attrs[attr] = locals_hack(attrs[attr])
+                attrs[attr] = locals_hack(attrs[attr], name)
 
         if '__call__' in attrs:
             # decorate the __call__ function with clock_tick

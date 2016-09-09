@@ -1,7 +1,7 @@
 import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
-from conversion.extract_datamodel import initial_values, locals_hack, extract_locals, VariableMultipleTypes, \
+from conversion.extract_datamodel import initial_values, extract_locals, VariableMultipleTypes, \
     VariableNotConvertable, FunctionNotSimulated
 
 
@@ -160,6 +160,54 @@ def test_function_local_special():
     assert result == expect
 
 
+def test_function_local_skips_init():
+    class A(HW):
+        def __init__(self):
+            self.a = 15
+
+        def __call__(self):
+            b = 1
+
+    expect = {
+        '__call__':
+            {
+                'b': 1
+            }
+    }
+    dut = A()
+    dut()
+
+    result = extract_locals(dut)
+    assert result == expect
+
+
+def test_function_local_special_clock_tick():
+    class A(HW):
+        def __init__(self):
+            self.a = 15
+
+        def __call__(self, b):
+            self.next.a = b
+
+    expect = {
+        '__call__':
+            {
+                'b': 2
+            }
+    }
+    dut = A()
+    dut(1)
+    assert dut.a == 15
+    assert dut.next.a == 1
+
+    dut(2)
+    assert dut.a == 1
+    assert dut.next.a == 2
+
+    result = extract_locals(dut)
+    assert result == expect
+
+
 def test_function_local_call_nosim():
     class A(HW):
         def __call__(self):
@@ -182,25 +230,20 @@ def test_function_local_call_bad_type():
 
 
 def test_function_local_count():
-    class A:
-        @locals_hack
+    class A(HW):
         def __call__(self):
             b = Sfix(0.1, 2, 3)
             return 123, 0.4
 
     dut = A()
     dut()
-    assert dut.__call__._call_count == 1
+    assert dut.__call__.fdict['calls'] == 1
     dut()
-    assert dut.__call__._call_count == 2
+    assert dut.__call__.fdict['calls'] == 2
 
 
-
-
-
-def test_function_local_call_sfix():
-    class A:
-        @locals_hack
+def test_function_local_sfix():
+    class A(HW):
         def __call__(self):
             b = Sfix(0.1, 2, 3)
 
@@ -216,9 +259,8 @@ def test_function_local_call_sfix():
     assert result == expect
 
 
-def test_function_local_call_boolean():
-    class A:
-        @locals_hack
+def test_function_local_boolean():
+    class A(HW):
         def __call__(self):
             b = True
 
@@ -234,9 +276,8 @@ def test_function_local_call_boolean():
     assert result == expect
 
 
-def test_function_local_call_arguments():
-    class A:
-        @locals_hack
+def test_function_local_arguments():
+    class A(HW):
         def __call__(self, a, c):
             b = Sfix(0.1, 2, 3)
 
@@ -254,9 +295,8 @@ def test_function_local_call_arguments():
     assert result == expect
 
 
-def test_function_local_call_iflocal():
-    class A:
-        @locals_hack
+def test_function_local_conditional():
+    class A(HW):
         def __call__(self, condition):
             if condition:
                 iflocal = 128
@@ -277,8 +317,7 @@ def test_function_local_call_iflocal():
 
 def test_function_local_call_multitype():
     # var should always be same type
-    class A:
-        @locals_hack
+    class A(HW):
         def __call__(self, condition):
             if condition:
                 iflocal = 128
@@ -287,15 +326,14 @@ def test_function_local_call_multitype():
 
     dut = A()
     dut(True)
-    dut(False)
     with pytest.raises(VariableMultipleTypes):
-        result = extract_locals(dut)
+        dut(False)
+        # result = extract_locals(dut)
 
 
 def test_function_local_call_multitype_sfix_valid():
     # valid if bounds are the same
-    class A:
-        @locals_hack
+    class A(HW):
         def __call__(self, condition):
             if condition:
                 iflocal = Sfix(1.2, 12, -15)
@@ -317,8 +355,7 @@ def test_function_local_call_multitype_sfix_valid():
 
 
 def test_function_local_call_multitype_sfix():
-    class A:
-        @locals_hack
+    class A(HW):
         def __call__(self, condition):
             if condition:
                 iflocal = Sfix(1.2, 0, -15)
@@ -327,19 +364,17 @@ def test_function_local_call_multitype_sfix():
 
     dut = A()
     dut(True)
-    dut(False)
+
     with pytest.raises(VariableMultipleTypes):
-        result = extract_locals(dut)
+        dut(False)
 
 
-def test_function_multifunc():
-    class A:
-        @locals_hack
+def test_function_local_multifunc():
+    class A(HW):
         def func2(self, o):
             loom = Sfix(o, 10, -10)
             return 12
 
-        @locals_hack
         def __call__(self, a, c):
             b = Sfix(0.1, 2, 3)
 
