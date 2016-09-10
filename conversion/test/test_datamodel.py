@@ -4,7 +4,7 @@ import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
 from conversion.extract_datamodel import initial_values, extract_locals, VariableNotConvertable, FunctionNotSimulated, \
-    TypeNotConsistent
+    TypeNotConsistent, AssignToSelf
 
 
 def test_initial_value_sfix():
@@ -569,4 +569,48 @@ def test_self_type_consistent_sfix():
     dut(True)  # This shall NOT throw even tho types are different (first time)
     dut(False)
 
-# def test_raises_
+
+def test_forbid_self_assign_sfix():
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.0)
+
+        def __call__(self, condition):
+            if condition:
+                self.next.a = Sfix(1.2, 3, -18)
+            else:
+                self.a = Sfix(2.2, 3, -18)
+
+    expect = textwrap.dedent("""\
+            Assigment to self.a, did you mean self.next.a?
+            Class: A""")
+
+    dut = A()
+    dut(True)
+    with pytest.raises(AssignToSelf) as e:
+        dut(False)
+
+    assert str(e.value) == expect
+
+
+def test_forbid_self_assign_list():
+    class A(HW):
+        def __init__(self):
+            self.alist = Sfix(0.0)
+
+        def __call__(self, condition):
+            if condition:
+                self.next.alist = [1, 2, 3]
+            else:
+                self.alist = [1, 2, 3, 4]
+
+    expect = textwrap.dedent("""\
+            Assigment to self.alist, did you mean self.next.alist?
+            Class: A""")
+
+    dut = A()
+    dut(True)
+    with pytest.raises(AssignToSelf) as e:
+        dut(False)
+
+    assert str(e.value) == expect

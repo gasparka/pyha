@@ -25,6 +25,13 @@ class VariableNotConvertable(Exception):
         super().__init__(message)
 
 
+class AssignToSelf(Exception):
+    def __init__(self, class_name, variable_name):
+        message = 'Assigment to self.{}, did you mean self.next.{}?\nClass: {}'.format(
+            variable_name, variable_name, class_name)
+        super().__init__(message)
+
+
 def dict_types_consistent_check(class_name, function_name, new, old):
     """ Check 'new' dict against 'new' dict for types, if not consistent raise """
     for key, value in new.items():
@@ -88,6 +95,27 @@ def locals_hack(func, class_name):
         return res
 
     return locals_hack_wrap
+
+
+def forbid_assign_to_self(func, class_name):
+    """ In Hapy user should only assign to self.next.X, any assign to
+        'self.X' is a bug and this decorator tests for that """
+
+    @wraps(func)
+    def forbid_assign_to_self_wrap(*args, **kwargs):
+        from common.hwsim import deepish_copy
+        old = deepish_copy(args[0].__dict__)
+        res = func(*args, **kwargs)
+
+        for key, value in args[0].__dict__.items():
+            if key == 'next':
+                continue
+            if value != old[key]:
+                raise AssignToSelf(class_name, key)
+
+        return res
+
+    return forbid_assign_to_self_wrap
 
 
 def self_type_consistent_checker(func, class_name):

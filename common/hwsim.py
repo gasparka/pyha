@@ -1,7 +1,7 @@
 from copy import deepcopy
 from functools import wraps
 
-from conversion.extract_datamodel import locals_hack, self_type_consistent_checker
+from conversion.extract_datamodel import locals_hack, self_type_consistent_checker, forbid_assign_to_self
 from six import iteritems, with_metaclass
 
 """
@@ -62,6 +62,7 @@ class Meta(type):
                 attrs[attr] = locals_hack(attrs[attr], name)
 
         if '__call__' in attrs:
+            attrs['__call__'] = forbid_assign_to_self(attrs['__call__'], name)
             attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
             # decorate the __call__ function with clock_tick
             attrs['__call__'] = clock_tick(attrs['__call__'])
