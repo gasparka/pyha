@@ -18,22 +18,31 @@ class VariableNotConvertable(Exception):
 
 
 class TraceManager:
-    stack = []
+    last_call_locals = {}
+    refcount = 0
 
     @classmethod
-    def set_profile(cls, tracer):
-        cls.stack.append(tracer)
-        sys.setprofile(tracer)
+    def tracer(cls, frame, event, arg):
+        # Note: this runs for ALL returns, only the LAST frame is valid info
+        if event == 'return':
+            cls.last_call_locals = frame.f_locals.copy()
+
+    @classmethod
+    def set_profile(cls):
+        cls.refcount += 1
+        sys.setprofile(TraceManager.tracer)
 
     @classmethod
     def remove_profile(cls):
-        cls.stack.pop()
+        cls.refcount -= 1
+        assert cls.refcount >= 0
         sys.setprofile(None)
 
     @classmethod
     def restore_profile(cls):
-        if len(cls.stack):
-            sys.setprofile(cls.stack[-1])
+        if cls.refcount > 0:
+            sys.setprofile(TraceManager.tracer)
+
 
 def locals_hack(func, class_name):
     func.class_name = class_name
@@ -42,25 +51,18 @@ def locals_hack(func, class_name):
 
     @wraps(func)
     def locals_hack_wrap(*args, **kwargs):
-        def tracer(frame, event, arg):
-            # Note: this runs for ALL returns, only the LAST frame is valid info
-            if event == 'return':
-                # print(func.__name__, ' HERE')
-                func.fdict['last_call_locals'] = frame.f_locals.copy()
 
-        # trace the function call
-        TraceManager.set_profile(tracer)
+        TraceManager.set_profile()
         res = func(*args, **kwargs)
         TraceManager.remove_profile()
 
         func.fdict['calls'] += 1
-
-        func.fdict['last_call_locals'].pop('self')
+        TraceManager.last_call_locals.pop('self')
         multitype_check()
 
-        func.fdict['locals'].update(func.fdict['last_call_locals'])
+        func.fdict['locals'].update(TraceManager.last_call_locals)
 
-        # in case nested call, restore the OLD profiler function
+        # in case nested call, restore the tracer function
         TraceManager.restore_profile()
         return res
 
@@ -71,7 +73,7 @@ def locals_hack(func, class_name):
                     .format(class_name,
                             func.__name__, var_name, type(old), old, type(new), new))
 
-        for key, value in func.fdict['last_call_locals'].items():
+        for key, value in TraceManager.last_call_locals.items():
             if key in func.fdict['locals']:
                 old = func.fdict['locals'][key]
                 if isinstance(value, Sfix):
