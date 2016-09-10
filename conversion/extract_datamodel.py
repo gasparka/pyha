@@ -17,6 +17,24 @@ class VariableNotConvertable(Exception):
     pass
 
 
+class TraceManager:
+    stack = []
+
+    @classmethod
+    def set_profile(cls, tracer):
+        cls.stack.append(tracer)
+        sys.setprofile(tracer)
+
+    @classmethod
+    def remove_profile(cls):
+        cls.stack.pop()
+        sys.setprofile(None)
+
+    @classmethod
+    def restore_profile(cls):
+        if len(cls.stack):
+            sys.setprofile(cls.stack[-1])
+
 def locals_hack(func, class_name):
     func.class_name = class_name
     func.knows_locals = True
@@ -27,12 +45,14 @@ def locals_hack(func, class_name):
         def tracer(frame, event, arg):
             # Note: this runs for ALL returns, only the LAST frame is valid info
             if event == 'return':
+                # print(func.__name__, ' HERE')
                 func.fdict['last_call_locals'] = frame.f_locals.copy()
 
-        sys.setprofile(tracer)
         # trace the function call
+        TraceManager.set_profile(tracer)
         res = func(*args, **kwargs)
-        sys.setprofile(None)
+        TraceManager.remove_profile()
+
         func.fdict['calls'] += 1
 
         func.fdict['last_call_locals'].pop('self')
@@ -40,6 +60,8 @@ def locals_hack(func, class_name):
 
         func.fdict['locals'].update(func.fdict['last_call_locals'])
 
+        # in case nested call, restore the OLD profiler function
+        TraceManager.restore_profile()
         return res
 
     def multitype_check():

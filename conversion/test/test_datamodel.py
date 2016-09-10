@@ -19,10 +19,10 @@ def test_initial_value_sfix2():
     class A:
         def __init__(self):
             self.a = Sfix(0.56, 0, -10)
-            self.b = Sfix(-10, 2, -10)
+            self.b = Sfix(-10, 8, -10)
 
     expect = {'a': Sfix(0.56, 0, -10),
-              'b': Sfix(-10, 2, -10)}
+              'b': Sfix(-10, 8, -10)}
     result = initial_values(A())
     assert result == expect
 
@@ -41,10 +41,10 @@ def test_initial_value_sfix_int():
     class A:
         def __init__(self):
             self.a = 20
-            self.b = Sfix(-10, 2, -10)
+            self.b = Sfix(-10, 8, -10)
 
     expect = {'a': 20,
-              'b': Sfix(-10, 2, -10)}
+              'b': Sfix(-10, 8, -10)}
     result = initial_values(A())
     assert result == expect
 
@@ -52,9 +52,9 @@ def test_initial_value_sfix_int():
 def test_initial_value_sfix_list():
     class A:
         def __init__(self):
-            self.b = [Sfix(-10, 2, -10)] * 10
+            self.b = [Sfix(-10, 8, -10)] * 10
 
-    expect = {'b': [Sfix(-10, 2, -10)] * 10}
+    expect = {'b': [Sfix(-10, 8, -10)] * 10}
     result = initial_values(A())
     assert result == expect
 
@@ -116,12 +116,12 @@ def test_initial_value_mixed():
     class A:
         def __init__(self):
             self.inte = 20
-            self.fix = [Sfix(-10, 2, -10)] * 10
+            self.fix = [Sfix(-10, 8, -10)] * 10
             self.a = {'a': 'tere', 25: 'tore'}
             self.lol = 0.5
             self.b = np.array([1, 2, 3])
 
-    expect = {'inte': 20, 'fix': [Sfix(-10, 2, -10)] * 10}
+    expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10}
     result = initial_values(A())
     assert result == expect
 
@@ -232,7 +232,7 @@ def test_function_local_call_bad_type():
 def test_function_local_count():
     class A(HW):
         def __call__(self):
-            b = Sfix(0.1, 2, 3)
+            b = Sfix(0.1, 2, -3)
             return 123, 0.4
 
     dut = A()
@@ -245,12 +245,12 @@ def test_function_local_count():
 def test_function_local_sfix():
     class A(HW):
         def __call__(self):
-            b = Sfix(0.1, 2, 3)
+            b = Sfix(0.1, 2, -3)
 
     expect = {
         '__call__':
             {
-                'b': Sfix(0.1, 2, 3)
+                'b': Sfix(0.1, 2, -3)
             }
     }
     dut = A()
@@ -279,18 +279,18 @@ def test_function_local_boolean():
 def test_function_local_arguments():
     class A(HW):
         def __call__(self, a, c):
-            b = Sfix(0.1, 2, 3)
+            b = Sfix(0.1, 2, -3)
 
     expect = {
         '__call__':
             {
                 'a': 15,
-                'b': Sfix(0.1, 2, 3),
-                'c': Sfix(0.1, 2, 3),
+                'b': Sfix(0.1, 2, -3),
+                'c': Sfix(0.1, 2, -3),
             }
     }
     dut = A()
-    dut(15, Sfix(0.1, 2, 3))
+    dut(15, Sfix(0.1, 2, -3))
     result = extract_locals(dut)
     assert result == expect
 
@@ -358,7 +358,7 @@ def test_function_local_call_multitype_sfix():
     class A(HW):
         def __call__(self, condition):
             if condition:
-                iflocal = Sfix(1.2, 0, -15)
+                iflocal = Sfix(1.2, 1, -15)
             else:
                 iflocal = Sfix(0.0, 12, -1)
 
@@ -376,14 +376,14 @@ def test_function_local_multifunc():
             return 12
 
         def __call__(self, a, c):
-            b = Sfix(0.1, 2, 3)
+            b = Sfix(0.1, 2, -3)
 
     expect = {
         '__call__':
             {
                 'a': 15,
-                'b': Sfix(0.1, 2, 3),
-                'c': Sfix(0.1, 2, 3),
+                'b': Sfix(0.1, 2, -3),
+                'c': Sfix(0.1, 2, -3),
             },
         'func2':
             {
@@ -392,7 +392,37 @@ def test_function_local_multifunc():
             }
     }
     dut = A()
-    dut(15, Sfix(0.1, 2, 3))
+    dut(15, Sfix(0.1, 2, -3))
     dut.func2(1)
+    result = extract_locals(dut)
+    assert result == expect
+
+
+def test_function_local_multifunc_nested():
+    class A(HW):
+        def func2(self, o):
+            loom = Sfix(o, 10, -10)
+            return 12
+
+        def __call__(self, a, c):
+            ret = self.func2(a)
+            b = Sfix(0.1, 2, -3)
+
+    expect = {
+        '__call__':
+            {
+                'a': 15,
+                'b': Sfix(0.1, 2, -3),
+                'c': Sfix(0.1, 2, -3),
+                'ret': 12
+            },
+        'func2':
+            {
+                'o': 15,
+                'loom': Sfix(15, 10, -10),
+            }
+    }
+    dut = A()
+    dut(15, Sfix(0.1, 2, -3))
     result = extract_locals(dut)
     assert result == expect
