@@ -1,12 +1,13 @@
 from copy import deepcopy
 from functools import wraps
 
-from conversion.extract_datamodel import locals_hack
+from conversion.extract_datamodel import locals_hack, self_type_consistent_checker
 from six import iteritems, with_metaclass
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
 """
+
 
 def deepish_copy(org):
     """
@@ -27,21 +28,6 @@ def deepish_copy(org):
                 out[k] = v  # ints
 
     return out
-
-
-# class clock_tick(object):
-#
-#     def __init__(self, func):
-#         self.func = func
-#
-#     def __call__(self, *args, **kwargs):
-#         now = self.__dict__
-#         next = self.__dict__['next'].__dict__
-#
-#         now.update(deepish_copy(next))
-#
-#         ret = self.func(self, *args, **kwargs)
-#         return ret
 
 
 def clock_tick(func):
@@ -65,6 +51,7 @@ class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
+
     def __new__(mcs, name, bases, attrs, **kwargs):
         # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
 
@@ -75,6 +62,7 @@ class Meta(type):
                 attrs[attr] = locals_hack(attrs[attr], name)
 
         if '__call__' in attrs:
+            attrs['__call__'] = self_type_consistent_checker((attrs['__call__']))
             # decorate the __call__ function with clock_tick
             attrs['__call__'] = clock_tick(attrs['__call__'])
         else:

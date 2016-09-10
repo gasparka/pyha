@@ -9,7 +9,11 @@ class FunctionNotSimulated(Exception):
     pass
 
 
-class VariableMultipleTypes(Exception):
+class LocalTypeNotConsistent(Exception):
+    pass
+
+
+class SelfTypeNotConsistent(Exception):
     pass
 
 
@@ -18,6 +22,7 @@ class VariableNotConvertable(Exception):
 
 
 class TraceManager:
+    """ Enables nested functions calls, thanks to ref counting """
     last_call_locals = {}
     refcount = 0
 
@@ -45,6 +50,7 @@ class TraceManager:
 
 
 def locals_hack(func, class_name):
+    """ Use system trace to get function locals after each call """
     func.class_name = class_name
     func.knows_locals = True
     func.fdict = {'calls': 0, 'locals': {}, 'last_call_locals': {}}
@@ -68,7 +74,7 @@ def locals_hack(func, class_name):
 
     def multitype_check():
         def bad(var_name, old, new):
-            raise VariableMultipleTypes(
+            raise LocalTypeNotConsistent(
                 'Variable with multiple types!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'
                     .format(class_name,
                             func.__name__, var_name, type(old), old, type(new), new))
@@ -82,8 +88,41 @@ def locals_hack(func, class_name):
                 elif type(value) != type(old):
                     bad(key, old, value)
 
-    locals_hack_wrap._inner = func
     return locals_hack_wrap
+
+
+def self_type_consistent_checker(func):
+    """ After each __call__, check that 'self' has consistent types(only single type over time)
+     This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
+    """
+
+    calls = 0
+
+    @wraps(func)
+    def self_type_consistent_checker_wrap(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:  # first time skip this shit
+            return func(*args, **kwargs)
+
+        from common.hwsim import deepish_copy
+        nxt = args[0].__dict__['next'].__dict__
+        old = deepish_copy(nxt)
+        res = func(*args, **kwargs)
+        new = nxt
+
+        for key, value in new.items():
+            if key in old:
+                old_value = old[key]
+            if isinstance(value, Sfix):
+                if value.left != old_value.left or value.right != old_value.right:
+                    raise SelfTypeNotConsistent
+            elif type(value) != type(old_value):
+                raise SelfTypeNotConsistent
+
+        return res
+
+    return self_type_consistent_checker_wrap
 
 
 def is_convertable(obj):
@@ -117,10 +156,6 @@ def extract_locals(obj):
             if call.fdict['calls'] == 0:
                 raise FunctionNotSimulated('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
                                            .format(type(obj).__name__, call.__name__))
-
-            # if call.multitype_vars is not None:
-            #     raise VariableMultipleTypes('\nClass: {}\nFunction: {}\nVariable: {}\n is used with multiple types'
-            #                                 .format(type(obj).__name__, call.func.__name__, call.multitype_vars))
 
             for key, val in call.fdict['locals'].items():
                 if not is_convertable(val):
