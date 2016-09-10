@@ -1,8 +1,8 @@
 import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
-from conversion.extract_datamodel import initial_values, extract_locals, LocalTypeNotConsistent, \
-    VariableNotConvertable, FunctionNotSimulated, SelfTypeNotConsistent
+from conversion.extract_datamodel import initial_values, extract_locals, VariableNotConvertable, FunctionNotSimulated, \
+    TypeNotConsistent
 
 
 def test_initial_value_sfix():
@@ -207,7 +207,7 @@ def test_locals_special_clock_tick():
     assert result == expect
 
 
-def test_locals_call_nosim():
+def test_locals_call_nosim_raises():
     class A(HW):
         def __call__(self):
             b = 20
@@ -217,7 +217,7 @@ def test_locals_call_nosim():
         extract_locals(dut)
 
 
-def test_locals_call_bad_type():
+def test_locals_call_bad_type_raises():
     class A(HW):
         def __call__(self):
             b = 20.5
@@ -314,7 +314,7 @@ def test_locals_conditional():
     assert result == expect
 
 
-def test_locals_call_multitype():
+def test_locals_call_multitype_raises():
     # var should always be same type
     class A(HW):
         def __call__(self, condition):
@@ -325,12 +325,12 @@ def test_locals_call_multitype():
 
     dut = A()
     dut(True)
-    with pytest.raises(LocalTypeNotConsistent):
+    with pytest.raises(TypeNotConsistent):
         dut(False)
         # result = extract_locals(dut)
 
 
-def test_locals_multitype_sfix_valid():
+def test_locals_multitype_sfix():
     # valid if bounds are the same
     class A(HW):
         def __call__(self, condition):
@@ -353,7 +353,7 @@ def test_locals_multitype_sfix_valid():
     assert result == expect
 
 
-def test_locals_multitype_sfix():
+def test_locals_multitype_sfix_raises():
     class A(HW):
         def __call__(self, condition):
             if condition:
@@ -364,7 +364,7 @@ def test_locals_multitype_sfix():
     dut = A()
     dut(True)
 
-    with pytest.raises(LocalTypeNotConsistent):
+    with pytest.raises(TypeNotConsistent):
         dut(False)
 
 
@@ -473,7 +473,7 @@ def test_locals_multifunc_nested_complex():
     assert result == expect
 
 
-def test_self_type_consistent1():
+def test_self_type_consistent_raises():
     class A(HW):
         def __init__(self):
             self.a = 128
@@ -486,11 +486,11 @@ def test_self_type_consistent1():
 
     dut = A()
     dut(True)
-    with pytest.raises(SelfTypeNotConsistent):
+    with pytest.raises(TypeNotConsistent):
         dut(False)
 
 
-def test_self_type_consistent_initial_allowed():
+def test_self_type_consistent_initial_allowed_raises():
     class A(HW):
         def __init__(self):
             self.a = None
@@ -503,11 +503,11 @@ def test_self_type_consistent_initial_allowed():
 
     dut = A()
     dut(True)  # This shall NOT throw even tho types are different (first time)
-    with pytest.raises(SelfTypeNotConsistent):
+    with pytest.raises(TypeNotConsistent):
         dut(False)
 
 
-def test_self_type_consistent_sfix():
+def test_self_type_consistent_sfix_raises():
     class A(HW):
         def __init__(self):
             self.a = Sfix(0.0)
@@ -520,11 +520,11 @@ def test_self_type_consistent_sfix():
 
     dut = A()
     dut(True)  # This shall NOT throw even tho types are different (first time)
-    with pytest.raises(SelfTypeNotConsistent):
+    with pytest.raises(TypeNotConsistent):
         dut(False)
 
 
-def test_self_type_consistent_sfix_valid():
+def test_self_type_consistent_sfix():
     class A(HW):
         def __init__(self):
             self.a = Sfix(0.0)
@@ -538,3 +538,6 @@ def test_self_type_consistent_sfix_valid():
     dut = A()
     dut(True)  # This shall NOT throw even tho types are different (first time)
     dut(False)
+
+
+def test_raises_

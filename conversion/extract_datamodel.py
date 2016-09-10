@@ -6,19 +6,35 @@ from common.sfix import Sfix
 
 
 class FunctionNotSimulated(Exception):
-    pass
+    def __init__(self, class_name, function_name):
+        message = 'Function not simulated before conversion!\nClass: {}\nFunction: {}'.format(class_name, function_name)
+        super().__init__(message)
 
 
-class LocalTypeNotConsistent(Exception):
-    pass
-
-
-class SelfTypeNotConsistent(Exception):
-    pass
+class TypeNotConsistent(Exception):
+    def __init__(self, class_name, function_name, variable_name, old, new):
+        message = 'Self/local not consistent type!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'.format(
+            class_name, function_name, variable_name, type(old), old, type(new), new)
+        super().__init__(message)
 
 
 class VariableNotConvertable(Exception):
-    pass
+    def __init__(self, class_name, function_name, variable_name, variable):
+        message = 'Variable not convertable!\nClass: {}\nFunction: {}\nVariable: {}\nValue: {}:{}'.format(
+            class_name, function_name, variable_name, type(variable), variable)
+        super().__init__(message)
+
+
+def dict_types_consistent_check(class_name, function_name, new, old):
+    """ Check 'new' dict against 'new' dict for types, if not consistent raise """
+    for key, value in new.items():
+        if key in old:
+            old_value = old[key]
+            if isinstance(value, Sfix):
+                if value.left != old_value.left or value.right != old_value.right:
+                    raise TypeNotConsistent(class_name, function_name, key, old, new)
+            elif type(value) != type(old_value):
+                raise TypeNotConsistent(class_name, function_name, key, old, new)
 
 
 class TraceManager:
@@ -57,14 +73,13 @@ def locals_hack(func, class_name):
 
     @wraps(func)
     def locals_hack_wrap(*args, **kwargs):
-
         TraceManager.set_profile()
         res = func(*args, **kwargs)
         TraceManager.remove_profile()
 
         func.fdict['calls'] += 1
         TraceManager.last_call_locals.pop('self')
-        multitype_check()
+        dict_types_consistent_check(class_name, func.__name__, TraceManager.last_call_locals, func.fdict['locals'])
 
         func.fdict['locals'].update(TraceManager.last_call_locals)
 
@@ -72,26 +87,10 @@ def locals_hack(func, class_name):
         TraceManager.restore_profile()
         return res
 
-    def multitype_check():
-        def bad(var_name, old, new):
-            raise LocalTypeNotConsistent(
-                'Variable with multiple types!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'
-                    .format(class_name,
-                            func.__name__, var_name, type(old), old, type(new), new))
-
-        for key, value in TraceManager.last_call_locals.items():
-            if key in func.fdict['locals']:
-                old = func.fdict['locals'][key]
-                if isinstance(value, Sfix):
-                    if value.left != old.left or value.right != old.right:
-                        bad(key, old, value)
-                elif type(value) != type(old):
-                    bad(key, old, value)
-
     return locals_hack_wrap
 
 
-def self_type_consistent_checker(func):
+def self_type_consistent_checker(func, class_name):
     """ After each __call__, check that 'self' has consistent types(only single type over time)
      This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
     """
@@ -102,7 +101,7 @@ def self_type_consistent_checker(func):
     def self_type_consistent_checker_wrap(*args, **kwargs):
         nonlocal calls
         calls += 1
-        if calls == 1:  # first time skip this shit
+        if calls == 1:
             return func(*args, **kwargs)
 
         from common.hwsim import deepish_copy
@@ -111,14 +110,7 @@ def self_type_consistent_checker(func):
         res = func(*args, **kwargs)
         new = nxt
 
-        for key, value in new.items():
-            if key in old:
-                old_value = old[key]
-            if isinstance(value, Sfix):
-                if value.left != old_value.left or value.right != old_value.right:
-                    raise SelfTypeNotConsistent
-            elif type(value) != type(old_value):
-                raise SelfTypeNotConsistent
+        dict_types_consistent_check(class_name, func.__name__, new, old)
 
         return res
 
@@ -149,19 +141,17 @@ def initial_values(obj):
 
 def extract_locals(obj):
     ret = {}
+    class_name = type(obj).__name__
     for method in dir(obj):
         if method == '__init__': continue
         call = getattr(obj, method)
         if hasattr(call, 'knows_locals'):
             if call.fdict['calls'] == 0:
-                raise FunctionNotSimulated('\nClass: {}\nFunction: {}\n has not been simulated before conversion.'
-                                           .format(type(obj).__name__, call.__name__))
+                raise FunctionNotSimulated(class_name, call.__name__)
 
             for key, val in call.fdict['locals'].items():
                 if not is_convertable(val):
-                    raise VariableNotConvertable(
-                        '\nClass: {}\nFunction: {}\nVariable: {}\nType: {},\n {} is not convertable.'
-                            .format(type(obj).__name__, call.__name__, key, type(val).__name__, val))
+                    raise VariableNotConvertable(class_name, call.__name__, key, val)
 
             ret[call.__name__] = call.fdict['locals']
 

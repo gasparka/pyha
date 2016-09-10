@@ -62,7 +62,7 @@ class Meta(type):
                 attrs[attr] = locals_hack(attrs[attr], name)
 
         if '__call__' in attrs:
-            attrs['__call__'] = self_type_consistent_checker((attrs['__call__']))
+            attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
             # decorate the __call__ function with clock_tick
             attrs['__call__'] = clock_tick(attrs['__call__'])
         else:
