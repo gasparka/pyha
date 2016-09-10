@@ -113,6 +113,9 @@ class Sfix(object):
     def __str__(self):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __float__(self):
         return float(self.val)
 

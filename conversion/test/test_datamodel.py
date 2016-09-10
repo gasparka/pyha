@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
@@ -222,10 +224,19 @@ def test_locals_call_bad_type_raises():
         def __call__(self):
             b = 20.5
 
+    expect = textwrap.dedent("""\
+            Variable not convertable!
+            Class: A
+            Function: __call__
+            Variable: b
+            Value: <class 'float'>:20.5""")
     dut = A()
     dut()
-    with pytest.raises(VariableNotConvertable):
+    with pytest.raises(VariableNotConvertable) as e:
         result = extract_locals(dut)
+
+    assert str(e.value) == expect
+
 
 
 def test_locals_calls():
@@ -323,12 +334,13 @@ def test_locals_call_multitype_raises():
             else:
                 iflocal = True
 
+
     dut = A()
     dut(True)
-    with pytest.raises(TypeNotConsistent):
+    with pytest.raises(TypeNotConsistent) as e:
         dut(False)
-        # result = extract_locals(dut)
 
+        # cant test text cause locals discovery order can vary
 
 def test_locals_multitype_sfix():
     # valid if bounds are the same
@@ -501,10 +513,19 @@ def test_self_type_consistent_initial_allowed_raises():
             else:
                 self.next.a = True
 
+    expect = textwrap.dedent("""\
+            Self/local not consistent type!
+            Class: A
+            Function: __call__
+            Variable: a
+            Old: <class 'dict'>:{'a': 128}
+            New: <class 'dict'>:{'a': True}""")
     dut = A()
     dut(True)  # This shall NOT throw even tho types are different (first time)
-    with pytest.raises(TypeNotConsistent):
+    with pytest.raises(TypeNotConsistent) as e:
         dut(False)
+
+    assert str(e.value) == expect
 
 
 def test_self_type_consistent_sfix_raises():
@@ -518,10 +539,19 @@ def test_self_type_consistent_sfix_raises():
             else:
                 self.next.a = Sfix(2.2, 3, -32)
 
+    expect = textwrap.dedent("""\
+            Self/local not consistent type!
+            Class: A
+            Function: __call__
+            Variable: a
+            Old: <class 'dict'>:{'a': 1.20000076294 [3:-18]}
+            New: <class 'dict'>:{'a': 2.19999999995 [3:-32]}""")
     dut = A()
     dut(True)  # This shall NOT throw even tho types are different (first time)
-    with pytest.raises(TypeNotConsistent):
+    with pytest.raises(TypeNotConsistent) as e:
         dut(False)
+
+    assert str(e.value) == expect
 
 
 def test_self_type_consistent_sfix():
@@ -539,5 +569,4 @@ def test_self_type_consistent_sfix():
     dut(True)  # This shall NOT throw even tho types are different (first time)
     dut(False)
 
-
-def test_raises_
+# def test_raises_

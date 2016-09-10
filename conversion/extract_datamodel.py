@@ -14,7 +14,7 @@ class FunctionNotSimulated(Exception):
 class TypeNotConsistent(Exception):
     def __init__(self, class_name, function_name, variable_name, old, new):
         message = 'Self/local not consistent type!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'.format(
-            class_name, function_name, variable_name, type(old), old, type(new), new)
+            class_name, function_name, variable_name, type(old), repr(old), type(new), new)
         super().__init__(message)
 
 
