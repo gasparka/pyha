@@ -123,7 +123,7 @@ def test_forbid_self_assign_sfix():
 def test_forbid_self_assign_list():
     class A(HW):
         def __init__(self):
-            self.alist = Sfix(0.0)
+            self.alist = [1, 2, 3]
 
         def __call__(self, condition):
             if condition:
@@ -163,7 +163,7 @@ def test_self_type_consistent_raises():
 def test_self_type_consistent_initial_allowed_raises():
     class A(HW):
         def __init__(self):
-            self.a = None
+            self.a = 128
 
         def __call__(self, condition):
             if condition:
@@ -179,7 +179,7 @@ def test_self_type_consistent_initial_allowed_raises():
             Old: <class 'dict'>:{'a': 128}
             New: <class 'dict'>:{'a': True}""")
     dut = A()
-    dut(True)  # This shall NOT throw even tho types are different (first time)
+    dut(True)
     with pytest.raises(TypeNotConsistent) as e:
         dut(False)
 
@@ -205,7 +205,7 @@ def test_self_type_consistent_sfix_raises():
             Old: <class 'dict'>:{'a': 1.20000076294 [3:-18]}
             New: <class 'dict'>:{'a': 2.19999999995 [3:-32]}""")
     dut = A()
-    dut(True)  # This shall NOT throw even tho types are different (first time)
+    dut(True)
     with pytest.raises(TypeNotConsistent) as e:
         dut(False)
 
@@ -224,5 +224,29 @@ def test_self_type_consistent_sfix():
                 self.next.a = Sfix(2.2, 3, -18)
 
     dut = A()
-    dut(True)  # This shall NOT throw even tho types are different (first time)
+    dut(True)
     dut(False)
+
+
+def test_initial_self():
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.0123)
+            self.i = 25
+            self.b = False
+
+        def __call__(self):
+            self.next.a = Sfix(1.2, 3, -18)
+            self.next.i = 0
+            self.next.b = True
+
+    dut = A()
+    assert dut.a == dut.__dict__['__initial_self__'].a
+    assert dut.b == dut.__dict__['__initial_self__'].b
+    assert dut.i == dut.__dict__['__initial_self__'].i
+    dut()
+    dut()
+    dut()
+    assert dut.__dict__['__initial_self__'].a.init_val == 0.0123
+    assert dut.__dict__['__initial_self__'].i == 25
+    assert dut.__dict__['__initial_self__'].b == False

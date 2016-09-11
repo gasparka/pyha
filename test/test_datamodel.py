@@ -3,38 +3,91 @@ import textwrap
 import pytest
 from common.hwsim import HW, TypeNotConsistent
 from common.sfix import Sfix
-from conversion.extract_datamodel import initial_values, extract_locals, VariableNotConvertable, FunctionNotSimulated
+from conversion.extract_datamodel import extract_datamodel, extract_locals, VariableNotConvertable, FunctionNotSimulated
 
 
-def test_initial_value_sfix():
-    class A:
+def test_datamodel_sfix():
+    class A(HW):
         def __init__(self):
             self.a = Sfix(0.56, 0, -10)
 
     expect = {'a': Sfix(0.56, 0, -10)}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
-def test_initial_value_sfix2():
-    class A:
+def test_datamodel_sfix_lazy():
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.56)
+
+        def __call__(self):
+            self.next.a = Sfix(0.0, 0, -10)
+
+    expect = {'a': Sfix(0.56, 0, -10)}
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
+    assert result == expect
+
+
+def test_datamodel_sfix2():
+    class A(HW):
         def __init__(self):
             self.a = Sfix(0.56, 0, -10)
             self.b = Sfix(-10, 8, -10)
 
+        def __call__(self):
+            pass
+
     expect = {'a': Sfix(0.56, 0, -10),
               'b': Sfix(-10, 8, -10)}
-    result = initial_values(A())
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
-def test_initial_value_int():
-    class A:
+def test_datamodel_sfix_list():
+    class A(HW):
+        def __init__(self):
+            self.b = [Sfix(-10, 8, -10)] * 10
+
+    expect = {'b': [Sfix(-10, 8, -10)] * 10}
+    result = extract_datamodel(A())
+    assert result == expect
+
+
+def test_datamodel_sfix_list_lazy():
+    class A(HW):
+        def __init__(self):
+            self.b = [Sfix(-1.4)] * 10
+
+        def __call__(self):
+            self.next.b = [Sfix(0.0, 2, -18)] * 10
+
+    expect = {'b': [Sfix(-1.4, 2, -18)] * 10}
+
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
+    assert result == expect
+
+
+def test_datamodel_int():
+    class A(HW):
         def __init__(self):
             self.a = 20
 
+        def __call__(self):
+            self.next.a = 162
+
     expect = {'a': 20}
-    result = initial_values(A())
+
+    dut = A()
+    dut()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
@@ -46,17 +99,7 @@ def test_initial_value_sfix_int():
 
     expect = {'a': 20,
               'b': Sfix(-10, 8, -10)}
-    result = initial_values(A())
-    assert result == expect
-
-
-def test_initial_value_sfix_list():
-    class A:
-        def __init__(self):
-            self.b = [Sfix(-10, 8, -10)] * 10
-
-    expect = {'b': [Sfix(-10, 8, -10)] * 10}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -66,7 +109,7 @@ def test_initial_value_int_list():
             self.b = [0] * 10
 
     expect = {'b': [0] * 10}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -76,7 +119,7 @@ def test_initial_value_bool():
             self.b = True
 
     expect = {'b': True}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -86,7 +129,7 @@ def test_initial_value_bool_list():
             self.b = [False] * 10
 
     expect = {'b': [False] * 10}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -96,7 +139,7 @@ def test_initial_value_reject_flaot():
             self.b = 0.5
 
     expect = {}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -107,7 +150,7 @@ def test_initial_value_reject_numpy():
             self.b = np.array([1, 2, 3])
 
     expect = {}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -122,7 +165,7 @@ def test_initial_value_mixed():
             self.b = np.array([1, 2, 3])
 
     expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10}
-    result = initial_values(A())
+    result = extract_datamodel(A())
     assert result == expect
 
 
@@ -237,7 +280,6 @@ def test_locals_call_bad_type_raises():
     assert str(e.value) == expect
 
 
-
 def test_locals_calls():
     class A(HW):
         def __call__(self):
@@ -333,13 +375,13 @@ def test_locals_call_multitype_raises():
             else:
                 iflocal = True
 
-
     dut = A()
     dut(True)
     with pytest.raises(TypeNotConsistent) as e:
         dut(False)
 
         # cant test text cause locals discovery order can vary
+
 
 def test_locals_multitype_sfix():
     # valid if bounds are the same

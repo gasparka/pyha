@@ -19,6 +19,9 @@ class AssignToSelf(Exception):
 
 class TypeNotConsistent(Exception):
     def __init__(self, class_name, function_name, variable_name, old, new):
+        # these clutter printing
+        new.pop('__initial_self__')
+        old.pop('__initial_self__')
         message = 'Self/local not consistent type!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'.format(
             class_name, function_name, variable_name, type(old), repr(old), type(new), new)
         super().__init__(message)
@@ -89,6 +92,9 @@ def dict_types_consistent_check(class_name, function_name, new, old):
             old_value = old[key]
             if isinstance(value, Sfix):
                 if value.left != old_value.left or value.right != old_value.right:
+                    if old_value.left == 0 and old_value.right == 0:
+                        # sfix lazy init
+                        continue
                     raise TypeNotConsistent(class_name, function_name, key, old, new)
             elif type(value) != type(old_value):
                 raise TypeNotConsistent(class_name, function_name, key, old, new)
@@ -99,16 +105,15 @@ def self_type_consistent_checker(func, class_name):
      This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
     """
 
-    calls = 0
+    # calls = 0
 
     @wraps(func)
     def self_type_consistent_checker_wrap(*args, **kwargs):
-        nonlocal calls
-        calls += 1
-        if calls == 1:
-            return func(*args, **kwargs)
+        # nonlocal calls
+        # calls += 1
+        # if calls == 1:
+        #     return func(*args, **kwargs)
 
-        from common.hwsim import deepish_copy
         nxt = args[0].__dict__['next'].__dict__
         old = deepish_copy(nxt)
         res = func(*args, **kwargs)
@@ -149,6 +154,11 @@ class Meta(type):
     def __call__(cls, *args, **kwargs):
         # print('  Meta.__call__(cls=%s, args=%s, kwargs=%s)' % (cls, args, kwargs))
         ret = super(Meta, cls).__call__(*args, **kwargs)
+
+        # save the initial self values
+        ret.__dict__['__initial_self__'] = deepcopy(ret)
+
+        # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
         return ret
 

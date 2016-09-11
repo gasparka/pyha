@@ -1,6 +1,5 @@
 import sys
 from functools import wraps
-from typing import List
 
 from common.sfix import Sfix
 
@@ -77,7 +76,7 @@ def is_convertible(obj):
     allowed_types = [Sfix, int, bool]
     if type(obj) in allowed_types:
         return True
-    elif isinstance(obj, List):
+    elif isinstance(obj, list):
         # To check whether all elements are of the same type
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):
@@ -87,10 +86,21 @@ def is_convertible(obj):
 
 
 # TODO: for initial values i just reject unconvertable types, this makes sense??
-def initial_values(obj):
+def extract_datamodel(obj):
+
     ret = {}
-    for key, val in obj.__dict__.items():
+    for key, val in obj.__dict__['__initial_self__'].__dict__.items():
         if is_convertible(val):
+            # for Sfix use the initial value but LATEST bounds
+            if isinstance(val, Sfix):
+                last = obj.next.__dict__[key]
+                val = Sfix(val.init_val, last.left, last.right)
+
+            # elif isinstance(val, list) and isinstance(val[0], Sfix):
+            #     x. for x in obj.__dict__[key]
+            #     val = []
+
+
             ret.update({key: val})
     return ret
 
