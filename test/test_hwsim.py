@@ -97,7 +97,7 @@ def test_list_cascade_register():
     assert dut.a.a == [3.0, 4.0, 1.0]
 
 
-def test_forbid_self_assign_sfix():
+def test_forbid_self_assign_sfix_raises():
     class A(HW):
         def __init__(self):
             self.a = Sfix(0.0)
@@ -120,7 +120,7 @@ def test_forbid_self_assign_sfix():
     assert str(e.value) == expect
 
 
-def test_forbid_self_assign_list():
+def test_forbid_self_assign_list_raises():
     class A(HW):
         def __init__(self):
             self.alist = [1, 2, 3]
@@ -141,6 +141,21 @@ def test_forbid_self_assign_list():
         dut(False)
 
     assert str(e.value) == expect
+
+
+def test_forbid_self_assign_numpy():
+    # numpy used to crash this check
+    import numpy as np
+    class A(HW):
+        def __init__(self):
+            self.b = np.array([1, 2, 3])
+
+        def __call__(self):
+            pass
+
+    expect = {}
+    dut = A()
+    dut()
 
 
 def test_self_type_consistent_raises():

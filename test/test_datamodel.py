@@ -97,7 +97,7 @@ def test_datamodel_int_list():
             self.b = [0] * 10
 
         def __call__(self):
-            self.next.b = [25] * 12
+            self.next.b = [25] * 10
 
     expect = {'b': [0] * 10}
     dut = A()
@@ -106,73 +106,85 @@ def test_datamodel_int_list():
     assert result == expect
 
 
-def test_initial_value_sfix_int():
-    class A:
-        def __init__(self):
-            self.a = 20
-            self.b = Sfix(-10, 8, -10)
-
-    expect = {'a': 20,
-              'b': Sfix(-10, 8, -10)}
-    result = extract_datamodel(A())
-    assert result == expect
-
-
-
-
-def test_initial_value_bool():
-    class A:
+def test_datamodel_bool():
+    class A(HW):
         def __init__(self):
             self.b = True
 
+        def __call__(self):
+            self.next.b = False
+
     expect = {'b': True}
-    result = extract_datamodel(A())
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
-def test_initial_value_bool_list():
-    class A:
+def test_datamodel_bool_list():
+    class A(HW):
         def __init__(self):
-            self.b = [False] * 10
+            self.b = [True, False]
 
-    expect = {'b': [False] * 10}
-    result = extract_datamodel(A())
+        def __call__(self):
+            self.next.b = [False, False]
+
+    expect = {'b': [True, False]}
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
-def test_initial_value_reject_flaot():
-    class A:
+def test_datamodel_reject_flaot():
+    class A(HW):
         def __init__(self):
             self.b = 0.5
 
+        def __call__(self):
+            pass
+
     expect = {}
-    result = extract_datamodel(A())
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
-def test_initial_value_reject_numpy():
+def test_datamodel_reject_numpy():
     import numpy as np
-    class A:
+    class A(HW):
         def __init__(self):
             self.b = np.array([1, 2, 3])
 
+        def __call__(self):
+            pass
+
     expect = {}
-    result = extract_datamodel(A())
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 
-def test_initial_value_mixed():
+def test_datamodel_mixed():
     import numpy as np
-    class A:
+    class A(HW):
         def __init__(self):
             self.inte = 20
             self.fix = [Sfix(-10, 8, -10)] * 10
             self.a = {'a': 'tere', 25: 'tore'}
             self.lol = 0.5
             self.b = np.array([1, 2, 3])
+            self.c = self.b.tolist()
 
-    expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10}
-    result = extract_datamodel(A())
+        def __call__(self, *args, **kwargs):
+            self.next.c = [3, 3, 3]
+
+    expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
     assert result == expect
 
 

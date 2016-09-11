@@ -20,8 +20,10 @@ class AssignToSelf(Exception):
 class TypeNotConsistent(Exception):
     def __init__(self, class_name, function_name, variable_name, old, new):
         # these clutter printing
-        new.pop('__initial_self__')
-        old.pop('__initial_self__')
+        from contextlib import suppress
+        with suppress(KeyError):  # only available for 'self'
+            new.pop('__initial_self__')
+            old.pop('__initial_self__')
         message = 'Self/local not consistent type!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'.format(
             class_name, function_name, variable_name, type(old), repr(old), type(new), new)
         super().__init__(message)
@@ -75,8 +77,10 @@ def forbid_assign_to_self(func, class_name):
         res = func(*args, **kwargs)
 
         for key, value in args[0].__dict__.items():
-            if key == 'next':
+            import numpy as np
+            if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
                 continue
+
             if value != old[key]:
                 raise AssignToSelf(class_name, key)
 
