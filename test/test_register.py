@@ -12,6 +12,16 @@ class Register(HW):
 
     def __call__(self, new_value):
         self.next.a = new_value
+        return self.a
+
+
+def test_functionality():
+    dut = Register(0.0)
+    ret = dut(Sfix(0.5, 0, -27))
+    assert ret == Sfix(0.0, 0, -27)
+
+    ret = dut(Sfix(0.5, 0, -27))
+    assert ret == Sfix(0.5, 0, -27)
 
 
 def test_conversion():
@@ -60,4 +70,7 @@ def test_conversion():
             end package body;""")
 
     conv = convert(reg_class)
-    assert str(conv) == expect
+    vhdl = str(conv)
+    with open('converted.vhdl', 'w') as f:
+        print(vhdl, file=f)
+    assert vhdl == expect

@@ -206,11 +206,12 @@ class DefNodeConv(NodeConv):
             name = NameNodeConv.parse('ret_' + str(i))
             return VHDLType(name, port_direction='out', red_node=rets)
 
-        try:
-            return [get_type(i) for i, x in enumerate(rets.value)]
-        except TypeError:
-            # only one return
+        # atomtrailers return len() > 1 for one return element
+        if isinstance(rets.value, AtomtrailersNode) or len(rets.value) == 1:
             return [get_type(0)]
+
+        return [get_type(i) for i, x in enumerate(rets.value)]
+
 
     def infer_variables(self):
         # TODO: maybe this is better to do after simulation?

@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from common.hwsim import HW, TypeNotConsistent
 from common.sfix import Sfix
-from conversion.extract_datamodel import extract_datamodel, extract_locals, VariableNotConvertable, FunctionNotSimulated
+from conversion.extract_datamodel import extract_datamodel, extract_locals, VariableNotConvertible, FunctionNotSimulated
 
 
 def test_datamodel_sfix():
@@ -293,7 +293,7 @@ def test_locals_call_bad_type_raises():
             Value: <class 'float'>:20.5""")
     dut = A()
     dut()
-    with pytest.raises(VariableNotConvertable) as e:
+    with pytest.raises(VariableNotConvertible) as e:
         result = extract_locals(dut)
 
     assert str(e.value) == expect

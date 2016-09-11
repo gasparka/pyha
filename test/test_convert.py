@@ -388,6 +388,21 @@ def test_def_argument_return(converter):
     assert str(conv) == expect
 
 
+def test_def_argument_return_self(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return self.b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type) is
+
+        begin
+            ret_0 := self.b;
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+
 def test_def_argument_return_multiple(converter):
     code = textwrap.dedent("""\
         def a():
