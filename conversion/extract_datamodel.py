@@ -91,14 +91,12 @@ def extract_datamodel(obj):
     ret = {}
     for key, val in obj.__dict__['__initial_self__'].__dict__.items():
         if is_convertible(val):
+            last = obj.next.__dict__[key]
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
-                last = obj.next.__dict__[key]
                 val = Sfix(val.init_val, last.left, last.right)
-
-            # elif isinstance(val, list) and isinstance(val[0], Sfix):
-            #     x. for x in obj.__dict__[key]
-            #     val = []
+            elif isinstance(val, list) and isinstance(val[0], Sfix):
+                val = [Sfix(new_val.init_val, last_val.left, last_val.right) for new_val, last_val in zip(val, last)]
 
 
             ret.update({key: val})

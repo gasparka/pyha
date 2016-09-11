@@ -228,6 +228,42 @@ def test_self_type_consistent_sfix():
     dut(False)
 
 
+def test_self_type_consistent_list():
+    class A(HW):
+        def __init__(self):
+            self.a = [1] * 5
+
+        def __call__(self):
+            self.next.a = [3] * 5
+
+    dut = A()
+    dut()
+    dut()
+
+
+def test_self_type_consistent_list_raises():
+    class A(HW):
+        def __init__(self):
+            self.a = [1] * 5
+
+        def __call__(self):
+            self.next.a = [3] * 2
+
+    expect = textwrap.dedent("""\
+            Self/local not consistent type!
+            Class: A
+            Function: __call__
+            Variable: a
+            Old: <class 'dict'>:{'a': [1, 1, 1, 1, 1]}
+            New: <class 'dict'>:{'a': [3, 3]}""")
+
+    dut = A()
+    with pytest.raises(TypeNotConsistent) as e:
+        dut()
+
+    assert str(e.value) == expect
+
+
 def test_initial_self():
     class A(HW):
         def __init__(self):

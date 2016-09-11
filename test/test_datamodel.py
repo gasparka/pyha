@@ -61,12 +61,12 @@ def test_datamodel_sfix_list():
 def test_datamodel_sfix_list_lazy():
     class A(HW):
         def __init__(self):
-            self.b = [Sfix(-1.4)] * 10
+            self.b = [Sfix(-1.4), Sfix(2.5), Sfix(-0.52)]
 
         def __call__(self):
-            self.next.b = [Sfix(0.0, 2, -18)] * 10
+            self.next.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
 
-    expect = {'b': [Sfix(-1.4, 2, -18)] * 10}
+    expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
 
     dut = A()
     dut()
@@ -91,6 +91,21 @@ def test_datamodel_int():
     assert result == expect
 
 
+def test_datamodel_int_list():
+    class A(HW):
+        def __init__(self):
+            self.b = [0] * 10
+
+        def __call__(self):
+            self.next.b = [25] * 12
+
+    expect = {'b': [0] * 10}
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
+    assert result == expect
+
+
 def test_initial_value_sfix_int():
     class A:
         def __init__(self):
@@ -103,14 +118,6 @@ def test_initial_value_sfix_int():
     assert result == expect
 
 
-def test_initial_value_int_list():
-    class A:
-        def __init__(self):
-            self.b = [0] * 10
-
-    expect = {'b': [0] * 10}
-    result = extract_datamodel(A())
-    assert result == expect
 
 
 def test_initial_value_bool():

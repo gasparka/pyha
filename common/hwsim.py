@@ -98,22 +98,17 @@ def dict_types_consistent_check(class_name, function_name, new, old):
                     raise TypeNotConsistent(class_name, function_name, key, old, new)
             elif type(value) != type(old_value):
                 raise TypeNotConsistent(class_name, function_name, key, old, new)
+            elif isinstance(value, list):
+                if len(old_value) != len(value):
+                    raise TypeNotConsistent(class_name, function_name, key, old, new)
 
 
 def self_type_consistent_checker(func, class_name):
     """ After each __call__, check that 'self' has consistent types(only single type over time)
      This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
     """
-
-    # calls = 0
-
     @wraps(func)
     def self_type_consistent_checker_wrap(*args, **kwargs):
-        # nonlocal calls
-        # calls += 1
-        # if calls == 1:
-        #     return func(*args, **kwargs)
-
         nxt = args[0].__dict__['next'].__dict__
         old = deepish_copy(nxt)
         res = func(*args, **kwargs)
