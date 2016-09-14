@@ -1484,6 +1484,16 @@ def test_call_self_return2_arugments(converter):
 # TODO class conversion
 # TODO function calls
 
+def test_redbaron_bug119():
+    # https://github.com/PyCQA/redbaron/issues/119
+    from redbaron import RedBaron
+    import textwrap
+    code = textwrap.dedent("""\
+        def a():
+            pass""")
+    red = RedBaron(code)[0]
+    red.value.insert(0, 'a')  # <- problem here
+
 def test_redbaron_bug120(converter):
     # https: // github.com / PyCQA / redbaron / issues / 120
     # adding new argumetn breaks help()
