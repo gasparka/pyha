@@ -9,8 +9,8 @@ from redbaron.nodes import AtomtrailersNode
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ExceptionReturnFunctionCall(Exception):
 
+class ExceptionReturnFunctionCall(Exception):
     def __init__(self, red_node: Node):
         message = 'Trying to return something that is not an variable!\nLine: {}'.format(red_node)
         super().__init__(message)
@@ -234,7 +234,6 @@ class DefNodeConv(NodeConv):
 
         return [get_type(i) for i, x in enumerate(rets.value)]
 
-
     def infer_variables(self):
         # TODO: maybe this is better to do after simulation?
         assigns = self.red_node.value('assign')
@@ -284,12 +283,13 @@ class DefNodeConv(NodeConv):
 
 class VHDLType:
     _instances = []
+
     # TODO: All instances must be recorded for later type recovery
     def __init__(self, name, red_node, var_type: str = None, port_direction: str = None, value=None):
         self.value = value
         self.red_node = red_node
         self.dir = port_direction
-        self.type = var_type
+        self.var_type = var_type
         self.name = name
 
         # hack to make 'self.target.name' duck typing work
@@ -299,10 +299,11 @@ class VHDLType:
 
         self.target = Hack(self.name)
 
-        VHDLType._instances.append(self)
+        from conversion.coupling import UndefinedVariables
+        UndefinedVariables.add(self)
 
     def __str__(self):
-        var_type = self.type or 'unknown_type'
+        var_type = self.var_type or 'unknown_type'
         port_direction = self.dir or ''
         default_value = ':={}'.format(self.value) if self.value else ''
         tmp_str = '{}:{} {}{}'.format(self.name, port_direction, var_type, default_value)
@@ -534,5 +535,11 @@ def red_to_conv_hub(red: Node, caller):
     return cls(red_node=red, parent=caller)
 
 
-def convert(red: Node):
-    return red_to_conv_hub(red, None)
+def convert(red: Node, caller=None, datamodel=None):
+    from conversion.coupling import UndefinedVariables, datamodel_to_conversion_coupling
+
+    UndefinedVariables.clear()
+    conv = red_to_conv_hub(red, caller)
+    datamodel_to_conversion_coupling(conv, datamodel)
+
+    return conv

@@ -116,3 +116,15 @@ def extract_locals(obj):
             ret[call.__name__] = call.fdict['locals']
 
     return ret
+
+class DataModel:
+    def __init__(self, obj=None, self_data=None, locals=None):
+        if obj is None:
+            self.self_data = self_data
+            self.locals = locals
+        else:
+            self.self_data = extract_datamodel(obj)
+            self.locals = extract_locals(obj)
+
+    def __str__(self):
+        return 'self_data: {}\tlocals: {}'.format(self.self_data, self.locals)
