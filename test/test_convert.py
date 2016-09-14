@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import pytest
 from common.sfix import Sfix
-from conversion.converter import red_to_conv_hub
+from conversion.converter import red_to_conv_hub, VHDLType, ExceptionReturnFunctionCall
 from redbaron import RedBaron
 
 
@@ -83,6 +83,31 @@ def test_return_self(converter):
     conv = converter(code)
     assert str(conv) == 'ret_0 := self.a;\nret_1 := self.\\next\\.b;'
 
+
+def test_return_self_arrayelem(converter):
+    code = 'return self.a[2]'
+    conv = converter(code)
+    assert str(conv) == 'ret_0 := self.a(2);'
+
+
+def test_return_call_raises(converter):
+    code = 'return a()'
+
+    conv = converter(code)
+    with pytest.raises(ExceptionReturnFunctionCall):
+        str(conv)
+
+
+def test_return_expression_raises(converter):
+    code = 'return a < b'
+
+    conv = converter(code)
+    with pytest.raises(ExceptionReturnFunctionCall):
+        str(conv)
+
+
+# def test_return_unsupported_type_raises():
+#     assert 0
 
 def test_comp_greater(converter):
     code = 'a > next'
@@ -406,7 +431,7 @@ def test_def_argument_return_self(converter):
 def test_def_argument_return_multiple(converter):
     code = textwrap.dedent("""\
         def a():
-            return b, c, l < g""")
+            return b, c, d""")
 
     expect = textwrap.dedent("""\
         procedure a(ret_0:out unknown_type; ret_1:out unknown_type; ret_2:out unknown_type) is
@@ -414,7 +439,7 @@ def test_def_argument_return_multiple(converter):
         begin
             ret_0 := b;
             ret_1 := c;
-            ret_2 := l < g;
+            ret_2 := d;
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect
@@ -533,6 +558,7 @@ def test_def_infer_variable_multiple(converter):
             l := h;
         end procedure;""")
     conv = converter(code)
+    print(VHDLType._instances)
     assert str(conv) == expect
 
 

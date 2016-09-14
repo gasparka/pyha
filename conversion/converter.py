@@ -9,6 +9,22 @@ from redbaron.nodes import AtomtrailersNode
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+class ExceptionReturnFunctionCall(Exception):
+
+    def __init__(self, red_node: Node):
+        message = 'Trying to return something that is not an variable!\nLine: {}'.format(red_node)
+        super().__init__(message)
+
+
+# class ExceptionUnknownReturnVariable(Exception):
+#     def __init__(self, datamodel: DataModel, red_node: Node):
+#         message = textwrap.dedent("""\
+#         Did not find returned variable in datamodel:
+#         Line: {}
+#         Datamodel:
+#             {}
+#         """).format(red_node, datamodel)
+#         super().__init__(message)
 
 class NodeConv:
     def __init__(self, red_node, parent=None):
@@ -112,6 +128,12 @@ class AssignmentNodeConv(NodeConv):
 
 class ReturnNodeConv(NodeConv):
     def __str__(self):
+        for x in get_iterable(self.value):
+            if isinstance(x, AtomtrailersNodeConv) and x.is_function_call():
+                raise ExceptionReturnFunctionCall(self.red_node)
+            elif not isinstance(x, NameNodeConv) and not isinstance(x, AtomtrailersNodeConv):
+                raise ExceptionReturnFunctionCall(self.red_node)
+
         str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
         return '\n'.join(str_ret)
 
@@ -261,6 +283,7 @@ class DefNodeConv(NodeConv):
 
 
 class VHDLType:
+    _instances = []
     # TODO: All instances must be recorded for later type recovery
     def __init__(self, name, red_node, var_type: str = None, port_direction: str = None, value=None):
         self.value = value
@@ -275,6 +298,8 @@ class VHDLType:
                 self.name = name
 
         self.target = Hack(self.name)
+
+        VHDLType._instances.append(self)
 
     def __str__(self):
         var_type = self.type or 'unknown_type'
