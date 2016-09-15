@@ -1,25 +1,23 @@
 from common.sfix import Sfix
-from conversion.converter import VHDLType, NodeConv
+from conversion.converter import VHDLType
 from conversion.extract_datamodel import DataModel
 
 
-class UndefinedVariables:
-    """ Converter adds all undefined variables here """
-    _variables = {}
+class Coupling:
+    _datamodel = None
 
     @classmethod
-    def clear(cls):
-        cls._variables.clear()
+    def set_datamodel(cls, dm: DataModel):
+        cls._datamodel = dm
 
     @classmethod
-    def add(cls, var: VHDLType):
-        if str(var.name) in cls.get():
-            raise Exception('WTF')
-        cls._variables.update({str(var.name): var})
-
-    @classmethod
-    def get(cls):
-        return cls._variables
+    def type_from_datamodel(cls, var: VHDLType):
+        if cls._datamodel is None: #support converter tests
+            return var.var_type
+        dm_locals = cls._datamodel.locals[function_name_defined(var)]
+        name = str(var.name)
+        if name in dm_locals:
+            return pytype_to_vhdl(dm_locals[name])
 
 
 def pytype_to_vhdl(var):
@@ -29,16 +27,11 @@ def pytype_to_vhdl(var):
         return 'integer'
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
+    else:
+        raise Exception('WTF type')
         # elif type(var) is list:
         #     return self.type_string(var[0])
 
 
 def function_name_defined(var: VHDLType):
     return var.red_node.parent.name
-
-
-def datamodel_to_conversion_coupling(conv: NodeConv, dm: DataModel):
-    for key, val in UndefinedVariables.get().items():
-        locals = dm.locals[function_name_defined(val)]
-        if key in locals:
-            val.var_type = pytype_to_vhdl(locals[key])

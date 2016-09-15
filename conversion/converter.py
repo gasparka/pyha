@@ -299,8 +299,9 @@ class VHDLType:
 
         self.target = Hack(self.name)
 
-        from conversion.coupling import UndefinedVariables
-        UndefinedVariables.add(self)
+        from conversion.coupling import Coupling
+        # self.var_type = Coupling.type_from_datamodel(self)
+
 
     def __str__(self):
         var_type = self.var_type or 'unknown_type'
@@ -410,7 +411,7 @@ class ClassNodeConv(NodeConv):
             defn.value.insert(0, 'make_self(reg, self)')
             defn.value.append('reg = self.next')
         except:
-            pass
+            raise
 
         super().__init__(red_node, parent)
 
@@ -418,10 +419,10 @@ class ClassNodeConv(NodeConv):
             # find /__call__/ function and add some stuff
             self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
             self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
-            self.callf.arguments[0].target.type = 'register_t'
+            self.callf.arguments[0].target.var_type = 'register_t'
             self.callf.arguments[0].target.dir = 'inout'
         except:
-            pass
+            raise
 
         self.data = {}
 
@@ -536,10 +537,8 @@ def red_to_conv_hub(red: Node, caller):
 
 
 def convert(red: Node, caller=None, datamodel=None):
-    from conversion.coupling import UndefinedVariables, datamodel_to_conversion_coupling
-
-    UndefinedVariables.clear()
+    from conversion.coupling import Coupling
+    Coupling.set_datamodel(datamodel)
     conv = red_to_conv_hub(red, caller)
-    datamodel_to_conversion_coupling(conv, datamodel)
 
     return conv
