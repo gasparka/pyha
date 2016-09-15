@@ -5,7 +5,6 @@ from redbaron import RedBaron
 
 from common.sfix import Sfix
 from conversion.converter import convert
-from conversion.coupling import Coupling
 from conversion.extract_datamodel import DataModel
 
 
@@ -33,6 +32,55 @@ def test_typed_def_argument(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     assert str(conv) == expect
+
+
+def test_typed_def_argument_notlocal_raises0(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            pass""")
+
+    datamodel = DataModel(locals={'a': {'rand': 123}})
+    expect = textwrap.dedent("""\
+        procedure a(b: integer) is
+
+        begin
+
+        end procedure;""")
+
+    with pytest.raises(KeyError):
+        conv = converter(code, datamodel)
+
+
+def test_typed_def_argument_notlocal_raises1(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            pass""")
+
+    datamodel = DataModel(locals={'a': {'rand': 123}})
+    expect = textwrap.dedent("""\
+        procedure a(b: integer) is
+
+        begin
+
+        end procedure;""")
+    with pytest.raises(KeyError):
+        conv = converter(code, datamodel)
+
+
+def test_typed_def_argument_notlocal_raises2(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            pass""")
+
+    datamodel = DataModel(locals={})
+    expect = textwrap.dedent("""\
+        procedure a(b: integer) is
+
+        begin
+
+        end procedure;""")
+    with pytest.raises(KeyError):
+        conv = converter(code, datamodel)
 
 
 def test_typed_def_argument_sfix(converter):
@@ -103,7 +151,7 @@ def test_typed_def_argument_return_local(converter):
     assert str(conv) == expect
 
 
-def test_def_argument_return_local_indexing(converter):
+def test_typed_def_argument_return_local_indexing(converter):
     code = textwrap.dedent("""\
         def a():
             return b[1]""")
@@ -119,18 +167,18 @@ def test_def_argument_return_local_indexing(converter):
     assert str(conv) == expect
 
 
-def test_def_argument_return_local_notinlocal_raises(converter):
+def test_typed_def_argument_return_local_notinlocal_raises(converter):
     code = textwrap.dedent("""\
         def a():
             return lol""")
 
     datamodel = DataModel(locals={'a': {'b': True}})
 
-    with pytest.raises(ExceptionUnknownReturnVariable):
+    with pytest.raises(KeyError):
         conv = converter(code, datamodel)
 
 
-def test_def_argument_return_self(converter):
+def test_typed_def_argument_return_self(converter):
     code = textwrap.dedent("""\
         def a():
             return self.b""")
@@ -146,7 +194,7 @@ def test_def_argument_return_self(converter):
     assert str(conv) == expect
 
 
-def test_def_argument_return_self_indexing(converter):
+def test_typed_def_argument_return_self_indexing(converter):
     code = textwrap.dedent("""\
         def a():
             return self.b[4]""")
@@ -162,17 +210,17 @@ def test_def_argument_return_self_indexing(converter):
     assert str(conv) == expect
 
 
-def test_def_argument_return_self_notinself_raises(converter):
+def test_typed_def_argument_return_self_notinself_raises(converter):
     code = textwrap.dedent("""\
         def a():
             return self.lol""")
 
     datamodel = DataModel(self_data={'b': True})
-    with pytest.raises(ExceptionUnknownReturnVariable):
+    with pytest.raises(KeyError):
         conv = converter(code, datamodel)
 
 
-def test_def_argument_return_self_nested(converter):
+def test_typed_def_argument_return_self_nested(converter):
     code = textwrap.dedent("""\
         def a():
             return self.obj.b""")
@@ -188,7 +236,7 @@ def test_def_argument_return_self_nested(converter):
     assert str(conv) == expect
 
 
-def test_def_argument_return_multiple(converter):
+def test_typed_def_argument_return_multiple(converter):
     code = textwrap.dedent("""\
         def a():
             return self.b, c, self.d""")
@@ -260,7 +308,7 @@ def test_def_infer_variable_sfix(converter):
         def a(b):
             next = Sfix(12, 5, 0)""")
 
-    datamodel = DataModel(locals={'a': {'next': Sfix(0,5,0), 'b': Sfix(0,0,-5)}})
+    datamodel = DataModel(locals={'a': {'next': Sfix(0, 5, 0), 'b': Sfix(0, 0, -5)}})
     expect = textwrap.dedent("""\
         procedure a(b: sfixed(0 downto -5)) is
             variable \\next\\: sfixed(5 downto 0);

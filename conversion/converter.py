@@ -1,10 +1,12 @@
 import logging
 import textwrap
 
-from common.sfix import Sfix
-from common.util import tabber, get_iterable
 from redbaron import NameNode, Node, EndlNode
 from redbaron.nodes import AtomtrailersNode
+
+from common.sfix import Sfix
+from common.util import tabber, get_iterable
+from conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -224,15 +226,15 @@ class DefNodeConv(NodeConv):
         except IndexError:
             return []
 
-        def get_type(i: int):
+        def get_type(i: int, red):
             name = NameNodeConv.parse('ret_' + str(i))
-            return VHDLType(name, port_direction='out', red_node=rets)
+            return VHDLType(name, port_direction='out', red_node=red)
 
         # atomtrailers return len() > 1 for one return element
         if isinstance(rets.value, AtomtrailersNode) or len(rets.value) == 1:
-            return [get_type(0)]
+            return [get_type(0, rets.value)]
 
-        return [get_type(i) for i, x in enumerate(rets.value)]
+        return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
         # TODO: maybe this is better to do after simulation?
@@ -279,42 +281,6 @@ class DefNodeConv(NodeConv):
 
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
         return template.format(**sockets)
-
-
-class VHDLType:
-    _instances = []
-
-    # TODO: All instances must be recorded for later type recovery
-    def __init__(self, name, red_node, var_type: str = None, port_direction: str = None, value=None):
-        self.value = value
-        self.red_node = red_node
-        self.dir = port_direction
-        self.var_type = var_type
-        self.name = name
-
-        # hack to make 'self.target.name' duck typing work
-        class Hack:
-            def __init__(self, name):
-                self.name = name
-
-        self.target = Hack(self.name)
-
-        from conversion.coupling import Coupling
-        # self.var_type = Coupling.type_from_datamodel(self)
-
-
-    def __str__(self):
-        var_type = self.var_type or 'unknown_type'
-        port_direction = self.dir or ''
-        default_value = ':={}'.format(self.value) if self.value else ''
-        tmp_str = '{}:{} {}{}'.format(self.name, port_direction, var_type, default_value)
-        return tmp_str
-
-
-class VHDLVariable(VHDLType):
-    def __str__(self):
-        sup = super().__str__()
-        return 'variable ' + sup + ';'
 
 
 class DefArgumentNodeConv(NodeConv):
@@ -537,8 +503,7 @@ def red_to_conv_hub(red: Node, caller):
 
 
 def convert(red: Node, caller=None, datamodel=None):
-    from conversion.coupling import Coupling
-    Coupling.set_datamodel(datamodel)
+    VHDLType.set_datamodel(datamodel)
     conv = red_to_conv_hub(red, caller)
 
     return conv

@@ -2,9 +2,10 @@ import textwrap
 from collections import OrderedDict
 
 import pytest
-from common.sfix import Sfix
-from conversion.converter import red_to_conv_hub, VHDLType, ExceptionReturnFunctionCall
 from redbaron import RedBaron
+
+from common.sfix import Sfix
+from conversion.converter import red_to_conv_hub, ExceptionReturnFunctionCall
 
 
 @pytest.fixture
@@ -413,6 +414,20 @@ def test_def_argument_return(converter):
     assert str(conv) == expect
 
 
+def test_def_argument_return_local_indexing(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return b[1]""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type) is
+
+        begin
+            ret_0 := b(1);
+        end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 def test_def_argument_return_self(converter):
     code = textwrap.dedent("""\
         def a():
@@ -558,7 +573,6 @@ def test_def_infer_variable_multiple(converter):
             l := h;
         end procedure;""")
     conv = converter(code)
-    print(VHDLType._instances)
     assert str(conv) == expect
 
 
