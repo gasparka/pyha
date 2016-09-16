@@ -44,7 +44,6 @@ class VHDLType:
             return self.var_type
 
         var = None
-        name = self._real_name()
         ret_var = self.red_node
         if isinstance(ret_var, AtomtrailersNode) and str(ret_var[0]) == 'self':
             var = self._datamodel.self_data
@@ -52,6 +51,10 @@ class VHDLType:
                 if not isinstance(x, GetitemNode):
                     var = var[str(x)]
         else:
+            name = self._real_name()
+            # hardcoded type
+            if name == 'self':
+                return 'self_t'
             # dealing with locals (includes all arguments!)
             var = self._datamodel.locals[self._defined_in_function()][name]
 
@@ -80,7 +83,9 @@ class VHDLType:
         if isinstance(self.red_node, DefArgumentNode):
             name = str(self.red_node.target)
         elif isinstance(self.red_node, AtomtrailersNode):
-            name = str(self.red_node[0])
+            if len(self.red_node('getitem')):
+                return str(self.red_node[0])
+            name = str(self.red_node)
         elif isinstance(self.red_node, AssignmentNode):
             name = str(self.red_node.target)
         else:
