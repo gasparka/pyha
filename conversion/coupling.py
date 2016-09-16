@@ -1,4 +1,4 @@
-from redbaron import GetitemNode, DefNode
+from redbaron import GetitemNode, DefNode, AssignmentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from common.sfix import Sfix
@@ -81,6 +81,8 @@ class VHDLType:
             name = str(self.red_node.target)
         elif isinstance(self.red_node, AtomtrailersNode):
             name = str(self.red_node[0])
+        elif isinstance(self.red_node, AssignmentNode):
+            name = str(self.red_node.target)
         else:
             name = str(self.red_node)
 

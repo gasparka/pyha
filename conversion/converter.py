@@ -237,7 +237,6 @@ class DefNodeConv(NodeConv):
         return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
-        # TODO: maybe this is better to do after simulation?
         assigns = self.red_node.value('assign')
         variables = [VHDLVariable(NameNodeConv(red_node=x.target), red_node=x) for x in assigns if
                      isinstance(x.target, NameNode)]

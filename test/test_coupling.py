@@ -269,6 +269,21 @@ def test_def_infer_variable(converter):
     assert str(conv) == expect
 
 
+def test_def_infer_variable_self_reject(converter):
+    # should not create variable
+    code = textwrap.dedent("""\
+        def a(b):
+            self.c = b""")
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            self.c := b;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert str(conv) == expect
+
 def test_def_infer_variable_argument_reject(converter):
     # no variable infered because assignment is to argument
     code = textwrap.dedent("""\
@@ -327,7 +342,7 @@ def test_def_infer_variable_return(converter):
     datamodel = DataModel(locals={'a': {'b': 1, 'l': 2}})
     expect = textwrap.dedent("""\
         procedure a(b: integer; ret_0:out integer) is
-            variable l: integer;
+
         begin
             ret_0 := l;
         end procedure;""")
