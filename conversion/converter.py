@@ -1,12 +1,11 @@
 import logging
 import textwrap
 
-from redbaron import NameNode, Node, EndlNode
-from redbaron.nodes import AtomtrailersNode
-
 from common.sfix import Sfix
 from common.util import tabber, get_iterable
 from conversion.coupling import VHDLType, VHDLVariable
+from redbaron import NameNode, Node, EndlNode
+from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -369,25 +368,23 @@ class ForNodeConv(NodeConv):
 
 class ClassNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
-        try:
-            # see def test_class_call_modifications(converter):
-            defn = red_node.find('defnode', name='__call__')
-            defn.arguments[0].target = 'reg'
-            defn.value.insert(0, 'make_self(reg, self)')
-            defn.value.append('reg = self.next')
-        except:
-            raise
+
+        # see def test_class_call_modifications(converter):
+        defn = red_node.find('defnode', name='__call__')
+        if defn is not None:
+            defn.arguments[0].target = 'self_reg'
+            defn.value.insert(0, 'make_self(self_reg, self)')
+            defn.value.append('self_reg = self.next')
+
 
         super().__init__(red_node, parent)
 
-        try:
-            # find /__call__/ function and add some stuff
-            self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
+        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\']
+        if len(self.callf):
+            self.callf = self.callf[0]
             self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
-            self.callf.arguments[0].target.var_type = 'register_t'
-            self.callf.arguments[0].target.dir = 'inout'
-        except:
-            raise
+            # self.callf.arguments[0].target.var_type = 'register_t'
+            # self.callf.arguments[0].target.port_direction = 'inout'
 
         self.data = {}
 
@@ -424,10 +421,10 @@ class ClassNodeConv(NodeConv):
 
     def get_makeself_str(self):
         template = textwrap.dedent("""\
-        procedure make_self(reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: register_t; self: out self_t) is
         begin
         {DATA}
-            self.\\next\\ := reg;
+            self.\\next\\ := self_reg;
         end procedure;""")
 
         variables = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
@@ -446,9 +443,9 @@ class ClassNodeConv(NodeConv):
                 \\next\\: register_t;
             end record;""")
         sockets = {'DATA': ''}
-        sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
-                     for key, val in self.data.items() if isinstance(val, Sfix)]
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in sfix_data))
+        # sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
+        #              for key, val in self.data.items() if isinstance(val, Sfix)]
+        sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 
     def __str__(self):

@@ -1,11 +1,12 @@
 import textwrap
 
 import pytest
-from redbaron import RedBaron
-
+from astropy.utils.compat.odict import OrderedDict
 from common.sfix import Sfix
 from conversion.converter import convert
+from conversion.coupling import VHDLType
 from conversion.extract_datamodel import DataModel
+from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -456,4 +457,252 @@ def test_typed_def_complex(converter):
             ret_1 := self.\\next\\.b;
         end procedure;""")
     conv = converter(code, datamodel)
+    assert str(conv) == expect
+
+
+def test_typed_def_infer_variable_dublicate2(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            x = l
+            x = b""")
+
+    datamodel = DataModel(locals={'a': {'x': 1, 'b': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+            variable x: integer;
+        begin
+            x := l;
+            x := b;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert str(conv) == expect
+
+
+def test_datamodel_to_self1():
+    datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27)})
+    VHDLType.set_datamodel(datamodel)
+    s = VHDLType.get_self()
+    assert str(s) == '[a: sfixed(0 downto -27)]'
+
+
+def test_datamodel_to_self2():
+    datamodel = DataModel(self_data={
+        'a': Sfix(1.0, 0, -27),
+        'b': Sfix(4.0, 2, -27),
+        'c': 25,
+        'd': False
+    })
+    VHDLType.set_datamodel(datamodel)
+    s = VHDLType.get_self()
+    assert str(s) == '[a: sfixed(0 downto -27), b: sfixed(2 downto -27), c: integer, d: boolean]'
+
+
+def test_class_datamodel(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27)})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed(0 downto -27);
+            end record;
+
+            type self_t is record
+                a: sfixed(0 downto -27);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert str(conv) == expect
+
+
+def test_class_datamodel2(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={
+        'a': Sfix(1.0, 0, -27),
+        'b': Sfix(4.0, 2, -27),
+        'c': 25,
+        'd': False
+    })
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed(0 downto -27);
+                b: sfixed(2 downto -27);
+                c: integer;
+                d: boolean;
+            end record;
+
+            type self_t is record
+                a: sfixed(0 downto -27);
+                b: sfixed(2 downto -27);
+                c: integer;
+                d: boolean;
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed_make_self(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+
+    expect = textwrap.dedent("""\
+        procedure make_self(reg: register_t; self: out self_t) is
+        begin
+            self.a := reg.a;
+            self.\\next\\ := reg;
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_makeself_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed2_make_self(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               def __call__(self):
+                    pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    data['b'] = Sfix(1.0, 3, -8)
+
+    expect = textwrap.dedent("""\
+        procedure make_self(reg: register_t; self: out self_t) is
+        begin
+            self.a := reg.a;
+            self.b := reg.b;
+            self.\\next\\ := reg;
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_makeself_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed_reset(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               def __call__(self):
+                    pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+
+    expect = textwrap.dedent("""\
+        procedure reset(reg: inout register_t) is
+        begin
+            reg.a := to_sfixed(0.0, 0, -27);
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_reset_str()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed_reset_prototype(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               def __call__(self):
+                    pass""")
+
+    expect = textwrap.dedent("""\
+        procedure reset(reg: inout register_t);""")
+
+    conv = converter(code)
+    conv = conv.get_reset_prototype()
+    assert str(conv) == expect
+
+
+def test_class_datamodel_sfixed2_reset(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+               def __call__(self):
+                    pass""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    data['b'] = Sfix(3.14, 3, -8)
+
+    expect = textwrap.dedent("""\
+        procedure reset(reg: inout register_t) is
+        begin
+            reg.a := to_sfixed(0.0, 0, -27);
+            reg.b := to_sfixed(3.14, 3, -8);
+        end procedure;""")
+    conv = converter(code)
+    conv.data = data
+    conv = conv.get_reset_str()
+    assert str(conv) == expect
+
+
+def test_class_full(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                def __call__(self):
+                    self.a = 0""")
+
+    data = OrderedDict()
+    data['a'] = Sfix(0.0, 0, -27)
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_float_types.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+
+        library work;
+            use work.all;
+
+        package Tc is
+            type register_t is record
+                a: sfixed(0 downto -27);
+            end record;
+            type self_t is record
+                a: sfixed(0 downto -27);
+                \\next\\: register_t;
+            end record;
+
+            procedure reset(reg: inout register_t);
+            procedure \\__call__\\(reg:inout register_t);
+        end package;
+
+        package body Tc is
+            procedure reset(reg: inout register_t) is
+            begin
+                reg.a := to_sfixed(0.0, 0, -27);
+            end procedure;
+
+            procedure make_self(reg: register_t; self: out self_t) is
+            begin
+                self.a := reg.a;
+                self.\\next\\ := reg;
+            end procedure;
+
+            procedure \\__call__\\(reg:inout register_t) is
+                variable self: self_t;
+            begin
+                make_self(reg, self);
+                self.a := 0;
+                reg := self.\\next\\;
+            end procedure;
+        end package body;""")
+
+    conv = converter(code)
+    conv.data = data
     assert str(conv) == expect

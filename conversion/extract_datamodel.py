@@ -1,4 +1,5 @@
 import sys
+from collections import OrderedDict
 from functools import wraps
 
 from common.sfix import Sfix
@@ -120,11 +121,11 @@ def extract_locals(obj):
 class DataModel:
     def __init__(self, obj=None, self_data=None, locals=None):
         if obj is None:
-            self.self_data = self_data
-            self.locals = locals
+            self.self_data = None if self_data is None else OrderedDict(sorted(self_data.items(), key=lambda t: t[0]))
+            self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
         else:
-            self.self_data = extract_datamodel(obj)
-            self.locals = extract_locals(obj)
+            self.self_data = OrderedDict(sorted(extract_datamodel(obj), key=lambda t: t[0]))
+            self.locals = OrderedDict(sorted(extract_locals(obj), key=lambda t: t[0]))
 
     def __str__(self):
         return 'self_data: {}\tlocals: {}'.format(self.self_data, self.locals)

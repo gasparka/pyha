@@ -1,8 +1,7 @@
-from redbaron import GetitemNode, DefNode, AssignmentNode
-from redbaron.nodes import DefArgumentNode, AtomtrailersNode
-
 from common.sfix import Sfix
 from conversion.extract_datamodel import DataModel
+from redbaron import GetitemNode, DefNode, AssignmentNode
+from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 
 class ExceptionCoupling(Exception):
@@ -16,12 +15,36 @@ class VHDLType:
     def set_datamodel(cls, dm: DataModel):
         cls._datamodel = dm
 
-    def __init__(self, name, red_node, var_type: str = None, port_direction: str = None, value=None):
+    @classmethod
+    def get_self(cls):
+        if cls._datamodel is None:
+            return []
+        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items()]
+
+    def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
+                 tuple_init=None):
+
+
         self.value = value
         self.red_node = red_node
-        self.dir = port_direction
+        self.port_direction = port_direction
         self.var_type = var_type
         self.name = name
+
+        if tuple_init is not None:
+            self.name = tuple_init[0]
+            self.var_type = self._pytype_to_vhdl(tuple_init[1])
+            return
+
+        # hardcoded types
+        if str(name) == 'self_reg':
+            self.var_type = 'register_t'
+            self.port_direction = 'inout'
+            return
+
+        if str(name) == 'self':
+            self.var_type = 'self_t'
+            return
 
         # hack to make 'self.target.name' duck typing work
         class Hack:
@@ -30,14 +53,18 @@ class VHDLType:
 
         self.target = Hack(self.name)
 
-        self.var_type = self.deduce_type()
+        if self.var_type is None:
+            self.var_type = self.deduce_type()
 
     def __str__(self):
         var_type = self.var_type or 'unknown_type'
-        port_direction = self.dir or ''
+        port_direction = self.port_direction or ''
         default_value = ':={}'.format(self.value) if self.value else ''
         tmp_str = '{}:{} {}{}'.format(self.name, port_direction, var_type, default_value)
         return tmp_str
+
+    def __repr__(self):
+        return self.__str__()
 
     def deduce_type(self):
         if self._datamodel is None:  # support converter tests
@@ -52,9 +79,6 @@ class VHDLType:
                     var = var[str(x)]
         else:
             name = self._real_name()
-            # hardcoded type
-            if name == 'self':
-                return 'self_t'
             # dealing with locals (includes all arguments!)
             var = self._datamodel.locals[self._defined_in_function()][name]
 
