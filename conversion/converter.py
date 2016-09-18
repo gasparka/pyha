@@ -507,6 +507,8 @@ def red_to_conv_hub(red: Node, caller):
 
 
 def convert(red: Node, caller=None, datamodel=None):
+    from conversion.extract_datamodel import DataModel
+    assert type(caller) is not DataModel
     VHDLType.set_datamodel(datamodel)
     conv = red_to_conv_hub(red, caller)
 

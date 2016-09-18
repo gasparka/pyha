@@ -124,8 +124,10 @@ class DataModel:
             self.self_data = None if self_data is None else OrderedDict(sorted(self_data.items(), key=lambda t: t[0]))
             self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
         else:
-            self.self_data = OrderedDict(sorted(extract_datamodel(obj), key=lambda t: t[0]))
-            self.locals = OrderedDict(sorted(extract_locals(obj), key=lambda t: t[0]))
+            dm = extract_datamodel(obj)
+            loc = extract_locals(obj)
+            self.self_data = OrderedDict(sorted(dm.items()))
+            self.locals = OrderedDict(sorted(loc.items()))
 
     def __str__(self):
         return 'self_data: {}\tlocals: {}'.format(self.self_data, self.locals)
