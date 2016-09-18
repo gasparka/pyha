@@ -1,7 +1,6 @@
 from decimal import *
 
 import numpy as np
-
 from common.sfix import Sfix
 
 getcontext().prec = 128

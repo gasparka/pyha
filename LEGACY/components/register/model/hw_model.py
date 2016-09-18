@@ -1,4 +1,4 @@
-from LEGACY.misc.metaclass.hwsim import HW
+from common.hwsim import HW
 from common.sfix import Sfix
 
 

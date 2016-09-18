@@ -3,6 +3,7 @@ import textwrap
 
 from common.sfix import Sfix
 from common.util import tabber, get_iterable
+from conversion.coupling import VHDLType, VHDLVariable
 from redbaron import NameNode, Node, EndlNode
 from redbaron.nodes import AtomtrailersNode
 
@@ -10,10 +11,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class ExceptionReturnFunctionCall(Exception):
+    def __init__(self, red_node: Node):
+        message = 'Trying to return something that is not an variable!\nLine: {}'.format(red_node)
+        super().__init__(message)
+
+
+# class ExceptionUnknownReturnVariable(Exception):
+#     def __init__(self, datamodel: DataModel, red_node: Node):
+#         message = textwrap.dedent("""\
+#         Did not find returned variable in datamodel:
+#         Line: {}
+#         Datamodel:
+#             {}
+#         """).format(red_node, datamodel)
+#         super().__init__(message)
+
 class NodeConv:
     def __init__(self, red_node, parent=None):
         self.red_node = red_node
         self.parent = parent
+        self.target = None
+        self.value = None
+        self.first = None
+        self.second = None
+        self.test = None
+        self.arguments = None
+        self.name = None
+        self.iterator = None
 
         for x in red_node._dict_keys:
             self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x], caller=self)
@@ -52,16 +77,15 @@ class NameNodeConv(NodeConv):
                            'transport', 'type', 'unaffected', 'units', 'until', 'use',
                            'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
 
-    def __init__(self, red_node, parent=None, explicit_name=None):
-        super().__init__(red_node, parent)
-        self.in_name = explicit_name or red_node.value
+    @classmethod
+    def parse(cls, name: str):
+        if name.lower() in cls.vhdl_reserved_names \
+                or name[0] == '_':
+            return '\{}\\'.format(name)  # "escape" reserved name
+        return name
 
     def __str__(self):
-        # vhdl is case insensitive
-        if self.in_name.lower() in self.vhdl_reserved_names \
-                or self.in_name[0] == '_':
-            return '\{}\\'.format(self.in_name)  # "escape" reserved name
-        return self.in_name
+        return NameNodeConv.parse(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
@@ -105,8 +129,14 @@ class AssignmentNodeConv(NodeConv):
 
 class ReturnNodeConv(NodeConv):
     def __str__(self):
-        str = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
-        return '\n'.join(str)
+        for x in get_iterable(self.value):
+            if isinstance(x, AtomtrailersNodeConv) and x.is_function_call():
+                raise ExceptionReturnFunctionCall(self.red_node)
+            elif not isinstance(x, NameNodeConv) and not isinstance(x, AtomtrailersNodeConv):
+                raise ExceptionReturnFunctionCall(self.red_node)
+
+        str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
+        return '\n'.join(str_ret)
 
 
 class ComparisonNodeConv(NodeConv):
@@ -163,7 +193,7 @@ class ElifNodeConv(NodeConv):
 
 class DefNodeConv(NodeConv):
     def function_calls_transform(self, red_node):
-        # find all assigment nodes, check if they contain 'self' function call
+        # find all assignment nodes, check if they contain 'self' function call
         # -> transform
         assigns = red_node.find_all('assign')
         for i, x in enumerate(assigns):
@@ -175,9 +205,9 @@ class DefNodeConv(NodeConv):
                         call.append(str(x.target))
                         call.value[-1].target = 'ret_0'
                     else:
-                        for i, argx in enumerate(x.target):
+                        for j, argx in enumerate(x.target):
                             call.append(str(argx))
-                            call.value[-1].target = 'ret_{}'.format(i)
+                            call.value[-1].target = 'ret_{}'.format(j)
 
                     x.replace(x.value)
 
@@ -185,7 +215,7 @@ class DefNodeConv(NodeConv):
         self.function_calls_transform(red_node)
 
         super().__init__(red_node, parent)
-        self.name = NameNodeConv(red_node, explicit_name=self.name)
+        self.name = NameNodeConv.parse(self.name)
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -195,17 +225,17 @@ class DefNodeConv(NodeConv):
         except IndexError:
             return []
 
-        def get_type(i: int):
-            return VHDLType(NameNodeConv(explicit_name='ret_' + str(i), red_node=rets), dir='out', red_node=rets)
+        def get_type(i: int, red):
+            name = NameNodeConv.parse('ret_' + str(i))
+            return VHDLType(name, port_direction='out', red_node=red)
 
-        try:
-            return [get_type(i) for i, x in enumerate(rets.value)]
-        except TypeError:
-            # only one return
-            return [get_type(0)]
+        # atomtrailers return len() > 1 for one return element
+        if isinstance(rets.value, AtomtrailersNode) or len(rets.value) == 1:
+            return [get_type(0, rets.value)]
+
+        return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
-        # TODO: maybe this is better to do after simulation?
         assigns = self.red_node.value('assign')
         variables = [VHDLVariable(NameNodeConv(red_node=x.target), red_node=x) for x in assigns if
                      isinstance(x.target, NameNode)]
@@ -231,7 +261,7 @@ class DefNodeConv(NodeConv):
         return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
 
     def __str__(self):
-        PROCEDURE_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             procedure {NAME}{ARGUMENTS} is
             {VARIABLES}
             begin
@@ -248,37 +278,7 @@ class DefNodeConv(NodeConv):
             sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
 
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
-        return PROCEDURE_TEMPLATE.format(**sockets)
-
-
-class VHDLType:
-    # TODO: All instances must be recorded for later type recovery
-    def __init__(self, name: NameNodeConv, red_node, type: str = None, dir: str = None, value=None):
-        self.value = value
-        self.red_node = red_node
-        self.dir = dir
-        self.type = type
-        self.name = name
-
-        # hack to make 'self.target.name' duck typing work
-        class Hack:
-            def __init__(self, name):
-                self.name = name
-
-        self.target = Hack(self.name)
-
-    def __str__(self):
-        type = self.type or 'unknown_type'
-        dir = self.dir or ''
-        default_value = ':={}'.format(self.value) if self.value else ''
-        str = '{}:{} {}{}'.format(self.name, dir, type, default_value)
-        return str
-
-
-class VHDLVariable(VHDLType):
-    def __str__(self):
-        sup = super().__str__()
-        return 'variable ' + sup + ';'
+        return template.format(**sockets)
 
 
 class DefArgumentNodeConv(NodeConv):
@@ -335,7 +335,8 @@ class UnitaryOperatorNodeConv(NodeConv):
 
 
 class EndlNodeConv(NodeConv):
-    pass
+    def __str__(self):
+        return ''
 
 
 # this is mostly array indexing
@@ -355,36 +356,38 @@ class GetitemNodeConv(NodeConv):
 
 class ForNodeConv(NodeConv):
     def __str__(self):
-        FOR_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
                 for {ITERATOR} in {RANGE} loop
                 {BODY}
                 end loop;""")
         sockets = {'ITERATOR': str(self.iterator)}
         sockets['RANGE'] = str(self.target)
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
-        return FOR_TEMPLATE.format(**sockets)
+        return template.format(**sockets)
 
 
 class ClassNodeConv(NodeConv):
+    """ This relies heavily on datamodel """
+
     def __init__(self, red_node, parent=None):
-        try:
-            # see def test_class_call_modifications(converter):
-            defn = red_node.find('defnode', name='__call__')
-            defn.arguments[0].target = 'reg'
-            defn.value.insert(0, 'make_self(reg, self)')
-            defn.value.append('reg = self.next')
-        except:
-            pass
+
+        # see def test_class_call_modifications(converter):
+        defn = red_node.find('defnode', name='__call__')
+        if defn is not None:
+            defn.arguments[0].target = 'self_reg'
+            defn.value.insert(0, 'make_self(self_reg, self)')
+            defn.value.append('self_reg = self.next')
 
         super().__init__(red_node, parent)
 
-        # find /__call__/ function and add some stuff
-        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\'][0]
-        self.callf.variables.append(VHDLVariable(name='self', type='self_t', red_node=None))
-        self.callf.arguments[0].target.type = 'register_t'
-        self.callf.arguments[0].target.dir = 'inout'
+        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\']
+        if len(self.callf):
+            self.callf = self.callf[0]
+            self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
+            # self.callf.arguments[0].target.var_type = 'register_t'
+            # self.callf.arguments[0].target.port_direction = 'inout'
 
-        self.data = []
+        self.data = {}
 
     def get_call_str(self):
         return str(self.callf)
@@ -402,36 +405,45 @@ class ClassNodeConv(NodeConv):
                 use work.all;""")
 
     def get_reset_prototype(self):
-        return 'procedure reset(reg: inout register_t);'
+        return 'procedure reset(self_reg: inout register_t);'
 
     def get_reset_str(self):
         template = textwrap.dedent("""\
-        procedure reset(reg: inout register_t) is
+        procedure reset(self_reg: inout register_t) is
         begin
         {DATA}
         end procedure;""")
 
-        vars = ['reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
-                for key, val in self.data.items() if isinstance(val, Sfix)]
+        variables = []
+        for key, val in VHDLType._datamodel.self_data.items():
+            if key == 'next': continue
+            if isinstance(val, Sfix):
+                tmp = 'self_reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+            else:
+                tmp = 'self_reg.{} := {};'.format(key, val)
+            variables.append(tmp)
+
         sockets = {'DATA': ''}
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
 
     def get_makeself_str(self):
-        MAKE_TEMPLATE = textwrap.dedent("""\
-        procedure make_self(reg: register_t; self: out self_t) is
+        template = textwrap.dedent("""\
+        procedure make_self(self_reg: register_t; self: out self_t) is
         begin
         {DATA}
-            self.\\next\\ := reg;
+            self.\\next\\ := self_reg;
         end procedure;""")
 
-        vars = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
+        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=key)
+                     for key in VHDLType._datamodel.self_data
+                     if str(key) != 'next']
         sockets = {'DATA': ''}
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in vars))
-        return MAKE_TEMPLATE.format(**sockets)
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
+        return template.format(**sockets)
 
     def get_datamodel(self):
-        DATA_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             type register_t is record
             {DATA}
             end record;
@@ -441,14 +453,11 @@ class ClassNodeConv(NodeConv):
                 \\next\\: register_t;
             end record;""")
         sockets = {'DATA': ''}
-        sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
-                     for key, val in self.data.items() if isinstance(val, Sfix)]
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in sfix_data))
-        return DATA_TEMPLATE.format(**sockets)
+        sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
+        return template.format(**sockets)
 
     def __str__(self):
-        self.name = NameNodeConv(self.red_node, explicit_name=self.name)
-        CLASS_TEMPLATE = textwrap.dedent("""\
+        template = textwrap.dedent("""\
             {IMPORTS}
 
             package {NAME} is
@@ -466,16 +475,18 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = str(self.name)
+        sockets['NAME'] = NameNodeConv.parse(self.name)
         sockets['IMPORTS'] = self.get_imports()
         sockets['SELF_T'] = tabber(self.get_datamodel())
+
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
         sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
         sockets['OTHER_FUNCTIONS'] = '\n'.join(tabber(str(x)) for x in self.value)
-        return CLASS_TEMPLATE.format(**sockets)
+
+        return template.format(**sockets)
 
 
 def red_to_conv_hub(red: Node, caller):
@@ -484,8 +495,8 @@ def red_to_conv_hub(red: Node, caller):
     """
     import sys
 
+    red_type = red.__class__.__name__
     try:
-        red_type = red.__class__.__name__
         cls = getattr(sys.modules[__name__], red_type + 'Conv')
     except AttributeError:
         if red_type == 'NoneType':
@@ -493,3 +504,12 @@ def red_to_conv_hub(red: Node, caller):
         raise
 
     return cls(red_node=red, parent=caller)
+
+
+def convert(red: Node, caller=None, datamodel=None):
+    from conversion.extract_datamodel import DataModel
+    assert type(caller) is not DataModel
+    VHDLType.set_datamodel(datamodel)
+    conv = red_to_conv_hub(red, caller)
+
+    return conv

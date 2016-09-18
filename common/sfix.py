@@ -1,8 +1,9 @@
+import logging
+
 import numpy as np
 
-
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def resize(fix, left=0, right=0, type=None, overflow_style='SATURATE'):
@@ -55,6 +56,11 @@ class Sfix(object):
         else:
             raise Exception('Wtf')
 
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
     # FIXME: THESE ARE FUCKED UP
     def max_representable(self):
         if self.left < 0:
@@ -106,6 +112,9 @@ class Sfix(object):
 
     def __str__(self):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __float__(self):
         return float(self.val)
