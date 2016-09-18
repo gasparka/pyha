@@ -1,7 +1,6 @@
 import textwrap
 
 import pytest
-from astropy.utils.compat.odict import OrderedDict
 from common.sfix import Sfix
 from conversion.converter import convert
 from conversion.coupling import VHDLType
@@ -32,7 +31,7 @@ def test_typed_def_argument(converter):
 
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_self(converter):
@@ -48,7 +47,7 @@ def test_typed_def_argument_self(converter):
 
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_notlocal_raises0(converter):
@@ -113,7 +112,7 @@ def test_typed_def_argument_sfix(converter):
 
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_argument_default_value(converter):
@@ -129,7 +128,7 @@ def test_typed_argument_default_value(converter):
 
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_multiple(converter):
@@ -149,7 +148,7 @@ def test_typed_def_argument_multiple(converter):
 
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_local(converter):
@@ -165,7 +164,7 @@ def test_typed_def_argument_return_local(converter):
             ret_0 := b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_local_indexing(converter):
@@ -181,7 +180,7 @@ def test_typed_def_argument_return_local_indexing(converter):
             ret_0 := b(1);
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_local_notinlocal_raises(converter):
@@ -208,7 +207,7 @@ def test_typed_def_argument_return_self(converter):
             ret_0 := self.b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_self_indexing(converter):
@@ -224,7 +223,7 @@ def test_typed_def_argument_return_self_indexing(converter):
             ret_0 := self.b(4);
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_self_subindexing(converter):
@@ -243,7 +242,7 @@ def test_typed_def_argument_return_self_subindexing(converter):
             ret_0 := self.l.b(4);
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_self_notinself_raises(converter):
@@ -269,7 +268,7 @@ def test_typed_def_argument_return_self_nested(converter):
             ret_0 := self.obj.b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_argument_return_multiple(converter):
@@ -287,7 +286,7 @@ def test_typed_def_argument_return_multiple(converter):
             ret_2 := self.d;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable(converter):
@@ -302,7 +301,7 @@ def test_typed_def_infer_variable(converter):
             c := b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_self_reject(converter):
@@ -318,7 +317,7 @@ def test_typed_def_infer_variable_self_reject(converter):
             self.c := b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_argument_reject(converter):
@@ -335,7 +334,7 @@ def test_typed_def_infer_variable_argument_reject(converter):
             b := l;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_argument_reject_reserved(converter):
@@ -352,7 +351,7 @@ def test_typed_def_infer_variable_argument_reject_reserved(converter):
             \\next\\ := l;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_sfix(converter):
@@ -368,7 +367,7 @@ def test_typed_def_infer_variable_sfix(converter):
             \\next\\ := Sfix(12, 5, 0);
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_return(converter):
@@ -384,7 +383,7 @@ def test_typed_def_infer_variable_return(converter):
             ret_0 := l;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_dublicate(converter):
@@ -401,7 +400,7 @@ def test_typed_def_infer_variable_dublicate(converter):
             x := b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_multiple(converter):
@@ -428,7 +427,7 @@ def test_typed_def_infer_variable_multiple(converter):
             l := h;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_complex(converter):
@@ -457,7 +456,7 @@ def test_typed_def_complex(converter):
             ret_1 := self.\\next\\.b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_typed_def_infer_variable_dublicate2(converter):
@@ -475,8 +474,14 @@ def test_typed_def_infer_variable_dublicate2(converter):
             x := b;
         end procedure;""")
     conv = converter(code, datamodel)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
+
+def test_datamodel_to_self_ignore_next():
+    datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27), 'next': {'lol': 'loom'}})
+    VHDLType.set_datamodel(datamodel)
+    s = VHDLType.get_self()
+    assert str(s) == '[a: sfixed(0 downto -27)]'
 
 def test_datamodel_to_self1():
     datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27)})
@@ -515,7 +520,7 @@ def test_class_datamodel(converter):
 
     conv = converter(code, datamodel)
     conv = conv.get_datamodel()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_class_datamodel2(converter):
@@ -548,106 +553,108 @@ def test_class_datamodel2(converter):
 
     conv = converter(code, datamodel)
     conv = conv.get_datamodel()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_class_datamodel_sfixed_make_self(converter):
+def test_class_datamodel_make_self(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
-    data = OrderedDict()
-    data['a'] = Sfix(0.0, 0, -27)
+    datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27)})
 
     expect = textwrap.dedent("""\
-        procedure make_self(reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: register_t; self: out self_t) is
         begin
-            self.a := reg.a;
-            self.\\next\\ := reg;
+            self.a := self_reg.a;
+            self.\\next\\ := self_reg;
         end procedure;""")
-    conv = converter(code)
-    conv.data = data
+    conv = converter(code, datamodel)
     conv = conv.get_makeself_str()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_class_datamodel_sfixed2_make_self(converter):
+def test_class_datamodel_make_self_ignore_next(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
-               def __call__(self):
-                    pass""")
+                pass""")
 
-    data = OrderedDict()
-    data['a'] = Sfix(0.0, 0, -27)
-    data['b'] = Sfix(1.0, 3, -8)
+    datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27), 'next': {'a': None}})
 
     expect = textwrap.dedent("""\
-        procedure make_self(reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: register_t; self: out self_t) is
         begin
-            self.a := reg.a;
-            self.b := reg.b;
-            self.\\next\\ := reg;
+            self.a := self_reg.a;
+            self.\\next\\ := self_reg;
         end procedure;""")
-    conv = converter(code)
-    conv.data = data
+    conv = converter(code, datamodel)
     conv = conv.get_makeself_str()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_class_datamodel_sfixed_reset(converter):
+def test_class_datamodel_make_self2(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
-               def __call__(self):
                     pass""")
 
-    data = OrderedDict()
-    data['a'] = Sfix(0.0, 0, -27)
+    datamodel = DataModel(self_data={
+        'a': Sfix(1.0, 2, -27),
+        'b': Sfix(4.0, 6, -27),
+        'c': 25,
+        'd': False
+    })
 
     expect = textwrap.dedent("""\
-        procedure reset(reg: inout register_t) is
+        procedure make_self(self_reg: register_t; self: out self_t) is
         begin
-            reg.a := to_sfixed(0.0, 0, -27);
+            self.a := self_reg.a;
+            self.b := self_reg.b;
+            self.c := self_reg.c;
+            self.d := self_reg.d;
+            self.\\next\\ := self_reg;
         end procedure;""")
-    conv = converter(code)
-    conv.data = data
+    conv = converter(code, datamodel)
+    conv = conv.get_makeself_str()
+    assert expect == str(conv)
+
+
+def test_class_datamodel_reset(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={
+        'a': Sfix(1.0, 2, -27),
+        'b': Sfix(4.0, 6, -27),
+        'c': 25,
+        'd': False,
+        'next': {'lol': 'loom'}
+    })
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := to_sfixed(1.0, 2, -27);
+            self_reg.b := to_sfixed(4.0, 6, -27);
+            self_reg.c := 25;
+            self_reg.d := False;
+        end procedure;""")
+    conv = converter(code, datamodel)
     conv = conv.get_reset_str()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_class_datamodel_sfixed_reset_prototype(converter):
+def test_class_datamodel_reset_prototype(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
-               def __call__(self):
                     pass""")
 
     expect = textwrap.dedent("""\
-        procedure reset(reg: inout register_t);""")
+        procedure reset(self_reg: inout register_t);""")
 
     conv = converter(code)
     conv = conv.get_reset_prototype()
-    assert str(conv) == expect
-
-
-def test_class_datamodel_sfixed2_reset(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-               def __call__(self):
-                    pass""")
-
-    data = OrderedDict()
-    data['a'] = Sfix(0.0, 0, -27)
-    data['b'] = Sfix(3.14, 3, -8)
-
-    expect = textwrap.dedent("""\
-        procedure reset(reg: inout register_t) is
-        begin
-            reg.a := to_sfixed(0.0, 0, -27);
-            reg.b := to_sfixed(3.14, 3, -8);
-        end procedure;""")
-    conv = converter(code)
-    conv.data = data
-    conv = conv.get_reset_str()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_class_full(converter):
@@ -656,53 +663,157 @@ def test_class_full(converter):
                 def __call__(self):
                     self.a = 0""")
 
-    data = OrderedDict()
-    data['a'] = Sfix(0.0, 0, -27)
+    datamodel = DataModel(self_data={
+        'a': Sfix(1.0, 2, -27),
+        'b': Sfix(4.0, 6, -27),
+        'c': 25,
+        'd': False,
+        'next': {'lol': 'loom'}
+    })
+
     expect = textwrap.dedent("""\
-        library ieee;
-            use ieee.std_logic_1164.all;
-            use ieee.numeric_std.all;
-            use ieee.fixed_float_types.all;
-            use ieee.fixed_pkg.all;
-            use ieee.math_real.all;
-
-        library work;
-            use work.all;
-
         package Tc is
             type register_t is record
-                a: sfixed(0 downto -27);
+                a: sfixed(2 downto -27);
+                b: sfixed(6 downto -27);
+                c: integer;
+                d: boolean;
             end record;
             type self_t is record
-                a: sfixed(0 downto -27);
+                a: sfixed(2 downto -27);
+                b: sfixed(6 downto -27);
+                c: integer;
+                d: boolean;
                 \\next\\: register_t;
             end record;
 
-            procedure reset(reg: inout register_t);
-            procedure \\__call__\\(reg:inout register_t);
+            procedure reset(self_reg: inout register_t);
+            procedure \\__call__\\(self_reg:inout register_t);
         end package;
 
         package body Tc is
-            procedure reset(reg: inout register_t) is
+            procedure reset(self_reg: inout register_t) is
             begin
-                reg.a := to_sfixed(0.0, 0, -27);
+                self_reg.a := to_sfixed(1.0, 2, -27);
+                self_reg.b := to_sfixed(4.0, 6, -27);
+                self_reg.c := 25;
+                self_reg.d := False;
             end procedure;
 
-            procedure make_self(reg: register_t; self: out self_t) is
+            procedure make_self(self_reg: register_t; self: out self_t) is
             begin
-                self.a := reg.a;
-                self.\\next\\ := reg;
+                self.a := self_reg.a;
+                self.b := self_reg.b;
+                self.c := self_reg.c;
+                self.d := self_reg.d;
+                self.\\next\\ := self_reg;
             end procedure;
 
-            procedure \\__call__\\(reg:inout register_t) is
+            procedure \\__call__\\(self_reg:inout register_t) is
                 variable self: self_t;
             begin
-                make_self(reg, self);
+                make_self(self_reg, self);
                 self.a := 0;
-                reg := self.\\next\\;
+                self_reg := self.\\next\\;
             end procedure;
         end package body;""")
 
-    conv = converter(code)
-    conv.data = data
-    assert str(conv) == expect
+    conv = str(converter(code, datamodel))
+    assert expect == conv[conv.index('package'):]
+
+
+def test_class_full_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Register():
+                def __call__(self):
+                    pass""")
+
+    datamodel = DataModel(self_data={
+        'd': False,
+    })
+    expect = textwrap.dedent("""\
+        package \\Register\\ is
+            type register_t is record
+                d: boolean;
+            end record;
+            type self_t is record
+                d: boolean;
+                \\next\\: register_t;
+            end record;
+
+            procedure reset(self_reg: inout register_t);
+            procedure \\__call__\\(self_reg:inout register_t);
+        end package;
+
+        package body \\Register\\ is
+            procedure reset(self_reg: inout register_t) is
+            begin
+                self_reg.d := False;
+            end procedure;
+
+            procedure make_self(self_reg: register_t; self: out self_t) is
+            begin
+                self.d := self_reg.d;
+                self.\\next\\ := self_reg;
+            end procedure;
+
+            procedure \\__call__\\(self_reg:inout register_t) is
+                variable self: self_t;
+            begin
+                make_self(self_reg, self);
+                self_reg := self.\\next\\;
+            end procedure;
+        end package body;""")
+
+    conv = str(converter(code, datamodel))
+    assert expect == conv[conv.index('package'):]
+
+
+def test_class_full_endl_bug(converter):
+    code = textwrap.dedent("""\
+            class Register():
+                def __call__(self):
+                    pass
+
+
+            """)
+
+    datamodel = DataModel(self_data={
+        'd': False,
+    })
+    expect = textwrap.dedent("""\
+            package \\Register\\ is
+                type register_t is record
+                    d: boolean;
+                end record;
+                type self_t is record
+                    d: boolean;
+                    \\next\\: register_t;
+                end record;
+
+                procedure reset(self_reg: inout register_t);
+                procedure \\__call__\\(self_reg:inout register_t);
+            end package;
+
+            package body \\Register\\ is
+                procedure reset(self_reg: inout register_t) is
+                begin
+                    self_reg.d := False;
+                end procedure;
+
+                procedure make_self(self_reg: register_t; self: out self_t) is
+                begin
+                    self.d := self_reg.d;
+                    self.\\next\\ := self_reg;
+                end procedure;
+
+                procedure \\__call__\\(self_reg:inout register_t) is
+                    variable self: self_t;
+                begin
+                    make_self(self_reg, self);
+                    self_reg := self.\\next\\;
+                end procedure;
+            end package body;""")
+
+    conv = str(converter(code, datamodel))
+    assert expect == conv[conv.index('package'):]

@@ -991,21 +991,12 @@ def test_for_complex(converter):
     assert str(conv) == expect
 
 
-def test_class_nocall_noinit(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                pass""")
-
-    assert 0
-
-
-def test_class_nocall(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def __init__(self, a):
-                    a()""")
-
-    assert 0
+# def test_class_nocall(converter):
+#     code = textwrap.dedent("""\
+#             class Register(HW):
+#                 pass""")
+#
+#     assert 0
 
 
 def test_class_call_modifications(converter):
@@ -1027,10 +1018,9 @@ def test_class_call_modifications(converter):
     assert str(conv) == expect
 
 
-def test_class_call_importlibs(converter):
+def test_class_importlibs(converter):
     code = textwrap.dedent("""\
             class Register(HW):
-                def __call__(self):
                     pass""")
 
     expect = textwrap.dedent("""\
@@ -1046,185 +1036,6 @@ def test_class_call_importlibs(converter):
 
     conv = converter(code)
     conv = conv.get_imports()
-    assert str(conv) == expect
-
-
-# def test_class(converter):
-#     code = textwrap.dedent("""\
-#             class Tc(HW):
-#                 def __call__(self):
-#                     pass""")
-#
-#     expect = textwrap.dedent("""\
-#         package Tc is
-#
-#             procedure \\__call__\\(reg:inout register_t);
-#         end package;
-#
-#         package body Tc is
-#             procedure \\__call__\\(reg:inout register_t) is
-#                 variable self: self_t;
-#             begin
-#                 make_self(reg, self);
-#                 reg := self.\\next\\;
-#             end procedure;
-#         end package body;""")
-#     conv = converter(code)
-#     assert str(conv) == expect
-#
-#
-# def test_class_reserved_name(converter):
-#     code = textwrap.dedent("""\
-#             class Register(HW):
-#                 def __call__(self):
-#                     pass""")
-#
-#     expect = textwrap.dedent("""\
-#         package \\Register\\ is
-#
-#             procedure \\__call__\\(reg:inout register_t);
-#         end package;
-#
-#         package body \\Register\\ is
-#             procedure \\__call__\\(reg:inout register_t) is
-#                 variable self: self_t;
-#             begin
-#                 make_self(reg, self);
-#                 reg := self.\\next\\;
-#             end procedure;
-#         end package body;""")
-#     conv = converter(code)
-#     assert str(conv) == expect
-#
-#
-# def test_class_with_init(converter):
-#     # init function shall be ignored
-#     code = textwrap.dedent("""\
-#             class Tc(HW):
-#                 def __init__(self):
-#                     loll = loom
-#
-#                 def __call__(self):
-#                     pass""")
-#
-#     expect = textwrap.dedent("""\
-#         package Tc is
-#
-#             procedure \\__call__\\(reg:inout register_t);
-#         end package;
-#
-#         package body Tc is
-#             procedure \\__call__\\(reg:inout register_t) is
-#                 variable self: self_t;
-#             begin
-#                 make_self(reg, self);
-#                 reg := self.\\next\\;
-#             end procedure;
-#         end package body;""")
-#     conv = converter(code)
-#     assert str(conv) == expect
-
-
-
-def test_class_full_name_bug(converter):
-    code = textwrap.dedent("""\
-            class Register():
-                def __call__(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-         library ieee;
-             use ieee.std_logic_1164.all;
-             use ieee.numeric_std.all;
-             use ieee.fixed_float_types.all;
-             use ieee.fixed_pkg.all;
-             use ieee.math_real.all;
-
-         library work;
-             use work.all;
-
-         package \\Register\\ is
-             type register_t is record
-             end record;
-             type self_t is record
-                 \\next\\: register_t;
-             end record;
-
-             procedure reset(reg: inout register_t);
-             procedure \\__call__\\(reg:inout register_t);
-         end package;
-
-         package body \\Register\\ is
-             procedure reset(reg: inout register_t) is
-             begin
-             end procedure;
-
-             procedure make_self(reg: register_t; self: out self_t) is
-             begin
-                 self.\\next\\ := reg;
-             end procedure;
-
-             procedure \\__call__\\(reg:inout register_t) is
-                 variable self: self_t;
-             begin
-                 make_self(reg, self);
-                 reg := self.\\next\\;
-             end procedure;
-         end package body;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_class_full_endl_bug(converter):
-    code = textwrap.dedent("""\
-            class Register():
-                def __call__(self):
-                    pass
-
-            """)
-
-    expect = textwrap.dedent("""\
-         library ieee;
-             use ieee.std_logic_1164.all;
-             use ieee.numeric_std.all;
-             use ieee.fixed_float_types.all;
-             use ieee.fixed_pkg.all;
-             use ieee.math_real.all;
-
-         library work;
-             use work.all;
-
-         package \\Register\\ is
-             type register_t is record
-             end record;
-             type self_t is record
-                 \\next\\: register_t;
-             end record;
-
-             procedure reset(self_reg: inout register_t);
-             procedure \\__call__\\(self_reg:inout register_t);
-         end package;
-
-         package body \\Register\\ is
-             procedure reset(self_reg: inout register_t) is
-             begin
-             end procedure;
-
-             procedure make_self(self_reg: register_t; self: out self_t) is
-             begin
-                 self.\\next\\ := self_reg;
-             end procedure;
-
-             procedure \\__call__\\(self_reg:inout register_t) is
-                 variable self: self_t;
-             begin
-                 make_self(self_reg, self);
-                 self_reg := self.\\next\\;
-             end procedure;
-         end package body;""")
-
-    conv = converter(code)
     assert str(conv) == expect
 
 

@@ -367,6 +367,8 @@ class ForNodeConv(NodeConv):
 
 
 class ClassNodeConv(NodeConv):
+    """ This relies heavily on datamodel """
+
     def __init__(self, red_node, parent=None):
 
         # see def test_class_call_modifications(converter):
@@ -375,7 +377,6 @@ class ClassNodeConv(NodeConv):
             defn.arguments[0].target = 'self_reg'
             defn.value.insert(0, 'make_self(self_reg, self)')
             defn.value.append('self_reg = self.next')
-
 
         super().__init__(red_node, parent)
 
@@ -404,17 +405,24 @@ class ClassNodeConv(NodeConv):
                 use work.all;""")
 
     def get_reset_prototype(self):
-        return 'procedure reset(reg: inout register_t);'
+        return 'procedure reset(self_reg: inout register_t);'
 
     def get_reset_str(self):
         template = textwrap.dedent("""\
-        procedure reset(reg: inout register_t) is
+        procedure reset(self_reg: inout register_t) is
         begin
         {DATA}
         end procedure;""")
 
-        variables = ['reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
-                     for key, val in self.data.items() if isinstance(val, Sfix)]
+        variables = []
+        for key, val in VHDLType._datamodel.self_data.items():
+            if key == 'next': continue
+            if isinstance(val, Sfix):
+                tmp = 'self_reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+            else:
+                tmp = 'self_reg.{} := {};'.format(key, val)
+            variables.append(tmp)
+
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
@@ -427,7 +435,9 @@ class ClassNodeConv(NodeConv):
             self.\\next\\ := self_reg;
         end procedure;""")
 
-        variables = ['self.{KEY} := reg.{KEY};'.format(KEY=key) for key in self.data]
+        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=key)
+                     for key in VHDLType._datamodel.self_data
+                     if str(key) != 'next']
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
@@ -443,8 +453,6 @@ class ClassNodeConv(NodeConv):
                 \\next\\: register_t;
             end record;""")
         sockets = {'DATA': ''}
-        # sfix_data = ['{}: sfixed({} downto {});'.format(key, val.left, val.right)
-        #              for key, val in self.data.items() if isinstance(val, Sfix)]
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 

@@ -19,7 +19,7 @@ class VHDLType:
     def get_self(cls):
         if cls._datamodel is None:
             return []
-        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items()]
+        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
