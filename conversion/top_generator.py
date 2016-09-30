@@ -110,6 +110,16 @@ class TopGenerator:
         else:
             assert 0
 
+    def normal_to_slv(self, var, var_name) -> str:
+        if type(var) == int:
+            return 'std_logic_vector(to_signed({}, 32))'.format(var_name)
+        elif type(var) == bool:
+            return 'std_logic({})'.format(var_name)
+        elif type(var) == Sfix:
+            return 'to_slv({})'.format(var_name)
+        else:
+            assert 0
+
     def make_entity(self) -> str:
         template = textwrap.dedent("""\
             entity  top is
@@ -138,6 +148,10 @@ class TopGenerator:
 
     def output_variables(self) -> str:
         return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x))
+                         for i, x in enumerate(self.get_object_return()))
+
+    def output_type_conversions(self) -> str:
+        return '\n'.join('out{} <= {};'.format(i, self.normal_to_slv(x, 'var_out{}'.format(i)))
                          for i, x in enumerate(self.get_object_return()))
 
     def input_variables(self) -> str:

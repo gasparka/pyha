@@ -55,6 +55,18 @@ def test_variables_output(basic_obj):
     assert expect == res.output_variables()
 
 
+def test_output_type_conversion(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+                out0 <= std_logic_vector(to_signed(var_out0, 32));
+                out1 <= std_logic(var_out1);
+                out2 <= to_slv(var_out2);""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.output_type_conversions()
+
+
 def test_variables_input(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
