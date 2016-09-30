@@ -58,13 +58,13 @@ def test_variables_output(basic_obj):
 def test_variables_input(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                variable var_out0: integer;
-                variable var_out1: boolean;
-                variable var_out2: sfixed(5 downto -8);""")
+                variable var_in0: integer;
+                variable var_in1: sfixed(2 downto -17);
+                variable var_in2: boolean;""")
 
     res = TopGenerator(dut)
 
-    assert expect == res.output_variables()
+    assert expect == res.input_variables()
 
 
 def test_decorator(basic_obj):

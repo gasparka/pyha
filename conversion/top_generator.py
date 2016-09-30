@@ -127,7 +127,14 @@ class TopGenerator:
         return template.format(**sockets)
 
     def output_variables(self) -> str:
-        return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x)) for i, x in enumerate(self.get_object_return()))
+        return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x))
+                         for i, x in enumerate(self.get_object_return()))
+
+    def input_variables(self) -> str:
+        return '\n'.join('variable var_in{}: {};'.format(i, pytype_to_vhdl(x))
+                         for i, x in enumerate(self.get_object_inputs()))
+
+
 
     def inputs(self):
         return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
