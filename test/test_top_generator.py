@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 from common.sfix import Sfix
-from conversion.top_generator import inout_saver
+from conversion.top_generator import inout_saver, TopGenerator
 
 
 @pytest.fixture
@@ -14,34 +14,33 @@ def basic_obj():
 
     dut = A()
     dut(2, Sfix(1.0, 2, -17), False)
+    dut(-57, Sfix(1.0, 2, -17), True)
+    dut(-57, Sfix(1.0, 2, -17), c=True)
     return dut
 
 
-def test_top_vhdl_entity(basic_obj):
-    dut = basic_obj()
-
+def test_top_vhdl_entity_basic(basic_obj):
+    dut = basic_obj
     expect = textwrap.dedent("""\
         entity  top is
-          port (
-            clk, rst_n: in std_logic;
+            port (
+                clk, rst_n: in std_logic;
 
-            -- inputs
-            in0: in std_logic_vector(31 downto 0);
-            in1: in std_logic_vector(19 downto 0);
-            in2: in std_logic;
+                -- inputs
+                in0: in std_logic_vector(31 downto 0);
+                in1: in std_logic_vector(19 downto 0);
+                in2: in std_logic;
 
-            -- outputs
-            out0: out std_logic_vector(31 downto 0);
-            out1: out std_logic;
-            out2: out std_logic_vector(13 downto 0);
-          );
+                -- outputs
+                out0: out std_logic_vector(31 downto 0);
+                out1: out std_logic;
+                out2: out std_logic_vector(13 downto 0);
+            );
         end entity;""")
 
     res = TopGenerator(dut)
 
-    assert expect == res._
-    print(obj.__call__)
-    # print(simulated_obj('tereloom'))
+    assert expect == res.make_entity()
 
 
 def test_decorator(basic_obj):

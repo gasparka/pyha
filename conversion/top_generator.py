@@ -1,4 +1,8 @@
+import textwrap
 from functools import wraps
+
+from common.sfix import Sfix
+from common.util import tabber
 
 
 def inout_saver(func):
@@ -69,11 +73,61 @@ endmodule
 
 
 class TopGenerator:
-    def __init__(self, base_dir):
-        self.inputs = inputs
-        self.dut_name = dut_name
-        self.base_dir = base_dir
-        self.outputs = outputs
+    def __init__(self, simulated_object):
+        self.simulated_object = simulated_object
+
+    def get_object_args(self) -> list:
+        # skip first arg -> it is self
+        return list(self.simulated_object.__call__._last_call['args'][1:])
+
+    def get_object_kwargs(self) -> list:
+        return self.simulated_object.__call__._last_call['kwargs'].items()
+
+    def get_object_inputs(self) -> list:
+        return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
+
+    def get_object_return(self) -> list:
+        return list(self.simulated_object.__call__._last_call['return'])
+
+    def pyvar_to_stdlogic(self, var) -> str:
+        if type(var) == int:
+            return 'std_logic_vector(31 downto 0)'
+        elif type(var) == bool:
+            return 'std_logic'
+        elif type(var) == Sfix:
+            return var.to_stdlogic()
+        else:
+            assert 0
+
+    def make_entity(self) -> str:
+        template = textwrap.dedent("""\
+            entity  top is
+                port (
+                    clk, rst_n: in std_logic;
+
+                    -- inputs
+            {INPUTS}
+
+                    -- outputs
+            {OUTPUTS}
+                );
+            end entity;""")
+        sockets = dict()
+
+        inputs = [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
+                  for i, x in enumerate(self.get_object_inputs())]
+
+        sockets['INPUTS'] = '\n'.join(inputs)
+
+        outputs = [tabber(tabber('out{}: out {};'.format(i, self.pyvar_to_stdlogic(x))))
+                   for i, x in enumerate(self.get_object_return())]
+
+        sockets['OUTPUTS'] = '\n'.join(outputs)
+        return template.format(**sockets)
+
+    def inputs(self):
+        return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
+                for i, x in enumerate(self.get_object_args())]
 
     def _make_verilog_top(self):
         subs = dict()
