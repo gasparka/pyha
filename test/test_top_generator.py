@@ -67,6 +67,17 @@ def test_variables_input(basic_obj):
     assert expect == res.input_variables()
 
 
+def test_input_type_conversion(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+                var_in0 := to_integer(to_signed(in0));
+                var_in1 := to_sfixed(in1, 2, -17);
+                var_in2 := in2;""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.input_type_conversions()
+
 def test_decorator(basic_obj):
     class A:
         @inout_saver

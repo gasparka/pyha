@@ -100,6 +100,16 @@ class TopGenerator:
         else:
             assert 0
 
+    def vhdl_slv_to_normal(self, var, var_name) -> str:
+        if type(var) == int:
+            return 'to_integer(to_signed({}))'.format(var_name)
+        elif type(var) == bool:
+            return var_name
+        elif type(var) == Sfix:
+            return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
+        else:
+            assert 0
+
     def make_entity(self) -> str:
         template = textwrap.dedent("""\
             entity  top is
@@ -134,7 +144,9 @@ class TopGenerator:
         return '\n'.join('variable var_in{}: {};'.format(i, pytype_to_vhdl(x))
                          for i, x in enumerate(self.get_object_inputs()))
 
-
+    def input_type_conversions(self) -> str:
+        return '\n'.join('var_in{} := {};'.format(i, self.vhdl_slv_to_normal(x, 'in{}'.format(i)))
+                         for i, x in enumerate(self.get_object_inputs()))
 
     def inputs(self):
         return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
