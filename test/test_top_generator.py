@@ -19,7 +19,7 @@ def basic_obj():
     return dut
 
 
-def test_top_vhdl_entity_basic(basic_obj):
+def test_entity_basic(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
         entity  top is
@@ -41,6 +41,30 @@ def test_top_vhdl_entity_basic(basic_obj):
     res = TopGenerator(dut)
 
     assert expect == res.make_entity()
+
+
+def test_variables_output(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+                variable var_out0: integer;
+                variable var_out1: boolean;
+                variable var_out2: sfixed(5 downto -8);""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.output_variables()
+
+
+def test_variables_input(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+                variable var_out0: integer;
+                variable var_out1: boolean;
+                variable var_out2: sfixed(5 downto -8);""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.output_variables()
 
 
 def test_decorator(basic_obj):

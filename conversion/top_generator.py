@@ -3,6 +3,7 @@ from functools import wraps
 
 from common.sfix import Sfix
 from common.util import tabber
+from conversion.coupling import pytype_to_vhdl
 
 
 def inout_saver(func):
@@ -124,6 +125,9 @@ class TopGenerator:
 
         sockets['OUTPUTS'] = '\n'.join(outputs)
         return template.format(**sockets)
+
+    def output_variables(self) -> str:
+        return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x)) for i, x in enumerate(self.get_object_return()))
 
     def inputs(self):
         return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))

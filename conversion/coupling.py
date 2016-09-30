@@ -8,6 +8,19 @@ class ExceptionCoupling(Exception):
     pass
 
 
+def pytype_to_vhdl(var):
+    if type(var) is bool:
+        return 'boolean'
+    elif type(var) is int:
+        return 'integer'
+    elif type(var) is Sfix:
+        return 'sfixed({} downto {})'.format(var.left, var.right)
+    elif type(var) is list:
+        return pytype_to_vhdl(var[0])
+    else:
+        assert 0
+
+
 class VHDLType:
     _datamodel = None
 
@@ -33,7 +46,7 @@ class VHDLType:
 
         if tuple_init is not None:
             self.name = tuple_init[0]
-            self.var_type = self._pytype_to_vhdl(tuple_init[1])
+            self.var_type = pytype_to_vhdl(tuple_init[1])
             return
 
         # hardcoded types
@@ -82,7 +95,7 @@ class VHDLType:
             # dealing with locals (includes all arguments!)
             var = self._datamodel.locals[self._defined_in_function()][name]
 
-        return self._pytype_to_vhdl(var)
+        return pytype_to_vhdl(var)
 
     def _defined_in_function(self):
         defn = self.red_node
@@ -90,17 +103,6 @@ class VHDLType:
             defn = defn.parent
         return defn.name
 
-    def _pytype_to_vhdl(self, var):
-        if type(var) is bool:
-            return 'boolean'
-        elif type(var) is int:
-            return 'integer'
-        elif type(var) is Sfix:
-            return 'sfixed({} downto {})'.format(var.left, var.right)
-        elif type(var) is list:
-            return self._pytype_to_vhdl(var[0])
-        else:
-            raise ExceptionCoupling('Variable not found in datamodel!')
 
     def _real_name(self):
         # VHDLType.name could be something else, like 'ret_0'
