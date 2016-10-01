@@ -157,7 +157,7 @@ class TopGenerator:
                 use ieee.math_real.all;
 
             library work;
-            use work.all;""")
+                use work.all;""")
 
     def object_class_name(self) -> str:
         # make sure we escape reserved names
@@ -187,10 +187,10 @@ class TopGenerator:
                         clk, rst_n: in std_logic;
 
                         -- inputs
-                {INPUTS}
+                {ENTITY_INPUTS}
 
                         -- outputs
-                {OUTPUTS}
+                {ENTITY_OUTPUTS}
                     );
                 end entity;
 
@@ -208,17 +208,33 @@ class TopGenerator:
                         {DUT_NAME}.reset(self);
                     elsif rising_edge(clk) then
                         --convert slv to normal types
-                {CONVERT_SLV_TO_NORMAL}
+                {INPUT_TYPE_CONVERSIONS}
 
                         --call the main entry
-                        {DUT_NAME}.\\__call__\\(self, {ARGUMENTS});
+                        {DUT_NAME}.\\__call__\\(self, {CALL_ARGUMENTS});
 
                         --convert normal types to slv
-                {CONVERT_NORMAL_TO_SLV}
+                {OUTPUT_TYPE_CONVERSIONS}
                       end if;
 
                     end process;
                 end architecture;""")
+
+        def tab(x):
+            return tabber(tabber(x))
+
+        sockets = {}
+        sockets['DUT_NAME'] = self.object_class_name()
+        sockets['IMPORTS'] = self.imports()
+        sockets['ENTITY_INPUTS'] = tab(self.make_entity_inputs())
+        sockets['ENTITY_OUTPUTS'] = tab(self.make_entity_outputs())
+        sockets['INPUT_VARIABLES'] = tab(self.input_variables())
+        sockets['OUTPUT_VARIABLES'] = tab(self.output_variables())
+        sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.input_type_conversions())
+        sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.output_type_conversions())
+        sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
+
+        return template.format(**sockets)
 
 
 if __name__ == "__main__":

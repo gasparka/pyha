@@ -111,7 +111,7 @@ def test_imports(basic_obj):
             use ieee.math_real.all;
 
         library work;
-        use work.all;""")
+            use work.all;""")
 
     res = TopGenerator(dut)
 
@@ -133,18 +133,69 @@ def test_call_arguments(basic_obj):
 def test_full(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-        library ieee;
-            use ieee.std_logic_1164.all;
-            use ieee.numeric_std.all;
-            use ieee.fixed_pkg.all;
-            use ieee.math_real.all;
+                    library ieee;
+                        use ieee.std_logic_1164.all;
+                        use ieee.numeric_std.all;
+                        use ieee.fixed_pkg.all;
+                        use ieee.math_real.all;
 
-        library work;
-        use work.all;""")
+                    library work;
+                        use work.all;
+
+                    entity  top is
+                        port (
+                            clk, rst_n: in std_logic;
+
+                            -- inputs
+                            in0: in std_logic_vector(31 downto 0);
+                            in1: in std_logic_vector(19 downto 0);
+                            in2: in std_logic;
+
+                            -- outputs
+                            out0: out std_logic_vector(31 downto 0);
+                            out1: out std_logic;
+                            out2: out std_logic_vector(13 downto 0);
+                        );
+                    end entity;
+
+                    architecture arch of top is
+                    begin
+                        process(clk, rst_n)
+                            variable self: \\Register\\.register_t;
+                            -- input variables
+                            variable var_in0: integer;
+                            variable var_in1: sfixed(2 downto -17);
+                            variable var_in2: boolean;
+
+                            --output variables
+                            variable var_out0: integer;
+                            variable var_out1: boolean;
+                            variable var_out2: sfixed(5 downto -8);
+                        begin
+                        if (not rst_n) then
+                            \\Register\\.reset(self);
+                        elsif rising_edge(clk) then
+                            --convert slv to normal types
+                            var_in0 := to_integer(to_signed(in0));
+                            var_in1 := to_sfixed(in1, 2, -17);
+                            var_in2 := in2;
+
+                            --call the main entry
+                            \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+
+                            --convert normal types to slv
+                            out0 <= std_logic_vector(to_signed(var_out0, 32));
+                            out1 <= std_logic(var_out1);
+                            out2 <= to_slv(var_out2);
+                          end if;
+
+                        end process;
+                    end architecture;""")
 
     res = TopGenerator(dut)
 
-    assert expect == res.imports()
+    assert expect == res.make()
+
 
 def test_decorator():
     class A:
