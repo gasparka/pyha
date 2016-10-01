@@ -195,6 +195,22 @@ class TopGenerator:
         self._make_vhdl_top()
         self._make_verilog_top()
 
+    def imports(self) -> str:
+        return textwrap.dedent("""\
+            library ieee;
+                use ieee.std_logic_1164.all;
+                use ieee.numeric_std.all;
+                use ieee.fixed_pkg.all;
+                use ieee.math_real.all;
+
+            library work;
+            use work.all;""")
+
+    def object_class_name(self):
+        # make sure we escape reserved names
+        from conversion.converter import NameNodeConv
+        return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
+
 
 if __name__ == "__main__":
     in_sig = ['x']

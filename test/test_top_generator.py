@@ -7,12 +7,13 @@ from conversion.top_generator import inout_saver, TopGenerator
 
 @pytest.fixture
 def basic_obj():
-    class A:
+    # this is reserved name in VHDL
+    class Register:
         @inout_saver
         def __call__(self, a, b, c):
             return a * 5, True, Sfix(0.0, 5, -8)
 
-    dut = A()
+    dut = Register()
     dut(2, Sfix(1.0, 2, -17), False)
     dut(-57, Sfix(1.0, 2, -17), True)
     dut(-57, Sfix(1.0, 2, -17), c=True)
@@ -90,7 +91,52 @@ def test_input_type_conversion(basic_obj):
 
     assert expect == res.input_type_conversions()
 
-def test_decorator(basic_obj):
+
+def test_dut_name(basic_obj):
+    dut = basic_obj
+    expect = '\\Register\\'
+
+    res = TopGenerator(dut)
+
+    assert expect == res.object_class_name()
+
+
+def test_imports(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+
+        library work;
+        use work.all;""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.imports()
+
+
+def test_dut_call(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+
+        library work;
+        use work.all;""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.imports()
+    {DUT_NAME}.main(self, {INPUT_SIGNALS_CALL}, {OUTPUT_VARIABLES});
+
+
+def test_decorator():
     class A:
         @inout_saver
         def __call__(self, a, b, c):
