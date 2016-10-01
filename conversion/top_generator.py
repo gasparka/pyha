@@ -1,5 +1,6 @@
 import textwrap
 from functools import wraps
+from pathlib import Path
 
 from common.sfix import Sfix
 from common.util import tabber
@@ -24,57 +25,9 @@ def inout_saver(func):
     return inout_saver_wrap
 
 
-VHDL_TOP_TEMPLATE = """
-library ieee;
-    use ieee.std_logic_1164.all;
-    use ieee.numeric_std.all;
-    use ieee.fixed_pkg.all;
-    use ieee.math_real.all;
-
-library work;
-use work.all;
-
-entity  top is
-  port (
-    clk, rst_n : in std_logic;
-    {INPUT_SIGNALS} :  in std_logic_vector(17 downto 0);
-    {OUTPUT_SIGNALS} :  out std_logic_vector(17 downto 0)
-  );
-end entity;
-
-architecture arch of top is
-begin
-    process(clk, rst_n)
-      variable self: {DUT_NAME}.self_t;
-      variable {OUTPUT_VARIABLES}: sfixed(0 downto -17);
-    begin
-      if (not rst_n) then
-        {DUT_NAME}.reset(self);
-      elsif rising_edge(clk) then
-        {DUT_NAME}.main(self, {INPUT_SIGNALS_CALL}, {OUTPUT_VARIABLES});
-        {OUTPUT_VARIABLES_TO_SLV}
-      end if;
-
-    end process;
-end architecture;
-"""
-
-VERILOG_TOP_TEMPLATE = """
-module top_sv #()
-  (
-  input clk,rst_n,
-  input  [17 :0]    {INPUT_SIGNALS},
-  output [17 :0]    {OUTPUT_SIGNALS}
-  );
-
-  top #()
-  top (.*);
-endmodule
-"""
-
-
 class TopGenerator:
-    def __init__(self, simulated_object):
+    def __init__(self, simulated_object, path=Path('.')):
+        self.path = path
         self.simulated_object = simulated_object
 
     def get_object_args(self) -> list:
@@ -128,27 +81,23 @@ class TopGenerator:
         return '\n'.join('out{}: out {};'.format(i, self.pyvar_to_stdlogic(x))
                          for i, x in enumerate(self.get_object_return()))
 
-    def output_variables(self) -> str:
+    def make_output_variables(self) -> str:
         return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x))
                          for i, x in enumerate(self.get_object_return()))
 
-    def output_type_conversions(self) -> str:
+    def make_output_type_conversions(self) -> str:
         return '\n'.join('out{} <= {};'.format(i, self.normal_to_slv(x, 'var_out{}'.format(i)))
                          for i, x in enumerate(self.get_object_return()))
 
-    def input_variables(self) -> str:
+    def make_input_variables(self) -> str:
         return '\n'.join('variable var_in{}: {};'.format(i, pytype_to_vhdl(x))
                          for i, x in enumerate(self.get_object_inputs()))
 
-    def input_type_conversions(self) -> str:
+    def make_input_type_conversions(self) -> str:
         return '\n'.join('var_in{} := {};'.format(i, self.vhdl_slv_to_normal(x, 'in{}'.format(i)))
                          for i, x in enumerate(self.get_object_inputs()))
 
-    def inputs(self):
-        return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
-                for i, x in enumerate(self.get_object_args())]
-
-    def imports(self) -> str:
+    def make_imports(self) -> str:
         return textwrap.dedent("""\
             library ieee;
                 use ieee.std_logic_1164.all;
@@ -225,20 +174,18 @@ class TopGenerator:
 
         sockets = {}
         sockets['DUT_NAME'] = self.object_class_name()
-        sockets['IMPORTS'] = self.imports()
+        sockets['IMPORTS'] = self.make_imports()
         sockets['ENTITY_INPUTS'] = tab(self.make_entity_inputs())
-        sockets['ENTITY_OUTPUTS'] = tab(self.make_entity_outputs())
-        sockets['INPUT_VARIABLES'] = tab(self.input_variables())
-        sockets['OUTPUT_VARIABLES'] = tab(self.output_variables())
-        sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.input_type_conversions())
-        sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.output_type_conversions())
+        sockets['ENTITY_OUTPUTS'] = tab(
+            self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
+        sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
+        sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
+        sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
+        sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.make_output_type_conversions())
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
 
-        return template.format(**sockets)
+        res = template.format(**sockets)
+        with (self.path / 'top.vhd').open('w') as f:
+            f.write(res)
 
-
-if __name__ == "__main__":
-    in_sig = ['x']
-    out_sig = ['y']
-    d = TopGenerator('.', 'average', in_sig, out_sig)
-    d.make()
+        return res

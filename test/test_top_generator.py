@@ -1,4 +1,5 @@
 import textwrap
+from pathlib import Path
 
 import pytest
 from common.sfix import Sfix
@@ -53,7 +54,7 @@ def test_variables_output(basic_obj):
 
     res = TopGenerator(dut)
 
-    assert expect == res.output_variables()
+    assert expect == res.make_output_variables()
 
 
 def test_output_type_conversion(basic_obj):
@@ -65,7 +66,7 @@ def test_output_type_conversion(basic_obj):
 
     res = TopGenerator(dut)
 
-    assert expect == res.output_type_conversions()
+    assert expect == res.make_output_type_conversions()
 
 
 def test_variables_input(basic_obj):
@@ -77,7 +78,7 @@ def test_variables_input(basic_obj):
 
     res = TopGenerator(dut)
 
-    assert expect == res.input_variables()
+    assert expect == res.make_input_variables()
 
 
 def test_input_type_conversion(basic_obj):
@@ -89,7 +90,7 @@ def test_input_type_conversion(basic_obj):
 
     res = TopGenerator(dut)
 
-    assert expect == res.input_type_conversions()
+    assert expect == res.make_input_type_conversions()
 
 
 def test_dut_name(basic_obj):
@@ -115,7 +116,7 @@ def test_imports(basic_obj):
 
     res = TopGenerator(dut)
 
-    assert expect == res.imports()
+    assert expect == res.make_imports()
 
 
 def test_call_arguments(basic_obj):
@@ -127,10 +128,7 @@ def test_call_arguments(basic_obj):
     assert expect == res.make_call_arguments()
 
 
-# expect = textwrap.dedent("""\
-#         # \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);""")
-
-def test_full(basic_obj):
+def test_full(basic_obj, tmpdir):
     dut = basic_obj
     expect = textwrap.dedent("""\
                     library ieee;
@@ -154,7 +152,7 @@ def test_full(basic_obj):
                             -- outputs
                             out0: out std_logic_vector(31 downto 0);
                             out1: out std_logic;
-                            out2: out std_logic_vector(13 downto 0);
+                            out2: out std_logic_vector(13 downto 0)
                         );
                     end entity;
 
@@ -192,9 +190,11 @@ def test_full(basic_obj):
                         end process;
                     end architecture;""")
 
-    res = TopGenerator(dut)
-
-    assert expect == res.make()
+    path = Path(str(tmpdir))
+    res = TopGenerator(dut, path=path).make()
+    assert expect == res
+    with (path / 'top.vhd').open('r') as f:
+        assert expect == f.read()
 
 
 def test_decorator():
