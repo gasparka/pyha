@@ -20,28 +20,28 @@ def basic_obj():
     return dut
 
 
-def test_entity_basic(basic_obj):
+def test_entity_inputs(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-        entity  top is
-            port (
-                clk, rst_n: in std_logic;
-
-                -- inputs
                 in0: in std_logic_vector(31 downto 0);
                 in1: in std_logic_vector(19 downto 0);
-                in2: in std_logic;
-
-                -- outputs
-                out0: out std_logic_vector(31 downto 0);
-                out1: out std_logic;
-                out2: out std_logic_vector(13 downto 0);
-            );
-        end entity;""")
+                in2: in std_logic;""")
 
     res = TopGenerator(dut)
 
-    assert expect == res.make_entity()
+    assert expect == res.make_entity_inputs()
+
+
+def test_entity_outputs(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+                out0: out std_logic_vector(31 downto 0);
+                out1: out std_logic;
+                out2: out std_logic_vector(13 downto 0);""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.make_entity_outputs()
 
 
 def test_variables_output(basic_obj):
@@ -127,6 +127,22 @@ def test_dut_call(basic_obj):
 
     assert expect == res.make_call()
 
+
+def test_architecture(basic_obj):
+    dut = basic_obj
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+
+        library work;
+        use work.all;""")
+
+    res = TopGenerator(dut)
+
+    assert expect == res.imports()
 
 def test_decorator():
     class A:

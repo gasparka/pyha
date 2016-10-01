@@ -120,31 +120,13 @@ class TopGenerator:
         else:
             assert 0
 
-    def make_entity(self) -> str:
-        template = textwrap.dedent("""\
-            entity  top is
-                port (
-                    clk, rst_n: in std_logic;
+    def make_entity_inputs(self) -> str:
+        return '\n'.join('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))
+                         for i, x in enumerate(self.get_object_inputs()))
 
-                    -- inputs
-            {INPUTS}
-
-                    -- outputs
-            {OUTPUTS}
-                );
-            end entity;""")
-        sockets = dict()
-
-        inputs = [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
-                  for i, x in enumerate(self.get_object_inputs())]
-
-        sockets['INPUTS'] = '\n'.join(inputs)
-
-        outputs = [tabber(tabber('out{}: out {};'.format(i, self.pyvar_to_stdlogic(x))))
-                   for i, x in enumerate(self.get_object_return())]
-
-        sockets['OUTPUTS'] = '\n'.join(outputs)
-        return template.format(**sockets)
+    def make_entity_outputs(self) -> str:
+        return '\n'.join('out{}: out {};'.format(i, self.pyvar_to_stdlogic(x))
+                         for i, x in enumerate(self.get_object_return()))
 
     def output_variables(self) -> str:
         return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x))
@@ -166,35 +148,6 @@ class TopGenerator:
         return [tabber(tabber('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))))
                 for i, x in enumerate(self.get_object_args())]
 
-    def _make_verilog_top(self):
-        subs = dict()
-        subs['INPUT_SIGNALS'] = ','.join(self.inputs)
-        subs['OUTPUT_SIGNALS'] = ','.join(self.outputs)
-        with (self.base_dir / 'top.sv').open('w') as f:
-            f.write(VERILOG_TOP_TEMPLATE.format(**subs))
-
-    def _make_vhdl_top(self):
-        subs = dict()
-        subs['INPUT_SIGNALS'] = ','.join(self.inputs)
-        subs['OUTPUT_SIGNALS'] = ','.join(self.outputs)
-        subs['DUT_NAME'] = self.dut_name
-
-        in_call = ['to_sfixed({va}, 0, -17) '.format(va=x) for x in self.inputs]
-        subs['INPUT_SIGNALS_CALL'] = ','.join(in_call)
-
-        out_vars = ['return_' + x for x in self.outputs]
-        subs['OUTPUT_VARIABLES'] = ','.join(out_vars)
-
-        out_slv = ['{va} <= to_slv(return_{va});\n'.format(va=x) for x in self.outputs]
-        subs['OUTPUT_VARIABLES_TO_SLV'] = ''.join(out_slv)
-
-        with (self.base_dir / 'top.vhd').open('w') as f:
-            f.write(VHDL_TOP_TEMPLATE.format(**subs))
-
-    def make(self):
-        self._make_vhdl_top()
-        self._make_verilog_top()
-
     def imports(self) -> str:
         return textwrap.dedent("""\
             library ieee;
@@ -206,7 +159,7 @@ class TopGenerator:
             library work;
             use work.all;""")
 
-    def object_class_name(self):
+    def object_class_name(self) -> str:
         # make sure we escape reserved names
         from conversion.converter import NameNodeConv
         return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
@@ -229,6 +182,48 @@ class TopGenerator:
 
         sockets['ARGUMENTS'] = ', '.join([inputs, outputs])
         return template.format(**sockets)
+
+    def make(self):
+        template = textwrap.dedent("""\
+                {IMPORTS}
+
+                entity  top is
+                    port (
+                        clk, rst_n: in std_logic;
+
+                        -- inputs
+                {INPUTS}
+
+                        -- outputs
+                {OUTPUTS}
+                    );
+                end entity;
+
+                architecture arch of top is
+                begin
+                    process(clk, rst_n)
+                        variable self: {DUT_NAME}.register_t;
+                        -- input variables
+                {INPUT_VARIABLES}
+
+                        --output variables
+                {OUTPUT_VARIABLES}
+                    begin
+                    if (not rst_n) then
+                        {DUT_NAME}.reset(self);
+                    elsif rising_edge(clk) then
+                        --convert slv to normal types
+                {CONVERT_SLV_TO_NORMAL}
+
+                        --call the main entry
+                {CALL}
+
+                        --convert normal types to slv
+                {CONVERT_NORMAL_TO_SLV}
+                      end if;
+
+                    end process;
+                end architecture;""")
 
 
 if __name__ == "__main__":
