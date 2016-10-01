@@ -118,17 +118,19 @@ def test_imports(basic_obj):
     assert expect == res.imports()
 
 
-def test_dut_call(basic_obj):
+def test_call_arguments(basic_obj):
     dut = basic_obj
-    expect = textwrap.dedent("""\
-        \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);""")
+    expect = 'var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2'
 
     res = TopGenerator(dut)
 
-    assert expect == res.make_call()
+    assert expect == res.make_call_arguments()
 
 
-def test_architecture(basic_obj):
+# expect = textwrap.dedent("""\
+#         # \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);""")
+
+def test_full(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
         library ieee;

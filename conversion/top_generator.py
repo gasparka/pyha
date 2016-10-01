@@ -164,11 +164,7 @@ class TopGenerator:
         from conversion.converter import NameNodeConv
         return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
 
-    def make_call(self) -> str:
-        template = textwrap.dedent("""\
-                {NAME}.\\__call__\\(self, {ARGUMENTS});""")
-        sockets = dict()
-        sockets['NAME'] = self.object_class_name()
+    def make_call_arguments(self) -> str:
 
         input_args = ', '.join('var_in{}'.format(i)
                                for i, _ in enumerate(self.get_object_args()))
@@ -180,8 +176,7 @@ class TopGenerator:
         outputs = ', '.join('ret_{i}=>var_out{i}'.format(i=i)
                             for i, _ in enumerate(self.get_object_return()))
 
-        sockets['ARGUMENTS'] = ', '.join([inputs, outputs])
-        return template.format(**sockets)
+        return ', '.join([inputs, outputs])
 
     def make(self):
         template = textwrap.dedent("""\
@@ -216,7 +211,7 @@ class TopGenerator:
                 {CONVERT_SLV_TO_NORMAL}
 
                         --call the main entry
-                {CALL}
+                        {DUT_NAME}.\\__call__\\(self, {ARGUMENTS});
 
                         --convert normal types to slv
                 {CONVERT_NORMAL_TO_SLV}
