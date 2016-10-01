@@ -121,19 +121,11 @@ def test_imports(basic_obj):
 def test_dut_call(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-        library ieee;
-            use ieee.std_logic_1164.all;
-            use ieee.numeric_std.all;
-            use ieee.fixed_pkg.all;
-            use ieee.math_real.all;
-
-        library work;
-        use work.all;""")
+        \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);""")
 
     res = TopGenerator(dut)
 
-    assert expect == res.imports()
-    {DUT_NAME}.main(self, {INPUT_SIGNALS_CALL}, {OUTPUT_VARIABLES});
+    assert expect == res.make_call()
 
 
 def test_decorator():

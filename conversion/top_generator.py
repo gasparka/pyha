@@ -211,6 +211,25 @@ class TopGenerator:
         from conversion.converter import NameNodeConv
         return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
 
+    def make_call(self) -> str:
+        template = textwrap.dedent("""\
+                {NAME}.\\__call__\\(self, {ARGUMENTS});""")
+        sockets = dict()
+        sockets['NAME'] = self.object_class_name()
+
+        input_args = ', '.join('var_in{}'.format(i)
+                               for i, _ in enumerate(self.get_object_args()))
+        ofs = len(self.get_object_args())
+        input_kwargs = ', '.join('{}=>var_in{}'.format(x[0], i + ofs)
+                                 for i, x in enumerate(self.get_object_kwargs()))
+        inputs = ', '.join([input_args, input_kwargs])
+
+        outputs = ', '.join('ret_{i}=>var_out{i}'.format(i=i)
+                            for i, _ in enumerate(self.get_object_return()))
+
+        sockets['ARGUMENTS'] = ', '.join([inputs, outputs])
+        return template.format(**sockets)
+
 
 if __name__ == "__main__":
     in_sig = ['x']
