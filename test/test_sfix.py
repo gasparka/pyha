@@ -332,4 +332,16 @@ def test_max_representable():
     assert a.max_representable() == 0.25 + 0.25 / 2
 
 
+def test_to_stdlogic():
+    a = Sfix(0.1, 0, 0)
+    assert a.to_stdlogic() == 'std_logic_vector(0 downto 0)'
+
+    a = Sfix(0.1, 3, 0)
+    assert a.to_stdlogic() == 'std_logic_vector(3 downto 0)'
+
+    a = Sfix(0.1, 3, -4)
+    assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
+
+
+
 # TODO: test restricted arguments

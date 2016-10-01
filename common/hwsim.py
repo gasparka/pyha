@@ -90,7 +90,7 @@ def forbid_assign_to_self(func, class_name):
 
 
 def dict_types_consistent_check(class_name, function_name, new, old):
-    """ Check 'new' dict against 'new' dict for types, if not consistent raise """
+    """ Check 'old' dict against 'new' dict for types, if not consistent raise """
     for key, value in new.items():
         if key in old:
             old_value = old[key]

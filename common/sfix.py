@@ -185,3 +185,7 @@ class Sfix(object):
     def __len__(self):
         assert self.left >= 0
         return -self.right + self.left + 1
+
+
+    def to_stdlogic(self):
+        return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
