@@ -2,17 +2,23 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from common.hwsim import HW
 from common.sfix import Sfix
 from conversion.top_generator import inout_saver, TopGenerator
 
 
-@pytest.fixture
-def basic_obj():
-    # this is reserved name in VHDL
-    class Register:
-        @inout_saver
-        def __call__(self, a, b, c):
-            return a * 5, True, Sfix(0.0, 5, -8)
+@pytest.fixture(params=['STANDALONE', 'AUTO'])
+def basic_obj(request):
+    if request.param_index == 0:
+        class Register:
+            @inout_saver
+            def __call__(self, a, b, c):
+                return a * 5, True, Sfix(0.0, 5, -8)
+    else:
+        # automatic decorators
+        class Register(HW):
+            def __call__(self, a, b, c):
+                return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
     dut(2, Sfix(1.0, 2, -17), False)
@@ -185,6 +191,92 @@ def test_full(basic_obj, tmpdir):
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
                             out1 <= std_logic(var_out1);
                             out2 <= to_slv(var_out2);
+                          end if;
+
+                        end process;
+                    end architecture;""")
+
+    path = Path(str(tmpdir))
+    res = TopGenerator(dut, path=path).make()
+    assert expect == res
+    with (path / 'top.vhd').open('r') as f:
+        assert expect == f.read()
+
+
+@pytest.fixture
+def simple_obj():
+    class Simple:
+        @inout_saver
+        def __call__(self, a):
+            return a
+
+    dut = Simple()
+    dut(2)
+    return dut
+
+
+def test_simple_list_problems(simple_obj):
+    dut = simple_obj
+    res = TopGenerator(dut)
+    assert res.get_object_return() == [2]
+    assert res.get_object_args() == [2]
+    # assert expect == res.make_call_arguments()
+
+
+def test_simple_call_arguments(simple_obj):
+    dut = simple_obj
+    expect = 'var_in0, ret_0=>var_out0'
+
+    res = TopGenerator(dut)
+
+    assert expect == res.make_call_arguments()
+
+
+def test_simple_full(simple_obj, tmpdir):
+    dut = simple_obj
+    expect = textwrap.dedent("""\
+                    library ieee;
+                        use ieee.std_logic_1164.all;
+                        use ieee.numeric_std.all;
+                        use ieee.fixed_pkg.all;
+                        use ieee.math_real.all;
+
+                    library work;
+                        use work.all;
+
+                    entity  top is
+                        port (
+                            clk, rst_n: in std_logic;
+
+                            -- inputs
+                            in0: in std_logic_vector(31 downto 0);
+
+                            -- outputs
+                            out0: out std_logic_vector(31 downto 0)
+                        );
+                    end entity;
+
+                    architecture arch of top is
+                    begin
+                        process(clk, rst_n)
+                            variable self: Simple.register_t;
+                            -- input variables
+                            variable var_in0: integer;
+
+                            --output variables
+                            variable var_out0: integer;
+                        begin
+                        if (not rst_n) then
+                            Simple.reset(self);
+                        elsif rising_edge(clk) then
+                            --convert slv to normal types
+                            var_in0 := to_integer(to_signed(in0));
+
+                            --call the main entry
+                            Simple.\\__call__\\(self, var_in0, ret_0=>var_out0);
+
+                            --convert normal types to slv
+                            out0 <= std_logic_vector(to_signed(var_out0, 32));
                           end if;
 
                         end process;

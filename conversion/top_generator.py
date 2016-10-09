@@ -41,7 +41,8 @@ class TopGenerator:
         return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
 
     def get_object_return(self) -> list:
-        return list(self.simulated_object.__call__._last_call['return'])
+        rets = self.simulated_object.__call__._last_call['return']
+        return list(rets) if isinstance(rets, tuple) else [rets]
 
     def pyvar_to_stdlogic(self, var) -> str:
         if type(var) == int:
@@ -120,7 +121,8 @@ class TopGenerator:
         ofs = len(self.get_object_args())
         input_kwargs = ', '.join('{}=>var_in{}'.format(x[0], i + ofs)
                                  for i, x in enumerate(self.get_object_kwargs()))
-        inputs = ', '.join([input_args, input_kwargs])
+
+        inputs = ', '.join([input_args, input_kwargs]) if len(self.get_object_kwargs()) else input_args
 
         outputs = ', '.join('ret_{i}=>var_out{i}'.format(i=i)
                             for i, _ in enumerate(self.get_object_return()))

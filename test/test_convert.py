@@ -1140,6 +1140,7 @@ def test_call_self_return2_arugments(converter):
 
 def test_redbaron_bug119():
     # https://github.com/PyCQA/redbaron/issues/119
+    # is this fixed in 0.6.2??
     from redbaron import RedBaron
     import textwrap
     code = textwrap.dedent("""\

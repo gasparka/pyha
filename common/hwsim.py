@@ -3,6 +3,7 @@ from functools import wraps
 
 from common.sfix import Sfix
 from conversion.extract_datamodel import locals_hack
+from conversion.top_generator import inout_saver
 from six import iteritems, with_metaclass
 
 """
@@ -141,6 +142,7 @@ class Meta(type):
 
         if '__call__' in attrs:
             attrs['__call__'] = forbid_assign_to_self(attrs['__call__'], name)
+            attrs['__call__'] = inout_saver(attrs['__call__'])  # TODO: this should be only enabled on conversion
             attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
             # decorate the __call__ function with clock_tick
             attrs['__call__'] = clock_tick(attrs['__call__'])
