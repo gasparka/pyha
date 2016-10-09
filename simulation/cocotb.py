@@ -52,42 +52,25 @@ class CocotbAuto(object):
     def default_assignments(self):
         # TODO: cocotb should probably be submodule
         # FIXME: hardcoded paths
-        self.environment['COCOTB'] = '~/git/cocotb/'
-        self.environment["PYTHONHOME"] = "/home/gaspar/programs/anaconda2_32"
-        self.environment["PATH"] = "/home/gaspar/programs/anaconda2_32/bin:" + self.environment["PATH"]
+        self.environment['COCOTB'] = '/home/gaspar/tst_coco_ghdl/cocotb/'
+        self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
-        self.environment['TOPLEVEL_LANG'] = 'verilog'
-        self.environment['SIM'] = 'modelsim'
-        self.environment['ARCH'] = 'i686'
+        self.environment['TOPLEVEL_LANG'] = 'vhdl'
+        self.environment['SIM'] = 'ghdl'
 
-        # this is needed for gate level sim
-        # FIXME: this creates the last line error
-        # if using makefile argument:
-        # vsim -t ps -onfinish exit -pli "libvpi.so" work.top_sv
-        # but python var yields:
-        # vsim -t ps -onfinish exit -pli "libvpi.so" -pli "libvpi.so" work.top_sv
-        self.environment['VSIM_ARGS'] = "-t ps"
-        self.environment['VCOM_ARGS'] = '-2008'
 
-        # this path is quite fucked up
-        # self.environment["PYTHONPATH"] = str(self.base_path.parent) + ':' + self.environment["PYTHONPATH"]
+
         self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
 
-        self.environment['TOPLEVEL'] = self.top_level_entity
+        self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = self.test_file
 
         self.environment['VHDL_SOURCES'] = ''
-        self.environment['VERILOG_SOURCES'] = ''
         for file in self.source_files.vhdl_src:
             if not file.is_file():
                 raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
             self.environment['VHDL_SOURCES'] += str(file) + ' '
-
-        for file in self.source_files.verilog_src:
-            if not file.is_file():
-                raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
-            self.environment['VERILOG_SOURCES'] += str(file)
 
         self.environment['OUTPUT_VARIABLES'] = str(len(self.source_files.output_sfix))
 

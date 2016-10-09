@@ -67,14 +67,11 @@ def generated_hdl(tmpdir_factory):
                 '/home/gaspar/git/hapy/test/register/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
 
-    verilog_src = ['/home/gaspar/git/hapy/test/register/top.sv']
-    verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
-
     from common.sfix import Sfix
 
     output_sfix = [Sfix(left=0, right=-27)] * 1
     input_sfix = [Sfix(left=0, right=-27)] * 1
-    return HDLStuff(tmpdir, vhdl_src, verilog_src, input_sfix, output_sfix)
+    return HDLStuff(tmpdir, vhdl_src, None, input_sfix, output_sfix)
 
 
 # @pytest.fixture
@@ -129,8 +126,6 @@ def dut(request, tmpdir, shared_tmpdir):
 
     elif request.param == 'HW-MODEL':
 
-        # ret(Sfix(0.5, 0, -27))
-        # ret(Sfix(0.5, 0, -27))
 
         dut = Testing(request, None, ret, None)
         return dut
