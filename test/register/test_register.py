@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
@@ -7,6 +8,8 @@ from conversion.converter import convert
 from conversion.extract_datamodel import DataModel
 from conversion.top_generator import TopGenerator
 from redbaron import RedBaron
+from simulation.cocotb import CocotbAuto
+from simulation.testing import Testing
 
 
 class HDLStuff(object):
@@ -21,7 +24,7 @@ class HDLStuff(object):
 def full_conversion(obj, tmpdir):
     datamodel = DataModel(obj)
     f = open(__file__).read()
-    reg_class = RedBaron(f)('class')[0]
+    reg_class = RedBaron(f)('class', name='Register')[0]
 
     conv = convert(reg_class, caller=None, datamodel=datamodel)
     conv = str(conv)
@@ -31,14 +34,26 @@ def full_conversion(obj, tmpdir):
     TopGenerator(obj).make()
 
 
-def test_main(dut):
-    full_conversion(dut, None)
+def test_main():
+    class Register(HW):
+        def __init__(self, init_value=0.):
+            self.a = Sfix(init_value)
+
+        def __call__(self, new_value):
+            self.next.a = new_value
+            return self.a
+
+    ret = Register()
+    ret(Sfix(0.5, 0, -27))
+    ret(Sfix(0.5, 0, -27))
+
+    full_conversion(ret, None)
 
 
 def generated_hdl(tmpdir_factory):
     import shutil
 
-    full_conversion()
+    # full_conversion()
     # tmpdir = tmpdir_factory.mktemp('src') # this returns some retarded path class
     tmpdir = tmpdir_factory  # this returns some retarded path class
     # tmpdir = Path(str(tmpdir))
@@ -56,25 +71,26 @@ def generated_hdl(tmpdir_factory):
     verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
 
     from common.sfix import Sfix
-    output_sfix = [Sfix(left=2, right=-17)] * 2
-    input_sfix = [Sfix(left=2, right=-17)] * 1
+
+    output_sfix = [Sfix(left=0, right=-27)] * 1
+    input_sfix = [Sfix(left=0, right=-27)] * 1
     return HDLStuff(tmpdir, vhdl_src, verilog_src, input_sfix, output_sfix)
 
 
-@pytest.fixture
-def dut():
-    class Register(HW):
-        def __init__(self, init_value=0.):
-            self.a = Sfix(init_value)
-
-        def __call__(self, new_value):
-            self.next.a = new_value
-            return self.a
-
-    ret = Register()
-    ret(Sfix(0.5, 0, -27))
-    ret(Sfix(0.5, 0, -27))
-    return ret
+# @pytest.fixture
+# def dut():
+#     class Register(HW):
+#         def __init__(self, init_value=0.):
+#             self.a = Sfix(init_value)
+#
+#         def __call__(self, new_value):
+#             self.next.a = new_value
+#             return self.a
+#
+#     ret = Register()
+#     ret(Sfix(0.5, 0, -27))
+#     ret(Sfix(0.5, 0, -27))
+#     return ret
 
 
 @pytest.fixture(scope='session')
@@ -82,44 +98,63 @@ def shared_tmpdir(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp('src')  # this returns some retarded path class
     return Path(str(tmpdir))
 
-# @pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
-# def dut(request, tmpdir, shared_tmpdir):
-#     from LEGACY.sim_automation import CocotbAuto
-#     limit = int(os.environ['TEST_DEPTH'])
-#     if request.param_index > limit:
-#         pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
-#
-#     bits = 31
-#     if request.param == 'MODEL':
-#         dut = Testing(request, WrapAcc(bits), None, None)
-#         return dut
-#
-#     elif request.param == 'HW-MODEL':
-#         # FIXME: this name clash is bullshit
-#         import wrapacc.hw.acc
-#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), None)
-#         return dut
-#
-#     elif request.param == 'HW-RTL':
-#         src = generated_hdl(shared_tmpdir)
-#         coco_sim = CocotbAuto(tmpdir, src)
-#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
-#         return dut
-#
-#     elif request.param == 'HW-GATE':
-#         src = gate_hdl(shared_tmpdir)
-#         coco_sim = CocotbAuto(tmpdir, src)
-#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
-#         return dut
+
+@pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
+def dut(request, tmpdir, shared_tmpdir):
+    # limit = int(os.environ['TEST_DEPTH'])
+    limit = 2
+    if request.param_index > limit:
+        pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
+
+    class Register(HW):
+        def __init__(self, init_value=0.):
+            self.a = Sfix(init_value)
+            self.output_sfix = [Sfix(left=0, right=-27)] * 1
+            self.input_sfix = [Sfix(left=0, right=-27)] * 1
+
+        def __call__(self, new_value):
+            self.next.a = new_value
+            return self.a
+
+        @property
+        def delay(self):
+            return 1
+
+    ret = Register()
+
+    if request.param == 'MODEL':
+        pytest.skip('LOL')
+        # dut = Testing(request, WrapAcc(bits), None, None)
+        # return dut
+
+    elif request.param == 'HW-MODEL':
+
+        # ret(Sfix(0.5, 0, -27))
+        # ret(Sfix(0.5, 0, -27))
+
+        dut = Testing(request, None, ret, None)
+        return dut
+
+    elif request.param == 'HW-RTL':
+        src = generated_hdl(shared_tmpdir)
+        coco_sim = CocotbAuto(tmpdir, src)
+        dut = Testing(request, None, ret, coco_sim)
+        return dut
+        #
+        # elif request.param == 'HW-GATE':
+        #     src = gate_hdl(shared_tmpdir)
+        #     coco_sim = CocotbAuto(tmpdir, src)
+        #     dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
+        #     return dut
 
 
-# def test_functionality():
-#     dut = Register(0.0)
-#     ret = dut(Sfix(0.5, 0, -27))
-#     assert ret == Sfix(0.0, 0, -27)
-#
-#     ret = dut(Sfix(0.5, 0, -27))
-#     assert ret == Sfix(0.5, 0, -27)
+def test_functionality(dut):
+    ret = dut([0.5, 0.6, 0.7])
+    assert np.allclose(ret, [0.5, 0.6, 0.7])
+
+    # ret = dut(0.6)
+    # assert np.isclose(ret, [0.6])
+
 #
 #
 # def test_conversion():

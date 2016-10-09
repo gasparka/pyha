@@ -36,6 +36,9 @@ class Sfix(object):
         Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
+
+        if not isinstance(val, (float, int)):
+            raise Exception('Value must be float or int!')
         self.right = right
         self.left = left
         self.val = val

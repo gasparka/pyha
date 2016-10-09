@@ -32,7 +32,8 @@ class TopGenerator:
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        assert self.simulated_object.__call__._last_call['calls'] > 1
+        if self.simulated_object.__call__._last_call['calls'] <= 1:
+            raise Exception('Object must be trained > 1 times.')
 
 
     def get_object_args(self) -> list:

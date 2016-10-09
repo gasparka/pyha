@@ -30,8 +30,8 @@ def run_dut(dut, in_data, out_count):
         # put input
         # print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
-            # print('Set {} to {}'.format('x' + str(i+1), xi))
-            setattr(dut, 'x' + str(i + 1), xi.astype(int))
+            # print('Set {} to {}'.format('in' + str(i), xi))
+            setattr(dut, 'in' + str(i), xi.astype(int))
 
         # NOTICE: need to have both yields to match simulation.
         yield RisingEdge(dut.clk)
@@ -40,7 +40,7 @@ def run_dut(dut, in_data, out_count):
         # collect output
         tmp = []
         for i in range(out_count):
-            var = 'y' + str(i + 1)
+            var = 'out' + str(i)
             val = getattr(dut, var).value.signed_integer
             # print('Got out {} = {}'.format(var, val))
             tmp.append(val)

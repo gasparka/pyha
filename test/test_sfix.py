@@ -1,6 +1,7 @@
 from decimal import *
 
 import numpy as np
+import pytest
 from common.sfix import Sfix
 
 getcontext().prec = 128
@@ -343,5 +344,11 @@ def test_to_stdlogic():
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
 
 
+def test_invalid_value_type():
+    with pytest.raises(Exception):
+        Sfix('1.2')
+
+    with pytest.raises(Exception):
+        Sfix(Sfix(0.1, 0, -10))
 
 # TODO: test restricted arguments
