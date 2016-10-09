@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from common.hwsim import HW
 from common.sfix import Sfix
@@ -5,6 +7,15 @@ from conversion.converter import convert
 from conversion.extract_datamodel import DataModel
 from conversion.top_generator import TopGenerator
 from redbaron import RedBaron
+
+
+class HDLStuff(object):
+    def __init__(self, base_path, vhdl_src, verilog_src, input_sfix, output_sfix):
+        self.output_sfix = output_sfix
+        self.input_sfix = input_sfix
+        self.base_path = base_path
+        self.vhdl_src = vhdl_src
+        self.verilog_src = verilog_src
 
 
 def full_conversion(obj, tmpdir):
@@ -20,6 +31,36 @@ def full_conversion(obj, tmpdir):
     TopGenerator(obj).make()
 
 
+def test_main(dut):
+    full_conversion(dut, None)
+
+
+def generated_hdl(tmpdir_factory):
+    import shutil
+
+    full_conversion()
+    # tmpdir = tmpdir_factory.mktemp('src') # this returns some retarded path class
+    tmpdir = tmpdir_factory  # this returns some retarded path class
+    # tmpdir = Path(str(tmpdir))
+
+    # copy cocotb python file to temp folder
+    coco_py = '/home/gaspar/git/hapy/simulation/cocotb_testing.py'
+    shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
+
+    # not implemented simulate by copying files to tmpdir
+    vhdl_src = ['/home/gaspar/git/hapy/test/register/converted.vhd',
+                '/home/gaspar/git/hapy/test/register/top.vhd']
+    vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
+
+    verilog_src = ['/home/gaspar/git/hapy/test/register/top.sv']
+    verilog_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in verilog_src]
+
+    from common.sfix import Sfix
+    output_sfix = [Sfix(left=2, right=-17)] * 2
+    input_sfix = [Sfix(left=2, right=-17)] * 1
+    return HDLStuff(tmpdir, vhdl_src, verilog_src, input_sfix, output_sfix)
+
+
 @pytest.fixture
 def dut():
     class Register(HW):
@@ -32,11 +73,45 @@ def dut():
 
     ret = Register()
     ret(Sfix(0.5, 0, -27))
+    ret(Sfix(0.5, 0, -27))
     return ret
 
 
-def test_main(dut):
-    full_conversion(dut, None)
+@pytest.fixture(scope='session')
+def shared_tmpdir(tmpdir_factory):
+    tmpdir = tmpdir_factory.mktemp('src')  # this returns some retarded path class
+    return Path(str(tmpdir))
+
+# @pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
+# def dut(request, tmpdir, shared_tmpdir):
+#     from LEGACY.sim_automation import CocotbAuto
+#     limit = int(os.environ['TEST_DEPTH'])
+#     if request.param_index > limit:
+#         pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
+#
+#     bits = 31
+#     if request.param == 'MODEL':
+#         dut = Testing(request, WrapAcc(bits), None, None)
+#         return dut
+#
+#     elif request.param == 'HW-MODEL':
+#         # FIXME: this name clash is bullshit
+#         import wrapacc.hw.acc
+#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), None)
+#         return dut
+#
+#     elif request.param == 'HW-RTL':
+#         src = generated_hdl(shared_tmpdir)
+#         coco_sim = CocotbAuto(tmpdir, src)
+#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
+#         return dut
+#
+#     elif request.param == 'HW-GATE':
+#         src = gate_hdl(shared_tmpdir)
+#         coco_sim = CocotbAuto(tmpdir, src)
+#         dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
+#         return dut
+
 
 # def test_functionality():
 #     dut = Register(0.0)

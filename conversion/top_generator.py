@@ -10,7 +10,7 @@ from conversion.coupling import pytype_to_vhdl
 def inout_saver(func):
     """ This decorator is used on __call__ function and saves the last args,kwargs and return
     values. Used to generate toplevel VHDL and Verilog files."""
-    func._last_call = {}
+    func._last_call = {'calls': 0}
 
     @wraps(func)
     def inout_saver_wrap(*args, **kwargs):
@@ -19,6 +19,7 @@ def inout_saver(func):
 
         ret = func(*args, **kwargs)
 
+        func._last_call['calls'] += 1
         func._last_call['return'] = ret
         return ret
 
@@ -29,6 +30,10 @@ class TopGenerator:
     def __init__(self, simulated_object, path=Path('.')):
         self.path = path
         self.simulated_object = simulated_object
+
+        # 0 or 1 calls wont propagate register outputs
+        assert self.simulated_object.__call__._last_call['calls'] > 1
+
 
     def get_object_args(self) -> list:
         # skip first arg -> it is self

@@ -212,6 +212,7 @@ def simple_obj():
 
     dut = Simple()
     dut(2)
+    dut(2)
     return dut
 
 
@@ -287,6 +288,20 @@ def test_simple_full(simple_obj, tmpdir):
     assert expect == res
     with (path / 'top.vhd').open('r') as f:
         assert expect == f.read()
+
+
+def test_no_sim():
+    class Simple:
+        @inout_saver
+        def __call__(self, a):
+            return a
+
+    # only trains 1 time, must be > 1
+    dut = Simple()
+    dut(2)
+
+    with pytest.raises(Exception):
+        TopGenerator(dut)
 
 
 def test_decorator():
