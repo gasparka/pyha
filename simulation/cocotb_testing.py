@@ -31,7 +31,7 @@ def run_dut(dut, in_data, out_count):
         # print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
             # print('Set {} to {}'.format('in' + str(i), xi))
-            setattr(dut, 'in' + str(i), xi.astype(int))
+            setattr(dut, 'in' + str(i), int(xi.astype(int)))
 
         # NOTICE: need to have both yields to match simulation.
         yield RisingEdge(dut.clk)
