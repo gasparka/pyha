@@ -18,12 +18,12 @@ before_script:
 
 install:
 #    - pip install -U tox
-    - pip install -r requirements_dev.txt --use-mirrors
+    - pip install -r requirements_dev.txt
     - pip install coveralls
 
 
 script:
-    - coverage run --source pyha -m py.test
+    - coverage run --source pyha -m py.test tests
     - ghdl --version
     - cd cocotb/examples/adder/tests
     - make SIM=ghdl TOPLEVEL_LANG=vhdl

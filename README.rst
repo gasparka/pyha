@@ -17,6 +17,9 @@ pyha
      :target: https://pyup.io/repos/github/petspats/pyha/
      :alt: Updates
 
+.. image:: https://coveralls.io/repos/github/petspats/pyha/badge.svg?branch=master
+    :target: https://coveralls.io/github/petspats/pyha?branch=master
+
 
 Python Boilerplate contains all the boilerplate you need to create a Python package.
 
