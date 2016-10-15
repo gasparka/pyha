@@ -16,23 +16,19 @@ before_script:
     # INSTALL COCOTB
     - git clone https://github.com/potentialventures/cocotb
 
-env:
-  - TOXENV=py35
-#  - TOXENV=py34
-#  - TOXENV=py33
-#  - TOXENV=py27
-#  - TOXENV=py26
-#  - TOXENV=pypy
+install:
+#    - pip install -U tox
+    - pip install -r requirements_dev.txt --use-mirrors
+    - pip install coveralls
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox
 
-# command to run tests, e.g. python setup.py test
 script:
-#    - tox -e ${TOXENV}
-
+    - coverage run --source pyha -m py.test
     - ghdl --version
     - cd cocotb/examples/adder/tests
     - make SIM=ghdl TOPLEVEL_LANG=vhdl
+
+after_success:
+    - coveralls
 
 
