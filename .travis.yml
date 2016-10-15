@@ -5,6 +5,8 @@ language: python
 python: 3.5
 
 before_script:
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libgnat-4.6
 #    - wget https://sourceforge.net/projects/ghdl-updates/files/Builds/ghdl-0.33/ghdl-0.33-x86_64-linux.tgz -O /tmp/ghdl.tar.gz
     - wget https://github.com/tgingold/ghdl/releases/download/2016-09-14/ghdl-0.34dev-mcode-2016-09-14.tgz -O /tmp/ghdl.tar.gz
     - mkdir ghdl
