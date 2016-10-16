@@ -1,6 +1,6 @@
-===============================
+====
 pyha
-===============================
+====
 
 
 .. image:: https://img.shields.io/pypi/v/pyha.svg
@@ -31,7 +31,7 @@ Features
 * TODO
 
 Credits
----------
+-------
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
