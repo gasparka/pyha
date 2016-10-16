@@ -2,9 +2,9 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from conversion.top_generator import inout_saver, TopGenerator
-from pyha.common import HW
-from pyha.common import Sfix
+from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
+from pyha.conversion.top_generator import inout_saver, TopGenerator
 
 
 @pytest.fixture(params=['STANDALONE', 'AUTO'])
