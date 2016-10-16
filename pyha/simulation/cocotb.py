@@ -64,7 +64,7 @@ class CocotbAuto(object):
 
 
 
-        self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
+        self.environment["PYTHONPATH"] = str(self.source_files.base_path)
 
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = self.test_file
