@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pyha
 import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
@@ -59,12 +60,12 @@ def generated_hdl(tmpdir_factory):
     # tmpdir = Path(str(tmpdir))
 
     # copy cocotb python file to temp folder
-    coco_py = '/home/gaspar/git/hapy/pyha/simulation/cocotb_testing.py'
+    coco_py = pyha.__path__[0] + '/simulation/cocotb_testing.py'
     shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
 
     # not implemented simulate by copying files to tmpdir
-    vhdl_src = ['/home/gaspar/git/hapy/tests/register/converted.vhd',
-                '/home/gaspar/git/hapy/tests/register/top.vhd']
+    vhdl_src = [pyha.__path__[0] + '/../tests/register/converted.vhd',
+                pyha.__path__[0] + '/../tests/register/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
 
     output_sfix = [Sfix(left=0, right=-27)] * 1

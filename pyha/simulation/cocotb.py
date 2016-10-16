@@ -52,8 +52,8 @@ class CocotbAuto(object):
     def default_assignments(self):
         # TODO: cocotb should probably be submodule
         # FIXME: hardcoded paths
-        self.environment['COCOTB'] = '/home/gaspar/tst_coco_ghdl/cocotb/'
-        self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
+        # self.environment['COCOTB'] = '/home/gaspar/tst_coco_ghdl/cocotb/'
+        # self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
