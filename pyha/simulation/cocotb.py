@@ -60,10 +60,11 @@ class CocotbAuto(object):
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
+        self.environment['GHDL_OPTIONS'] = '--std=08'
 
 
 
-        # self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
+        self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
 
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = self.test_file
