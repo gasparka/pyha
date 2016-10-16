@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+import pyha
+
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
 # Copyright (c) 2013 Potential Ventures Ltd
@@ -52,7 +54,7 @@ class CocotbAuto(object):
     def default_assignments(self):
         # TODO: cocotb should probably be submodule
         # FIXME: hardcoded paths
-        # self.environment['COCOTB'] = '/home/gaspar/tst_coco_ghdl/cocotb/'
+        self.environment['COCOTB'] = pyha.__path__[0] +'/../cocotb'
         # self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
@@ -61,7 +63,7 @@ class CocotbAuto(object):
 
 
 
-        self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
+        # self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
 
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = self.test_file
