@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from pip.req import parse_requirements
 from setuptools import setup
 
 with open('README.rst') as readme_file:
@@ -10,12 +10,10 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 
-requirements = [
-    'redbaron == 0.6.2',
-    'six == 1.10.0',
-    'numpy == 1.11.1',
-    'pytest == 2.9.2',
-]
+
+# parse_requirements() returns generator of pip.req.InstallRequirement objects
+install_reqs = parse_requirements('requirements.txt', session=False)
+requirements = [str(ir.req) for ir in install_reqs]
 
 test_requirements = [
 
