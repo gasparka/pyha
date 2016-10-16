@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 import pyha
 
@@ -55,7 +56,12 @@ class CocotbAuto(object):
         # TODO: cocotb should probably be submodule
         # FIXME: hardcoded paths
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-        self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
+
+        import sys
+        print(sys.executable)
+        p = Path(sys.executable).parent.parent
+        self.environment["PYTHONHOME"] = str(p)
+        # self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
