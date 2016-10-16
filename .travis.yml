@@ -14,7 +14,8 @@ before_script:
     - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
-    - git clone https://github.com/potentialventures/cocotb
+    # TODO: create PR and use original cocotb repo!
+    - git clone https://github.com/petspats/cocotb
 
 install:
 #    - pip install -U tox
@@ -24,6 +25,8 @@ install:
 
 
 script:
+    - which python
+    - $PYTHONHOME
     - coverage run --source pyha -m py.test tests
     - ghdl --version
     - cd cocotb/examples/adder/tests
