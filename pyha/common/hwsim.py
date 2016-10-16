@@ -1,9 +1,9 @@
 from copy import deepcopy
 from functools import wraps
 
-from conversion.extract_datamodel import locals_hack
-from conversion.top_generator import inout_saver
-from pyha.common import Sfix
+from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import locals_hack
+from pyha.conversion.top_generator import inout_saver
 from six import iteritems, with_metaclass
 
 """

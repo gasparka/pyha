@@ -2,9 +2,9 @@ import textwrap
 from functools import wraps
 from pathlib import Path
 
-from conversion.coupling import pytype_to_vhdl
-from pyha.common import Sfix
-from pyha.common import tabber
+from pyha.common.sfix import Sfix
+from pyha.common.util import tabber
+from pyha.conversion.coupling import pytype_to_vhdl
 
 
 def inout_saver(func):
@@ -117,7 +117,7 @@ class TopGenerator:
 
     def object_class_name(self) -> str:
         # make sure we escape reserved names
-        from conversion.converter import NameNodeConv
+        from pyha.conversion.converter import NameNodeConv
         return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
 
     def make_call_arguments(self) -> str:

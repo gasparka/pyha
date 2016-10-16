@@ -1,9 +1,10 @@
 import textwrap
 
 import pytest
-from conversion.extract_datamodel import extract_datamodel, extract_locals, VariableNotConvertible, FunctionNotSimulated
-from pyha.common import HW, TypeNotConsistent
-from pyha.common import Sfix
+from pyha.common.hwsim import HW, TypeNotConsistent
+from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
+    VariableNotConvertible
 
 
 def test_datamodel_sfix():
