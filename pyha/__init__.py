@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
 
-__author__ = """Audrey Roy Greenfeld"""
-__email__ = 'aroy@alum.mit.edu'
+__author__ = """"""
+__email__ = ''
 __version__ = '0.0.0'

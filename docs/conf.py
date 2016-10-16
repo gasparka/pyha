@@ -13,14 +13,14 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
 
 # Get the project root dir, which is the parent dir of this
 cwd = os.getcwd()
@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyha'
-copyright = u"2016, Audrey Roy Greenfeld"
+copyright = u"2016, Gaspar Karm"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -210,7 +210,7 @@ latex_elements = {
 latex_documents = [
     ('index', 'pyha.tex',
      u'pyha Documentation',
-     u'Audrey Roy Greenfeld', 'manual'),
+     u'Gaspar Karm', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at
@@ -241,7 +241,7 @@ latex_documents = [
 man_pages = [
     ('index', 'pyha',
      u'pyha Documentation',
-     [u'Audrey Roy Greenfeld'], 1)
+     [u'Gaspar Karm'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,7 +256,7 @@ man_pages = [
 texinfo_documents = [
     ('index', 'pyha',
      u'pyha Documentation',
-     u'Audrey Roy Greenfeld',
+     u'Gaspar Karm',
      'pyha',
      'One line description of project.',
      'Miscellaneous'),
