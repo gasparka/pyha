@@ -9,12 +9,16 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
+
 requirements = [
-    # TODO: put package requirements here
+    'redbaron == 0.6.2',
+    'six == 1.10.0',
+    'numpy == 1.11.1',
+    'pytest == 2.9.2',
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+
 ]
 
 setup(
@@ -49,5 +53,5 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
-    tests_require=test_requirements
+    tests_require=test_requirements,
 )

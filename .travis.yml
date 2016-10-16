@@ -18,6 +18,7 @@ before_script:
 
 install:
 #    - pip install -U tox
+    - pip install .
     - pip install -r requirements_dev.txt
     - pip install coveralls
 
