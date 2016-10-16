@@ -1,8 +1,8 @@
 import textwrap
 
 import pytest
-from pyha.common import HW, Meta, clock_tick, AssignToSelf, TypeNotConsistent
-from pyha.common import Sfix
+from pyha.common.hwsim import HW, Meta, clock_tick, AssignToSelf, TypeNotConsistent
+from pyha.common.sfix import Sfix
 
 
 def test_metaclass_assigned():
