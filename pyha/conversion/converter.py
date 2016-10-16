@@ -1,9 +1,9 @@
 import logging
 import textwrap
 
-from conversion.coupling import VHDLType, VHDLVariable
-from pyha.common import Sfix
-from pyha.common import tabber, get_iterable
+from pyha.common.sfix import Sfix
+from pyha.common.util import get_iterable, tabber
+from pyha.conversion.coupling import VHDLType, VHDLVariable
 from redbaron import NameNode, Node, EndlNode
 from redbaron.nodes import AtomtrailersNode
 
@@ -507,7 +507,7 @@ def red_to_conv_hub(red: Node, caller):
 
 
 def convert(red: Node, caller=None, datamodel=None):
-    from conversion.extract_datamodel import DataModel
+    from pyha.conversion.extract_datamodel import DataModel
     assert type(caller) is not DataModel
     VHDLType.set_datamodel(datamodel)
     conv = red_to_conv_hub(red, caller)

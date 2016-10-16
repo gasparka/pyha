@@ -2,7 +2,7 @@ import sys
 from collections import OrderedDict
 from functools import wraps
 
-from pyha.common import Sfix
+from pyha.common.sfix import Sfix
 
 
 class FunctionNotSimulated(Exception):
@@ -60,7 +60,7 @@ def locals_hack(func, class_name):
 
         func.fdict['calls'] += 1
         TraceManager.last_call_locals.pop('self')
-        from pyha.common import dict_types_consistent_check
+        from pyha.common.hwsim import dict_types_consistent_check
         dict_types_consistent_check(class_name, func.__name__, TraceManager.last_call_locals, func.fdict['locals'])
 
         func.fdict['locals'].update(TraceManager.last_call_locals)

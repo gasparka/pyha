@@ -1,7 +1,7 @@
 import textwrap
 
 import pytest
-from conversion.converter import red_to_conv_hub, ExceptionReturnFunctionCall
+from pyha.conversion.converter import red_to_conv_hub, ExceptionReturnFunctionCall
 from redbaron import RedBaron
 
 

@@ -1,5 +1,5 @@
-from conversion.extract_datamodel import DataModel
-from pyha.common import Sfix
+from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import DataModel
 from redbaron import GetitemNode, DefNode, AssignmentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
