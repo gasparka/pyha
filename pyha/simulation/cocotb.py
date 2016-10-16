@@ -55,7 +55,7 @@ class CocotbAuto(object):
         # TODO: cocotb should probably be submodule
         # FIXME: hardcoded paths
         self.environment['COCOTB'] = pyha.__path__[0] +'/../cocotb'
-        # self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
+        self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
@@ -64,7 +64,7 @@ class CocotbAuto(object):
 
 
 
-        self.environment["PYTHONPATH"] = str(self.source_files.base_path) + ':' + self.environment["PYTHONPATH"]
+        self.environment["PYTHONPATH"] = str(self.source_files.base_path)
 
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = self.test_file
