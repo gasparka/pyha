@@ -10,7 +10,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'pytest', 'redbaron',
+    # TODO: put package requirements here
 ]
 
 test_requirements = [
@@ -20,10 +20,10 @@ test_requirements = [
 setup(
     name='pyha',
     version='0.0.0',
-    description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
+    description="Pyhton to hardware",
     long_description=readme + '\n\n' + history,
-    author="Audrey Roy Greenfeld",
-    author_email='aroy@alum.mit.edu',
+    author="Gaspar Karm",
+    author_email='gkarm@live.com',
     url='https://github.com/petspats/pyha',
     packages=[
         'pyha',

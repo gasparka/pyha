@@ -2,13 +2,13 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from common.hwsim import HW
-from common.sfix import Sfix
-from conversion.converter import convert
-from conversion.extract_datamodel import DataModel
-from conversion.top_generator import TopGenerator
-from pyha.simulation import CocotbAuto
-from pyha.simulation import Testing
+from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
+from pyha.conversion.converter import convert
+from pyha.conversion.extract_datamodel import DataModel
+from pyha.conversion.top_generator import TopGenerator
+from pyha.simulation.cocotb import CocotbAuto
+from pyha.simulation.testing import Testing
 from redbaron import RedBaron
 
 
@@ -59,15 +59,13 @@ def generated_hdl(tmpdir_factory):
     # tmpdir = Path(str(tmpdir))
 
     # copy cocotb python file to temp folder
-    coco_py = '/home/gaspar/git/hapy/simulation/cocotb_testing.py'
+    coco_py = '/home/gaspar/git/hapy/pyha/simulation/cocotb_testing.py'
     shutil.copyfile(coco_py, str(tmpdir / Path(coco_py).name))
 
     # not implemented simulate by copying files to tmpdir
-    vhdl_src = ['/home/gaspar/git/hapy/test/register/converted.vhd',
-                '/home/gaspar/git/hapy/test/register/top.vhd']
+    vhdl_src = ['/home/gaspar/git/hapy/tests/register/converted.vhd',
+                '/home/gaspar/git/hapy/tests/register/top.vhd']
     vhdl_src = [Path(shutil.copyfile(x, str(tmpdir / Path(x).name))) for x in vhdl_src]
-
-    from pyha.common import Sfix
 
     output_sfix = [Sfix(left=0, right=-27)] * 1
     input_sfix = [Sfix(left=0, right=-27)] * 1

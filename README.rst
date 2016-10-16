@@ -17,19 +17,12 @@ pyha
 :target: https://pyup.io/repos/github/petspats/pyha/
      :alt: Updates
 
-.. image:: https://coveralls.io/repos/github/petspats/pyha/badge.svg?branch=develop
-:target: https://coveralls.io/github/petspats/pyha?branch=develop
 
-.. image:: https://landscape.io/github/petspats/pyha/develop/landscape.svg?style=flat
-:target: https://landscape.io/github/petspats/pyha/develop
-   :alt: Code Health
+    Pyhton to hardware
 
 
-        Python Boilerplate contains all the boilerplate you need to create a Python package.
-
-
-        * Free software: Apache Software License 2.0
-        * Documentation: https://pyha.readthedocs.io.
+    * Free software: Apache Software License 2.0
+    * Documentation: https://pyha.readthedocs.io.
 
 
 Features

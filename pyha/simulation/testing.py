@@ -1,8 +1,8 @@
 from contextlib import suppress
 
 import numpy as np
-from pyha.common import Sfix
-from pyha.common import get_iterable
+from pyha.common.sfix import Sfix
+from pyha.common.util import get_iterable
 
 
 class Testing(object):
