@@ -1,10 +1,10 @@
 import textwrap
 
 import pytest
-from conversion.converter import convert
-from conversion.coupling import VHDLType
-from conversion.extract_datamodel import DataModel
-from pyha.common import Sfix
+from pyha.common.sfix import Sfix
+from pyha.conversion.converter import convert
+from pyha.conversion.coupling import VHDLType
+from pyha.conversion.extract_datamodel import DataModel
 from redbaron import RedBaron
 
 
