@@ -54,14 +54,10 @@ class CocotbAuto(object):
         # self.default_files()
 
     def default_assignments(self):
-        # TODO: cocotb should probably be submodule
-        # FIXME: hardcoded paths
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-
 
         # this line is called 'i hate cocotb'
         self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
-        # self.environment["PYTHONHOME"] = "/home/gaspar/anaconda3/"
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'

@@ -18,19 +18,13 @@ before_script:
     - git clone https://github.com/petspats/cocotb
 
 install:
-#    - pip install -U tox
     - pip install .
     - pip install -r requirements_dev.txt
     - pip install coveralls
 
 
 script:
-    - which python
-    - $PYTHONHOME
     - coverage run --source pyha -m py.test tests
-    - ghdl --version
-    - cd cocotb/examples/adder/tests
-    - make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 after_success:
     - coveralls
