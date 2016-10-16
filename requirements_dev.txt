@@ -5,4 +5,3 @@ watchdog==0.8.3
 flake8==3.0.4
 coverage==4.2
 Sphinx==1.4.8
-pytest==3.0.3
