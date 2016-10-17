@@ -6,21 +6,16 @@ python: 3.5
 
 before_script:
     # INSTALL GHDL
-    - sudo apt-get -qq update
-    - sudo apt-get install -y libgnat-4.6
-    - wget https://github.com/tgingold/ghdl/releases/download/2016-09-14/ghdl-0.34dev-mcode-2016-09-14.tgz -O /tmp/ghdl.tar.gz
-    - mkdir ghdl
-    - tar -C ghdl -xvf /tmp/ghdl.tar.gz
-    - export PATH=$PATH:$PWD/ghdl/bin/
+    - sh scripts/install_ghdl.sh
 
     # INSTALL COCOTB
-    # TODO: create PR and use original cocotb repo!
-    - git clone https://github.com/petspats/cocotb
+    - sh scripts/install_cocotb.sh
 
 install:
     - pip install .
     - pip install -r requirements_dev.txt
     - pip install coveralls
+    - pip install codeclimate-test-reporter
 
 
 script:
@@ -28,5 +23,4 @@ script:
 
 after_success:
     - coveralls
-
-
+    - codeclimate-test-reporter
