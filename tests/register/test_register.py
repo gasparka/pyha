@@ -73,21 +73,6 @@ def generated_hdl(tmpdir_factory):
     return HDLStuff(tmpdir, vhdl_src, None, input_sfix, output_sfix)
 
 
-# @pytest.fixture
-# def dut():
-#     class Register(HW):
-#         def __init__(self, init_value=0.):
-#             self.a = Sfix(init_value)
-#
-#         def __call__(self, new_value):
-#             self.next.a = new_value
-#             return self.a
-#
-#     ret = Register()
-#     ret(Sfix(0.5, 0, -27))
-#     ret(Sfix(0.5, 0, -27))
-#     return ret
-
 
 @pytest.fixture(scope='session')
 def shared_tmpdir(tmpdir_factory):

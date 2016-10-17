@@ -6,6 +6,10 @@ python: 3.5
 
 before_script:
     # INSTALL GHDL
+    - sudo bash -c 'echo deb http://ee.archive.ubuntu.com/ubuntu precise main universe > /etc/apt/sources.list.d/pyha_tmp.list'
+    - sudo apt update
+    - sudo apt-get install -y gnat-4.6-base, libgnat-4.6
+    - sudo rm -f /etc/apt/sources.list.d/pyha_tmp.list
     - sh scripts/install_ghdl.sh
     - export PATH=$PATH:$PWD/ghdl/bin/
 
