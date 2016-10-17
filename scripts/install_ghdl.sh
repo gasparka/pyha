@@ -1,3 +1,6 @@
+#!/bin/bash
+set -evx
+
 # install gnat runtime, adding repo is needed for Ubuntu > 14
 sudo bash -c 'echo deb http://ee.archive.ubuntu.com/ubuntu precise main universe > /etc/apt/sources.list.d/pyha_tmp.list'
 sudo apt update

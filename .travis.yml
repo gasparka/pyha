@@ -7,6 +7,7 @@ python: 3.5
 before_script:
     # INSTALL GHDL
     - sh scripts/install_ghdl.sh
+    - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
     - sh scripts/install_cocotb.sh
