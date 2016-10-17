@@ -10,7 +10,7 @@ before_script:
 #    - sudo apt-get update
 #    - sudo apt-get install -y gnat-4.6-base, libgnat-4.6
 #    - sudo rm -f /etc/apt/sources.list.d/pyha_tmp.list
-    - sudo ./scripts/install_ghdl.sh
+    - sudo sh scripts/install_ghdl.sh
     - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
