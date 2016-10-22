@@ -1,10 +1,21 @@
 import textwrap
 from functools import wraps
-from pathlib import Path
 
 from pyha.common.sfix import Sfix
 from pyha.common.util import tabber
 from pyha.conversion.coupling import pytype_to_vhdl
+
+
+class NotTrainedError(Exception):
+    pass
+
+
+class NoInputsError(Exception):
+    pass
+
+
+class NoOutputsError(Exception):
+    pass
 
 
 def inout_saver(func):
@@ -27,14 +38,18 @@ def inout_saver(func):
 
 
 class TopGenerator:
-    def __init__(self, simulated_object, path=Path('.')):
-        self.path = path
+    def __init__(self, simulated_object):
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
         if self.simulated_object.__call__._last_call['calls'] <= 1:
-            raise Exception('Object must be trained > 1 times.')
+            raise NotTrainedError('Object must be trained > 1 times.')
 
+        if len(self.get_object_inputs()) == 0:
+            raise NoInputsError('Model has no inputs (arguments to __call__).')
+
+        if len(self.get_object_return()) == 0:
+            raise NoOutputsError('Model has no outputs (__call__ returns).')
 
     def get_object_args(self) -> list:
         # skip first arg -> it is self
@@ -48,7 +63,12 @@ class TopGenerator:
 
     def get_object_return(self) -> list:
         rets = self.simulated_object.__call__._last_call['return']
-        return list(rets) if isinstance(rets, tuple) else [rets]
+        if isinstance(rets, tuple):
+            return list(rets)
+        elif rets is None:
+            return []
+        else:
+            return [rets] # single value
 
     def pyvar_to_stdlogic(self, var) -> str:
         if type(var) == int:
@@ -193,7 +213,7 @@ class TopGenerator:
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
 
         res = template.format(**sockets)
-        with (self.path / 'top.vhd').open('w') as f:
-            f.write(res)
+        # with (self.path / 'top.vhd').open('w') as f:
+        #     f.write(res)
 
         return res

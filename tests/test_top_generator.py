@@ -1,10 +1,9 @@
 import textwrap
-from pathlib import Path
 
 import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.conversion.top_generator import inout_saver, TopGenerator
+from pyha.conversion.top_generator import inout_saver, TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
 
 
 @pytest.fixture(params=['STANDALONE', 'AUTO'])
@@ -196,12 +195,13 @@ def test_full(basic_obj, tmpdir):
                         end process;
                     end architecture;""")
 
-    path = Path(str(tmpdir))
-    res = TopGenerator(dut, path=path).make()
+    res = TopGenerator(dut).make()
     assert expect == res
-    with (path / 'top.vhd').open('r') as f:
-        assert expect == f.read()
 
+
+##################################
+# SIMPLE OBJECT
+##################################
 
 @pytest.fixture
 def simple_obj():
@@ -221,7 +221,6 @@ def test_simple_list_problems(simple_obj):
     res = TopGenerator(dut)
     assert res.get_object_return() == [2]
     assert res.get_object_args() == [2]
-    # assert expect == res.make_call_arguments()
 
 
 def test_simple_call_arguments(simple_obj):
@@ -233,7 +232,7 @@ def test_simple_call_arguments(simple_obj):
     assert expect == res.make_call_arguments()
 
 
-def test_simple_full(simple_obj, tmpdir):
+def test_simple_full(simple_obj):
     dut = simple_obj
     expect = textwrap.dedent("""\
                     library ieee;
@@ -283,11 +282,40 @@ def test_simple_full(simple_obj, tmpdir):
                         end process;
                     end architecture;""")
 
-    path = Path(str(tmpdir))
-    res = TopGenerator(dut, path=path).make()
+    res = TopGenerator(dut).make()
     assert expect == res
-    with (path / 'top.vhd').open('r') as f:
-        assert expect == f.read()
+
+
+##################################
+# MISC
+##################################
+
+def test_no_inputs():
+    class Simple:
+        @inout_saver
+        def __call__(self):
+            return 1
+
+    dut = Simple()
+    dut()
+    dut()
+
+    with pytest.raises(NoInputsError):
+        TopGenerator(dut)
+
+
+def test_no_outputs():
+    class Simple:
+        @inout_saver
+        def __call__(self, a):
+            pass
+
+    dut = Simple()
+    dut(1)
+    dut(2)
+
+    with pytest.raises(NoOutputsError):
+        TopGenerator(dut)
 
 
 def test_no_sim():
@@ -300,7 +328,7 @@ def test_no_sim():
     dut = Simple()
     dut(2)
 
-    with pytest.raises(Exception):
+    with pytest.raises(NotTrainedError):
         TopGenerator(dut)
 
 
