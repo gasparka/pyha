@@ -1,8 +1,27 @@
 import textwrap
 
 import pytest
-from pyha.conversion.converter import red_to_conv_hub, ExceptionReturnFunctionCall
+from pyha.common.hwsim import HW
+from pyha.conversion.conversion import Conversion
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 from redbaron import RedBaron
+
+
+@pytest.fixture
+def dut():
+    class Dummy(HW):
+        def __call__(self, a):
+            return a
+
+    o = Dummy()
+    # train object
+    o(1)
+    o(2)
+    return Conversion(o)
+
+
+def test_lol(dut):
+    pass
 
 
 @pytest.fixture
@@ -10,7 +29,7 @@ def converter():
     class Conv:
         def __call__(self, code):
             red = RedBaron(code)
-            return red_to_conv_hub(red[0], caller=self)
+            return convert(red[0], caller=self)
 
     return Conv()
 
@@ -424,6 +443,7 @@ def test_def_argument_return_local_indexing(converter):
         end procedure;""")
     conv = converter(code)
     assert str(conv) == expect
+
 
 def test_def_argument_return_self(converter):
     code = textwrap.dedent("""\
@@ -1148,6 +1168,7 @@ def test_redbaron_bug119():
             pass""")
     red = RedBaron(code)[0]
     red.value.insert(0, 'a')  # <- problem here
+
 
 def test_redbaron_bug120(converter):
     # https: // github.com / PyCQA / redbaron / issues / 120
