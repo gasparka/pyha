@@ -1,6 +1,6 @@
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import DataModel
-from redbaron import GetitemNode, DefNode, AssignmentNode
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 
@@ -83,19 +83,32 @@ class VHDLType:
         if self._datamodel is None:  # support converter tests
             return self.var_type
 
-        var = None
-        ret_var = self.red_node
-        if isinstance(ret_var, AtomtrailersNode) and str(ret_var[0]) == 'self':
-            var = self._datamodel.self_data
-            for x in ret_var[1:]:
-                if not isinstance(x, GetitemNode):
-                    var = var[str(x)]
-        else:
+        # is 'self.x' something
+        if isinstance(self.red_node, AtomtrailersNode) and str(self.red_node[0]) == 'self':
+            var = self.walk_self_data(self.red_node)
+        elif isinstance(self.red_node, IntNode): #integer constant
+            var = int(self.red_node.value)
+        # boolean constant
+        elif isinstance(self.red_node, NameNode) and self.red_node.value in ['False', 'True']:
+            var = bool(self.red_node.value)
+        # Sfix constant
+        elif isinstance(self.red_node, AtomtrailersNode) and self.red_node.value[0] == 'Sfix':
+            raise Exception('Return Sfix constant? Not allowed because too hard to implement :O')
+        else: # dealing with locals (includes all arguments!)
             name = self._real_name()
-            # dealing with locals (includes all arguments!)
             var = self._datamodel.locals[self._defined_in_function()][name]
 
         return pytype_to_vhdl(var)
+
+    def walk_self_data(self, atom_trailer):
+        """ atom_trailer is something like this: self.a.b.c.d
+            This finds type of such nested variable
+        """
+        var = self._datamodel.self_data
+        for x in atom_trailer[1:]:
+            if not isinstance(x, GetitemNode):
+                var = var[str(x)]
+        return var
 
     def _defined_in_function(self):
         defn = self.red_node

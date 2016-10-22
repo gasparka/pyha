@@ -47,7 +47,6 @@ def test_inputs(dut):
 def test_outputs(dut):
     assert len(dut.outputs) == 1 and type(dut.outputs[0]) == int
 
-
 ##################################
 # MISC
 ##################################

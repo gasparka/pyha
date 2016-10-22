@@ -132,7 +132,7 @@ class ReturnNodeConv(NodeConv):
         for x in get_iterable(self.value):
             if isinstance(x, AtomtrailersNodeConv) and x.is_function_call():
                 raise ExceptionReturnFunctionCall(self.red_node)
-            elif not isinstance(x, NameNodeConv) and not isinstance(x, AtomtrailersNodeConv):
+            elif not isinstance(x, (NameNodeConv, AtomtrailersNodeConv, IntNodeConv)):
                 raise ExceptionReturnFunctionCall(self.red_node)
 
         str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
@@ -484,7 +484,7 @@ class ClassNodeConv(NodeConv):
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
-        sockets['OTHER_FUNCTIONS'] = '\n'.join(tabber(str(x)) for x in self.value)
+        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)
 
