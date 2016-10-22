@@ -73,7 +73,6 @@ def generated_hdl(tmpdir_factory):
     return HDLStuff(tmpdir, vhdl_src, None, input_sfix, output_sfix)
 
 
-
 @pytest.fixture(scope='session')
 def shared_tmpdir(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp('src')  # this returns some retarded path class
@@ -109,7 +108,6 @@ def dut(request, tmpdir, shared_tmpdir):
         # return dut
 
     elif request.param == 'HW-MODEL':
-
 
         dut = Testing(request, None, ret, None)
         return dut

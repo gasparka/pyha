@@ -1,31 +1,65 @@
-import pytest
+from pathlib import Path
 
+import pyha
+import pytest
+from pyha.common.hwsim import HW
 from pyha.conversion.conversion import Conversion
 
 
-def test_get_objects_source_path():
-    dut = Conversion(None)
+@pytest.fixture
+def dut():
+    class Dummy(HW):
+        def __call__(self, a):
+            return a
+
+    o = Dummy()
+    # train object
+    o(1)
+    o(2)
+    return Conversion(o)
+
+
+def test_get_objects_source_path(dut):
     path = dut.get_objects_source_path(dut)
-    assert path == '/home/gaspar/git/pyha/pyha/conversion/conversion.py'
+    assert path == pyha.__path__[0] + '/conversion/conversion.py'
 
-def test_get_objects_rednode():
-    dut = Conversion(None)
-    red = dut.get_objects_rednode(dut)
-    assert red.name == 'Conversion'
 
-def test_get_objects_rednode_badtype():
-    bad = 0.2
-    dut = Conversion(None)
+def test_get_objects_rednode(dut):
+    red = dut.get_objects_rednode(dut.main_obj)
+    assert red.name == 'Dummy'
+
+
+def test_get_objects_rednode_badtype(dut):
     with pytest.raises(Exception):
-        red = dut.get_objects_rednode(bad)
+        dut.get_objects_rednode(0.2)
 
+
+def test_write_vhdl_files(dut, tmpdir):
+    tmpdir = Path(str(tmpdir))
+    files = dut.write_vhdl_files(tmpdir)
+    assert files[0] == tmpdir / 'main.vhd' and files[0].is_file()
+    assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
+
+
+
+
+
+
+##################################
+# MISC
+##################################
 def test_get_objects_rednode_twonodes():
-    class Dummy:
-        pass
-    class Dummy:
-        pass
+    class Dummy2(HW):
+        def __call__(self, a):
+            return a
 
-    bad = Dummy()
-    dut = Conversion(None)
+    class Dummy2(HW):
+        def __call__(self, a):
+            return a
+
+    o = Dummy2()
+    o(1)
+    o(2)
+
     with pytest.raises(Exception):
-        red = dut.get_objects_rednode(bad)
+        d = Conversion(o)
