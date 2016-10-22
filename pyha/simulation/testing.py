@@ -40,7 +40,7 @@ class Testing(object):
             args = self.add_dummy_pipeline_samples(args)
 
             # fixed conversion
-            for i, (values, type) in enumerate(zip(args, self.hw_model.input_sfix)):
+            for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
                 args[i] = [Sfix(x, type.left, type.right) for x in values]
 
             # Sfix.set_float_mode(True)
@@ -53,7 +53,7 @@ class Testing(object):
             self.pure_output = np.copy(outl)
 
             # remove pipeline flush samples
-            outl = outl[self.hw_model.delay:]
+            outl = outl[self.hw_model.get_delay():]
             return np.transpose(outl)
 
 
@@ -62,19 +62,19 @@ class Testing(object):
             args = self.add_dummy_pipeline_samples(args)
 
             # fixed conversion
-            for i, (values, type) in enumerate(zip(args, self.hw_model.input_sfix)):
+            for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
                 args[i] = [Sfix(x, type.left, type.right).fixed_value() for x in values]
 
             args = np.transpose(args)
             out = self.coco_sim.run(args)
             self.pure_output = np.copy(out)
 
-            out = out[self.hw_model.delay:]
+            out = out[self.hw_model.get_delay():]
             out = np.transpose(out)
 
             # convert fixed values to float
             out = out.astype(float)
-            for i, (values, type) in enumerate(zip(out, self.hw_model.output_sfix)):
+            for i, (values, type) in enumerate(zip(out, [Sfix(left=0, right=-27)] * 1)):
                 out[i] = (values * 2 ** type.right)
 
             return out
@@ -86,5 +86,5 @@ class Testing(object):
 
         if len(np.array(args).shape) == 1:
             args = [[x] for x in args]
-        args = [np.append(x, [0.0] * self.hw_model.delay) for x in args]
+        args = [np.append(x, [0.0] * self.hw_model.get_delay()) for x in args]
         return args

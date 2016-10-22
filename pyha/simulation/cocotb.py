@@ -1,9 +1,11 @@
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 import pyha
+from pyha.conversion.conversion import Conversion
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -40,18 +42,14 @@ include $(COCOTB)/makefiles/Makefile.sim
 
 
 class CocotbAuto(object):
-    def __init__(self, base_path, source_files, sim_folder='coco_sim', test_file='cocotb_testing',
-                 top_level_entity='top_sv'):
-        self.source_files = source_files
-        self.top_level_entity = top_level_entity
-        self.test_file = test_file
+    def __init__(self, base_path, conv:Conversion, sim_folder='coco_sim'):
+        self.conv = conv
+        self.src_files = conv.write_vhdl_files(base_path)
         self.base_path = base_path
         self.sim_folder = sim_folder
 
         self.environment = os.environ.copy()
-
         self.default_assignments()
-        # self.default_files()
 
     def default_assignments(self):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
@@ -62,20 +60,24 @@ class CocotbAuto(object):
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
-        self.environment['GHDL_OPTIONS'] = '--std=08'
+        self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
 
-        self.environment["PYTHONPATH"] = str(self.source_files.base_path)
+        self.environment["PYTHONPATH"] = str(self.base_path)
 
         self.environment['TOPLEVEL'] = 'top'
-        self.environment['MODULE'] = self.test_file
+        self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        self.environment['VHDL_SOURCES'] = ''
-        for file in self.source_files.vhdl_src:
-            if not file.is_file():
-                raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
-            self.environment['VHDL_SOURCES'] += str(file) + ' '
+        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src_files)
+        # self.environment['VHDL_SOURCES'] = ''
+        # for file in self.source_files.vhdl_src:
+        #     if not file.is_file():
+        #         raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
+        #     self.environment['VHDL_SOURCES'] += str(file) + ' '
 
-        self.environment['OUTPUT_VARIABLES'] = str(len(self.source_files.output_sfix))
+        # copy cocotb simulation top file
+        coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
+        shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
+        self.environment['OUTPUT_VARIABLES'] = str(len(self.conv.outputs))
 
     def run(self, input_data):
         import numpy as np
