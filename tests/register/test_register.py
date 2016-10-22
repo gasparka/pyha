@@ -8,7 +8,7 @@ from pyha.simulation.testing import Testing
 
 
 @pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
-def dut(request, tmpdir, shared_tmpdir):
+def dut(request, tmpdir):
     # limit = int(os.environ['TEST_DEPTH'])
     limit = 2
     if request.param_index > limit:
