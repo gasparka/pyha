@@ -1,5 +1,6 @@
 import inspect
 from pathlib import Path
+from typing import List
 
 from pyha.conversion.converter import convert
 from pyha.conversion.extract_datamodel import DataModel
@@ -21,18 +22,27 @@ class Conversion:
         self.main_obj = main_obj
         main_red = self.get_objects_rednode(main_obj)
         main_datamodel = DataModel(main_obj)
+        # main_datamodel = None
         self.main_conversion = convert(main_red, caller=None, datamodel=main_datamodel)
 
-        self.top_vhdl = TopGenerator(main_obj).make()
+        self.top_vhdl = TopGenerator(main_obj)
 
-    def write_vhdl_files(self, base_dir: Path):
+    @property
+    def inputs(self) -> List[object]:
+        return self.top_vhdl.get_object_inputs()
+
+    @property
+    def outputs(self) -> List[object]:
+        return self.top_vhdl.get_object_return()
+
+    def write_vhdl_files(self, base_dir: Path) -> List[Path]:
         paths = [base_dir / 'main.vhd']
         with paths[-1].open('w') as f:
             f.write(str(self.main_conversion))
 
         paths.append(base_dir / 'top.vhd')
         with paths[-1].open('w') as f:
-            f.write(self.top_vhdl)
+            f.write(self.top_vhdl.make())
 
         return paths
 
@@ -48,5 +58,5 @@ class Conversion:
 
         return red_list[0]
 
-    def get_objects_source_path(self, obj):
+    def get_objects_source_path(self, obj) -> str:
         return inspect.getsourcefile(type(obj))
