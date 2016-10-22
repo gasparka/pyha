@@ -6,10 +6,6 @@ from setuptools import setup
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
-
 
 # parse_requirements() returns generator of pip.req.InstallRequirement objects
 install_reqs = parse_requirements('requirements.txt', session=False)
@@ -23,7 +19,7 @@ setup(
     name='pyha',
     version='0.0.0',
     description="Pyhton to hardware",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Gaspar Karm",
     author_email='gkarm@live.com',
     url='https://github.com/petspats/pyha',
