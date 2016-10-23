@@ -1,5 +1,3 @@
-from contextlib import suppress
-
 import numpy as np
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable
@@ -20,22 +18,12 @@ class Testing(object):
 
         # self.original_input = np.copy(args)
         if self.request.param == 'MODEL':
-            # trans = np.transpose(args)
-            # is_singe_call = len(trans.shape) == 1
-            # if is_singe_call:
-            #     trans = [trans]
-            # outl = []
-            # for x in trans:
-            #     out = self.model(*x, **kwargs)
-            #     outl.append(out)
             out = self.model(*args, **kwargs)
-
             self.pure_output = np.copy(out)
             return np.transpose(out)
 
         elif self.request.param == 'HW-MODEL':
-            with suppress(Exception):
-                args = self.hw_model.test_adaptor(*args, **kwargs)
+
             # flush pipeline
             args = self.add_dummy_pipeline_samples(args)
 

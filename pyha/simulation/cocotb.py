@@ -68,11 +68,6 @@ class CocotbAuto(object):
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
         self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src_files)
-        # self.environment['VHDL_SOURCES'] = ''
-        # for file in self.source_files.vhdl_src:
-        #     if not file.is_file():
-        #         raise Exception("Cannot add '{0!s}'".format(file)) from FileNotFoundError(file)
-        #     self.environment['VHDL_SOURCES'] += str(file) + ' '
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
