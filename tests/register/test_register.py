@@ -7,13 +7,7 @@ from pyha.simulation.cocotb import CocotbAuto
 from pyha.simulation.testing import Testing
 
 
-@pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
-def dut(request, tmpdir):
-    # limit = int(os.environ['TEST_DEPTH'])
-    limit = 2
-    if request.param_index > limit:
-        pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
-
+def trained_object():
     class Register(HW):
         def __init__(self, init_value=0.):
             self.a = Sfix(init_value)
@@ -29,6 +23,17 @@ def dut(request, tmpdir):
     ret.get_delay()
     ret(Sfix(0.0, 0, -27))
     ret(Sfix(0.0, 0, -27))
+    return ret
+
+
+@pytest.fixture(scope='function', params=['MODEL', 'HW-MODEL', 'HW-RTL', 'HW-GATE'])
+def dut(request, tmpdir):
+    # limit = int(os.environ['TEST_DEPTH'])
+    limit = 2
+    if request.param_index > limit:
+        pytest.skip('Test not to be included, increase env["TEST_DEPTH"] to run more tests')
+
+    ret = trained_object()
 
     if request.param == 'MODEL':
         pytest.skip('LOL')
@@ -47,14 +52,13 @@ def dut(request, tmpdir):
         coco_sim = CocotbAuto(tmpdir, conv)
         dut = Testing(request, None, ret, coco_sim)
         return dut
-        #
-        # elif request.param == 'HW-GATE':
-        #     src = gate_hdl(shared_tmpdir)
-        #     coco_sim = CocotbAuto(tmpdir, src)
-        #     dut = Testing(request, WrapAcc(bits), wrapacc.hw.acc.WrapAcc(bits), coco_sim)
-        #     return dut
+
 
 
 def test_functionality(dut):
     ret = dut([0.5, 0.6, 0.7])
     assert np.allclose(ret, [0.5, 0.6, 0.7])
+
+def test_delay():
+    # TODO: need a way to call other functions than __call__, top generator
+    pass

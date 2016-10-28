@@ -31,7 +31,6 @@ class Testing(object):
             for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
                 args[i] = [Sfix(x, type.left, type.right) for x in values]
 
-            # Sfix.set_float_mode(True)
             trans = np.transpose(args)
             outl = []
             for x in trans:
@@ -51,7 +50,7 @@ class Testing(object):
 
             # fixed conversion
             for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
-                args[i] = [Sfix(x, type.left, type.right).fixed_value() for x in values]
+                args[i] = [Sfix(x, type.left, type.right) for x in values]
 
             args = np.transpose(args)
             out = self.coco_sim.run(args)
@@ -66,6 +65,9 @@ class Testing(object):
                 out[i] = (values * 2 ** type.right)
 
             return out
+
+    def output_type_conversion(self):
+        pass
 
     def add_dummy_pipeline_samples(self, args):
         # arg = getattr(self.hw_model, 'delay', None)
