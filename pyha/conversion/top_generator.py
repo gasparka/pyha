@@ -82,7 +82,7 @@ class TopGenerator:
 
     def vhdl_slv_to_normal(self, var, var_name) -> str:
         if type(var) == int:
-            return 'to_integer(to_signed({}))'.format(var_name)
+            return 'to_integer(signed({}))'.format(var_name)
         elif type(var) == bool:
             return var_name
         elif type(var) == Sfix:

@@ -89,7 +89,7 @@ def test_variables_input(basic_obj):
 def test_input_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                var_in0 := to_integer(to_signed(in0));
+                var_in0 := to_integer(signed(in0));
                 var_in1 := to_sfixed(in1, 2, -17);
                 var_in2 := in2;""")
 
@@ -179,7 +179,7 @@ def test_full(basic_obj, tmpdir):
                             \\Register\\.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
-                            var_in0 := to_integer(to_signed(in0));
+                            var_in0 := to_integer(signed(in0));
                             var_in1 := to_sfixed(in1, 2, -17);
                             var_in2 := in2;
 
@@ -270,7 +270,7 @@ def test_simple_full(simple_obj):
                             Simple.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
-                            var_in0 := to_integer(to_signed(in0));
+                            var_in0 := to_integer(signed(in0));
 
                             --call the main entry
                             Simple.\\__call__\\(self, var_in0, ret_0=>var_out0);
