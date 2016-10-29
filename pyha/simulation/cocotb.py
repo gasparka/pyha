@@ -77,6 +77,7 @@ class CocotbAuto(object):
     def run(self, input_data):
         import numpy as np
 
+        input_data = np.vectorize(lambda x: x.fixed_value())(input_data)
         np.save(str(self.base_path / 'input.npy'), input_data)
 
         # write makefile template
@@ -86,4 +87,8 @@ class CocotbAuto(object):
         subprocess.call("make", env=self.environment, cwd=str(self.base_path))
 
         outp = np.load(str(self.base_path / 'output.npy'))
+        outp = outp.astype(float)
+        for i, values in enumerate(outp):
+            outp[i] = (values * 2 ** -27) # FIXME: hardcoded type
+
         return outp
