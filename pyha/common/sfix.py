@@ -192,3 +192,7 @@ class Sfix(object):
 
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
+
+    # TODO: add tests
+    def __call__(self, x: float):
+        return Sfix(x, self.left, self.right)
