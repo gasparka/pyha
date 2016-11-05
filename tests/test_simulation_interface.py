@@ -57,12 +57,12 @@ def test_type_conversion():
             return a
 
     ret = Tmp().wtf([0.5, 0.5, 1.5, 9])
-    assert ret == [0.5, 0.5, 1.5, 9]
-    assert type(ret[0]) == float
+    assert (ret == [0.5, 0.5, 1.5, 9]).all()
+    # assert type(ret[0]) == float
 
     ret = Tmp().wtf(np.array([0.5, 0.5, 1.5, 9]))
-    assert ret == [0.5, 0.5, 1.5, 9]
-    assert type(ret[0]) == float
+    assert (ret == [0.5, 0.5, 1.5, 9]).all()
+    # assert type(ret[0]) == float
 
 
 def test_type_conversions_multi():
@@ -87,32 +87,20 @@ def test_type_conversions_multi():
     ain, bin, cin = [[1, 2, 3, 4], [True, False, True, False], [0.5, 0.5, 1.5, 9]]
     ret = Tmp().wtf(ain, bin, cin)
     aout, bout, cout = ret
-    assert ain == aout
-    assert type(aout[0]) == int
+    assert (ain == aout).all()
+    # assert type(aout[0]) == int
 
-    assert bin == bout
-    assert type(bout[0]) == bool
+    assert (bin == bout).all()
+    # assert type(bout[0]) == bool
 
-    assert cin == cout
-    assert type(cout[0]) == float
+    assert (cin == cout).all()
+    # assert type(cout[0]) == float
 
 
 #########################################
 # SIMPLE COMB INT
 #########################################
 
-@pytest.fixture(params=['LIST', 'NUMPY', 'SINGLE', 'NUMPY_SINGLE'])
-def comb_int_data(request):
-    inp = [[1, 2, 3, 4, 5], np.array([1, 2, 3, 4, 5]), [1], np.array([2])]
-
-    class d:
-        input = inp[request.param_index]
-        expected = [x * 2 for x in input]
-
-        def verify(self, result):
-            assert (result == d.expected).all()
-
-    return d()
 
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
@@ -133,9 +121,12 @@ def comb_int(request):
     return Simulation(request.param, model=Dummy(), hw_model=Dummy_HW(), input_types=[int])
 
 
-def test_comb_int_list(comb_int, comb_int_data):
-    ret = comb_int(comb_int_data.input)
-    comb_int_data.verify(ret)
+def test_comb_int_list(comb_int):
+    in_int = [1, 2, 3, 4, 5]
+    expect = np.array([x * 2 for x in in_int])
+    ret = comb_int(in_int)
+
+    assert (ret == expect).all()
 
 
 def test_comb_int_numpy(comb_int):
@@ -151,32 +142,47 @@ def test_comb_int_single(comb_int):
 
     assert (ret == in_int * 2).all()
 
+
 #########################################
 # SIMPLE COMB BOOL
 #########################################
 
-# @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-# def comb_bool(request):
-#     class Dummy:
-#         def __call__(self, in_int):
-#             return not in_int
-#
-#     class Dummy_HW(HW):
-#         def __init__(self):
-#             self.dummy = 0
-#
-#         def __call__(self, in_int):
-#             ret = not in_int
-#             return ret
-#
-#     return Simulation(request.param, model=Dummy(), hw_model=Dummy_HW(), input_types=[bool])
-#
-#
-# def test_comb_bool(comb_bool):
-#     in_int = np.array([True, False, False, True])
-#     ret = comb_bool(in_int)
-#
-#     assert (ret == in_int * 2).all()
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def comb_bool(request):
+    class Dummy:
+        def __call__(self, in_int):
+            return [not x for x in in_int]
+
+    class Bool_HW(HW):
+        def __init__(self):
+            self.dummy = 0
+
+        def __call__(self, in_int):
+            ret = not in_int
+            return ret
+
+    return Simulation(request.param, model=Dummy(), hw_model=Bool_HW(), input_types=[bool])
+
+
+def test_comb_bool_list(comb_bool):
+    input = [True, False, False]
+    expect = np.array([not x for x in input])
+    ret = comb_bool(input)
+    assert (ret.astype(bool) == expect).all()
+
+
+def test_comb_bool_numpy(comb_bool):
+    input = np.array([True, False, False])
+    expect = np.array([not x for x in input])
+    ret = comb_bool(input)
+    assert (ret.astype(bool) == expect).all()
+
+
+def test_comb_bool_single(comb_bool):
+    input = np.array([True])
+    expect = np.array([not x for x in input])
+    ret = comb_bool(input)
+    assert (ret.astype(bool) == expect).all()
 
 #########################################
 # SIMPLE SEQ

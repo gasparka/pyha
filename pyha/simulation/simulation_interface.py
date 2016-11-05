@@ -70,12 +70,13 @@ def type_conversions(func):
             return ret
 
         ret = output_types(ret)
-        return ret
+        return np.array(ret)
 
     return type_enforcement_wrap
 
 
 class Simulation:
+    """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, hw_model=None, input_types: List[object] = None):
@@ -112,7 +113,7 @@ class Simulation:
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             return self.cocosim.run(args)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> np.array:
         if self.simulation_type == SIM_MODEL:
             return np.transpose(self.model(*args))
 
