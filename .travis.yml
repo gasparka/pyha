@@ -14,7 +14,7 @@ before_script:
     - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
-    - sh scripts/install_cocotb.sh
+    - sudo sh scripts/install_cocotb.sh
 
 install:
     - pip install .

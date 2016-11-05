@@ -12,6 +12,6 @@ wget https://github.com/tgingold/ghdl/releases/download/2016-09-14/ghdl-0.34dev-
 mkdir ghdl
 tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
-
+export PATH=$PATH:$PWD/ghdl/bin/
 echo 'export PATH=/home/gaspar/git/pyha/ghdl/bin:$PATH' >> ~/.bashrc
-source $HOME/.bashrc
+#source $HOME/.bashrc
