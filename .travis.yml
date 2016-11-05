@@ -14,7 +14,8 @@ before_script:
     - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
-    - sudo sh scripts/install_cocotb.sh
+    - sudo apt-get install git make gcc g++ swig python-dev
+    - sh scripts/install_cocotb.sh #cant sudo this, files will lock, later
 
 install:
     - pip install .
