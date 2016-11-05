@@ -84,7 +84,7 @@ class TopGenerator:
         if type(var) == int:
             return 'to_integer(signed({}))'.format(var_name)
         elif type(var) == bool:
-            return var_name
+            return "True when {} = '1' else False".format(var_name)
         elif type(var) == Sfix:
             return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
         else:
@@ -94,7 +94,7 @@ class TopGenerator:
         if type(var) == int:
             return 'std_logic_vector(to_signed({}, 32))'.format(var_name)
         elif type(var) == bool:
-            return 'std_logic({})'.format(var_name)
+            return "'1' when {} else '0'".format(var_name)
         elif type(var) == Sfix:
             return 'to_slv({})'.format(var_name)
         else:
