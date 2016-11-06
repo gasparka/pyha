@@ -7,7 +7,6 @@ from typing import List
 import numpy as np
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable
 from pyha.conversion.conversion import Conversion
 from pyha.simulation.cocotb import CocotbAuto
 
@@ -25,29 +24,19 @@ def flush_pipeline(func):
 
     @wraps(func)
     def flush_pipeline_wrap(self, *args, **kwargs):
-        # with suppress(AttributeError):  # no get_delay()
-        delay = self.hw_model.get_delay()
+        delay = 0
+        with suppress(AttributeError):  # no get_delay()
+            delay = self.hw_model.get_delay()
         if delay == 0:
             return func(self, *args, **kwargs)
 
         args = list(args)
 
-        app = []
-        for x in get_iterable(args[0]):
-            if type(x) == int:
-                app.append(0)
-            elif type(x) == bool:
-                app.append(False)
-            elif type(x) == Sfix:
-                app.append(x(0.0))
-
-        args.append(app * delay)
-        # args = [x + [0] * delay for x in args]
+        for i in range(delay):
+            args.append(args[0])
 
         ret = func(self, *args, **kwargs)
-
-        with suppress(AttributeError):  # no get_delay()
-            ret = ret[delay:]
+        ret = ret[delay:]
         return ret
 
     return flush_pipeline_wrap

@@ -1,3 +1,4 @@
+# TODO: this file is messy, alot of copy paste code
 import subprocess
 
 import numpy as np
@@ -7,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose, flush_pipeline
+    type_conversions, in_out_transpose
 
 
 def test_ghdl_version():
@@ -93,71 +94,6 @@ def test_type_conversions_multi():
     assert (cin == cout).all()
     # assert type(cout[0]) == float
 
-
-@pytest.mark.parametrize("delay", [0, 1, 2])
-def test_flush_pipeline_int(delay):
-    class Tmp:
-        def __init__(self):
-            class Dummer:
-                def get_delay(self):
-                    return delay
-
-            self.hw_model = Dummer()
-
-        @flush_pipeline
-        def dummy(self, *inp):
-            delay = self.hw_model.get_delay()
-            if delay == 0:
-                return inp
-            if len()
-                inp = list(inp[0]) * delay + list(inp[:-delay])
-            return inp
-
-    inp = [1, 2, 3]
-    expected = inp
-
-    outp = Tmp().dummy(*np.transpose(inp).tolist())
-    assert (list(outp) == expected)
-
-
-@pytest.mark.parametrize("delay", [0, 1, 2])
-def test_flush_pipeline_bool(delay):
-    class Tmp:
-        def get_delay(self):
-            return delay
-
-        @flush_pipeline
-        def dummy(self, inp):
-            """ Simulates delay, think abut 'delay' chained registers"""
-            if self.get_delay() == 0:
-                return inp
-            return self.get_delay() * [0] + inp[:-self.get_delay()]
-
-    inp = [False, True, False]
-    expected = inp
-
-    outp = Tmp().dummy(inp)
-    assert outp == expected
-
-
-@pytest.mark.parametrize("delay", [0, 1, 2])
-def test_flush_pipeline_sfixed(delay):
-    class Tmp:
-        def get_delay(self):
-            return delay
-
-        @flush_pipeline
-        def dummy(self, inp):
-            """ Simulates delay, think abut 'delay' chained registers"""
-            if self.get_delay() == 0:
-                return inp
-            return self.get_delay() * [0] + inp[:-self.get_delay()]
-
-    inp = [Sfix(0.5, 1, -5), Sfix(1.4, 1, -5), Sfix(0.3, 1, -5)]
-    expected = inp
-
-    outp = Tmp().dummy(inp)
-    assert outp == expected
 
 
 #########################################
@@ -349,6 +285,65 @@ def test_comb_multi_single(comb_multi):
 # MULTIPLE SEQUENTIAL
 # Purpose is to test @flush_pipeline at real environment
 #########################################
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def sequential_single(request):
+    class Dummy:
+        def __call__(self, in_sfix):
+            return [xf - 1 for xf in in_sfix]
+
+    class SeqSingle_HW(HW):
+        def __init__(self):
+            self.get_delay()
+            self.sfix_reg = Sfix(0.0)
+
+        def __call__(self, in_sfix):
+            self.next.sfix_reg = in_sfix - 1.0
+            return self.sfix_reg
+
+        def get_delay(self):
+            return 1
+
+    return Simulation(request.param, model=Dummy(), hw_model=SeqSingle_HW(),
+                      input_types=[Sfix(left=2, right=-8)])
+
+
+def test_sequential_single(sequential_single):
+    input = [0.25, 1, 1.5]
+    expect = [-0.75, 0.0, 0.5]
+    ret = sequential_single(input)
+    assert (ret == expect).all()
+
+
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def sequential_single_delay2(request):
+    class Dummy:
+        def __call__(self, in_sfix):
+            return [xf - 1 for xf in in_sfix]
+
+    class SeqSingle2_HW(HW):
+        def __init__(self):
+            self.get_delay()
+            self.sfix_reg = Sfix(0.0)
+            self.sfix_reg2 = Sfix(0.0)
+
+        def __call__(self, in_sfix):
+            self.next.sfix_reg = in_sfix - 1.0
+            self.next.sfix_reg2 = self.sfix_reg
+            return self.sfix_reg2
+
+        def get_delay(self):
+            return 2
+
+    return Simulation(request.param, model=Dummy(), hw_model=SeqSingle2_HW(),
+                      input_types=[Sfix(left=2, right=-8)])
+
+
+def test_sequential_single_delay2(sequential_single_delay2):
+    input = [0.25, 1, 1.5]
+    expect = [-0.75, 0.0, 0.5]
+    ret = sequential_single_delay2(input)
+    assert (ret == expect).all()
+
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_multi(request):
@@ -376,7 +371,7 @@ def sequential_multi(request):
                       input_types=[int, bool, Sfix(left=2, right=-8)])
 
 
-def test_sequential_multi_list(sequential_multi):
+def test_sequential_multi(sequential_multi):
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
     ret = sequential_multi(*input)
