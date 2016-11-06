@@ -7,7 +7,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose
+    type_conversions, in_out_transpose, flush_pipeline
 
 
 def test_ghdl_version():
@@ -94,10 +94,75 @@ def test_type_conversions_multi():
     # assert type(cout[0]) == float
 
 
+@pytest.mark.parametrize("delay", [0, 1, 2])
+def test_flush_pipeline_int(delay):
+    class Tmp:
+        def __init__(self):
+            class Dummer:
+                def get_delay(self):
+                    return delay
+
+            self.hw_model = Dummer()
+
+        @flush_pipeline
+        def dummy(self, *inp):
+            delay = self.hw_model.get_delay()
+            if delay == 0:
+                return inp
+            if len()
+                inp = list(inp[0]) * delay + list(inp[:-delay])
+            return inp
+
+    inp = [1, 2, 3]
+    expected = inp
+
+    outp = Tmp().dummy(*np.transpose(inp).tolist())
+    assert (list(outp) == expected)
+
+
+@pytest.mark.parametrize("delay", [0, 1, 2])
+def test_flush_pipeline_bool(delay):
+    class Tmp:
+        def get_delay(self):
+            return delay
+
+        @flush_pipeline
+        def dummy(self, inp):
+            """ Simulates delay, think abut 'delay' chained registers"""
+            if self.get_delay() == 0:
+                return inp
+            return self.get_delay() * [0] + inp[:-self.get_delay()]
+
+    inp = [False, True, False]
+    expected = inp
+
+    outp = Tmp().dummy(inp)
+    assert outp == expected
+
+
+@pytest.mark.parametrize("delay", [0, 1, 2])
+def test_flush_pipeline_sfixed(delay):
+    class Tmp:
+        def get_delay(self):
+            return delay
+
+        @flush_pipeline
+        def dummy(self, inp):
+            """ Simulates delay, think abut 'delay' chained registers"""
+            if self.get_delay() == 0:
+                return inp
+            return self.get_delay() * [0] + inp[:-self.get_delay()]
+
+    inp = [Sfix(0.5, 1, -5), Sfix(1.4, 1, -5), Sfix(0.3, 1, -5)]
+    expected = inp
+
+    outp = Tmp().dummy(inp)
+    assert outp == expected
+
+
 #########################################
 # SIMPLE COMB INT
 #########################################
-
 
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
@@ -279,32 +344,42 @@ def test_comb_multi_single(comb_multi):
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()
 
+
 #########################################
-# SIMPLE SEQ
+# MULTIPLE SEQUENTIAL
+# Purpose is to test @flush_pipeline at real environment
 #########################################
 
-# @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-# def seq(request):
-#     class DummySeq:
-#         def __call__(self, inp):
-#             return inp + 1
-#
-#     class DummySeq_HW(HW):
-#         def __init__(self):
-#             self.reg = 0
-#
-#         def __call__(self, inp):
-#             self.next.reg = inp + 1
-#             return self.reg
-#
-#         def get_delay(self):
-#             return 1
-#
-#     return Simulation(request.param, model=DummySeq(), hw_model=DummySeq_HW())
-#
-#
-# def test_sim_seq(seq):
-#     inp = np.array([1, 2, 3, 4, 5])
-#     ret = seq(inp)
-#
-#     assert (ret == inp + 1).all()
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def sequential_multi(request):
+    class Dummy:
+        def __call__(self, in_int, in_bool, in_sfix):
+            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
+
+    class MultiSeq_HW(HW):
+        def __init__(self):
+            self.get_delay()
+            self.int_reg = 0
+            self.bool_reg = False
+            self.sfix_reg = Sfix(0.0)
+
+        def __call__(self, in_int, in_bool, in_sfix):
+            self.next.int_reg = in_int * 2
+            self.next.bool_reg = not in_bool
+            self.next.sfix_reg = in_sfix - 1.0
+            return self.int_reg, self.bool_reg, self.sfix_reg
+
+        def get_delay(self):
+            return 1
+
+    return Simulation(request.param, model=Dummy(), hw_model=MultiSeq_HW(),
+                      input_types=[int, bool, Sfix(left=2, right=-8)])
+
+
+def test_sequential_multi_list(sequential_multi):
+    input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
+    expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
+    ret = sequential_multi(*input)
+    assert (ret[0] == expect[0]).all()
+    assert (ret[1].astype(bool) == expect[1]).all()
+    assert (ret[2] == expect[2]).all()

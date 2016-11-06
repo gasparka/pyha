@@ -7,6 +7,7 @@ from typing import List
 import numpy as np
 
 from pyha.common.sfix import Sfix
+from pyha.common.util import get_iterable
 from pyha.conversion.conversion import Conversion
 from pyha.simulation.cocotb import CocotbAuto
 
@@ -24,12 +25,29 @@ def flush_pipeline(func):
 
     @wraps(func)
     def flush_pipeline_wrap(self, *args, **kwargs):
-        # now = args[0].__dict__
-        # next = args[0].__dict__['next'].__dict__
-        #
-        # now.update(deepish_copy(next))
+        # with suppress(AttributeError):  # no get_delay()
+        delay = self.hw_model.get_delay()
+        if delay == 0:
+            return func(self, *args, **kwargs)
 
-        ret = func(*args, **kwargs)
+        args = list(args)
+
+        app = []
+        for x in get_iterable(args[0]):
+            if type(x) == int:
+                app.append(0)
+            elif type(x) == bool:
+                app.append(False)
+            elif type(x) == Sfix:
+                app.append(x(0.0))
+
+        args.append(app * delay)
+        # args = [x + [0] * delay for x in args]
+
+        ret = func(self, *args, **kwargs)
+
+        with suppress(AttributeError):  # no get_delay()
+            ret = ret[delay:]
         return ret
 
     return flush_pipeline_wrap
@@ -39,6 +57,7 @@ def in_out_transpose(func):
     """ Transpose input before call and output after call """
     @wraps(func)
     def transposer_wrap(self, *args, **kwargs):
+        # numpy cannot be used as it loses type info (converts everything to float)
         args = [x for x in zip(*args)]  # transpose
 
         ret = func(self, *args, **kwargs)
@@ -108,6 +127,7 @@ class Simulation:
 
     @type_conversions
     @in_out_transpose
+    @flush_pipeline
     def hw_simulation(self, *args, **kwargs):
         if self.simulation_type == SIM_HW_MODEL:
             return [self.hw_model(*x) for x in args]
