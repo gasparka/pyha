@@ -66,7 +66,7 @@ def test_output_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
                 out0 <= std_logic_vector(to_signed(var_out0, 32));
-                out1 <= std_logic(var_out1);
+                out1 <= '1' when var_out1 else '0';
                 out2 <= to_slv(var_out2);""")
 
     res = TopGenerator(dut)
@@ -89,9 +89,9 @@ def test_variables_input(basic_obj):
 def test_input_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                var_in0 := to_integer(to_signed(in0));
+                var_in0 := to_integer(signed(in0));
                 var_in1 := to_sfixed(in1, 2, -17);
-                var_in2 := in2;""")
+                var_in2 := True when in2 = '1' else False;""")
 
     res = TopGenerator(dut)
 
@@ -179,16 +179,16 @@ def test_full(basic_obj, tmpdir):
                             \\Register\\.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
-                            var_in0 := to_integer(to_signed(in0));
+                            var_in0 := to_integer(signed(in0));
                             var_in1 := to_sfixed(in1, 2, -17);
-                            var_in2 := in2;
+                            var_in2 := True when in2 = '1' else False;
 
                             --call the main entry
                             \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
-                            out1 <= std_logic(var_out1);
+                            out1 <= '1' when var_out1 else '0';
                             out2 <= to_slv(var_out2);
                           end if;
 
@@ -270,7 +270,7 @@ def test_simple_full(simple_obj):
                             Simple.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
-                            var_in0 := to_integer(to_signed(in0));
+                            var_in0 := to_integer(signed(in0));
 
                             --call the main entry
                             Simple.\\__call__\\(self, var_in0, ret_0=>var_out0);

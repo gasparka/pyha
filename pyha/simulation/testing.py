@@ -1,8 +1,5 @@
-from contextlib import suppress
-
 import numpy as np
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable
 
 
 class Testing(object):
@@ -18,72 +15,35 @@ class Testing(object):
 
     def __call__(self, *args, **kwargs):
 
-        # self.original_input = np.copy(args)
         if self.request.param == 'MODEL':
-            # trans = np.transpose(args)
-            # is_singe_call = len(trans.shape) == 1
-            # if is_singe_call:
-            #     trans = [trans]
-            # outl = []
-            # for x in trans:
-            #     out = self.model(*x, **kwargs)
-            #     outl.append(out)
             out = self.model(*args, **kwargs)
-
             self.pure_output = np.copy(out)
             return np.transpose(out)
 
-        elif self.request.param == 'HW-MODEL':
-            with suppress(Exception):
-                args = self.hw_model.test_adaptor(*args, **kwargs)
-            # flush pipeline
-            args = self.add_dummy_pipeline_samples(args)
+        # flush pipeline
+        args = self.add_dummy_pipeline_samples(args)
 
-            # fixed conversion
-            for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
-                args[i] = [Sfix(x, type.left, type.right) for x in values]
+        # fixed conversion
+        for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
+            args[i] = [Sfix(x, type.left, type.right) for x in values]
 
-            # Sfix.set_float_mode(True)
-            trans = np.transpose(args)
-            outl = []
-            for x in trans:
-                out = self.hw_model(*x, **kwargs)
-                outl.append([float(x) for x in get_iterable(out)])
+        trans = np.transpose(args)
 
-            self.pure_output = np.copy(outl)
-
-            # remove pipeline flush samples
-            outl = outl[self.hw_model.get_delay():]
-            return np.transpose(outl)
-
-
+        if self.request.param == 'HW-MODEL':
+            out = [self.hw_model(*x, **kwargs) for x in trans]
         elif self.request.param in ('HW-RTL', 'HW-GATE'):
+            out = self.coco_sim.run(trans)
+        self.pure_output = np.copy(out)
 
-            args = self.add_dummy_pipeline_samples(args)
+        out = out[self.hw_model.get_delay():]
+        out = np.transpose(out)
+        out = out.astype(float)
+        return out
 
-            # fixed conversion
-            for i, (values, type) in enumerate(zip(args, [Sfix(left=0, right=-27)] * 1)):
-                args[i] = [Sfix(x, type.left, type.right).fixed_value() for x in values]
-
-            args = np.transpose(args)
-            out = self.coco_sim.run(args)
-            self.pure_output = np.copy(out)
-
-            out = out[self.hw_model.get_delay():]
-            out = np.transpose(out)
-
-            # convert fixed values to float
-            out = out.astype(float)
-            for i, (values, type) in enumerate(zip(out, [Sfix(left=0, right=-27)] * 1)):
-                out[i] = (values * 2 ** type.right)
-
-            return out
+    def output_type_conversion(self):
+        pass
 
     def add_dummy_pipeline_samples(self, args):
-        # arg = getattr(self.hw_model, 'delay', None)
-        # if arg is None:
-        #     raise Exception('HW model is missing DELAY attribute')
-
         if len(np.array(args).shape) == 1:
             args = [[x] for x in args]
         args = [np.append(x, [0.0] * self.hw_model.get_delay()) for x in args]

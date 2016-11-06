@@ -24,6 +24,9 @@ pyha
    :target: https://landscape.io/github/petspats/pyha/develop
    :alt: Code Health
 
+.. image:: https://codeclimate.com/github/petspats/pyha/badges/gpa.svg
+   :target: https://codeclimate.com/github/petspats/pyha
+   :alt: Code Climate
 
 Python Boilerplate contains all the boilerplate you need to create a Python package.
 
