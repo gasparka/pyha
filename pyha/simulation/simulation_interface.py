@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion
 from pyha.simulation.cocotb import CocotbAuto
@@ -111,7 +112,7 @@ class Simulation:
         if self.simulation_type == SIM_HW_MODEL:
             return [self.hw_model(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
-            return self.cocosim.run(args)
+            return self.cocosim.run(*args)
 
     def __call__(self, *args, **kwargs) -> np.array:
         if self.simulation_type == SIM_MODEL:

@@ -1,8 +1,9 @@
 import subprocess
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
@@ -33,10 +34,6 @@ def test_sim_no_model():
 
     with pytest.raises(NoModelError):
         Simulation(SIM_GATE, None, None)
-
-
-def test_flush_pipeline_samples():
-    pass
 
 
 def test_type_conversion():
@@ -137,6 +134,7 @@ def test_comb_int_numpy(comb_int):
 
 
 def test_comb_int_single(comb_int):
+    # fails if run separately! (not enough training)
     in_int = np.array([1])
     ret = comb_int(in_int)
 
@@ -179,10 +177,107 @@ def test_comb_bool_numpy(comb_bool):
 
 
 def test_comb_bool_single(comb_bool):
+    # fails if run separately! (not enough training)
     input = np.array([True])
     expect = np.array([not x for x in input])
     ret = comb_bool(input)
     assert (ret.astype(bool) == expect).all()
+
+
+#########################################
+# SIMPLE COMB BOOL
+#########################################
+
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def comb_sfix(request):
+    class Dummy:
+        def __call__(self, in_int):
+            return [x - 1.0 for x in in_int]
+
+    class Sfix_HW(HW):
+        def __init__(self):
+            self.dummy = 0
+
+        def __call__(self, in_int):
+            ret = in_int - 1.0
+            return ret
+
+    return Simulation(request.param, model=Dummy(), hw_model=Sfix_HW(), input_types=[Sfix(left=2, right=-8)])
+
+
+def test_comb_sfix_list(comb_sfix):
+    input = [0.25, 1, 1.5]
+    expect = np.array([x - 1.0 for x in input])
+    ret = comb_sfix(input)
+    assert (ret == expect).all()
+
+
+def test_comb_sfix_numpy(comb_sfix):
+    input = np.array([0.25, 1, 1.5])
+    expect = np.array([x - 1.0 for x in input])
+    ret = comb_sfix(input)
+    assert (ret == expect).all()
+
+
+def test_comb_sfix_single(comb_sfix):
+    # fails if run separately! (not enough training)
+    input = np.array([0.25])
+    expect = np.array([x - 1.0 for x in input])
+    ret = comb_sfix(input)
+    assert (ret == expect).all()
+
+
+#########################################
+# MULTIPLE COMB
+#########################################
+
+@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+def comb_multi(request):
+    class Dummy:
+        def __call__(self, in_int, in_bool, in_sfix):
+            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
+            # return [not x for x in in_int]
+            # return [x - 1.0 for x in in_int]
+
+    class Multi_HW(HW):
+        def __init__(self):
+            self.dummy = 0
+
+        def __call__(self, in_int, in_bool, in_sfix):
+            ret_int = in_int * 2
+            ret_bool = not in_bool
+            ret_sfix = in_sfix - 1.0
+            return ret_int, ret_bool, ret_sfix
+
+    return Simulation(request.param, model=Dummy(), hw_model=Multi_HW(),
+                      input_types=[int, bool, Sfix(left=2, right=-8)])
+
+
+def test_comb_multi_list(comb_multi):
+    input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
+    expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
+    ret = comb_multi(*input)
+    assert (ret[0] == expect[0]).all()
+    assert (ret[1].astype(bool) == expect[1]).all()
+    assert (ret[2] == expect[2]).all()
+
+
+def test_comb_multi_numpy(comb_multi):
+    input = np.array([[1, 2, 3], [True, False, False], [0.25, 1, 1.5]])
+    expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
+    ret = comb_multi(*input)
+    assert (ret[0] == expect[0]).all()
+    assert (ret[1].astype(bool) == expect[1]).all()
+    assert (ret[2] == expect[2]).all()
+
+
+def test_comb_multi_single(comb_multi):
+    input = np.array([[1], [True], [0.25]])
+    expect = [[2], [False], [-0.75]]
+    ret = comb_multi(*input)
+    assert (ret[0] == expect[0]).all()
+    assert (ret[1].astype(bool) == expect[1]).all()
+    assert (ret[2] == expect[2]).all()
 
 #########################################
 # SIMPLE SEQ

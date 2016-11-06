@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import pyha
+from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion
 
 COCOTB_MAKEFILE_TEMPLATE = """
@@ -74,10 +75,13 @@ class CocotbAuto(object):
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
         self.environment['OUTPUT_VARIABLES'] = str(len(self.conv.outputs))
 
-    def run(self, input_data):
+    def run(self, *input_data):
         import numpy as np
 
-        # input_data = np.vectorize(lambda x: x.fixed_value())(input_data)
+        # convert all Sfix elements to 'integer' form
+        input_data = np.vectorize(
+            lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
+
         np.save(str(self.base_path / 'input.npy'), input_data)
 
         # write makefile template
@@ -88,7 +92,20 @@ class CocotbAuto(object):
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(float)
-        # for i, values in enumerate(outp):
-        #     outp[i] = (values * 2 ** -27) # FIXME: hardcoded type
+
+        # FIXME: fix this retarded solution, combien with Sfix to 'integer'part and implement in decorator, maybe after transpose decorator!
+        # convert 'integer' form back to Sfix
+        outp = np.transpose(outp)
+        assert len(self.conv.outputs) > 0
+        if len(self.conv.outputs) == 1:
+            if isinstance(self.conv.outputs[0], Sfix):
+                for i, val in enumerate(outp):
+                    outp[i] = (val * 2 ** self.conv.outputs[0].right)
+        else:
+            for i, row in enumerate(outp):
+                if isinstance(self.conv.outputs[i], Sfix):
+                    for j, val in enumerate(row):
+                        outp[i][j] = (val * 2 ** self.conv.outputs[i].right)
+        outp = np.transpose(outp)
 
         return outp

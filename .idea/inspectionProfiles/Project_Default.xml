@@ -45,6 +45,8 @@
           <option value="conversion.main.GetitemNodeConv.*" />
           <option value="conversion.main.ForNodeConv.*" />
           <option value="conversion.main.ClassNodeConv.*" />
+          <option value="bool.all" />
+          <option value="object.right" />
         </list>
       </option>
     </inspection_tool>

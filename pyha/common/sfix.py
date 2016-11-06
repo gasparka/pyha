@@ -35,7 +35,12 @@ class Sfix(object):
     def set_float_mode(x):
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
+    def __init__(self, val=0.0, left=None, right=None, init_only=False, overflow_style='SATURATE'):
+        if left == None:
+            raise Exception('Left bound for Sfix is None!')
+
+        if right == None:
+            raise Exception('Right bound for Sfix is None!')
 
         if not isinstance(val, (float, int)):
             raise Exception('Value must be float or int!')
@@ -135,6 +140,7 @@ class Sfix(object):
                     init_only=True)
 
     def __sub__(self, other):
+        # TODO: why only float?
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
@@ -143,6 +149,7 @@ class Sfix(object):
                     init_only=True)
 
     def __mul__(self, other):
+        # TODO: why only float?
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val * other.val,
