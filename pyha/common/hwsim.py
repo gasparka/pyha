@@ -135,7 +135,6 @@ class Meta(type):
         # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
 
         # TODO: some hook to enable this for conversion only
-        # add profiler hack to access local variables of functions
         for attr in attrs:
             if callable(attrs[attr]):
                 attrs[attr] = locals_hack(attrs[attr], name)
@@ -144,7 +143,6 @@ class Meta(type):
             attrs['__call__'] = forbid_assign_to_self(attrs['__call__'], name)
             attrs['__call__'] = inout_saver(attrs['__call__'])  # TODO: this should be only enabled on conversion
             attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
-            # decorate the __call__ function with clock_tick
             attrs['__call__'] = clock_tick(attrs['__call__'])
         else:
             pass
@@ -155,6 +153,8 @@ class Meta(type):
     def __call__(cls, *args, **kwargs):
         # print('  Meta.__call__(cls=%s, args=%s, kwargs=%s)' % (cls, args, kwargs))
         ret = super(Meta, cls).__call__(*args, **kwargs)
+
+        # reset
 
         # save the initial self values
         ret.__dict__['__initial_self__'] = deepcopy(ret)

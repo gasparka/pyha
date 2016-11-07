@@ -7,6 +7,27 @@ from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals,
     VariableNotConvertible
 
 
+
+def test_datamodel_new_instance_resets():
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.56)
+
+        def __call__(self):
+            self.next.a = Sfix(0.0, 0, -10)
+
+    expect = {'a': Sfix(0.56, 0, -10)}
+    dut = A()
+    dut()
+    result = extract_datamodel(dut)
+    assert result == expect
+
+
+    # new instance shall have empty datamodel
+    dut2 = A()
+    result = extract_datamodel(dut)
+    assert result == {}
+
 def test_datamodel_sfix():
     class A(HW):
         def __init__(self):
