@@ -10,7 +10,7 @@ class Register(HW):
         self.get_delay()
         self.a = Sfix(init_value)
 
-    def __call__(self, new_value):
+    def main(self, new_value):
         self.next.a = new_value
         return self.a
 

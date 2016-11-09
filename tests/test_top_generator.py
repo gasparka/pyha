@@ -11,12 +11,12 @@ def basic_obj(request):
     if request.param_index == 0:
         class Register:
             @inout_saver
-            def __call__(self, a, b, c):
+            def main(self, a, b, c):
                 return a * 5, True, Sfix(0.0, 5, -8)
     else:
         # automatic decorators
         class Register(HW):
-            def __call__(self, a, b, c):
+            def main(self, a, b, c):
                 return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
@@ -184,7 +184,7 @@ def test_full(basic_obj, tmpdir):
                             var_in2 := True when in2 = '1' else False;
 
                             --call the main entry
-                            \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+                            \\Register\\.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -207,7 +207,7 @@ def test_full(basic_obj, tmpdir):
 def simple_obj():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     dut = Simple()
@@ -273,7 +273,7 @@ def test_simple_full(simple_obj):
                             var_in0 := to_integer(signed(in0));
 
                             --call the main entry
-                            Simple.\\__call__\\(self, var_in0, ret_0=>var_out0);
+                            Simple.main(self, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -293,7 +293,7 @@ def test_simple_full(simple_obj):
 def test_no_inputs():
     class Simple:
         @inout_saver
-        def __call__(self):
+        def main(self):
             return 1
 
     dut = Simple()
@@ -307,7 +307,7 @@ def test_no_inputs():
 def test_no_outputs():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             pass
 
     dut = Simple()
@@ -321,7 +321,7 @@ def test_no_outputs():
 def test_no_sim():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     # only trains 1 time, must be > 1
@@ -335,7 +335,7 @@ def test_no_sim():
 def test_decorator():
     class A:
         @inout_saver
-        def __call__(self, a, b, c):
+        def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()
@@ -352,7 +352,7 @@ def test_decorator():
 def test_decorator_kwargs():
     class A:
         @inout_saver
-        def __call__(self, a, b, c):
+        def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()

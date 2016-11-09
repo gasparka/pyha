@@ -13,7 +13,7 @@ def test_datamodel_new_instance_resets():
         def __init__(self):
             self.a = Sfix(0.56)
 
-        def __call__(self):
+        def main(self):
             self.next.a = Sfix(0.0, 0, -10)
 
     expect = {'a': Sfix(0.56, 0, -10)}
@@ -43,7 +43,7 @@ def test_datamodel_sfix_lazy():
         def __init__(self):
             self.a = Sfix(0.56)
 
-        def __call__(self):
+        def main(self):
             self.next.a = Sfix(0.0, 0, -10)
 
     expect = {'a': Sfix(0.56, 0, -10)}
@@ -59,7 +59,7 @@ def test_datamodel_sfix2():
             self.a = Sfix(0.56, 0, -10)
             self.b = Sfix(-10, 8, -10)
 
-        def __call__(self):
+        def main(self):
             pass
 
     expect = {'a': Sfix(0.56, 0, -10),
@@ -85,7 +85,7 @@ def test_datamodel_sfix_list_lazy():
         def __init__(self):
             self.b = [Sfix(-1.4), Sfix(2.5), Sfix(-0.52)]
 
-        def __call__(self):
+        def main(self):
             self.next.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
 
     expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
@@ -101,7 +101,7 @@ def test_datamodel_int():
         def __init__(self):
             self.a = 20
 
-        def __call__(self):
+        def main(self):
             self.next.a = 162
 
     expect = {'a': 20}
@@ -118,7 +118,7 @@ def test_datamodel_int_list():
         def __init__(self):
             self.b = [0] * 10
 
-        def __call__(self):
+        def main(self):
             self.next.b = [25] * 10
 
     expect = {'b': [0] * 10}
@@ -133,7 +133,7 @@ def test_datamodel_bool():
         def __init__(self):
             self.b = True
 
-        def __call__(self):
+        def main(self):
             self.next.b = False
 
     expect = {'b': True}
@@ -148,7 +148,7 @@ def test_datamodel_bool_list():
         def __init__(self):
             self.b = [True, False]
 
-        def __call__(self):
+        def main(self):
             self.next.b = [False, False]
 
     expect = {'b': [True, False]}
@@ -163,7 +163,7 @@ def test_datamodel_reject_flaot():
         def __init__(self):
             self.b = 0.5
 
-        def __call__(self):
+        def main(self):
             pass
 
     expect = {}
@@ -179,7 +179,7 @@ def test_datamodel_reject_numpy():
         def __init__(self):
             self.b = np.array([1, 2, 3])
 
-        def __call__(self):
+        def main(self):
             pass
 
     expect = {}
@@ -200,7 +200,7 @@ def test_datamodel_mixed():
             self.b = np.array([1, 2, 3])
             self.c = self.b.tolist()
 
-        def __call__(self, *args, **kwargs):
+        def main(self, *args, **kwargs):
             self.next.c = [3, 3, 3]
 
     expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
@@ -229,7 +229,7 @@ def test_locals():
 
 def test_locals_special():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = 20
 
     expect = {
@@ -249,7 +249,7 @@ def test_locals_skips_init():
         def __init__(self):
             self.a = 15
 
-        def __call__(self):
+        def main(self):
             b = 1
 
     expect = {
@@ -270,7 +270,7 @@ def test_locals_special_clock_tick():
         def __init__(self):
             self.a = 15
 
-        def __call__(self, b):
+        def main(self, b):
             self.next.a = b
 
     expect = {
@@ -294,7 +294,7 @@ def test_locals_special_clock_tick():
 
 def test_locals_call_nosim_raises():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = 20
 
     dut = A()
@@ -304,7 +304,7 @@ def test_locals_call_nosim_raises():
 
 def test_locals_call_bad_type_raises():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = 20.5
 
     expect = textwrap.dedent("""\
@@ -323,7 +323,7 @@ def test_locals_call_bad_type_raises():
 
 def test_locals_calls():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = Sfix(0.1, 2, -3)
             return 123, 0.4
 
@@ -336,7 +336,7 @@ def test_locals_calls():
 
 def test_locals_sfix():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = Sfix(0.1, 2, -3)
 
     expect = {
@@ -353,7 +353,7 @@ def test_locals_sfix():
 
 def test_locals_boolean():
     class A(HW):
-        def __call__(self):
+        def main(self):
             b = True
 
     expect = {
@@ -370,7 +370,7 @@ def test_locals_boolean():
 
 def test_locals_arguments():
     class A(HW):
-        def __call__(self, a, c):
+        def main(self, a, c):
             b = Sfix(0.1, 2, -3)
 
     expect = {
@@ -389,7 +389,7 @@ def test_locals_arguments():
 
 def test_locals_conditional():
     class A(HW):
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 iflocal = 128
 
@@ -410,7 +410,7 @@ def test_locals_conditional():
 def test_locals_call_multitype_raises():
     # var should always be same type
     class A(HW):
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 iflocal = 128
             else:
@@ -427,7 +427,7 @@ def test_locals_call_multitype_raises():
 def test_locals_multitype_sfix():
     # valid if bounds are the same
     class A(HW):
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 iflocal = Sfix(1.2, 12, -15)
             else:
@@ -449,7 +449,7 @@ def test_locals_multitype_sfix():
 
 def test_locals_multitype_sfix_raises():
     class A(HW):
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 iflocal = Sfix(1.2, 1, -15)
             else:
@@ -468,7 +468,7 @@ def test_locals_multifunc():
             loom = Sfix(o, 10, -10)
             return 12
 
-        def __call__(self, a, c):
+        def main(self, a, c):
             b = Sfix(0.1, 2, -3)
 
     expect = {
@@ -497,7 +497,7 @@ def test_locals_multifunc_nested():
             loom = Sfix(o, 10, -10)
             return 12
 
-        def __call__(self, a, c):
+        def main(self, a, c):
             ret = self.func2(a)
             b = Sfix(0.1, 2, -3)
 
@@ -532,7 +532,7 @@ def test_locals_multifunc_nested_complex():
         def func2(self, o):
             return self.func4(Sfix(o, 10, -10))
 
-        def __call__(self, a, c):
+        def main(self, a, c):
             ret = self.func2(a)
             ret2 = self.func3()
             b = Sfix(0.1, 2, -3)

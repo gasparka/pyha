@@ -14,7 +14,7 @@ def test_metaclass_assigned():
 
 def test_call_decorated():
     class A(HW):
-        def __call__(self, *args, **kwargs):
+        def main(self, *args, **kwargs):
             pass
 
     assert A.__call__.__wrapped__ == clock_tick
@@ -41,7 +41,7 @@ def test_float_register():
         def __init__(self):
             self.a = 1.0
 
-        def __call__(self, next):
+        def main(self, next):
             self.next.a = next
 
     dut = A()
@@ -57,7 +57,7 @@ def test_list_register():
         def __init__(self):
             self.a = [1.0, 2.0, 3.0]
 
-        def __call__(self, next):
+        def main(self, next):
             self.next.a = [next] + self.a[:-1]
 
     dut = A()
@@ -73,7 +73,7 @@ def test_list_cascade_register():
         def __init__(self):
             self.a = [1.0, 2.0, 3.0]
 
-        def __call__(self, next):
+        def main(self, next):
             self.next.a = [next] + self.a[:-1]
             return self.a[-1]
 
@@ -82,7 +82,7 @@ def test_list_cascade_register():
             self.a = A()
             self.l = [0.0, 0.0]
 
-        def __call__(self, next):
+        def main(self, next):
             last = self.a(next)
             self.next.l = [last] + self.l[:-1]
 
@@ -102,7 +102,7 @@ def test_forbid_self_assign_sfix_raises():
         def __init__(self):
             self.a = Sfix(0.0)
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.a = Sfix(1.2, 3, -18)
             else:
@@ -125,7 +125,7 @@ def test_forbid_self_assign_list_raises():
         def __init__(self):
             self.alist = [1, 2, 3]
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.alist = [1, 2, 3]
             else:
@@ -150,7 +150,7 @@ def test_forbid_self_assign_numpy():
         def __init__(self):
             self.b = np.array([1, 2, 3])
 
-        def __call__(self):
+        def main(self):
             pass
 
     expect = {}
@@ -163,7 +163,7 @@ def test_self_type_consistent_raises():
         def __init__(self):
             self.a = 128
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.a = 128
             else:
@@ -180,7 +180,7 @@ def test_self_type_consistent_initial_allowed_raises():
         def __init__(self):
             self.a = 128
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.a = 128
             else:
@@ -206,7 +206,7 @@ def test_self_type_consistent_sfix_raises():
         def __init__(self):
             self.a = Sfix(0.0)
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.a = Sfix(1.2, 3, -18)
             else:
@@ -232,7 +232,7 @@ def test_self_type_consistent_sfix():
         def __init__(self):
             self.a = Sfix(0.0)
 
-        def __call__(self, condition):
+        def main(self, condition):
             if condition:
                 self.next.a = Sfix(1.2, 3, -18)
             else:
@@ -248,7 +248,7 @@ def test_self_type_consistent_list():
         def __init__(self):
             self.a = [1] * 5
 
-        def __call__(self):
+        def main(self):
             self.next.a = [3] * 5
 
     dut = A()
@@ -261,7 +261,7 @@ def test_self_type_consistent_list_raises():
         def __init__(self):
             self.a = [1] * 5
 
-        def __call__(self):
+        def main(self):
             self.next.a = [3] * 2
 
     expect = textwrap.dedent("""\
@@ -286,7 +286,7 @@ def test_initial_self():
             self.i = 25
             self.b = False
 
-        def __call__(self):
+        def main(self):
             self.next.a = Sfix(1.2, 3, -18)
             self.next.i = 0
             self.next.b = True

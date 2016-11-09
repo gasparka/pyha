@@ -380,7 +380,7 @@ class ClassNodeConv(NodeConv):
 
         super().__init__(red_node, parent)
 
-        self.callf = [x for x in self.value if str(x.name) == '\\__call__\\']
+        self.callf = [x for x in self.value if str(x.name) == 'main']
         if len(self.callf):
             self.callf = self.callf[0]
             self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))

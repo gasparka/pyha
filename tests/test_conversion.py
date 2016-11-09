@@ -9,7 +9,7 @@ from pyha.conversion.conversion import Conversion
 @pytest.fixture
 def dut():
     class Dummy(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     o = Dummy()
@@ -52,11 +52,11 @@ def test_outputs(dut):
 ##################################
 def test_get_objects_rednode_twonodes():
     class Dummy2(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     class Dummy2(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     o = Dummy2()
