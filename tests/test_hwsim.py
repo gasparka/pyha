@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.hwsim import HW, Meta, clock_tick, AssignToSelf, TypeNotConsistent
 from pyha.common.sfix import Sfix
 
@@ -189,7 +190,7 @@ def test_self_type_consistent_initial_allowed_raises():
     expect = textwrap.dedent("""\
             Self/local not consistent type!
             Class: A
-            Function: __call__
+            Function: main
             Variable: a
             Old: <class 'dict'>:{'a': 128}
             New: <class 'dict'>:{'a': True}""")
@@ -215,7 +216,7 @@ def test_self_type_consistent_sfix_raises():
     expect = textwrap.dedent("""\
             Self/local not consistent type!
             Class: A
-            Function: __call__
+            Function: main
             Variable: a
             Old: <class 'dict'>:{'a': 1.20000076294 [3:-18]}
             New: <class 'dict'>:{'a': 2.19999999995 [3:-32]}""")
@@ -267,7 +268,7 @@ def test_self_type_consistent_list_raises():
     expect = textwrap.dedent("""\
             Self/local not consistent type!
             Class: A
-            Function: __call__
+            Function: main
             Variable: a
             Old: <class 'dict'>:{'a': [1, 1, 1, 1, 1]}
             New: <class 'dict'>:{'a': [3, 3]}""")

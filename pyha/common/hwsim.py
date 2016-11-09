@@ -1,10 +1,11 @@
 from copy import deepcopy
 from functools import wraps
 
+from six import iteritems, with_metaclass
+
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import locals_hack
 from pyha.conversion.top_generator import inout_saver
-from six import iteritems, with_metaclass
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -109,7 +110,7 @@ def dict_types_consistent_check(class_name, function_name, new, old):
 
 
 def self_type_consistent_checker(func, class_name):
-    """ After each __call__, check that 'self' has consistent types(only single type over time)
+    """ After each main, check that 'self' has consistent types(only single type over time)
      This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
     """
     @wraps(func)
@@ -139,11 +140,11 @@ class Meta(type):
             if callable(attrs[attr]):
                 attrs[attr] = locals_hack(attrs[attr], name)
 
-        if '__call__' in attrs:
-            attrs['__call__'] = forbid_assign_to_self(attrs['__call__'], name)
-            attrs['__call__'] = inout_saver(attrs['__call__'])  # TODO: this should be only enabled on conversion
-            attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
-            attrs['__call__'] = clock_tick(attrs['__call__'])
+        if 'main' in attrs:
+            attrs['main'] = forbid_assign_to_self(attrs['main'], name)
+            attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+            attrs['main'] = self_type_consistent_checker(attrs['main'], name)
+            attrs['main'] = clock_tick(attrs['main'])
         else:
             pass
         ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)

@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.hwsim import HW, TypeNotConsistent
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
@@ -233,7 +234,7 @@ def test_locals_special():
             b = 20
 
     expect = {
-        '__call__':
+        'main':
             {
                 'b': 20
             }
@@ -253,7 +254,7 @@ def test_locals_skips_init():
             b = 1
 
     expect = {
-        '__call__':
+        'main':
             {
                 'b': 1
             }
@@ -274,7 +275,7 @@ def test_locals_special_clock_tick():
             self.next.a = b
 
     expect = {
-        '__call__':
+        'main':
             {
                 'b': 2
             }
@@ -310,7 +311,7 @@ def test_locals_call_bad_type_raises():
     expect = textwrap.dedent("""\
             Variable not convertable!
             Class: A
-            Function: __call__
+            Function: main
             Variable: b
             Value: <class 'float'>:20.5""")
     dut = A()
@@ -340,7 +341,7 @@ def test_locals_sfix():
             b = Sfix(0.1, 2, -3)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'b': Sfix(0.1, 2, -3)
             }
@@ -357,7 +358,7 @@ def test_locals_boolean():
             b = True
 
     expect = {
-        '__call__':
+        'main':
             {
                 'b': True
             }
@@ -374,7 +375,7 @@ def test_locals_arguments():
             b = Sfix(0.1, 2, -3)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'a': 15,
                 'b': Sfix(0.1, 2, -3),
@@ -394,7 +395,7 @@ def test_locals_conditional():
                 iflocal = 128
 
     expect = {
-        '__call__':
+        'main':
             {
                 'condition': False,
                 'iflocal': 128
@@ -434,7 +435,7 @@ def test_locals_multitype_sfix():
                 iflocal = Sfix(0.0, 12, -15)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'condition': False,
                 'iflocal': Sfix(0.0, 12, -15)
@@ -472,7 +473,7 @@ def test_locals_multifunc():
             b = Sfix(0.1, 2, -3)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'a': 15,
                 'b': Sfix(0.1, 2, -3),
@@ -502,7 +503,7 @@ def test_locals_multifunc_nested():
             b = Sfix(0.1, 2, -3)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'a': 15,
                 'b': Sfix(0.1, 2, -3),
@@ -538,7 +539,7 @@ def test_locals_multifunc_nested_complex():
             b = Sfix(0.1, 2, -3)
 
     expect = {
-        '__call__':
+        'main':
             {
                 'a': 15,
                 'b': Sfix(0.1, 2, -3),

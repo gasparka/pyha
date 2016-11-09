@@ -1,11 +1,12 @@
 import logging
 import textwrap
 
+from redbaron import NameNode, Node, EndlNode
+from redbaron.nodes import AtomtrailersNode
+
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
 from pyha.conversion.coupling import VHDLType, VHDLVariable
-from redbaron import NameNode, Node, EndlNode
-from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -372,7 +373,7 @@ class ClassNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
 
         # see def test_class_call_modifications(converter):
-        defn = red_node.find('defnode', name='__call__')
+        defn = red_node.find('defnode', name='main')
         if defn is not None:
             defn.arguments[0].target = 'self_reg'
             defn.value.insert(0, 'make_self(self_reg, self)')
