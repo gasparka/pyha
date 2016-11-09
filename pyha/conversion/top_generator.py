@@ -42,7 +42,7 @@ class TopGenerator:
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        if self.simulated_object.__call__._last_call['calls'] <= 1:
+        if self.simulated_object.main._last_call['calls'] <= 1:
             raise NotTrainedError('Object must be trained > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
@@ -53,16 +53,16 @@ class TopGenerator:
 
     def get_object_args(self) -> list:
         # skip first arg -> it is self
-        return list(self.simulated_object.__call__._last_call['args'][1:])
+        return list(self.simulated_object.main._last_call['args'][1:])
 
     def get_object_kwargs(self) -> list:
-        return self.simulated_object.__call__._last_call['kwargs'].items()
+        return self.simulated_object.main._last_call['kwargs'].items()
 
     def get_object_inputs(self) -> list:
         return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
 
     def get_object_return(self) -> list:
-        rets = self.simulated_object.__call__._last_call['return']
+        rets = self.simulated_object.main._last_call['return']
         if isinstance(rets, tuple):
             return list(rets)
         elif rets is None:

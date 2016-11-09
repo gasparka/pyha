@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import inout_saver, TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
@@ -20,9 +21,9 @@ def basic_obj(request):
                 return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
-    dut(2, Sfix(1.0, 2, -17), False)
-    dut(-57, Sfix(1.0, 2, -17), True)
-    dut(-57, Sfix(1.0, 2, -17), c=True)
+    dut.main(2, Sfix(1.0, 2, -17), False)
+    dut.main(-57, Sfix(1.0, 2, -17), True)
+    dut.main(-57, Sfix(1.0, 2, -17), c=True)
     return dut
 
 
@@ -211,8 +212,8 @@ def simple_obj():
             return a
 
     dut = Simple()
-    dut(2)
-    dut(2)
+    dut.main(2)
+    dut.main(2)
     return dut
 
 
@@ -297,8 +298,8 @@ def test_no_inputs():
             return 1
 
     dut = Simple()
-    dut()
-    dut()
+    dut.main()
+    dut.main()
 
     with pytest.raises(NoInputsError):
         TopGenerator(dut)
@@ -311,8 +312,8 @@ def test_no_outputs():
             pass
 
     dut = Simple()
-    dut(1)
-    dut(2)
+    dut.main(1)
+    dut.main(2)
 
     with pytest.raises(NoOutputsError):
         TopGenerator(dut)
@@ -326,7 +327,7 @@ def test_no_sim():
 
     # only trains 1 time, must be > 1
     dut = Simple()
-    dut(2)
+    dut.main(2)
 
     with pytest.raises(NotTrainedError):
         TopGenerator(dut)
@@ -339,14 +340,14 @@ def test_decorator():
             return a * 5, True, Sfix(0.0)
 
     dut = A()
-    dut(2, Sfix(1.0), False)
-    assert type(dut.__call__._last_call['args'][1]) == int
-    assert type(dut.__call__._last_call['args'][2]) == Sfix
-    assert type(dut.__call__._last_call['args'][3]) == bool
+    dut.main(2, Sfix(1.0), False)
+    assert type(dut.main._last_call['args'][1]) == int
+    assert type(dut.main._last_call['args'][2]) == Sfix
+    assert type(dut.main._last_call['args'][3]) == bool
 
-    assert type(dut.__call__._last_call['return'][0]) == int
-    assert type(dut.__call__._last_call['return'][1]) == bool
-    assert type(dut.__call__._last_call['return'][2]) == Sfix
+    assert type(dut.main._last_call['return'][0]) == int
+    assert type(dut.main._last_call['return'][1]) == bool
+    assert type(dut.main._last_call['return'][2]) == Sfix
 
 
 def test_decorator_kwargs():
@@ -356,11 +357,11 @@ def test_decorator_kwargs():
             return a * 5, True, Sfix(0.0)
 
     dut = A()
-    dut(b=2, c=Sfix(1.0), a=False)
-    assert type(dut.__call__._last_call['kwargs']['b']) == int
-    assert type(dut.__call__._last_call['kwargs']['c']) == Sfix
-    assert type(dut.__call__._last_call['kwargs']['a']) == bool
+    dut.main(b=2, c=Sfix(1.0), a=False)
+    assert type(dut.main._last_call['kwargs']['b']) == int
+    assert type(dut.main._last_call['kwargs']['c']) == Sfix
+    assert type(dut.main._last_call['kwargs']['a']) == bool
 
-    assert type(dut.__call__._last_call['return'][0]) == int
-    assert type(dut.__call__._last_call['return'][1]) == bool
-    assert type(dut.__call__._last_call['return'][2]) == Sfix
+    assert type(dut.main._last_call['return'][0]) == int
+    assert type(dut.main._last_call['return'][1]) == bool
+    assert type(dut.main._last_call['return'][2]) == Sfix
