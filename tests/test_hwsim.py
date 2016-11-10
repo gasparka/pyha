@@ -317,22 +317,32 @@ def test_functions_are_partial():
     assert isinstance(dut1.main, partial)
 
 
-def test_function_attributes_unique():
-    class A(HW):
-        def __init__(self):
-            self.b = False
+def test_decorator_principe():
+    class DecoClass:
+        def __init__(self, func):
+            self.func = func
+            self.calls = 0
 
+        def __call__(self, *args):
+            self.calls += 1
+            return self.func(*args)
+
+    class A:
         def main(self):
-            self.next.b = True
+            pass
 
     dut1 = A()
-    dut1.main()
-
-    assert dut1.main.func.fdict['calls'] == 1
+    dut1.main = DecoClass(dut1.main)
 
     dut2 = A()
-    # assert dut2.main.func.fdict['calls'] == 0
+    dut2.main = DecoClass(dut2.main)
+
+
+    dut1.main()
+
+    assert dut1.main.calls == 1
+
     dut2.main()
     dut2.main()
-    assert dut1.main.func.fdict['calls'] == 2
-    assert dut2.main.func.fdict['calls'] == 2
+    assert dut1.main.calls == 1
+    assert dut2.main.calls == 2
