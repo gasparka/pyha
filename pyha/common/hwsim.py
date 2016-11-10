@@ -1,11 +1,10 @@
 from copy import deepcopy
-from functools import wraps
+from functools import wraps, partial
 
 from six import iteritems, with_metaclass
 
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import locals_hack
-from pyha.conversion.top_generator import inout_saver
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -135,18 +134,18 @@ class Meta(type):
     def __new__(mcs, name, bases, attrs, **kwargs):
         # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
 
-        # TODO: some hook to enable this for conversion only
-        for attr in attrs:
-            if callable(attrs[attr]):
-                attrs[attr] = locals_hack(attrs[attr], name)
-
-        if 'main' in attrs:
-            attrs['main'] = forbid_assign_to_self(attrs['main'], name)
-            attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-            attrs['main'] = self_type_consistent_checker(attrs['main'], name)
-            attrs['main'] = clock_tick(attrs['main'])
-        else:
-            pass
+        # # TODO: some hook to enable this for conversion only
+        # for attr in attrs:
+        #     if callable(attrs[attr]):
+        #         attrs[attr] = locals_hack(attrs[attr], name)
+        #
+        # if 'main' in attrs:
+        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
+        #     attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
+        #     attrs['main'] = clock_tick(attrs['main'])
+        # else:
+        #     pass
         ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)
         return ret
 
@@ -155,13 +154,33 @@ class Meta(type):
         # print('  Meta.__call__(cls=%s, args=%s, kwargs=%s)' % (cls, args, kwargs))
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
-        # reset
 
         # save the initial self values
         ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
+
+        # Turn user functions to partial(every instance get different function object), need this because function attributes are used
+
+        # TODO: some hook to enable this for conversion only
+        # for attr in attrs:
+        #     if callable(attrs[attr]):
+        #         attrs[attr] = locals_hack(attrs[attr], name)
+        #
+        # if 'main' in attrs:
+        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
+        #     attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
+        #     attrs['main'] = clock_tick(attrs['main'])
+        # else:
+        #     pass
+
+        for method_str in dir(ret):
+            method = getattr(ret, method_str)
+            if method_str[:2] != '__' and callable(method):
+                setattr(ret, method_str, partial(locals_hack(method, 'dummy')))
+
         return ret
 
 

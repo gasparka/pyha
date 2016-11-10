@@ -19,15 +19,16 @@ def test_datamodel_new_instance_resets():
 
     expect = {'a': Sfix(0.56, 0, -10)}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
 
     # new instance shall have empty datamodel
     dut2 = A()
-    result = extract_datamodel(dut)
-    assert result == {}
+    result = extract_datamodel(dut2)
+    expect = {'a': Sfix(0.56)}
+    assert result == expect
 
 def test_datamodel_sfix():
     class A(HW):
@@ -49,7 +50,7 @@ def test_datamodel_sfix_lazy():
 
     expect = {'a': Sfix(0.56, 0, -10)}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -66,7 +67,7 @@ def test_datamodel_sfix2():
     expect = {'a': Sfix(0.56, 0, -10),
               'b': Sfix(-10, 8, -10)}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -92,7 +93,7 @@ def test_datamodel_sfix_list_lazy():
     expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
 
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -108,8 +109,8 @@ def test_datamodel_int():
     expect = {'a': 20}
 
     dut = A()
-    dut()
-    dut()
+    dut.main()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -124,7 +125,7 @@ def test_datamodel_int_list():
 
     expect = {'b': [0] * 10}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -139,7 +140,7 @@ def test_datamodel_bool():
 
     expect = {'b': True}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -154,7 +155,7 @@ def test_datamodel_bool_list():
 
     expect = {'b': [True, False]}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -169,7 +170,7 @@ def test_datamodel_reject_flaot():
 
     expect = {}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -185,7 +186,7 @@ def test_datamodel_reject_numpy():
 
     expect = {}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -206,7 +207,7 @@ def test_datamodel_mixed():
 
     expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
     dut = A()
-    dut()
+    dut.main()
     result = extract_datamodel(dut)
     assert result == expect
 
@@ -228,6 +229,27 @@ def test_locals():
     assert result == expect
 
 
+def test_locals_new_instance_resets():
+    class A(HW):
+        def main(self, v):
+            b = v
+
+    expect = {
+        'main':
+            {
+                'b': 20,
+                'v': 20
+            }
+    }
+    dut = A()
+    dut.main(20)
+    result = extract_locals(dut)
+    assert result == expect
+
+    dut2 = A()
+    result = extract_locals(dut2)
+    assert result == {}
+
 def test_locals_special():
     class A(HW):
         def main(self):
@@ -240,7 +262,7 @@ def test_locals_special():
             }
     }
     dut = A()
-    dut()
+    dut.main()
     result = extract_locals(dut)
     assert result == expect
 
@@ -260,7 +282,7 @@ def test_locals_skips_init():
             }
     }
     dut = A()
-    dut()
+    dut.main()
 
     result = extract_locals(dut)
     assert result == expect
@@ -281,11 +303,11 @@ def test_locals_special_clock_tick():
             }
     }
     dut = A()
-    dut(1)
+    dut.main(1)
     assert dut.a == 15
     assert dut.next.a == 1
 
-    dut(2)
+    dut.main(2)
     assert dut.a == 1
     assert dut.next.a == 2
 
@@ -315,7 +337,7 @@ def test_locals_call_bad_type_raises():
             Variable: b
             Value: <class 'float'>:20.5""")
     dut = A()
-    dut()
+    dut.main()
     with pytest.raises(VariableNotConvertible) as e:
         result = extract_locals(dut)
 
@@ -329,10 +351,10 @@ def test_locals_calls():
             return 123, 0.4
 
     dut = A()
-    dut()
-    assert dut.__call__.fdict['calls'] == 1
-    dut()
-    assert dut.__call__.fdict['calls'] == 2
+    dut.main()
+    assert dut.main.fdict['calls'] == 1
+    dut.main()
+    assert dut.main.fdict['calls'] == 2
 
 
 def test_locals_sfix():
@@ -347,7 +369,7 @@ def test_locals_sfix():
             }
     }
     dut = A()
-    dut()
+    dut.main()
     result = extract_locals(dut)
     assert result == expect
 
@@ -364,7 +386,7 @@ def test_locals_boolean():
             }
     }
     dut = A()
-    dut()
+    dut.main()
     result = extract_locals(dut)
     assert result == expect
 
@@ -383,7 +405,7 @@ def test_locals_arguments():
             }
     }
     dut = A()
-    dut(15, Sfix(0.1, 2, -3))
+    dut.main(15, Sfix(0.1, 2, -3))
     result = extract_locals(dut)
     assert result == expect
 
@@ -402,8 +424,8 @@ def test_locals_conditional():
             }
     }
     dut = A()
-    dut(True)
-    dut(False)
+    dut.main(True)
+    dut.main(False)
     result = extract_locals(dut)
     assert result == expect
 
@@ -418,9 +440,9 @@ def test_locals_call_multitype_raises():
                 iflocal = True
 
     dut = A()
-    dut(True)
+    dut.main(True)
     with pytest.raises(TypeNotConsistent) as e:
-        dut(False)
+        dut.main(False)
 
         # cant test text cause locals discovery order can vary
 
@@ -442,8 +464,8 @@ def test_locals_multitype_sfix():
             }
     }
     dut = A()
-    dut(True)
-    dut(False)
+    dut.main(True)
+    dut.main(False)
     result = extract_locals(dut)
     assert result == expect
 
@@ -457,10 +479,10 @@ def test_locals_multitype_sfix_raises():
                 iflocal = Sfix(0.0, 12, -1)
 
     dut = A()
-    dut(True)
+    dut.main(True)
 
     with pytest.raises(TypeNotConsistent):
-        dut(False)
+        dut.main(False)
 
 
 def test_locals_multifunc():
@@ -486,7 +508,7 @@ def test_locals_multifunc():
             }
     }
     dut = A()
-    dut(15, Sfix(0.1, 2, -3))
+    dut.main(15, Sfix(0.1, 2, -3))
     dut.func2(1)
     result = extract_locals(dut)
     assert result == expect
@@ -517,7 +539,7 @@ def test_locals_multifunc_nested():
             }
     }
     dut = A()
-    dut(15, Sfix(0.1, 2, -3))
+    dut.main(15, Sfix(0.1, 2, -3))
     result = extract_locals(dut)
     assert result == expect
 
@@ -561,8 +583,8 @@ def test_locals_multifunc_nested_complex():
             }
     }
     dut = A()
-    dut(1, Sfix(0.1, 2, -3))
-    dut(2, Sfix(1.1, 2, -3))
-    dut(15, Sfix(0.1, 2, -3))
+    dut.main(1, Sfix(0.1, 2, -3))
+    dut.main(2, Sfix(1.1, 2, -3))
+    dut.main(15, Sfix(0.1, 2, -3))
     result = extract_locals(dut)
     assert result == expect

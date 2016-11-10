@@ -1,4 +1,5 @@
 import textwrap
+from functools import partial
 
 import pytest
 
@@ -302,3 +303,36 @@ def test_initial_self():
     assert dut.__dict__['__initial_self__'].a.init_val == 0.0123
     assert dut.__dict__['__initial_self__'].i == 25
     assert dut.__dict__['__initial_self__'].b == False
+
+
+def test_functions_are_partial():
+    class A(HW):
+        def __init__(self):
+            self.b = False
+
+        def main(self):
+            self.next.b = True
+
+    dut1 = A()
+    assert isinstance(dut1.main, partial)
+
+
+def test_function_attributes_unique():
+    class A(HW):
+        def __init__(self):
+            self.b = False
+
+        def main(self):
+            self.next.b = True
+
+    dut1 = A()
+    dut1.main()
+
+    assert dut1.main.func.fdict['calls'] == 1
+
+    dut2 = A()
+    # assert dut2.main.func.fdict['calls'] == 0
+    dut2.main()
+    dut2.main()
+    assert dut1.main.func.fdict['calls'] == 2
+    assert dut2.main.func.fdict['calls'] == 2
