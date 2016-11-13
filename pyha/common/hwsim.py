@@ -60,6 +60,9 @@ def clock_tick(func):
         now = args[0].__dict__
         next = args[0].__dict__['next'].__dict__
 
+        # now = func.func.__self__.__dict__
+        # next = func.func.__self__.__dict__['next'].__dict__
+
         now.update(deepish_copy(next))
 
         ret = func(*args, **kwargs)
@@ -139,13 +142,13 @@ class Meta(type):
         #     if callable(attrs[attr]):
         #         attrs[attr] = locals_hack(attrs[attr], name)
 
-        if 'main' in attrs:
-            attrs['main'] = forbid_assign_to_self(attrs['main'], name)
-            # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-            attrs['main'] = self_type_consistent_checker(attrs['main'], name)
-            attrs['main'] = clock_tick(attrs['main'])
-        else:
-            pass
+        # if 'main' in attrs:
+        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
+        #     # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
+        #     attrs['main'] = clock_tick(attrs['main'])
+        # else:
+        #     pass
         ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)
         return ret
 
@@ -163,6 +166,13 @@ class Meta(type):
             method = getattr(ret, method_str)
             if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
                 new = LocalsExtractor(method, cls.__name__)
+
+                if 'main' == method_str:
+                    # new = forbid_assign_to_self(new, cls.__name__)
+                    # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+                    # new = self_type_consistent_checker(new, cls.__name__)
+                    new = clock_tick(new)
+
                 setattr(ret, method_str, new)
 
         return ret

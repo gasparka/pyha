@@ -136,14 +136,15 @@ def extract_locals(obj):
         if method == '__init__': continue
         call = getattr(obj, method)
         if hasattr(call, 'knows_locals'):
-            if call.fdict['calls'] == 0:
-                raise FunctionNotSimulated(class_name, call.__name__)
+            if call.calls == 0:
+                raise FunctionNotSimulated(class_name, call.func.__name__)
 
-            for key, val in call.fdict['locals'].items():
+            for key, val in call.locals.items():
+                if key == 'self': continue
                 if not is_convertible(val):
-                    raise VariableNotConvertible(class_name, call.__name__, key, val)
+                    raise VariableNotConvertible(class_name, call.func.__name__, key, val)
 
-            ret[call.__name__] = call.fdict['locals']
+            ret[call.func.__name__] = call.locals
 
     return ret
 

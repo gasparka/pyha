@@ -2,10 +2,10 @@ import textwrap
 
 import pytest
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import HW, TypeNotConsistent
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
-    VariableNotConvertible, TypeNotConsistent
+    VariableNotConvertible
 
 
 def test_datamodel_new_instance_resets():
@@ -211,7 +211,7 @@ def test_datamodel_mixed():
     assert result == expect
 
 
-def test_locals():
+def test_localss():
     class A(HW):
         def tst(self):
             b = 20
