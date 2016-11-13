@@ -1,10 +1,10 @@
 import textwrap
-from functools import wraps
 
 import pytest
 
 from pyha.common.hwsim import HW, Meta, clock_tick, AssignToSelf, TypeNotConsistent
 from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import LocalsExtractor
 
 
 def test_metaclass_assigned():
@@ -14,12 +14,37 @@ def test_metaclass_assigned():
     assert type(A) == Meta
 
 
+def test_locals_decorated():
+    class A(HW):
+        def main(self, *args, **kwargs):
+            pass
+
+        def func2(self):
+            pass
+
+    assert isinstance(A().main, LocalsExtractor)
+    assert isinstance(A().func2, LocalsExtractor)
+
+
+def test_objects_not_decorated():
+    # had problem where LocalExtractor was applied to all CALLABLE objects
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.0)
+
+        def main(self, *args, **kwargs):
+            pass
+
+    assert not isinstance(A().a, LocalsExtractor)
+
+
 def test_call_decorated():
     class A(HW):
         def main(self, *args, **kwargs):
             pass
 
-    assert A().main.__wrapped__ == clock_tick
+    assert A().main.func.__wrapped__ == clock_tick
+
 
 
 def test_next_init():
@@ -342,78 +367,77 @@ def test_decorator_principe():
     assert dut1.main.calls == 1
     assert dut2.main.calls == 2
 
-
-def test_decorator_principe2():
-    def tmp(func):
-        """ Update register values from "next" """
-
-        @wraps(func)
-        def clock_tick_wrap(*args, **kwargs):
-            now = args[0].__dict__
-            next = args[0].__dict__['next'].__dict__
-
-            ret = func(*args, **kwargs)
-            return ret
-
-        clock_tick_wrap.__wrapped__ = clock_tick
-        return clock_tick_wrap
-
-    class DecoClass:
-        def __init__(self, f):
-            self.f = f
-
-        def __call__(self, *args):
-            return self.f(*args)
-
-        def __get__(self, obj, objtype):
-            """Support instance methods."""
-            import functools
-            return functools.partial(self.__call__, obj)
-
-    class A:
-        def __init__(self):
-            self.a = 2
-
-        @tmp
-        def main(self, b):
-            pass
-
-    class B:
-        def __init__(self):
-            self.a = 2
-
-        def main(self, b):
-            pass
-
-    class C:
-        def __init__(self):
-            self.a = 2
-
-        @DecoClass
-        def main(self, b):
-            self.a = b
-
-    # dut1 = A()
-    #
-    # dut2 = B()
-    # dut2.main = tmp(dut2.main)
-    #
-    #
-    # # dut1.main(3)
-    # # dut2.main(3)
-    #
-    dut3 = C()
-    dut3.main(123)
-
-    class D:
-        def __init__(self):
-            self.a = 2
-
-        def main(self, b):
-            self.a = b
-
-    dut = D()
-    dut.main = DecoClass(dut.main)
-    dut.main(321)
-    pass
-    pass
+# def test_decorator_principe2():
+#     def tmp(func):
+#         """ Update register values from "next" """
+#
+#         @wraps(func)
+#         def clock_tick_wrap(*args, **kwargs):
+#             now = args[0].__dict__
+#             next = args[0].__dict__['next'].__dict__
+#
+#             ret = func(*args, **kwargs)
+#             return ret
+#
+#         clock_tick_wrap.__wrapped__ = clock_tick
+#         return clock_tick_wrap
+#
+#     class DecoClass:
+#         def __init__(self, f):
+#             self.f = f
+#
+#         def __call__(self, *args):
+#             return self.f(*args)
+#
+#         def __get__(self, obj, objtype):
+#             """Support instance methods."""
+#             import functools
+#             return functools.partial(self.__call__, obj)
+#
+#     class A:
+#         def __init__(self):
+#             self.a = 2
+#
+#         @tmp
+#         def main(self, b):
+#             pass
+#
+#     class B:
+#         def __init__(self):
+#             self.a = 2
+#
+#         def main(self, b):
+#             pass
+#
+#     class C:
+#         def __init__(self):
+#             self.a = 2
+#
+#         @DecoClass
+#         def main(self, b):
+#             self.a = b
+#
+#     # dut1 = A()
+#     #
+#     # dut2 = B()
+#     # dut2.main = tmp(dut2.main)
+#     #
+#     #
+#     # # dut1.main(3)
+#     # # dut2.main(3)
+#     #
+#     dut3 = C()
+#     dut3.main(123)
+#
+#     class D:
+#         def __init__(self):
+#             self.a = 2
+#
+#         def main(self, b):
+#             self.a = b
+#
+#     dut = D()
+#     dut.main = DecoClass(dut.main)
+#     dut.main(321)
+#     pass
+#     pass

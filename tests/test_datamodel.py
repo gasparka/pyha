@@ -2,11 +2,10 @@ import textwrap
 
 import pytest
 
-from pyha.common.hwsim import HW, TypeNotConsistent
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
-    VariableNotConvertible
-
+    VariableNotConvertible, TypeNotConsistent
 
 
 def test_datamodel_new_instance_resets():

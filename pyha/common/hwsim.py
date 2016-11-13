@@ -5,6 +5,7 @@ import numpy as np
 from six import iteritems, with_metaclass
 
 from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import LocalsExtractor
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -150,7 +151,6 @@ class Meta(type):
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
-        # print('  Meta.__call__(cls=%s, args=%s, kwargs=%s)' % (cls, args, kwargs))
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
         # save the initial self values
@@ -159,20 +159,11 @@ class Meta(type):
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
 
-        # for method_str in dir(ret):
-        #     method = getattr(ret, method_str)
-        #     if method_str[:2] != '__' and callable(method):
-        #
-        #         new = method
-        #         # new = locals_hack(method, cls.__name__)
-        #
-        #         if method_str == 'main':
-        #             # new = forbid_assign_to_self(new, cls.__name__)
-        #             # new = inout_saver(new)
-        #             # new = self_type_consistent_checker(new, cls.__name__)
-        #             new = clock_tick(new)
-        #
-        #         setattr(ret, method_str, new)
+        for method_str in dir(ret):
+            method = getattr(ret, method_str)
+            if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
+                new = LocalsExtractor(method, cls.__name__)
+                setattr(ret, method_str, new)
 
         return ret
 

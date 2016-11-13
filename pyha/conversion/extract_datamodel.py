@@ -1,6 +1,6 @@
+import functools
 import sys
 from collections import OrderedDict
-from functools import wraps
 
 from pyha.common.sfix import Sfix
 
@@ -46,30 +46,59 @@ class TraceManager:
             sys.setprofile(TraceManager.tracer)
 
 
-def locals_hack(func, class_name):
-    """ Use system trace to get function locals after each call """
-    func.class_name = class_name
-    func.knows_locals = True
-    func.fdict = {'calls': 0, 'locals': {}, 'last_call_locals': {}}
+class LocalsExtractor:
+    def __init__(self, func, class_name):
+        self.class_name = class_name
+        self.func = func
+        self.calls = 0
+        self.knows_locals = True
+        self.locals = {}
 
-    @wraps(func)
-    def locals_hack_wrap(*args, **kwargs):
+    def __call__(self, *args, **kwargs):
         TraceManager.set_profile()
-        res = func(*args, **kwargs)
+        res = self.func(*args, **kwargs)
         TraceManager.remove_profile()
 
-        func.fdict['calls'] += 1
-        TraceManager.last_call_locals.pop('self')
+        self.calls += 1
+        # TraceManager.last_call_locals.pop('self')
         from pyha.common.hwsim import dict_types_consistent_check
-        dict_types_consistent_check(class_name, func.__name__, TraceManager.last_call_locals, func.fdict['locals'])
+        dict_types_consistent_check(self.class_name, self.func.__name__, TraceManager.last_call_locals, self.locals)
 
-        func.fdict['locals'].update(TraceManager.last_call_locals)
+        self.locals.update(TraceManager.last_call_locals)
 
         # in case nested call, restore the tracer function
         TraceManager.restore_profile()
         return res
 
-    return locals_hack_wrap
+    def __get__(self, obj, objtype):
+        """Support instance methods."""
+        return functools.partial(self.__call__, obj)
+
+
+# def locals_hack(func, class_name):
+#     """ Use system trace to get function locals after each call """
+#     func.class_name = class_name
+#     func.knows_locals = True
+#     func.fdict = {'calls': 0, 'locals': {}, 'last_call_locals': {}}
+#
+#     @wraps(func)
+#     def locals_hack_wrap(*args, **kwargs):
+#         TraceManager.set_profile()
+#         res = func(*args, **kwargs)
+#         TraceManager.remove_profile()
+#
+#         func.fdict['calls'] += 1
+#         TraceManager.last_call_locals.pop('self')
+#         from pyha.common.hwsim import dict_types_consistent_check
+#         dict_types_consistent_check(class_name, func.__name__, TraceManager.last_call_locals, func.fdict['locals'])
+#
+#         func.fdict['locals'].update(TraceManager.last_call_locals)
+#
+#         # in case nested call, restore the tracer function
+#         TraceManager.restore_profile()
+#         return res
+#
+#     return locals_hack_wrap
 
 
 def is_convertible(obj):
