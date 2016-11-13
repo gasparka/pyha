@@ -1,10 +1,11 @@
 from copy import deepcopy
 from functools import wraps
 
-from pyha.common.sfix import Sfix
-from pyha.conversion.extract_datamodel import locals_hack
-from pyha.conversion.top_generator import inout_saver
+import numpy as np
 from six import iteritems, with_metaclass
+
+from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import LocalsExtractor
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -59,6 +60,9 @@ def clock_tick(func):
         now = args[0].__dict__
         next = args[0].__dict__['next'].__dict__
 
+        # now = func.func.__self__.__dict__
+        # next = func.func.__self__.__dict__['next'].__dict__
+
         now.update(deepish_copy(next))
 
         ret = func(*args, **kwargs)
@@ -69,7 +73,7 @@ def clock_tick(func):
 
 
 def forbid_assign_to_self(func, class_name):
-    """ In Hapy user should only assign to self.next.X, any assign to
+    """ User should only assign to self.next.X, any assign to
         'self.X' is a bug and this decorator tests for that """
 
     @wraps(func)
@@ -78,7 +82,6 @@ def forbid_assign_to_self(func, class_name):
         res = func(*args, **kwargs)
 
         for key, value in args[0].__dict__.items():
-            import numpy as np
             if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
                 continue
 
@@ -109,7 +112,7 @@ def dict_types_consistent_check(class_name, function_name, new, old):
 
 
 def self_type_consistent_checker(func, class_name):
-    """ After each __call__, check that 'self' has consistent types(only single type over time)
+    """ After each main, check that 'self' has consistent types(only single type over time)
      This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
     """
     @wraps(func)
@@ -135,25 +138,22 @@ class Meta(type):
         # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
 
         # TODO: some hook to enable this for conversion only
-        # add profiler hack to access local variables of functions
-        for attr in attrs:
-            if callable(attrs[attr]):
-                attrs[attr] = locals_hack(attrs[attr], name)
+        # for attr in attrs:
+        #     if callable(attrs[attr]):
+        #         attrs[attr] = locals_hack(attrs[attr], name)
 
-        if '__call__' in attrs:
-            attrs['__call__'] = forbid_assign_to_self(attrs['__call__'], name)
-            attrs['__call__'] = inout_saver(attrs['__call__'])  # TODO: this should be only enabled on conversion
-            attrs['__call__'] = self_type_consistent_checker(attrs['__call__'], name)
-            # decorate the __call__ function with clock_tick
-            attrs['__call__'] = clock_tick(attrs['__call__'])
-        else:
-            pass
+        # if 'main' in attrs:
+        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
+        #     # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
+        #     attrs['main'] = clock_tick(attrs['main'])
+        # else:
+        #     pass
         ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)
         return ret
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
-        # print('  Meta.__call__(cls=%s, args=%s, kwargs=%s)' % (cls, args, kwargs))
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
         # save the initial self values
@@ -161,6 +161,20 @@ class Meta(type):
 
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
+
+        for method_str in dir(ret):
+            method = getattr(ret, method_str)
+            if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
+                new = LocalsExtractor(method, cls.__name__)
+
+                if 'main' == method_str:
+                    # new = forbid_assign_to_self(new, cls.__name__)
+                    # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
+                    # new = self_type_consistent_checker(new, cls.__name__)
+                    new = clock_tick(new)
+
+                setattr(ret, method_str, new)
+
         return ret
 
 

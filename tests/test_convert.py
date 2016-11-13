@@ -7,21 +7,6 @@ from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 from redbaron import RedBaron
 
 
-@pytest.fixture
-def dut():
-    class Dummy(HW):
-        def __call__(self, a):
-            return a
-
-    o = Dummy()
-    # train object
-    o(1)
-    o(2)
-    return Conversion(o)
-
-
-def test_lol(dut):
-    pass
 
 
 @pytest.fixture
@@ -1022,11 +1007,11 @@ def test_for_complex(converter):
 def test_class_call_modifications(converter):
     code = textwrap.dedent("""\
             class Register(HW):
-                def __call__(self):
+                def main(self):
                     pass""")
 
     expect = textwrap.dedent("""\
-        procedure \\__call__\\(self_reg:inout register_t) is
+        procedure main(self_reg:inout register_t) is
             variable self: self_t;
         begin
             make_self(self_reg, self);

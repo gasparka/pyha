@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import inout_saver, TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
@@ -11,18 +12,18 @@ def basic_obj(request):
     if request.param_index == 0:
         class Register:
             @inout_saver
-            def __call__(self, a, b, c):
+            def main(self, a, b, c):
                 return a * 5, True, Sfix(0.0, 5, -8)
     else:
         # automatic decorators
         class Register(HW):
-            def __call__(self, a, b, c):
+            def main(self, a, b, c):
                 return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
-    dut(2, Sfix(1.0, 2, -17), False)
-    dut(-57, Sfix(1.0, 2, -17), True)
-    dut(-57, Sfix(1.0, 2, -17), c=True)
+    dut.main(2, Sfix(1.0, 2, -17), False)
+    dut.main(-57, Sfix(1.0, 2, -17), True)
+    dut.main(-57, Sfix(1.0, 2, -17), c=True)
     return dut
 
 
@@ -184,7 +185,7 @@ def test_full(basic_obj, tmpdir):
                             var_in2 := True when in2 = '1' else False;
 
                             --call the main entry
-                            \\Register\\.\\__call__\\(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+                            \\Register\\.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -207,12 +208,12 @@ def test_full(basic_obj, tmpdir):
 def simple_obj():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     dut = Simple()
-    dut(2)
-    dut(2)
+    dut.main(2)
+    dut.main(2)
     return dut
 
 
@@ -273,7 +274,7 @@ def test_simple_full(simple_obj):
                             var_in0 := to_integer(signed(in0));
 
                             --call the main entry
-                            Simple.\\__call__\\(self, var_in0, ret_0=>var_out0);
+                            Simple.main(self, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -293,12 +294,12 @@ def test_simple_full(simple_obj):
 def test_no_inputs():
     class Simple:
         @inout_saver
-        def __call__(self):
+        def main(self):
             return 1
 
     dut = Simple()
-    dut()
-    dut()
+    dut.main()
+    dut.main()
 
     with pytest.raises(NoInputsError):
         TopGenerator(dut)
@@ -307,12 +308,12 @@ def test_no_inputs():
 def test_no_outputs():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             pass
 
     dut = Simple()
-    dut(1)
-    dut(2)
+    dut.main(1)
+    dut.main(2)
 
     with pytest.raises(NoOutputsError):
         TopGenerator(dut)
@@ -321,12 +322,12 @@ def test_no_outputs():
 def test_no_sim():
     class Simple:
         @inout_saver
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     # only trains 1 time, must be > 1
     dut = Simple()
-    dut(2)
+    dut.main(2)
 
     with pytest.raises(NotTrainedError):
         TopGenerator(dut)
@@ -335,32 +336,32 @@ def test_no_sim():
 def test_decorator():
     class A:
         @inout_saver
-        def __call__(self, a, b, c):
+        def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()
-    dut(2, Sfix(1.0), False)
-    assert type(dut.__call__._last_call['args'][1]) == int
-    assert type(dut.__call__._last_call['args'][2]) == Sfix
-    assert type(dut.__call__._last_call['args'][3]) == bool
+    dut.main(2, Sfix(1.0), False)
+    assert type(dut.main._last_call['args'][1]) == int
+    assert type(dut.main._last_call['args'][2]) == Sfix
+    assert type(dut.main._last_call['args'][3]) == bool
 
-    assert type(dut.__call__._last_call['return'][0]) == int
-    assert type(dut.__call__._last_call['return'][1]) == bool
-    assert type(dut.__call__._last_call['return'][2]) == Sfix
+    assert type(dut.main._last_call['return'][0]) == int
+    assert type(dut.main._last_call['return'][1]) == bool
+    assert type(dut.main._last_call['return'][2]) == Sfix
 
 
 def test_decorator_kwargs():
     class A:
         @inout_saver
-        def __call__(self, a, b, c):
+        def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()
-    dut(b=2, c=Sfix(1.0), a=False)
-    assert type(dut.__call__._last_call['kwargs']['b']) == int
-    assert type(dut.__call__._last_call['kwargs']['c']) == Sfix
-    assert type(dut.__call__._last_call['kwargs']['a']) == bool
+    dut.main(b=2, c=Sfix(1.0), a=False)
+    assert type(dut.main._last_call['kwargs']['b']) == int
+    assert type(dut.main._last_call['kwargs']['c']) == Sfix
+    assert type(dut.main._last_call['kwargs']['a']) == bool
 
-    assert type(dut.__call__._last_call['return'][0]) == int
-    assert type(dut.__call__._last_call['return'][1]) == bool
-    assert type(dut.__call__._last_call['return'][2]) == Sfix
+    assert type(dut.main._last_call['return'][0]) == int
+    assert type(dut.main._last_call['return'][1]) == bool
+    assert type(dut.main._last_call['return'][2]) == Sfix

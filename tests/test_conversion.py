@@ -1,7 +1,8 @@
 from pathlib import Path
 
-import pyha
 import pytest
+
+import pyha
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import Conversion
 
@@ -9,13 +10,13 @@ from pyha.conversion.conversion import Conversion
 @pytest.fixture
 def dut():
     class Dummy(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     o = Dummy()
     # train object
-    o(1)
-    o(2)
+    o.main(1)
+    o.main(2)
     return Conversion(o)
 
 
@@ -52,16 +53,16 @@ def test_outputs(dut):
 ##################################
 def test_get_objects_rednode_twonodes():
     class Dummy2(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     class Dummy2(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     o = Dummy2()
-    o(1)
-    o(2)
+    o.main(1)
+    o.main(2)
 
     with pytest.raises(Exception):
         d = Conversion(o)

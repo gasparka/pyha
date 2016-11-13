@@ -104,7 +104,7 @@ def test_type_conversions_multi():
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_int(request):
     class Dummy:
-        def __call__(self, in_int):
+        def main(self, in_int):
             return [x * 2 for x in in_int]
             # return in_int * 2
 
@@ -112,7 +112,7 @@ def comb_int(request):
         def __init__(self):
             self.dummy = 0
 
-        def __call__(self, in_int):
+        def main(self, in_int):
             ret = in_int * 2
             return ret
 
@@ -149,14 +149,14 @@ def test_comb_int_single(comb_int):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_bool(request):
     class Dummy:
-        def __call__(self, in_int):
+        def main(self, in_int):
             return [not x for x in in_int]
 
     class Bool_HW(HW):
         def __init__(self):
             self.dummy = 0
 
-        def __call__(self, in_int):
+        def main(self, in_int):
             ret = not in_int
             return ret
 
@@ -192,14 +192,14 @@ def test_comb_bool_single(comb_bool):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_sfix(request):
     class Dummy:
-        def __call__(self, in_int):
+        def main(self, in_int):
             return [x - 1.0 for x in in_int]
 
     class Sfix_HW(HW):
         def __init__(self):
             self.dummy = 0
 
-        def __call__(self, in_int):
+        def main(self, in_int):
             ret = in_int - 1.0
             return ret
 
@@ -235,7 +235,7 @@ def test_comb_sfix_single(comb_sfix):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_multi(request):
     class Dummy:
-        def __call__(self, in_int, in_bool, in_sfix):
+        def main(self, in_int, in_bool, in_sfix):
             return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
             # return [not x for x in in_int]
             # return [x - 1.0 for x in in_int]
@@ -244,7 +244,7 @@ def comb_multi(request):
         def __init__(self):
             self.dummy = 0
 
-        def __call__(self, in_int, in_bool, in_sfix):
+        def main(self, in_int, in_bool, in_sfix):
             ret_int = in_int * 2
             ret_bool = not in_bool
             ret_sfix = in_sfix - 1.0
@@ -288,7 +288,7 @@ def test_comb_multi_single(comb_multi):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_single(request):
     class Dummy:
-        def __call__(self, in_sfix):
+        def main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
 
     class SeqSingle_HW(HW):
@@ -296,7 +296,7 @@ def sequential_single(request):
             self.get_delay()
             self.sfix_reg = Sfix(0.0)
 
-        def __call__(self, in_sfix):
+        def main(self, in_sfix):
             self.next.sfix_reg = in_sfix - 1.0
             return self.sfix_reg
 
@@ -317,7 +317,7 @@ def test_sequential_single(sequential_single):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_single_delay2(request):
     class Dummy:
-        def __call__(self, in_sfix):
+        def main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
 
     class SeqSingle2_HW(HW):
@@ -326,7 +326,7 @@ def sequential_single_delay2(request):
             self.sfix_reg = Sfix(0.0)
             self.sfix_reg2 = Sfix(0.0)
 
-        def __call__(self, in_sfix):
+        def main(self, in_sfix):
             self.next.sfix_reg = in_sfix - 1.0
             self.next.sfix_reg2 = self.sfix_reg
             return self.sfix_reg2
@@ -348,7 +348,7 @@ def test_sequential_single_delay2(sequential_single_delay2):
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_multi(request):
     class Dummy:
-        def __call__(self, in_int, in_bool, in_sfix):
+        def main(self, in_int, in_bool, in_sfix):
             return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
 
     class MultiSeq_HW(HW):
@@ -358,7 +358,7 @@ def sequential_multi(request):
             self.bool_reg = False
             self.sfix_reg = Sfix(0.0)
 
-        def __call__(self, in_int, in_bool, in_sfix):
+        def main(self, in_int, in_bool, in_sfix):
             self.next.int_reg = in_int * 2
             self.next.bool_reg = not in_bool
             self.next.sfix_reg = in_sfix - 1.0

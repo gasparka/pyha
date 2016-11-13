@@ -1,11 +1,12 @@
 import textwrap
 
 import pytest
+from redbaron import RedBaron
+
 from pyha.common.sfix import Sfix
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
-from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -706,7 +707,7 @@ def test_class_datamodel_reset_prototype(converter):
 def test_class_full(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
-                def __call__(self):
+                def main(self):
                     self.a = 0""")
 
     datamodel = DataModel(self_data={
@@ -734,7 +735,7 @@ def test_class_full(converter):
             end record;
 
             procedure reset(self_reg: inout register_t);
-            procedure \\__call__\\(self_reg:inout register_t);
+            procedure main(self_reg:inout register_t);
         end package;
 
         package body Tc is
@@ -755,7 +756,7 @@ def test_class_full(converter):
                 self.\\next\\ := self_reg;
             end procedure;
 
-            procedure \\__call__\\(self_reg:inout register_t) is
+            procedure main(self_reg:inout register_t) is
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
@@ -771,7 +772,7 @@ def test_class_full(converter):
 def test_class_full_reserved_name(converter):
     code = textwrap.dedent("""\
             class Register():
-                def __call__(self):
+                def main(self):
                     pass""")
 
     datamodel = DataModel(self_data={
@@ -788,7 +789,7 @@ def test_class_full_reserved_name(converter):
             end record;
 
             procedure reset(self_reg: inout register_t);
-            procedure \\__call__\\(self_reg:inout register_t);
+            procedure main(self_reg:inout register_t);
         end package;
 
         package body \\Register\\ is
@@ -803,7 +804,7 @@ def test_class_full_reserved_name(converter):
                 self.\\next\\ := self_reg;
             end procedure;
 
-            procedure \\__call__\\(self_reg:inout register_t) is
+            procedure main(self_reg:inout register_t) is
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
@@ -818,7 +819,7 @@ def test_class_full_reserved_name(converter):
 def test_class_full_endl_bug(converter):
     code = textwrap.dedent("""\
             class Register():
-                def __call__(self):
+                def main(self):
                     pass
 
 
@@ -838,7 +839,7 @@ def test_class_full_endl_bug(converter):
                 end record;
 
                 procedure reset(self_reg: inout register_t);
-                procedure \\__call__\\(self_reg:inout register_t);
+                procedure main(self_reg:inout register_t);
             end package;
 
             package body \\Register\\ is
@@ -853,7 +854,7 @@ def test_class_full_endl_bug(converter):
                     self.\\next\\ := self_reg;
                 end procedure;
 
-                procedure \\__call__\\(self_reg:inout register_t) is
+                procedure main(self_reg:inout register_t) is
                     variable self: self_t;
                 begin
                     make_self(self_reg, self);
@@ -871,7 +872,7 @@ def test_class_full_get_delay(converter):
                 def __init__(self, init_value=0.):
                     self.a = Sfix(init_value)
 
-                def __call__(self, new_value):
+                def main(self, new_value):
                     self.next.a = new_value
                     return self.a
 
@@ -881,7 +882,7 @@ def test_class_full_get_delay(converter):
 
     datamodel = DataModel(
         self_data={'a': Sfix(0.0, 0, -27)},
-        locals={'__call__': {'new_value': Sfix(0.0, 0, -27)}, 'get_delay': {}})
+        locals={'main': {'new_value': Sfix(0.0, 0, -27)}, 'get_delay': {}})
 
     expect = textwrap.dedent("""\
             package \\Register\\ is
@@ -894,7 +895,7 @@ def test_class_full_get_delay(converter):
                 end record;
 
                 procedure reset(self_reg: inout register_t);
-                procedure \__call__\(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27));
+                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27));
                 procedure get_delay(self: self_t; ret_0:out integer);
             end package;
 
@@ -910,7 +911,7 @@ def test_class_full_get_delay(converter):
                     self.\\next\\ := self_reg;
                 end procedure;
 
-                procedure \__call__\(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27)) is
+                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27)) is
                     variable self: self_t;
                 begin
                     make_self(self_reg, self);

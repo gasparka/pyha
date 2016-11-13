@@ -19,7 +19,7 @@ class NoOutputsError(Exception):
 
 
 def inout_saver(func):
-    """ This decorator is used on __call__ function and saves the last args,kwargs and return
+    """ This decorator is used on main function and saves the last args,kwargs and return
     values. Used to generate toplevel VHDL and Verilog files."""
     func._last_call = {'calls': 0}
 
@@ -42,27 +42,27 @@ class TopGenerator:
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        if self.simulated_object.__call__._last_call['calls'] <= 1:
+        if self.simulated_object.main._last_call['calls'] <= 1:
             raise NotTrainedError('Object must be trained > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
-            raise NoInputsError('Model has no inputs (arguments to __call__).')
+            raise NoInputsError('Model has no inputs (arguments to main).')
 
         if len(self.get_object_return()) == 0:
-            raise NoOutputsError('Model has no outputs (__call__ returns).')
+            raise NoOutputsError('Model has no outputs (main returns).')
 
     def get_object_args(self) -> list:
         # skip first arg -> it is self
-        return list(self.simulated_object.__call__._last_call['args'][1:])
+        return list(self.simulated_object.main._last_call['args'][1:])
 
     def get_object_kwargs(self) -> list:
-        return self.simulated_object.__call__._last_call['kwargs'].items()
+        return self.simulated_object.main._last_call['kwargs'].items()
 
     def get_object_inputs(self) -> list:
         return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
 
     def get_object_return(self) -> list:
-        rets = self.simulated_object.__call__._last_call['return']
+        rets = self.simulated_object.main._last_call['return']
         if isinstance(rets, tuple):
             return list(rets)
         elif rets is None:
@@ -188,7 +188,7 @@ class TopGenerator:
                 {INPUT_TYPE_CONVERSIONS}
 
                         --call the main entry
-                        {DUT_NAME}.\\__call__\\(self, {CALL_ARGUMENTS});
+                        {DUT_NAME}.main(self, {CALL_ARGUMENTS});
 
                         --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}

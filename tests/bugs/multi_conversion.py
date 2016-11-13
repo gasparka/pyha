@@ -15,7 +15,7 @@ from redbaron import RedBaron
 @pytest.fixture
 def dut():
     class Dummy(HW):
-        def __call__(self, a):
+        def main(self, a):
             return a
 
     o = Dummy()
