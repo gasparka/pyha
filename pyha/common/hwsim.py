@@ -1,5 +1,4 @@
 from copy import deepcopy
-from functools import wraps
 
 import numpy as np
 from six import iteritems, with_metaclass
@@ -54,38 +53,70 @@ def deepish_copy(org):
 class PyhaFunc:
     def __init__(self, func):
         self.class_name = func.__self__.__class__.__name__
+        self.function_name = func.__name__
         self.func = func
         self.calls = 0
         self.locals = {}
 
-    def __call__(self, *args, **kwargs):
-        real_self = self.func.__self__
+        # used for top_generator
+        self.last_args = {}
+        self.last_kwargs = {}
+        self.last_return = {}
 
-        # uptade registers from next
-        now = real_self.__dict__
-        next = real_self.__dict__['next'].__dict__
-        old_next = deepish_copy(next)
-        now.update(old_next)
+    def dict_types_consistent_check(self, new, old):
+        """ Check 'old' dict against 'new' dict for types, if not consistent raise """
+        for key, value in new.items():
+            if key in old:
+                old_value = old[key]
+                if isinstance(value, Sfix):
+                    if value.left != old_value.left or value.right != old_value.right:
+                        if old_value.left == 0 and old_value.right == 0:
+                            # sfix lazy init
+                            continue
+                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                elif type(value) != type(old_value):
+                    raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                elif isinstance(value, list):
+                    if len(old_value) != len(value):
+                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
 
-        # protect assign to self
-        old = deepish_copy(now)
+    def forbid_assign_to_self(self, new, old):
+        """ User should only assign to self.next.X, any assign to
+            'self.X' is a bug and this decorator tests for that """
 
-        # CALL IS HERE!
-        ret = self.func(*args, **kwargs)
-
-        # check if self was assigned
-        for key, value in now.items():
+        for key, value in new.items():
             if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
                 continue
 
             if value != old[key]:
                 raise AssignToSelf(self.class_name, key)
 
-        #
-        dict_types_consistent_check(self.class_name, self.func.__name__, real_self.__dict__['next'].__dict__, old_next)
+    def __call__(self, *args, **kwargs):
+        self.last_args = args
+        self.last_kwargs = kwargs
+        real_self = self.func.__self__
 
+        # update registers from next
+        now = real_self.__dict__
+        next = real_self.__dict__['next'].__dict__
+        old_next = deepish_copy(next)
 
-        return ret
+        now.update(old_next)
+        # protect assign to self
+        old_self = deepish_copy(now)
+
+        # CALL IS HERE!
+        ret = self.func(*args, **kwargs)
+        self.calls += 1
+
+        self.last_return = ret
+
+        self.forbid_assign_to_self(real_self.__dict__, old_self)
+
+        """ After each main, check that 'self' has consistent types(only single type over time)
+         This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
+        """
+        self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
         # TraceManager.set_profile()
         # res = self.func(*args, **kwargs)
         # TraceManager.remove_profile()
@@ -101,86 +132,7 @@ class PyhaFunc:
         # TraceManager.restore_profile()
         # return res
 
-        # def __get__(self, obj, objtype):
-        #     """Support instance methods."""
-        #     return functools.partial(self.__call__, obj)
-
-
-# def clock_tick(func):
-#     """ Update register values from "next" """
-#
-#     @wraps(func)
-#     def clock_tick_wrap(*args, **kwargs):
-#         now = args[0].__dict__
-#         next = args[0].__dict__['next'].__dict__
-#
-#         # now = func.func.__self__.__dict__
-#         # next = func.func.__self__.__dict__['next'].__dict__
-#
-#         now.update(deepish_copy(next))
-#
-#         ret = func(*args, **kwargs)
-#         return ret
-#
-#     clock_tick_wrap.__wrapped__ = clock_tick
-#     return clock_tick_wrap
-
-
-def forbid_assign_to_self(func, class_name):
-    """ User should only assign to self.next.X, any assign to
-        'self.X' is a bug and this decorator tests for that """
-
-    @wraps(func)
-    def forbid_assign_to_self_wrap(*args, **kwargs):
-        old = deepish_copy(args[0].__dict__)
-        res = func(*args, **kwargs)
-
-        for key, value in args[0].__dict__.items():
-            if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
-                continue
-
-            if value != old[key]:
-                raise AssignToSelf(class_name, key)
-
-        return res
-
-    return forbid_assign_to_self_wrap
-
-
-def dict_types_consistent_check(class_name, function_name, new, old):
-    """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-    for key, value in new.items():
-        if key in old:
-            old_value = old[key]
-            if isinstance(value, Sfix):
-                if value.left != old_value.left or value.right != old_value.right:
-                    if old_value.left == 0 and old_value.right == 0:
-                        # sfix lazy init
-                        continue
-                    raise TypeNotConsistent(class_name, function_name, key, old, new)
-            elif type(value) != type(old_value):
-                raise TypeNotConsistent(class_name, function_name, key, old, new)
-            elif isinstance(value, list):
-                if len(old_value) != len(value):
-                    raise TypeNotConsistent(class_name, function_name, key, old, new)
-
-
-def self_type_consistent_checker(func, class_name):
-    """ After each main, check that 'self' has consistent types(only single type over time)
-     This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
-    """
-    @wraps(func)
-    def self_type_consistent_checker_wrap(*args, **kwargs):
-        nxt = args[0].__dict__['next'].__dict__
-        old = deepish_copy(nxt)
-        res = func(*args, **kwargs)
-        new = nxt
-
-        dict_types_consistent_check(class_name, func.__name__, new, old)
-
-        return res
-
-    return self_type_consistent_checker_wrap
+        return ret
 
 
 class Meta(type):

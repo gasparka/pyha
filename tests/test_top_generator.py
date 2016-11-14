@@ -4,21 +4,14 @@ import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.conversion.top_generator import inout_saver, TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
+from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
 
 
-@pytest.fixture(params=['STANDALONE', 'AUTO'])
-def basic_obj(request):
-    if request.param_index == 0:
-        class Register:
-            @inout_saver
-            def main(self, a, b, c):
-                return a * 5, True, Sfix(0.0, 5, -8)
-    else:
-        # automatic decorators
-        class Register(HW):
-            def main(self, a, b, c):
-                return a * 5, True, Sfix(0.0, 5, -8)
+@pytest.fixture
+def basic_obj():
+    class Register(HW):
+        def main(self, a, b, c):
+            return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
     dut.main(2, Sfix(1.0, 2, -17), False)
@@ -206,8 +199,7 @@ def test_full(basic_obj, tmpdir):
 
 @pytest.fixture
 def simple_obj():
-    class Simple:
-        @inout_saver
+    class Simple(HW):
         def main(self, a):
             return a
 
@@ -292,8 +284,7 @@ def test_simple_full(simple_obj):
 ##################################
 
 def test_no_inputs():
-    class Simple:
-        @inout_saver
+    class Simple(HW):
         def main(self):
             return 1
 
@@ -306,8 +297,7 @@ def test_no_inputs():
 
 
 def test_no_outputs():
-    class Simple:
-        @inout_saver
+    class Simple(HW):
         def main(self, a):
             pass
 
@@ -320,8 +310,7 @@ def test_no_outputs():
 
 
 def test_no_sim():
-    class Simple:
-        @inout_saver
+    class Simple(HW):
         def main(self, a):
             return a
 
@@ -334,34 +323,32 @@ def test_no_sim():
 
 
 def test_decorator():
-    class A:
-        @inout_saver
+    class A(HW):
         def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()
     dut.main(2, Sfix(1.0), False)
-    assert type(dut.main._last_call['args'][1]) == int
-    assert type(dut.main._last_call['args'][2]) == Sfix
-    assert type(dut.main._last_call['args'][3]) == bool
+    assert type(dut.main.last_args[0]) == int
+    assert type(dut.main.last_args[1]) == Sfix
+    assert type(dut.main.last_args[2]) == bool
 
-    assert type(dut.main._last_call['return'][0]) == int
-    assert type(dut.main._last_call['return'][1]) == bool
-    assert type(dut.main._last_call['return'][2]) == Sfix
+    assert type(dut.main.last_return[0]) == int
+    assert type(dut.main.last_return[1]) == bool
+    assert type(dut.main.last_return[2]) == Sfix
 
 
 def test_decorator_kwargs():
-    class A:
-        @inout_saver
+    class A(HW):
         def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
     dut = A()
     dut.main(b=2, c=Sfix(1.0), a=False)
-    assert type(dut.main._last_call['kwargs']['b']) == int
-    assert type(dut.main._last_call['kwargs']['c']) == Sfix
-    assert type(dut.main._last_call['kwargs']['a']) == bool
+    assert type(dut.main.last_kwargs['b']) == int
+    assert type(dut.main.last_kwargs['c']) == Sfix
+    assert type(dut.main.last_kwargs['a']) == bool
 
-    assert type(dut.main._last_call['return'][0]) == int
-    assert type(dut.main._last_call['return'][1]) == bool
-    assert type(dut.main._last_call['return'][2]) == Sfix
+    assert type(dut.main.last_return[0]) == int
+    assert type(dut.main.last_return[1]) == bool
+    assert type(dut.main.last_return[2]) == Sfix
