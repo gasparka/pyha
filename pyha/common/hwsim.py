@@ -5,7 +5,6 @@ import numpy as np
 from six import iteritems, with_metaclass
 
 from pyha.common.sfix import Sfix
-from pyha.conversion.extract_datamodel import LocalsExtractor
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -52,24 +51,79 @@ def deepish_copy(org):
     return out
 
 
-def clock_tick(func):
-    """ Update register values from "next" """
+class PyhaFunc:
+    def __init__(self, func):
+        self.class_name = func.__self__.__class__.__name__
+        self.func = func
+        self.calls = 0
+        self.locals = {}
 
-    @wraps(func)
-    def clock_tick_wrap(*args, **kwargs):
-        now = args[0].__dict__
-        next = args[0].__dict__['next'].__dict__
+    def __call__(self, *args, **kwargs):
+        real_self = self.func.__self__
 
-        # now = func.func.__self__.__dict__
-        # next = func.func.__self__.__dict__['next'].__dict__
+        # uptade registers from next
+        now = real_self.__dict__
+        next = real_self.__dict__['next'].__dict__
+        old_next = deepish_copy(next)
+        now.update(old_next)
 
-        now.update(deepish_copy(next))
+        # protect assign to self
+        old = deepish_copy(now)
 
-        ret = func(*args, **kwargs)
+        # CALL IS HERE!
+        ret = self.func(*args, **kwargs)
+
+        # check if self was assigned
+        for key, value in now.items():
+            if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
+                continue
+
+            if value != old[key]:
+                raise AssignToSelf(self.class_name, key)
+
+        #
+        dict_types_consistent_check(self.class_name, self.func.__name__, real_self.__dict__['next'].__dict__, old_next)
+
+
         return ret
+        # TraceManager.set_profile()
+        # res = self.func(*args, **kwargs)
+        # TraceManager.remove_profile()
+        #
+        # self.calls += 1
+        # # TraceManager.last_call_locals.pop('self')
+        # from pyha.common.hwsim import dict_types_consistent_check
+        # dict_types_consistent_check(self.class_name, self.func.__name__, TraceManager.last_call_locals, self.locals)
+        #
+        # self.locals.update(TraceManager.last_call_locals)
+        #
+        # # in case nested call, restore the tracer function
+        # TraceManager.restore_profile()
+        # return res
 
-    clock_tick_wrap.__wrapped__ = clock_tick
-    return clock_tick_wrap
+        # def __get__(self, obj, objtype):
+        #     """Support instance methods."""
+        #     return functools.partial(self.__call__, obj)
+
+
+# def clock_tick(func):
+#     """ Update register values from "next" """
+#
+#     @wraps(func)
+#     def clock_tick_wrap(*args, **kwargs):
+#         now = args[0].__dict__
+#         next = args[0].__dict__['next'].__dict__
+#
+#         # now = func.func.__self__.__dict__
+#         # next = func.func.__self__.__dict__['next'].__dict__
+#
+#         now.update(deepish_copy(next))
+#
+#         ret = func(*args, **kwargs)
+#         return ret
+#
+#     clock_tick_wrap.__wrapped__ = clock_tick
+#     return clock_tick_wrap
 
 
 def forbid_assign_to_self(func, class_name):
@@ -134,24 +188,6 @@ class Meta(type):
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
 
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
-
-        # TODO: some hook to enable this for conversion only
-        # for attr in attrs:
-        #     if callable(attrs[attr]):
-        #         attrs[attr] = locals_hack(attrs[attr], name)
-
-        # if 'main' in attrs:
-        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
-        #     # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
-        #     attrs['main'] = clock_tick(attrs['main'])
-        # else:
-        #     pass
-        ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)
-        return ret
-
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
@@ -162,17 +198,11 @@ class Meta(type):
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
 
+        # decorate all methods
         for method_str in dir(ret):
             method = getattr(ret, method_str)
             if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
-                new = LocalsExtractor(method, cls.__name__)
-
-                if 'main' == method_str:
-                    # new = forbid_assign_to_self(new, cls.__name__)
-                    # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-                    # new = self_type_consistent_checker(new, cls.__name__)
-                    new = clock_tick(new)
-
+                new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
         return ret
