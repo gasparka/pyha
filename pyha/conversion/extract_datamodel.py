@@ -1,7 +1,6 @@
-import functools
-import sys
 from collections import OrderedDict
 
+from pyha.common.hwsim import PyhaFunc
 from pyha.common.sfix import Sfix
 
 
@@ -18,61 +17,61 @@ class VariableNotConvertible(Exception):
         super().__init__(message)
 
 
-class TraceManager:
-    """ Enables nested functions calls, thanks to ref counting """
-    last_call_locals = {}
-    refcount = 0
+# class TraceManager:
+#     """ Enables nested functions calls, thanks to ref counting """
+#     last_call_locals = {}
+#     refcount = 0
+#
+#     @classmethod
+#     def tracer(cls, frame, event, arg):
+#         # Note: this runs for ALL returns, only the LAST frame is valid info
+#         if event == 'return':
+#             cls.last_call_locals = frame.f_locals.copy()
+#
+#     @classmethod
+#     def set_profile(cls):
+#         cls.refcount += 1
+#         sys.setprofile(TraceManager.tracer)
+#
+#     @classmethod
+#     def remove_profile(cls):
+#         cls.refcount -= 1
+#         assert cls.refcount >= 0
+#         sys.setprofile(None)
+#
+#     @classmethod
+#     def restore_profile(cls):
+#         if cls.refcount > 0:
+#             sys.setprofile(TraceManager.tracer)
 
-    @classmethod
-    def tracer(cls, frame, event, arg):
-        # Note: this runs for ALL returns, only the LAST frame is valid info
-        if event == 'return':
-            cls.last_call_locals = frame.f_locals.copy()
 
-    @classmethod
-    def set_profile(cls):
-        cls.refcount += 1
-        sys.setprofile(TraceManager.tracer)
-
-    @classmethod
-    def remove_profile(cls):
-        cls.refcount -= 1
-        assert cls.refcount >= 0
-        sys.setprofile(None)
-
-    @classmethod
-    def restore_profile(cls):
-        if cls.refcount > 0:
-            sys.setprofile(TraceManager.tracer)
-
-
-class LocalsExtractor:
-    def __init__(self, func, class_name):
-        self.class_name = class_name
-        self.func = func
-        self.calls = 0
-        self.knows_locals = True
-        self.locals = {}
-
-    def __call__(self, *args, **kwargs):
-        TraceManager.set_profile()
-        res = self.func(*args, **kwargs)
-        TraceManager.remove_profile()
-
-        self.calls += 1
-        # TraceManager.last_call_locals.pop('self')
-        from pyha.common.hwsim import dict_types_consistent_check
-        dict_types_consistent_check(self.class_name, self.func.__name__, TraceManager.last_call_locals, self.locals)
-
-        self.locals.update(TraceManager.last_call_locals)
-
-        # in case nested call, restore the tracer function
-        TraceManager.restore_profile()
-        return res
-
-    def __get__(self, obj, objtype):
-        """Support instance methods."""
-        return functools.partial(self.__call__, obj)
+# class LocalsExtractor:
+#     def __init__(self, func, class_name):
+#         self.class_name = class_name
+#         self.func = func
+#         self.calls = 0
+#         self.knows_locals = True
+#         self.locals = {}
+#
+#     def __call__(self, *args, **kwargs):
+#         TraceManager.set_profile()
+#         res = self.func(*args, **kwargs)
+#         TraceManager.remove_profile()
+#
+#         self.calls += 1
+#         # TraceManager.last_call_locals.pop('self')
+#         from pyha.common.hwsim import dict_types_consistent_check
+#         dict_types_consistent_check(self.class_name, self.func.__name__, TraceManager.last_call_locals, self.locals)
+#
+#         self.locals.update(TraceManager.last_call_locals)
+#
+#         # in case nested call, restore the tracer function
+#         TraceManager.restore_profile()
+#         return res
+#
+#     def __get__(self, obj, objtype):
+#         """Support instance methods."""
+#         return functools.partial(self.__call__, obj)
 
 
 # def locals_hack(func, class_name):
@@ -135,12 +134,12 @@ def extract_locals(obj):
     for method in dir(obj):
         if method == '__init__': continue
         call = getattr(obj, method)
-        if hasattr(call, 'knows_locals'):
+        # if hasattr(call, 'knows_locals'):
+        if isinstance(call, PyhaFunc):
             if call.calls == 0:
                 raise FunctionNotSimulated(class_name, call.func.__name__)
 
             for key, val in call.locals.items():
-                if key == 'self': continue
                 if not is_convertible(val):
                     raise VariableNotConvertible(class_name, call.func.__name__, key, val)
 

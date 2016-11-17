@@ -1,3 +1,4 @@
+import sys
 from copy import deepcopy
 
 import numpy as np
@@ -50,6 +51,33 @@ def deepish_copy(org):
     return out
 
 
+class TraceManager:
+    """ Enables nested functions calls, thanks to ref counting """
+    last_call_locals = {}
+    refcount = 0
+
+    @classmethod
+    def tracer(cls, frame, event, arg):
+        # Note: this runs for ALL returns, only the LAST frame is valid info
+        if event == 'return':
+            cls.last_call_locals = frame.f_locals.copy()
+
+    @classmethod
+    def set_profile(cls):
+        cls.refcount += 1
+        sys.setprofile(TraceManager.tracer)
+
+    @classmethod
+    def remove_profile(cls):
+        cls.refcount -= 1
+        assert cls.refcount >= 0
+        sys.setprofile(None)
+
+    @classmethod
+    def restore_profile(cls):
+        if cls.refcount > 0:
+            sys.setprofile(TraceManager.tracer)
+
 class PyhaFunc:
     def __init__(self, func):
         self.class_name = func.__self__.__class__.__name__
@@ -91,6 +119,20 @@ class PyhaFunc:
             if value != old[key]:
                 raise AssignToSelf(self.class_name, key)
 
+    def call_with_locals_discovery(self, *args, **kwargs):
+        TraceManager.set_profile()
+        res = self.func(*args, **kwargs)
+        TraceManager.remove_profile()
+
+        TraceManager.last_call_locals.pop('self')
+        self.dict_types_consistent_check(TraceManager.last_call_locals, self.locals)
+
+        self.locals.update(TraceManager.last_call_locals)
+
+        # in case nested call, restore the tracer function
+        TraceManager.restore_profile()
+        return res
+
     def __call__(self, *args, **kwargs):
         self.last_args = args
         self.last_kwargs = kwargs
@@ -106,7 +148,8 @@ class PyhaFunc:
         old_self = deepish_copy(now)
 
         # CALL IS HERE!
-        ret = self.func(*args, **kwargs)
+        ret = self.call_with_locals_discovery(*args, **kwargs)
+        # ret = self.func(*args, **kwargs)
         self.calls += 1
 
         self.last_return = ret
@@ -117,20 +160,6 @@ class PyhaFunc:
          This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
         """
         self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
-        # TraceManager.set_profile()
-        # res = self.func(*args, **kwargs)
-        # TraceManager.remove_profile()
-        #
-        # self.calls += 1
-        # # TraceManager.last_call_locals.pop('self')
-        # from pyha.common.hwsim import dict_types_consistent_check
-        # dict_types_consistent_check(self.class_name, self.func.__name__, TraceManager.last_call_locals, self.locals)
-        #
-        # self.locals.update(TraceManager.last_call_locals)
-        #
-        # # in case nested call, restore the tracer function
-        # TraceManager.restore_profile()
-        # return res
 
         return ret
 
