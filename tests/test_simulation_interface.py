@@ -48,9 +48,9 @@ def test_type_conversion():
         @type_conversions
         @in_out_transpose
         def dummy(self, *args):
-            return [self(*x) for x in args]
+            return [self.main(*x) for x in args]
 
-        def __call__(self, a):
+        def main(self, a):
             assert type(a) == Sfix
             return a
 
@@ -74,9 +74,9 @@ def test_type_conversions_multi():
         @type_conversions
         @in_out_transpose
         def dummy(self, *args):
-            return [self(*x) for x in args]
+            return [self.main(*x) for x in args]
 
-        def __call__(self, a, b, c):
+        def main(self, a, b, c):
             assert type(a) == int
             assert type(b) == bool
             assert type(c) == Sfix
@@ -122,14 +122,14 @@ def comb_int(request):
 def test_comb_int_list(comb_int):
     in_int = [1, 2, 3, 4, 5]
     expect = np.array([x * 2 for x in in_int])
-    ret = comb_int(in_int)
+    ret = comb_int.main(in_int)
 
     assert (ret == expect).all()
 
 
 def test_comb_int_numpy(comb_int):
     in_int = np.array([1, 2, 3, 4, 5])
-    ret = comb_int(in_int)
+    ret = comb_int.main(in_int)
 
     assert (ret == in_int * 2).all()
 
@@ -137,7 +137,7 @@ def test_comb_int_numpy(comb_int):
 def test_comb_int_single(comb_int):
     # fails if run separately! (not enough training)
     in_int = np.array([1])
-    ret = comb_int(in_int)
+    ret = comb_int.main(in_int)
 
     assert (ret == in_int * 2).all()
 
@@ -166,14 +166,14 @@ def comb_bool(request):
 def test_comb_bool_list(comb_bool):
     input = [True, False, False]
     expect = np.array([not x for x in input])
-    ret = comb_bool(input)
+    ret = comb_bool.main(input)
     assert (ret.astype(bool) == expect).all()
 
 
 def test_comb_bool_numpy(comb_bool):
     input = np.array([True, False, False])
     expect = np.array([not x for x in input])
-    ret = comb_bool(input)
+    ret = comb_bool.main(input)
     assert (ret.astype(bool) == expect).all()
 
 
@@ -181,7 +181,7 @@ def test_comb_bool_single(comb_bool):
     # fails if run separately! (not enough training)
     input = np.array([True])
     expect = np.array([not x for x in input])
-    ret = comb_bool(input)
+    ret = comb_bool.main(input)
     assert (ret.astype(bool) == expect).all()
 
 
@@ -209,14 +209,14 @@ def comb_sfix(request):
 def test_comb_sfix_list(comb_sfix):
     input = [0.25, 1, 1.5]
     expect = np.array([x - 1.0 for x in input])
-    ret = comb_sfix(input)
+    ret = comb_sfix.main(input)
     assert (ret == expect).all()
 
 
 def test_comb_sfix_numpy(comb_sfix):
     input = np.array([0.25, 1, 1.5])
     expect = np.array([x - 1.0 for x in input])
-    ret = comb_sfix(input)
+    ret = comb_sfix.main(input)
     assert (ret == expect).all()
 
 
@@ -224,7 +224,7 @@ def test_comb_sfix_single(comb_sfix):
     # fails if run separately! (not enough training)
     input = np.array([0.25])
     expect = np.array([x - 1.0 for x in input])
-    ret = comb_sfix(input)
+    ret = comb_sfix.main(input)
     assert (ret == expect).all()
 
 
@@ -257,7 +257,7 @@ def comb_multi(request):
 def test_comb_multi_list(comb_multi):
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = comb_multi(*input)
+    ret = comb_multi.main(*input)
     assert (ret[0] == expect[0]).all()
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()
@@ -266,7 +266,7 @@ def test_comb_multi_list(comb_multi):
 def test_comb_multi_numpy(comb_multi):
     input = np.array([[1, 2, 3], [True, False, False], [0.25, 1, 1.5]])
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = comb_multi(*input)
+    ret = comb_multi.main(*input)
     assert (ret[0] == expect[0]).all()
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()
@@ -275,7 +275,7 @@ def test_comb_multi_numpy(comb_multi):
 def test_comb_multi_single(comb_multi):
     input = np.array([[1], [True], [0.25]])
     expect = [[2], [False], [-0.75]]
-    ret = comb_multi(*input)
+    ret = comb_multi.main(*input)
     assert (ret[0] == expect[0]).all()
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()
@@ -310,7 +310,7 @@ def sequential_single(request):
 def test_sequential_single(sequential_single):
     input = [0.25, 1, 1.5]
     expect = [-0.75, 0.0, 0.5]
-    ret = sequential_single(input)
+    ret = sequential_single.main(input)
     assert (ret == expect).all()
 
 
@@ -341,7 +341,7 @@ def sequential_single_delay2(request):
 def test_sequential_single_delay2(sequential_single_delay2):
     input = [0.25, 1, 1.5]
     expect = [-0.75, 0.0, 0.5]
-    ret = sequential_single_delay2(input)
+    ret = sequential_single_delay2.main(input)
     assert (ret == expect).all()
 
 
@@ -374,7 +374,7 @@ def sequential_multi(request):
 def test_sequential_multi(sequential_multi):
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = sequential_multi(*input)
+    ret = sequential_multi.main(*input)
     assert (ret[0] == expect[0]).all()
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()

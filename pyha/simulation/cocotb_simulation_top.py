@@ -56,7 +56,7 @@ def test_main(dut):
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')
     # in_data = np.transpose(in_data)
-    print(in_data)
+    # print(in_data)
 
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)

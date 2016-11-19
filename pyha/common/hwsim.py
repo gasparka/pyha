@@ -91,6 +91,8 @@ class PyhaFunc:
         self.last_kwargs = {}
         self.last_return = {}
 
+        self.is_main = self.function_name == 'main'
+
     def dict_types_consistent_check(self, new, old):
         """ Check 'old' dict against 'new' dict for types, if not consistent raise """
         for key, value in new.items():
@@ -135,9 +137,14 @@ class PyhaFunc:
         return res
 
     def __call__(self, *args, **kwargs):
+
         self.last_args = args
         self.last_kwargs = kwargs
         real_self = self.func.__self__
+        self.calls += 1
+        # function is not main, dont have to simulate clock
+        if not self.is_main:
+            return self.call_with_locals_discovery(*args, **kwargs)
 
         # update registers from next
         now = real_self.__dict__
@@ -150,8 +157,6 @@ class PyhaFunc:
 
         # CALL IS HERE!
         ret = self.call_with_locals_discovery(*args, **kwargs)
-        # ret = self.func(*args, **kwargs)
-        self.calls += 1
 
         self.last_return = ret
 

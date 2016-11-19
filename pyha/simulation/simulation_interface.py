@@ -119,13 +119,13 @@ class Simulation:
     @flush_pipeline
     def hw_simulation(self, *args, **kwargs):
         if self.simulation_type == SIM_HW_MODEL:
-            return [self.hw_model(*x) for x in args]
+            return [self.hw_model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             return self.cocosim.run(*args)
 
-    def __call__(self, *args, **kwargs) -> np.array:
+    def main(self, *args, **kwargs) -> np.array:
         if self.simulation_type == SIM_MODEL:
-            return np.transpose(self.model(*args))
+            return np.transpose(self.model.main(*args))
 
         out = self.hw_simulation(*args)
         return out
