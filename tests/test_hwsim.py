@@ -71,6 +71,26 @@ def test_float_register():
     assert dut.a == 2.0
 
 
+def test_only_main_is_clocked():
+    """ Only 'main' shall simulate clock! """
+
+    class A(HW):
+        def __init__(self):
+            self.a = 1.0
+
+        def some_non_main_function(self, next):
+            self.next.a = next
+
+    dut = A()
+    assert dut.a == 1.0
+    dut.some_non_main_function(2.0)
+    assert dut.a == 1.0
+    dut.some_non_main_function(3.0)
+    assert dut.a == 1.0
+    dut.some_non_main_function(3.0)
+    assert dut.a == 1.0
+
+
 def test_list_register():
     class A(HW):
         def __init__(self):
@@ -320,7 +340,6 @@ def test_initial_self():
     assert dut.__dict__['__initial_self__'].a.init_val == 0.0123
     assert dut.__dict__['__initial_self__'].i == 25
     assert dut.__dict__['__initial_self__'].b == False
-
 
 
 def test_decorator_principe():

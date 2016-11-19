@@ -51,34 +51,34 @@ def deepish_copy(org):
     return out
 
 
-class TraceManager:
-    """ Enables nested functions calls, thanks to ref counting """
-    last_call_locals = {}
-    refcount = 0
-
-    @classmethod
-    def tracer(cls, frame, event, arg):
-        # Note: this runs for ALL returns, only the LAST frame is valid info
-        if event == 'return':
-            cls.last_call_locals = frame.f_locals.copy()
-
-    @classmethod
-    def set_profile(cls):
-        cls.refcount += 1
-        sys.setprofile(TraceManager.tracer)
-
-    @classmethod
-    def remove_profile(cls):
-        cls.refcount -= 1
-        assert cls.refcount >= 0
-        sys.setprofile(None)
-
-    @classmethod
-    def restore_profile(cls):
-        if cls.refcount > 0:
-            sys.setprofile(TraceManager.tracer)
-
 class PyhaFunc:
+    class TraceManager:
+        """ Enables nested functions calls, thanks to ref counting """
+        last_call_locals = {}
+        refcount = 0
+
+        @classmethod
+        def tracer(cls, frame, event, arg):
+            # Note: this runs for ALL returns, only the LAST frame is valid info
+            if event == 'return':
+                cls.last_call_locals = frame.f_locals.copy()
+
+        @classmethod
+        def set_profile(cls):
+            cls.refcount += 1
+            sys.setprofile(cls.tracer)
+
+        @classmethod
+        def remove_profile(cls):
+            cls.refcount -= 1
+            assert cls.refcount >= 0
+            sys.setprofile(None)
+
+        @classmethod
+        def restore_profile(cls):
+            if cls.refcount > 0:
+                sys.setprofile(cls.tracer)
+
     def __init__(self, func):
         self.class_name = func.__self__.__class__.__name__
         self.function_name = func.__name__
@@ -120,17 +120,18 @@ class PyhaFunc:
                 raise AssignToSelf(self.class_name, key)
 
     def call_with_locals_discovery(self, *args, **kwargs):
-        TraceManager.set_profile()
+        """ Call decorated function with tracing to read back local values """
+        self.TraceManager.set_profile()
         res = self.func(*args, **kwargs)
-        TraceManager.remove_profile()
+        self.TraceManager.remove_profile()
 
-        TraceManager.last_call_locals.pop('self')
-        self.dict_types_consistent_check(TraceManager.last_call_locals, self.locals)
+        self.TraceManager.last_call_locals.pop('self')
+        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
-        self.locals.update(TraceManager.last_call_locals)
+        self.locals.update(self.TraceManager.last_call_locals)
 
         # in case nested call, restore the tracer function
-        TraceManager.restore_profile()
+        self.TraceManager.restore_profile()
         return res
 
     def __call__(self, *args, **kwargs):
