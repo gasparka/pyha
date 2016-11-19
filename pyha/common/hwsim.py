@@ -1,11 +1,10 @@
+import sys
 from copy import deepcopy
-from functools import wraps
 
 import numpy as np
 from six import iteritems, with_metaclass
 
 from pyha.common.sfix import Sfix
-from pyha.conversion.extract_datamodel import LocalsExtractor
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -52,105 +51,129 @@ def deepish_copy(org):
     return out
 
 
-def clock_tick(func):
-    """ Update register values from "next" """
+class PyhaFunc:
+    class TraceManager:
+        """ Enables nested functions calls, thanks to ref counting """
+        last_call_locals = {}
+        refcount = 0
 
-    @wraps(func)
-    def clock_tick_wrap(*args, **kwargs):
-        now = args[0].__dict__
-        next = args[0].__dict__['next'].__dict__
+        @classmethod
+        def tracer(cls, frame, event, arg):
+            # Note: this runs for ALL returns, only the LAST frame is valid info
+            if event == 'return':
+                cls.last_call_locals = frame.f_locals.copy()
 
-        # now = func.func.__self__.__dict__
-        # next = func.func.__self__.__dict__['next'].__dict__
+        @classmethod
+        def set_profile(cls):
+            cls.refcount += 1
+            sys.setprofile(cls.tracer)
 
-        now.update(deepish_copy(next))
+        @classmethod
+        def remove_profile(cls):
+            cls.refcount -= 1
+            assert cls.refcount >= 0
+            sys.setprofile(None)
 
-        ret = func(*args, **kwargs)
-        return ret
+        @classmethod
+        def restore_profile(cls):
+            if cls.refcount > 0:
+                sys.setprofile(cls.tracer)
 
-    clock_tick_wrap.__wrapped__ = clock_tick
-    return clock_tick_wrap
+    def __init__(self, func):
+        self.class_name = func.__self__.__class__.__name__
+        self.function_name = func.__name__
+        self.func = func
+        self.calls = 0
+        self.locals = {}
 
+        # used for top_generator
+        self.last_args = {}
+        self.last_kwargs = {}
+        self.last_return = {}
 
-def forbid_assign_to_self(func, class_name):
-    """ User should only assign to self.next.X, any assign to
-        'self.X' is a bug and this decorator tests for that """
+        self.is_main = self.function_name == 'main'
 
-    @wraps(func)
-    def forbid_assign_to_self_wrap(*args, **kwargs):
-        old = deepish_copy(args[0].__dict__)
-        res = func(*args, **kwargs)
+    def dict_types_consistent_check(self, new, old):
+        """ Check 'old' dict against 'new' dict for types, if not consistent raise """
+        for key, value in new.items():
+            if key in old:
+                old_value = old[key]
+                if isinstance(value, Sfix):
+                    if value.left != old_value.left or value.right != old_value.right:
+                        if old_value.left == 0 and old_value.right == 0:
+                            # sfix lazy init
+                            continue
+                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                elif type(value) != type(old_value):
+                    raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                elif isinstance(value, list):
+                    if len(old_value) != len(value):
+                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
 
-        for key, value in args[0].__dict__.items():
+    def forbid_assign_to_self(self, new, old):
+        """ User should only assign to self.next.X, any assign to
+            'self.X' is a bug and this decorator tests for that """
+
+        for key, value in new.items():
             if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
                 continue
 
             if value != old[key]:
-                raise AssignToSelf(class_name, key)
+                raise AssignToSelf(self.class_name, key)
 
+    def call_with_locals_discovery(self, *args, **kwargs):
+        """ Call decorated function with tracing to read back local values """
+        self.TraceManager.set_profile()
+        res = self.func(*args, **kwargs)
+        self.TraceManager.remove_profile()
+
+        self.TraceManager.last_call_locals.pop('self')
+        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+
+        self.locals.update(self.TraceManager.last_call_locals)
+
+        # in case nested call, restore the tracer function
+        self.TraceManager.restore_profile()
         return res
 
-    return forbid_assign_to_self_wrap
+    def __call__(self, *args, **kwargs):
 
+        self.last_args = args
+        self.last_kwargs = kwargs
+        real_self = self.func.__self__
+        self.calls += 1
+        # function is not main, dont have to simulate clock
+        if not self.is_main:
+            return self.call_with_locals_discovery(*args, **kwargs)
 
-def dict_types_consistent_check(class_name, function_name, new, old):
-    """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-    for key, value in new.items():
-        if key in old:
-            old_value = old[key]
-            if isinstance(value, Sfix):
-                if value.left != old_value.left or value.right != old_value.right:
-                    if old_value.left == 0 and old_value.right == 0:
-                        # sfix lazy init
-                        continue
-                    raise TypeNotConsistent(class_name, function_name, key, old, new)
-            elif type(value) != type(old_value):
-                raise TypeNotConsistent(class_name, function_name, key, old, new)
-            elif isinstance(value, list):
-                if len(old_value) != len(value):
-                    raise TypeNotConsistent(class_name, function_name, key, old, new)
+        # update registers from next
+        now = real_self.__dict__
+        next = real_self.__dict__['next'].__dict__
+        old_next = deepish_copy(next)
 
+        now.update(old_next)
+        # protect assign to self
+        old_self = deepish_copy(now)
 
-def self_type_consistent_checker(func, class_name):
-    """ After each main, check that 'self' has consistent types(only single type over time)
-     This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
-    """
-    @wraps(func)
-    def self_type_consistent_checker_wrap(*args, **kwargs):
-        nxt = args[0].__dict__['next'].__dict__
-        old = deepish_copy(nxt)
-        res = func(*args, **kwargs)
-        new = nxt
+        # CALL IS HERE!
+        ret = self.call_with_locals_discovery(*args, **kwargs)
 
-        dict_types_consistent_check(class_name, func.__name__, new, old)
+        self.last_return = ret
 
-        return res
+        self.forbid_assign_to_self(real_self.__dict__, old_self)
 
-    return self_type_consistent_checker_wrap
+        """ After each main, check that 'self' has consistent types(only single type over time)
+         This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
+        """
+        self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
+
+        return ret
 
 
 class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
-
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        # print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], **%s)' % (mcs, name, bases, ', '.join(attrs), kwargs))
-
-        # TODO: some hook to enable this for conversion only
-        # for attr in attrs:
-        #     if callable(attrs[attr]):
-        #         attrs[attr] = locals_hack(attrs[attr], name)
-
-        # if 'main' in attrs:
-        #     attrs['main'] = forbid_assign_to_self(attrs['main'], name)
-        #     # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-        #     attrs['main'] = self_type_consistent_checker(attrs['main'], name)
-        #     attrs['main'] = clock_tick(attrs['main'])
-        # else:
-        #     pass
-        ret = super(Meta, mcs).__new__(mcs, name, bases, attrs)
-        return ret
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
@@ -162,17 +185,11 @@ class Meta(type):
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
 
+        # decorate all methods
         for method_str in dir(ret):
             method = getattr(ret, method_str)
             if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
-                new = LocalsExtractor(method, cls.__name__)
-
-                if 'main' == method_str:
-                    # new = forbid_assign_to_self(new, cls.__name__)
-                    # attrs['main'] = inout_saver(attrs['main'])  # TODO: this should be only enabled on conversion
-                    # new = self_type_consistent_checker(new, cls.__name__)
-                    new = clock_tick(new)
-
+                new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
         return ret

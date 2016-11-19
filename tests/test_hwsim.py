@@ -2,9 +2,8 @@ import textwrap
 
 import pytest
 
-from pyha.common.hwsim import HW, Meta, clock_tick, AssignToSelf, TypeNotConsistent
+from pyha.common.hwsim import HW, Meta, AssignToSelf, TypeNotConsistent, PyhaFunc
 from pyha.common.sfix import Sfix
-from pyha.conversion.extract_datamodel import LocalsExtractor
 
 
 def test_metaclass_assigned():
@@ -22,8 +21,8 @@ def test_locals_decorated():
         def func2(self):
             pass
 
-    assert isinstance(A().main, LocalsExtractor)
-    assert isinstance(A().func2, LocalsExtractor)
+    assert isinstance(A().main, PyhaFunc)
+    assert isinstance(A().func2, PyhaFunc)
 
 
 def test_objects_not_decorated():
@@ -35,15 +34,8 @@ def test_objects_not_decorated():
         def main(self, *args, **kwargs):
             pass
 
-    assert not isinstance(A().a, LocalsExtractor)
+    assert not isinstance(A().a, PyhaFunc)
 
-
-def test_call_decorated():
-    class A(HW):
-        def main(self, *args, **kwargs):
-            pass
-
-    assert A().main.func.__wrapped__ == clock_tick
 
 
 
@@ -77,6 +69,26 @@ def test_float_register():
     assert dut.a == 1.0
     dut.main(3.0)
     assert dut.a == 2.0
+
+
+def test_only_main_is_clocked():
+    """ Only 'main' shall simulate clock! """
+
+    class A(HW):
+        def __init__(self):
+            self.a = 1.0
+
+        def some_non_main_function(self, next):
+            self.next.a = next
+
+    dut = A()
+    assert dut.a == 1.0
+    dut.some_non_main_function(2.0)
+    assert dut.a == 1.0
+    dut.some_non_main_function(3.0)
+    assert dut.a == 1.0
+    dut.some_non_main_function(3.0)
+    assert dut.a == 1.0
 
 
 def test_list_register():
@@ -328,7 +340,6 @@ def test_initial_self():
     assert dut.__dict__['__initial_self__'].a.init_val == 0.0123
     assert dut.__dict__['__initial_self__'].i == 25
     assert dut.__dict__['__initial_self__'].b == False
-
 
 
 def test_decorator_principe():

@@ -246,8 +246,9 @@ def test_locals_new_instance_resets():
     assert result == expect
 
     dut2 = A()
-    result = extract_locals(dut2)
-    assert result == {}
+    with pytest.raises(FunctionNotSimulated):
+        extract_locals(dut2)
+
 
 def test_locals_special():
     class A(HW):
@@ -351,9 +352,9 @@ def test_locals_calls():
 
     dut = A()
     dut.main()
-    assert dut.main.fdict['calls'] == 1
+    assert dut.main.calls == 1
     dut.main()
-    assert dut.main.fdict['calls'] == 2
+    assert dut.main.calls == 2
 
 
 def test_locals_sfix():

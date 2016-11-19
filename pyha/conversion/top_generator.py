@@ -1,5 +1,4 @@
 import textwrap
-from functools import wraps
 
 from pyha.common.sfix import Sfix
 from pyha.common.util import tabber
@@ -18,31 +17,12 @@ class NoOutputsError(Exception):
     pass
 
 
-def inout_saver(func):
-    """ This decorator is used on main function and saves the last args,kwargs and return
-    values. Used to generate toplevel VHDL and Verilog files."""
-    func._last_call = {'calls': 0}
-
-    @wraps(func)
-    def inout_saver_wrap(*args, **kwargs):
-        func._last_call['args'] = args
-        func._last_call['kwargs'] = kwargs
-
-        ret = func(*args, **kwargs)
-
-        func._last_call['calls'] += 1
-        func._last_call['return'] = ret
-        return ret
-
-    return inout_saver_wrap
-
-
 class TopGenerator:
     def __init__(self, simulated_object):
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        if self.simulated_object.main._last_call['calls'] <= 1:
+        if self.simulated_object.main.calls <= 1:
             raise NotTrainedError('Object must be trained > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
@@ -52,23 +32,22 @@ class TopGenerator:
             raise NoOutputsError('Model has no outputs (main returns).')
 
     def get_object_args(self) -> list:
-        # skip first arg -> it is self
-        return list(self.simulated_object.main._last_call['args'][1:])
+        return list(self.simulated_object.main.last_args)
 
     def get_object_kwargs(self) -> list:
-        return self.simulated_object.main._last_call['kwargs'].items()
+        return self.simulated_object.main.last_kwargs.items()
 
     def get_object_inputs(self) -> list:
         return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
 
     def get_object_return(self) -> list:
-        rets = self.simulated_object.main._last_call['return']
+        rets = self.simulated_object.main.last_return
         if isinstance(rets, tuple):
             return list(rets)
         elif rets is None:
             return []
         else:
-            return [rets] # single value
+            return [rets]  # single value
 
     def pyvar_to_stdlogic(self, var) -> str:
         if type(var) == int:
