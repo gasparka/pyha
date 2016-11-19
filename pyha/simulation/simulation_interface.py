@@ -1,4 +1,5 @@
 from contextlib import suppress
+from copy import deepcopy
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -94,6 +95,9 @@ class Simulation:
         self.model = model
         self.simulation_type = simulation_type
 
+        # direct output from dut call will be written here( without type conversions, pipeline fixes..)
+        self.pure_output = []
+
         if simulation_type == SIM_MODEL and model is None:
             raise NoModelError('Trying to run "model" simulation but no model given!')
 
@@ -119,9 +123,16 @@ class Simulation:
     @flush_pipeline
     def hw_simulation(self, *args, **kwargs):
         if self.simulation_type == SIM_HW_MODEL:
-            return [self.hw_model.main(*x) for x in args]
+            # reset registers, in order to match COCOTB RTL simulation behaviour
+            self.hw_model.next = deepcopy(self.hw_model.__initial_self__)
+            ret = [self.hw_model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
-            return self.cocosim.run(*args)
+            ret = self.cocosim.run(*args)
+        else:
+            assert 0
+
+        self.pure_output = ret
+        return ret
 
     def main(self, *args, **kwargs) -> np.array:
         if self.simulation_type == SIM_MODEL:

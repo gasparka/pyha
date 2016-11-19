@@ -378,3 +378,30 @@ def test_sequential_multi(sequential_multi):
     assert (ret[0] == expect[0]).all()
     assert (ret[1].astype(bool) == expect[1]).all()
     assert (ret[2] == expect[2]).all()
+
+
+def test_hw_sim_resets():
+    """ Registers should take initial values on each new simulation invocation,
+    motivation is to provide same interface as with COCOTB based RTL simulation."""
+
+    class Rst_Hw(HW):
+        def __init__(self):
+            self.get_delay()
+            self.sfix_reg = Sfix(0.5, 0, -18)
+
+        def main(self, in_sfix):
+            self.next.sfix_reg = in_sfix
+            return self.sfix_reg
+
+        def get_delay(self):
+            return 1
+
+    dut = Simulation(SIM_HW_MODEL, hw_model=Rst_Hw(), input_types=[Sfix(left=0, right=-18)])
+    dut.main([0.1])
+    first_out = float(dut.pure_output[0])
+    assert first_out == 0.5
+
+    # make new simulation, registers must reset
+    dut.main([0.1])
+    first_out = float(dut.pure_output[0])
+    assert first_out == 0.5
