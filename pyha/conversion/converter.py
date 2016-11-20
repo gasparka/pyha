@@ -359,12 +359,36 @@ class GetitemNodeConv(NodeConv):
     def get_index_target(self):
         return '.'.join(str(x) for x in self.parent.value[:-1])
 
+    def is_negative_indexing(self, obj):
+        return isinstance(obj, UnitaryOperatorNodeConv) and int(str(obj)) < 0
+
     def __str__(self):
-        if isinstance(self.value, UnitaryOperatorNodeConv) and int(str(self.value)) < 0:
+        if self.is_negative_indexing(self.value):
             target = self.get_index_target()
             return "({}'length{})".format(target, self.value)
 
         return '({})'.format(self.value)
+
+
+class SliceNodeConv(GetitemNodeConv):
+    def get_index_target(self):
+        return '.'.join(str(x) for x in self.parent.parent.value[:-1])
+
+    # Example: [0:5] -> (0 to 4)
+    # x[0:-1] -> x(0 to x'high-1)
+    def __str__(self):
+        if self.upper is None:
+            upper = "{}'high".format(self.get_index_target())
+        else:
+            # vhdl includes upper limit, subtract one to get same behaviour as in python
+            upper = int(str(self.upper)) - 1
+
+        if self.is_negative_indexing(self.upper):
+            target = self.get_index_target()
+            upper = "{}'high{}".format(target, self.upper)
+
+        lower = 0 if self.lower is None else self.lower
+        return '{} to {}'.format(lower, upper)
 
 
 class ForNodeConv(NodeConv):

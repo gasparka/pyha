@@ -47,6 +47,8 @@
           <option value="conversion.main.ClassNodeConv.*" />
           <option value="bool.all" />
           <option value="object.right" />
+          <option value="pyha.conversion.converter.SliceNodeConv.upper" />
+          <option value="pyha.conversion.converter.SliceNodeConv.*" />
         </list>
       </option>
     </inspection_tool>
