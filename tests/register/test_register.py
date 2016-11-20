@@ -6,33 +6,33 @@ from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import Simulation, SIM_HW_MODEL, SIM_RTL
 
 
-# class LazySfixRegister(HW):
-#     def __init__(self):
-#         self.get_delay()
-#         self.a = Sfix()
-#
-#     def main(self, new_value):
-#         self.next.a = new_value
-#         return self.a
-#
-#     def get_delay(self):
-#         return 1
-#
-#
-# @pytest.fixture(scope='session', params=[-17, -18, -19])
-# def bits(request):
-#     return request.param
-#
-#
-# @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
-# def lazy_reg(request, bits):
-#     dut = LazySfixRegister()
-#     return Simulation(request.param, hw_model=dut, input_types=[Sfix(0.0, 0, bits)])
-#
-#
-# def test_functionality(lazy_reg):
-#     ret = lazy_reg.main([0.5, 0.6, 0.7])
-#     assert np.allclose(ret, [0.5, 0.6, 0.7])
+class LazySfixRegister(HW):
+    def __init__(self):
+        self.get_delay()
+        self.a = Sfix()
+
+    def main(self, new_value):
+        self.next.a = new_value
+        return self.a
+
+    def get_delay(self):
+        return 1
+
+
+@pytest.fixture(scope='session', params=[-17, -18, -19])
+def bits(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
+def lazy_reg(request, bits):
+    dut = LazySfixRegister()
+    return Simulation(request.param, hw_model=dut, input_types=[Sfix(0.0, 0, bits)])
+
+
+def test_functionality(lazy_reg):
+    ret = lazy_reg.main([0.5, 0.6, 0.7])
+    assert np.allclose(ret, [0.5, 0.6, 0.7])
 
 
 ##########################################################################################
@@ -75,6 +75,25 @@ def test_initial_value(dut_inits):
     assert dut_inits.pure_output[0][1] == 123
     assert dut_inits.pure_output[0][2] == False
 
-# def test_delay():
-#     # TODO: need a way to call other functions than __call__, top generator
-#     pass
+
+##########################################################################################
+class ShiftReg(HW):
+    def __init__(self):
+        self.shr = [1, 2, 3, 4]
+
+    def main(self, new_sample):
+        out = self.shr[-1]
+        self.next.shr = [new_sample] + self.shr[:-1]
+        return out
+
+
+@pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
+def dut_shr(request):
+    dut = ShiftReg()
+    return Simulation(request.param, hw_model=dut, input_types=[int])
+
+
+def test_shift_reg(dut_shr):
+    inp = [0, -1, -2, -3]
+    outp = dut_shr.main(inp)
+    pass

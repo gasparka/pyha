@@ -381,7 +381,7 @@ def test_sequential_multi(sequential_multi):
 
 
 def test_hw_sim_resets():
-    """ Registers should take initial values on each new simulation invocation,
+    """ Registers should take initial values on each new simulation(call of main) invocation,
     motivation is to provide same interface as with COCOTB based RTL simulation."""
 
     class Rst_Hw(HW):

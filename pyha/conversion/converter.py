@@ -146,7 +146,13 @@ class ComparisonNodeConv(NodeConv):
 
 
 class BinaryOperatorNodeConv(ComparisonNodeConv):
-    pass
+    def __str__(self):
+
+        # test if we are dealing with array appending ([a] + b)
+        if self.value == '+':
+            if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
+                self.value = '&'
+        return '{} {} {}'.format(self.first, self.value, self.second)
 
 
 class BooleanOperatorNodeConv(ComparisonNodeConv):
@@ -333,6 +339,12 @@ class FloatNodeConv(NodeConv):
 
 class UnitaryOperatorNodeConv(NodeConv):
     pass
+
+
+class ListNodeConv(NodeConv):
+    def __str__(self):
+        assert len(self.value) == 1
+        return str(self.value[0])
 
 
 class EndlNodeConv(NodeConv):

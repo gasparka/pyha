@@ -1,12 +1,9 @@
 import textwrap
 
 import pytest
-from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 from redbaron import RedBaron
 
-
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 
 
 @pytest.fixture
@@ -1139,6 +1136,38 @@ def test_call_self_return2_arugments(converter):
     conv = converter(code)
     assert str(conv) == expect
 
+
+def test_list(converter):
+    code = textwrap.dedent("""\
+            [a]""")
+
+    expect = textwrap.dedent("""\
+            a""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_list_append(converter):
+    code = textwrap.dedent("""\
+            [a] + b""")
+
+    expect = textwrap.dedent("""\
+            a & b""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_list_post_append(converter):
+    code = textwrap.dedent("""\
+            a + [b]""")
+
+    expect = textwrap.dedent("""\
+            a & b""")
+
+    conv = converter(code)
+    assert str(conv) == expect
 
 # TODO class conversion
 # TODO function calls
