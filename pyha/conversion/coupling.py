@@ -1,7 +1,8 @@
-from pyha.common.sfix import Sfix
-from pyha.conversion.extract_datamodel import DataModel
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
+
+from pyha.common.sfix import Sfix
+from pyha.conversion.extract_datamodel import DataModel
 
 
 class ExceptionCoupling(Exception):
@@ -16,7 +17,10 @@ def pytype_to_vhdl(var):
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
     elif type(var) is list:
-        return pytype_to_vhdl(var[0])
+        subtype = pytype_to_vhdl(var[0])
+        if subtype[:len('sfixed')] == 'sfixed':
+            subtype = subtype[:len('sfixed')]
+        return '{}_list_t(0 to {})'.format(subtype, len(var) - 1)
     else:
         assert 0
 
@@ -97,6 +101,10 @@ class VHDLType:
         else: # dealing with locals (includes all arguments!)
             name = self._real_name()
             var = self._datamodel.locals[self._defined_in_function()][name]
+            if isinstance(var, list):
+                index = int(self.red_node.value[1].value.value)
+                var = var[index]
+
 
         return pytype_to_vhdl(var)
 
@@ -108,6 +116,9 @@ class VHDLType:
         for x in atom_trailer[1:]:
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
+            else:
+                var = var[int(x.value.value)]
+
         return var
 
     def _defined_in_function(self):

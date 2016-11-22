@@ -5,7 +5,7 @@ from redbaron import RedBaron
 
 from pyha.common.sfix import Sfix
 from pyha.conversion.converter import convert
-from pyha.conversion.coupling import VHDLType
+from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 
 
@@ -210,7 +210,6 @@ def test_typed_def_argument_return_constant_sfix(converter):
     # will not work because it was too hard to implement!
     with pytest.raises(Exception):
         converter(code, datamodel)
-
 
 
 def test_typed_def_argument_return_local_indexing(converter):
@@ -569,6 +568,82 @@ def test_class_datamodel(converter):
     conv = conv.get_datamodel()
     assert expect == str(conv)
 
+
+def test_pytype_to_vhdl_list():
+    inp = [0, 1, 2, 3]
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'integer_list_t(0 to 3)'
+
+    inp = [True, False]
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'boolean_list_t(0 to 1)'
+
+    inp = [Sfix()] * 5
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'sfixed_list_t(0 to 4)'
+
+
+def test_list_int(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [0] * 12})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: integer_list_t(0 to 11);
+            end record;
+
+            type self_t is record
+                a: integer_list_t(0 to 11);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert expect == str(conv)
+
+
+def test_list_boolean(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [False] * 128})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: boolean_list_t(0 to 127);
+            end record;
+
+            type self_t is record
+                a: boolean_list_t(0 to 127);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert expect == str(conv)
+
+
+def test_list_sfix(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15)] * 2})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed_list_t(0 to 1);
+            end record;
+
+            type self_t is record
+                a: sfixed_list_t(0 to 1);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert expect == str(conv)
 
 def test_class_datamodel2(converter):
     code = textwrap.dedent("""\
