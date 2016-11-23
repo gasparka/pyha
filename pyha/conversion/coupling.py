@@ -17,10 +17,14 @@ def pytype_to_vhdl(var):
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
     elif type(var) is list:
+        arr_token = '_list_t(0 to {})'.format(len(var) - 1)
         subtype = pytype_to_vhdl(var[0])
-        if subtype[:len('sfixed')] == 'sfixed':
-            subtype = subtype[:len('sfixed')]
-        return '{}_list_t(0 to {})'.format(subtype, len(var) - 1)
+        pos = subtype.find('(')
+        if pos == -1:
+            typ = subtype + arr_token
+        else:  # sfixed
+            typ = subtype[:pos] + arr_token + subtype[pos:]
+        return typ
     else:
         assert 0
 

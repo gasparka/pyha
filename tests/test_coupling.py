@@ -578,9 +578,9 @@ def test_pytype_to_vhdl_list():
     ret = pytype_to_vhdl(inp)
     assert ret == 'boolean_list_t(0 to 1)'
 
-    inp = [Sfix()] * 5
+    inp = [Sfix(0.2, 1, -2)] * 5
     ret = pytype_to_vhdl(inp)
-    assert ret == 'sfixed_list_t(0 to 4)'
+    assert ret == 'sfixed_list_t(0 to 4)(1 downto -2)'
 
 
 def test_list_int(converter):
@@ -600,8 +600,15 @@ def test_list_int(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
-    assert expect == str(conv)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
 
 
 def test_list_boolean(converter):
@@ -609,20 +616,27 @@ def test_list_boolean(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [False] * 128})
+    datamodel = DataModel(self_data={'a': [False, True, False, True]})
     expect = textwrap.dedent("""\
             type register_t is record
-                a: boolean_list_t(0 to 127);
+                a: boolean_list_t(0 to 3);
             end record;
 
             type self_t is record
-                a: boolean_list_t(0 to 127);
+                a: boolean_list_t(0 to 3);
                 \\next\\: register_t;
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
-    assert expect == str(conv)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (False, True, False, True);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
 
 
 def test_list_sfix(converter):
@@ -630,20 +644,28 @@ def test_list_sfix(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15)] * 2})
+    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]})
     expect = textwrap.dedent("""\
             type register_t is record
-                a: sfixed_list_t(0 to 1);
+                a: sfixed_list_t(0 to 1)(2 downto -15);
             end record;
 
             type self_t is record
-                a: sfixed_list_t(0 to 1);
+                a: sfixed_list_t(0 to 1)(2 downto -15);
                 \\next\\: register_t;
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
-    assert expect == str(conv)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (to_sfixed(0.1, 2, -15), to_sfixed(1.5, 2, -15));
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
 
 def test_class_datamodel2(converter):
     code = textwrap.dedent("""\

@@ -451,11 +451,20 @@ class ClassNodeConv(NodeConv):
         {DATA}
         end procedure;""")
 
+        def sfixed_init(val):
+            return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
+
         variables = []
         for key, val in VHDLType._datamodel.self_data.items():
             if key == 'next': continue
             if isinstance(val, Sfix):
-                tmp = 'self_reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(val))
+            elif isinstance(val, list):
+                if isinstance(val[0], Sfix):
+                    lstr = '(' + ', '.join(sfixed_init(x) for x in val) + ')'
+                else:
+                    lstr = '(' + ', '.join(str(x) for x in val) + ')'
+                tmp = 'self_reg.{} := {};'.format(key, lstr)
             else:
                 tmp = 'self_reg.{} := {};'.format(key, val)
             variables.append(tmp)
