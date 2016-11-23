@@ -21,9 +21,9 @@ def pytype_to_vhdl(var):
         subtype = pytype_to_vhdl(var[0])
         pos = subtype.find('(')
         if pos == -1:
-            typ = subtype + arr_token
+            typ = 'PyhaUtil.' + subtype + arr_token
         else:  # sfixed
-            typ = subtype[:pos] + arr_token + subtype[pos:]
+            typ = 'PyhaUtil.' + subtype[:pos] + arr_token + subtype[pos:]
         return typ
     else:
         assert 0

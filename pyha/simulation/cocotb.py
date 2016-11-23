@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from matplotlib.compat.subprocess import CalledProcessError
+
 import pyha
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion
@@ -43,7 +45,7 @@ include $(COCOTB)/makefiles/Makefile.sim
 
 
 class CocotbAuto(object):
-    def __init__(self, base_path, conv:Conversion, sim_folder='coco_sim'):
+    def __init__(self, base_path, conv: Conversion, sim_folder='coco_sim'):
         self.conv = conv
         self.src_files = conv.write_vhdl_files(base_path)
         self.base_path = base_path
@@ -68,7 +70,8 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src_files)
+        pyha_util_py = pyha.__path__[0] + '/common/hdl/pyha_util.vhd'
+        self.environment['VHDL_SOURCES'] = pyha_util_py + ' ' + ' '.join(str(x) for x in self.src_files)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
@@ -88,7 +91,11 @@ class CocotbAuto(object):
         with (self.base_path / 'Makefile').open('w') as f:
             f.write(COCOTB_MAKEFILE_TEMPLATE)
 
-        subprocess.call("make", env=self.environment, cwd=str(self.base_path))
+        try:
+            subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
+        except CalledProcessError:
+            raise Exception(
+                'Something went wrong with RTL simulation, scroll to very top and see if there are GHDL errors.')
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(float)
