@@ -70,8 +70,7 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        pyha_util_py = pyha.__path__[0] + '/common/hdl/pyha_util.vhd'
-        self.environment['VHDL_SOURCES'] = pyha_util_py + ' ' + ' '.join(str(x) for x in self.src_files)
+        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src_files)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
