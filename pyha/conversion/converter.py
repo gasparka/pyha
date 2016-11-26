@@ -6,7 +6,7 @@ from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
-from pyha.conversion.coupling import VHDLType, VHDLVariable
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -146,7 +146,13 @@ class ComparisonNodeConv(NodeConv):
 
 
 class BinaryOperatorNodeConv(ComparisonNodeConv):
-    pass
+    def __str__(self):
+
+        # test if we are dealing with array appending ([a] + b)
+        if self.value == '+':
+            if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
+                self.value = '&'
+        return '{} {} {}'.format(self.first, self.value, self.second)
 
 
 class BooleanOperatorNodeConv(ComparisonNodeConv):
@@ -335,6 +341,12 @@ class UnitaryOperatorNodeConv(NodeConv):
     pass
 
 
+class ListNodeConv(NodeConv):
+    def __str__(self):
+        assert len(self.value) == 1
+        return str(self.value[0])
+
+
 class EndlNodeConv(NodeConv):
     def __str__(self):
         return ''
@@ -347,12 +359,36 @@ class GetitemNodeConv(NodeConv):
     def get_index_target(self):
         return '.'.join(str(x) for x in self.parent.value[:-1])
 
+    def is_negative_indexing(self, obj):
+        return isinstance(obj, UnitaryOperatorNodeConv) and int(str(obj)) < 0
+
     def __str__(self):
-        if isinstance(self.value, UnitaryOperatorNodeConv) and int(str(self.value)) < 0:
+        if self.is_negative_indexing(self.value):
             target = self.get_index_target()
             return "({}'length{})".format(target, self.value)
 
         return '({})'.format(self.value)
+
+
+class SliceNodeConv(GetitemNodeConv):
+    def get_index_target(self):
+        return '.'.join(str(x) for x in self.parent.parent.value[:-1])
+
+    # Example: [0:5] -> (0 to 4)
+    # x[0:-1] -> x(0 to x'high-1)
+    def __str__(self):
+        if self.upper is None:
+            upper = "{}'high".format(self.get_index_target())
+        else:
+            # vhdl includes upper limit, subtract one to get same behaviour as in python
+            upper = int(str(self.upper)) - 1
+
+        if self.is_negative_indexing(self.upper):
+            target = self.get_index_target()
+            upper = "{}'high{}".format(target, self.upper)
+
+        lower = 0 if self.lower is None else self.lower
+        return '{} to {}'.format(lower, upper)
 
 
 class ForNodeConv(NodeConv):
@@ -415,11 +451,20 @@ class ClassNodeConv(NodeConv):
         {DATA}
         end procedure;""")
 
+        def sfixed_init(val):
+            return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
+
         variables = []
         for key, val in VHDLType._datamodel.self_data.items():
             if key == 'next': continue
             if isinstance(val, Sfix):
-                tmp = 'self_reg.{} := to_sfixed({}, {}, {});'.format(key, val.init_val, val.left, val.right)
+                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(val))
+            elif isinstance(val, list):
+                if isinstance(val[0], Sfix):
+                    lstr = '(' + ', '.join(sfixed_init(x) for x in val) + ')'
+                else:
+                    lstr = '(' + ', '.join(str(x) for x in val) + ')'
+                tmp = 'self_reg.{} := {};'.format(key, lstr)
             else:
                 tmp = 'self_reg.{} := {};'.format(key, val)
             variables.append(tmp)
@@ -457,11 +502,24 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 
+    def get_typedefs(self):
+        template = 'type {} is array (natural range <>) of {};'
+        typedefs = []
+        for val in VHDLType.get_typedef_vars():
+            assert type(val) is list
+            name = pytype_to_vhdl(val)
+            name = name[:name.find('(')]  # cut array size
+            typedefs.append(template.format(name, pytype_to_vhdl(val[0])))
+
+        return typedefs
+
     def __str__(self):
         template = textwrap.dedent("""\
             {IMPORTS}
 
             package {NAME} is
+            {TYPEDEFS}
+
             {SELF_T}
 
             {FUNC_HEADERS}
@@ -478,6 +536,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = NameNodeConv.parse(self.name)
         sockets['IMPORTS'] = self.get_imports()
+        sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'

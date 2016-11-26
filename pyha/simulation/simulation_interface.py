@@ -16,6 +16,9 @@ class NoModelError(Exception):
     pass
 
 
+class InputTypesError(Exception):
+    pass
+
 SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE = ['MODEL', 'HW_MODEL', 'RTL', 'GATE']
 
 
@@ -108,8 +111,7 @@ class Simulation:
         if simulation_type == SIM_HW_MODEL:
             Simulation.hw_instances[hw_model.__class__.__name__] = hw_model
 
-        if simulation_type in (SIM_RTL, SIM_GATE):
-            self.cocosim = self.prepare_hw_simulation()
+        self.cocosim = None
 
     def prepare_hw_simulation(self):
         # grab the already simulated model!
@@ -121,7 +123,7 @@ class Simulation:
     @type_conversions
     @in_out_transpose
     @flush_pipeline
-    def hw_simulation(self, *args, **kwargs):
+    def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
             self.hw_model.next = deepcopy(self.hw_model.__initial_self__)
@@ -134,7 +136,19 @@ class Simulation:
         self.pure_output = ret
         return ret
 
-    def main(self, *args, **kwargs) -> np.array:
+    def main(self, *args) -> np.array:
+        if len(args) != len(self.input_types):
+            raise InputTypesError('Your "Simulation(input_types=X)" does not match actual call!')
+
+        for x in args:
+            if type(x) is list:
+                if type(x[0]) is Sfix:
+                    raise InputTypesError(
+                        'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
+
+        if self.simulation_type in (SIM_RTL, SIM_GATE) and self.cocosim is None:
+            self.cocosim = self.prepare_hw_simulation()
+
         if self.simulation_type == SIM_MODEL:
             return np.transpose(self.model.main(*args))
 

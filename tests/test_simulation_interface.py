@@ -8,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose
+    type_conversions, in_out_transpose, InputTypesError
 
 
 def test_ghdl_version():
@@ -117,6 +117,7 @@ def comb_int(request):
             return ret
 
     return Simulation(request.param, model=Dummy(), hw_model=Dummy_HW(), input_types=[int])
+
 
 
 def test_comb_int_list(comb_int):
@@ -254,6 +255,20 @@ def comb_multi(request):
                       input_types=[int, bool, Sfix(left=2, right=-8)])
 
 
+def test_comb_multi_arguments_mismatch(comb_multi):
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True], [0.5, 0, 6], [3, 4])
+
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True])
+
+
+def test_comb_multi_pass_sfixed(comb_multi):
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True], [Sfix(0.5, 2, -8), Sfix(0.5, 2, -8)])
+
+
+
 def test_comb_multi_list(comb_multi):
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
@@ -381,7 +396,7 @@ def test_sequential_multi(sequential_multi):
 
 
 def test_hw_sim_resets():
-    """ Registers should take initial values on each new simulation invocation,
+    """ Registers should take initial values on each new simulation(call of main) invocation,
     motivation is to provide same interface as with COCOTB based RTL simulation."""
 
     class Rst_Hw(HW):

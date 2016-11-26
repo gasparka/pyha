@@ -180,6 +180,7 @@ class Meta(type):
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
         # save the initial self values
+        # all registers will be derived from these values!
         ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # give self.next to the new object

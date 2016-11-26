@@ -5,7 +5,7 @@ from redbaron import RedBaron
 
 from pyha.common.sfix import Sfix
 from pyha.conversion.converter import convert
-from pyha.conversion.coupling import VHDLType
+from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 
 
@@ -212,7 +212,6 @@ def test_typed_def_argument_return_constant_sfix(converter):
         converter(code, datamodel)
 
 
-
 def test_typed_def_argument_return_local_indexing(converter):
     code = textwrap.dedent("""\
         def a():
@@ -267,6 +266,22 @@ def test_typed_def_argument_return_self_indexing(converter):
 
         begin
             ret_0 := self.b(4);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_argument_return_self_indexing_negative(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return self.b[-1]""")
+
+    datamodel = DataModel(self_data={'b': [-1, -2]})
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out integer) is
+
+        begin
+            ret_0 := self.b(self.b'length-1);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -570,6 +585,114 @@ def test_class_datamodel(converter):
     assert expect == str(conv)
 
 
+def test_pytype_to_vhdl_l():
+    inp = [0, 1, 2, 3]
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'integer_list_t(0 to 3)'
+
+    inp = [True, False]
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'boolean_list_t(0 to 1)'
+
+    inp = [Sfix(0.2, 1, -2)] * 5
+    ret = pytype_to_vhdl(inp)
+    assert ret == 'sfixed1_2_list_t(0 to 4)'
+
+
+def test_datamodel_list_int(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [0] * 12})
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: integer_list_t(0 to 11);
+            end record;
+
+            type self_t is record
+                a: integer_list_t(0 to 11);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+    expect = ['type integer_list_t is array (natural range <>) of integer;']
+    assert expect == conv.get_typedefs()
+
+
+def test_datamodel_list_boolean(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [False, True, False, True]})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: boolean_list_t(0 to 3);
+            end record;
+
+            type self_t is record
+                a: boolean_list_t(0 to 3);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (False, True, False, True);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+    expect = ['type boolean_list_t is array (natural range <>) of boolean;']
+    assert expect == conv.get_typedefs()
+
+
+def test_list_sfix(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]})
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: sfixed2_15_list_t(0 to 1);
+            end record;
+
+            type self_t is record
+                a: sfixed2_15_list_t(0 to 1);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (to_sfixed(0.1, 2, -15), to_sfixed(1.5, 2, -15));
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+    expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
+    assert expect == conv.get_typedefs()
+
+
 def test_class_datamodel2(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -720,6 +843,8 @@ def test_class_full(converter):
 
     expect = textwrap.dedent("""\
         package Tc is
+
+
             type register_t is record
                 a: sfixed(2 downto -27);
                 b: sfixed(6 downto -27);
@@ -780,6 +905,8 @@ def test_class_full_reserved_name(converter):
     })
     expect = textwrap.dedent("""\
         package \\Register\\ is
+
+
             type register_t is record
                 d: boolean;
             end record;
@@ -830,6 +957,8 @@ def test_class_full_endl_bug(converter):
     })
     expect = textwrap.dedent("""\
             package \\Register\\ is
+
+
                 type register_t is record
                     d: boolean;
                 end record;
@@ -886,6 +1015,8 @@ def test_class_full_get_delay(converter):
 
     expect = textwrap.dedent("""\
             package \\Register\\ is
+
+
                 type register_t is record
                     a: sfixed(0 downto -27);
                 end record;

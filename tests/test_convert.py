@@ -1,12 +1,9 @@
 import textwrap
 
 import pytest
-from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 from redbaron import RedBaron
 
-
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 
 
 @pytest.fixture
@@ -851,6 +848,72 @@ def test_indexing_negative_index3(converter):
     assert str(conv) == expect
 
 
+def test_indexing_slice(converter):
+    code = textwrap.dedent("""\
+            a[0:5]""")
+
+    expect = textwrap.dedent("""\
+            a(0 to 4)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_slice_no_lower(converter):
+    code = textwrap.dedent("""\
+            a[:2]""")
+
+    expect = textwrap.dedent("""\
+            a(0 to 1)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_slice_no_lower_negative_upper(converter):
+    code = textwrap.dedent("""\
+            self.a[:-1]""")
+
+    expect = textwrap.dedent("""\
+            self.a(0 to self.a'high-1)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_slice_no_lower_negative_upper2(converter):
+    code = textwrap.dedent("""\
+            a[:-2]""")
+
+    expect = textwrap.dedent("""\
+            a(0 to a'high-2)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_slice_no_upper(converter):
+    code = textwrap.dedent("""\
+            a[1:]""")
+
+    expect = textwrap.dedent("""\
+            a(1 to a'high)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_indexing_slice_no_upper_no_lower(converter):
+    code = textwrap.dedent("""\
+            a[:]""")
+
+    expect = textwrap.dedent("""\
+            a(0 to a'high)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
 def test_builtin_length(converter):
     code = textwrap.dedent("""\
             len(self.taps)""")
@@ -1135,6 +1198,39 @@ def test_call_self_return2_arugments(converter):
         begin
             d(loll, loom, ret_0=>b, ret_1=>c);
         end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_list(converter):
+    code = textwrap.dedent("""\
+            [a]""")
+
+    expect = textwrap.dedent("""\
+            a""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_list_append(converter):
+    code = textwrap.dedent("""\
+            [a] + b""")
+
+    expect = textwrap.dedent("""\
+            a & b""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_list_post_append(converter):
+    code = textwrap.dedent("""\
+            a + [b]""")
+
+    expect = textwrap.dedent("""\
+            a & b""")
 
     conv = converter(code)
     assert str(conv) == expect
