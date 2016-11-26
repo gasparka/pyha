@@ -4,8 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from matplotlib.compat.subprocess import CalledProcessError
-
 import pyha
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion
@@ -92,7 +90,7 @@ class CocotbAuto(object):
 
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             raise Exception(
                 'Something went wrong with RTL simulation, scroll to very top and see if there are GHDL errors.')
 
