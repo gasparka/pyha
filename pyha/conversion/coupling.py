@@ -45,7 +45,6 @@ class VHDLType:
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
 
-
         self.value = value
         self.red_node = red_node
         self.port_direction = port_direction
@@ -94,7 +93,7 @@ class VHDLType:
         # is 'self.x' something
         if isinstance(self.red_node, AtomtrailersNode) and str(self.red_node[0]) == 'self':
             var = self.walk_self_data(self.red_node)
-        elif isinstance(self.red_node, IntNode): #integer constant
+        elif isinstance(self.red_node, IntNode):  # integer constant
             var = int(self.red_node.value)
         # boolean constant
         elif isinstance(self.red_node, NameNode) and self.red_node.value in ['False', 'True']:
@@ -102,13 +101,12 @@ class VHDLType:
         # Sfix constant
         elif isinstance(self.red_node, AtomtrailersNode) and self.red_node.value[0] == 'Sfix':
             raise Exception('Return Sfix constant? Not allowed because too hard to implement :O')
-        else: # dealing with locals (includes all arguments!)
+        else:  # dealing with locals (includes all arguments!)
             name = self._real_name()
             var = self._datamodel.locals[self._defined_in_function()][name]
             if isinstance(var, list):
                 index = int(self.red_node.value[1].value.value)
                 var = var[index]
-
 
         return pytype_to_vhdl(var)
 
@@ -130,7 +128,6 @@ class VHDLType:
         while type(defn) is not DefNode:
             defn = defn.parent
         return defn.name
-
 
     def _real_name(self):
         # VHDLType.name could be something else, like 'ret_0'

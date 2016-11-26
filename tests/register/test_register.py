@@ -96,4 +96,4 @@ def dut_shr(request):
 def test_shift_reg(dut_shr):
     inp = [0, -1, -2, -3]
     outp = dut_shr.main(inp)
-    pass
+    assert (outp == [4, 3, 2, 1]).all()
