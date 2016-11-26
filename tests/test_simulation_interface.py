@@ -8,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose
+    type_conversions, in_out_transpose, InputTypesError
 
 
 def test_ghdl_version():
@@ -117,6 +117,7 @@ def comb_int(request):
             return ret
 
     return Simulation(request.param, model=Dummy(), hw_model=Dummy_HW(), input_types=[int])
+
 
 
 def test_comb_int_list(comb_int):
@@ -252,6 +253,14 @@ def comb_multi(request):
 
     return Simulation(request.param, model=Dummy(), hw_model=Multi_HW(),
                       input_types=[int, bool, Sfix(left=2, right=-8)])
+
+
+def test_comb_multi_arguments_mismatch(comb_multi):
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True], [0.5, 0, 6], [3, 4])
+
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True])
 
 
 def test_comb_multi_list(comb_multi):
