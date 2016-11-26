@@ -18,18 +18,27 @@ def pytype_to_vhdl(var):
         return 'sfixed({} downto {})'.format(var.left, var.right)
     elif type(var) is list:
         arr_token = '_list_t(0 to {})'.format(len(var) - 1)
-        subtype = pytype_to_vhdl(var[0])
-        pos = subtype.find('(')
-        if pos == -1:
-            typ = 'PyhaUtil.' + subtype + arr_token
-        else:  # sfixed
-            typ = 'PyhaUtil.' + subtype[:pos] + arr_token + subtype[pos:]
-        return typ
+        if type(var[0]) is bool:
+            return 'boolean' + arr_token
+        elif type(var[0]) is int:
+            return 'integer' + arr_token
+        elif type(var[0]) is Sfix:
+            return 'sfixed{}{}{}'.format(var[0].left, var[0].right, arr_token)
+            # subtype = pytype_to_vhdl(var[0])
+            # pos = subtype.find('(')
+            # if pos == -1:
+            #     typ = subtype + arr_token
+            # else:  # sfixed
+            #     typ = subtype[:pos] + arr_token + subtype[pos:]
+            # return typ
     else:
         assert 0
 
 
 class VHDLType:
+    """ This merges converter and datamodel code. Converter provides a variable,
+    datamodel provides a type, this finds a type fof variable"""
+
     _datamodel = None
 
     @classmethod
@@ -90,6 +99,12 @@ class VHDLType:
         if self._datamodel is None:  # support converter tests
             return self.var_type
 
+        var = self.get_var_datamodel()
+
+        type = pytype_to_vhdl(var)
+        return type
+
+    def get_var_datamodel(self):
         # is 'self.x' something
         if isinstance(self.red_node, AtomtrailersNode) and str(self.red_node[0]) == 'self':
             var = self.walk_self_data(self.red_node)
@@ -107,8 +122,7 @@ class VHDLType:
             if isinstance(var, list):
                 index = int(self.red_node.value[1].value.value)
                 var = var[index]
-
-        return pytype_to_vhdl(var)
+        return var
 
     def walk_self_data(self, atom_trailer):
         """ atom_trailer is something like this: self.a.b.c.d
