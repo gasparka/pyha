@@ -79,45 +79,23 @@ def test_initial_value(dut_inits):
 ##########################################################################################
 class ShiftReg(HW):
     def __init__(self):
-        self.shr = [1, 2, 3, 4]
+        self.shr_int = [1, 2, 3, 4]
+        self.shr_bool = [True, False, False, True]
 
-    def main(self, new_sample):
-        # out = self.shr[-1]
-        self.next.shr = [new_sample] + self.shr[:-1]
-        return self.shr[-1]
+    def main(self, new_int, new_bool):
+        self.next.shr_int = [new_int] + self.shr_int[:-1]
+        self.next.shr_bool = [new_bool] + self.shr_bool[:-1]
+        return self.shr_int[-1], self.shr_bool[-1]
 
 
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
 def dut_shr(request):
     dut = ShiftReg()
-    return Simulation(request.param, hw_model=dut, input_types=[int])
+    return Simulation(request.param, hw_model=dut, input_types=[int, bool])
 
 
 def test_shift_reg(dut_shr):
-    inp = [0, -1, -2, -3]
-    outp = dut_shr.main(inp)
-    assert (outp == [4, 3, 2, 1]).all()
-
-
-    # class ShiftReg(HW):
-    #     def __init__(self):
-    #         self.shr_int = [1, 2, 3, 4]
-    #         self.shr_bool = [True, False, False, True]
-    #
-    #     def main(self, new_int, new_bool):
-    #         self.next.shr_int = [new_int] + self.shr_int[:-1]
-    #         self.next.shr_bool = [new_bool] + self.shr_bool[:-1]
-    #         return self.shr_int[-1], self.shr_bool[-1]
-    #
-    #
-    # @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
-    # def dut_shr(request):
-    #     dut = ShiftReg()
-    #     return Simulation(request.param, hw_model=dut, input_types=[int, bool])
-    #
-    #
-    # def test_shift_reg(dut_shr):
-    #     in_int = [0, -1, -2, -3]
-    #     in_bool = [False, False, False, True]
-    #     out_int, out_bool = dut_shr.main(in_int, in_bool)
-    #     assert (out_int == [4, 3, 2, 1]).all()
+    in_int = [0, -1, -2, -3]
+    in_bool = [False, False, False, True]
+    out_int, out_bool = dut_shr.main(in_int, in_bool)
+    assert (out_int == [4, 3, 2, 1]).all()
