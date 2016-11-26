@@ -596,7 +596,7 @@ def test_pytype_to_vhdl_l():
 
     inp = [Sfix(0.2, 1, -2)] * 5
     ret = pytype_to_vhdl(inp)
-    assert ret == 'sfixed_list_t(0 to 4)(1 downto -2)'
+    assert ret == 'sfixed1_2_list_t(0 to 4)'
 
 
 def test_datamodel_list_int(converter):
@@ -843,6 +843,8 @@ def test_class_full(converter):
 
     expect = textwrap.dedent("""\
         package Tc is
+
+
             type register_t is record
                 a: sfixed(2 downto -27);
                 b: sfixed(6 downto -27);
@@ -903,6 +905,8 @@ def test_class_full_reserved_name(converter):
     })
     expect = textwrap.dedent("""\
         package \\Register\\ is
+
+
             type register_t is record
                 d: boolean;
             end record;
@@ -953,6 +957,8 @@ def test_class_full_endl_bug(converter):
     })
     expect = textwrap.dedent("""\
             package \\Register\\ is
+
+
                 type register_t is record
                     d: boolean;
                 end record;
@@ -1009,6 +1015,8 @@ def test_class_full_get_delay(converter):
 
     expect = textwrap.dedent("""\
             package \\Register\\ is
+
+
                 type register_t is record
                     a: sfixed(0 downto -27);
                 end record;
