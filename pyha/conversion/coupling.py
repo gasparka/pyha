@@ -23,14 +23,9 @@ def pytype_to_vhdl(var):
         elif type(var[0]) is int:
             return 'integer' + arr_token
         elif type(var[0]) is Sfix:
-            return 'sfixed{}{}{}'.format(var[0].left, var[0].right, arr_token)
-            # subtype = pytype_to_vhdl(var[0])
-            # pos = subtype.find('(')
-            # if pos == -1:
-            #     typ = subtype + arr_token
-            # else:  # sfixed
-            #     typ = subtype[:pos] + arr_token + subtype[pos:]
-            # return typ
+            left = var[0].left if var[0].left >= 0 else '_' + str(abs(var[0].left))
+            right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
+            return 'sfixed{}{}{}'.format(left, right, arr_token)
     else:
         assert 0
 

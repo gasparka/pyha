@@ -101,8 +101,8 @@ def test_shift_reg(dut_shr):
     # first output values are initial valus defined in __init__
     in_int = [0, -1, -2, -3, -4, -5]
     in_bool = [False, False, False, True, True, True]
-    in_sfix = [Sfix(0.1, 2, -18), Sfix(0.2, 2, -18), Sfix(0.3, 2, -18),
-               Sfix(0.4, 2, -18), Sfix(0.5, 2, -18), Sfix(0.6, 2, -18)]
-    out_int, out_bool = dut_shr.main(in_int, in_bool, in_sfix)
+    in_sfix = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    out_int, out_bool, out_sfix = dut_shr.main(in_int, in_bool, in_sfix)
     assert (out_int == [4, 3, 2, 1, 0, -1]).all()
     assert (out_bool.astype(bool) == [True, False, False, True, False, False]).all()
+    assert np.allclose(out_sfix, [2.1, -0.5, 0.6, 0.5, 0.1, 0.2], rtol=1e-4)

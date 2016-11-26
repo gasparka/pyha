@@ -670,11 +670,11 @@ def test_list_sfix(converter):
     datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]})
     expect = textwrap.dedent("""\
             type register_t is record
-                a: sfixed_list_t(0 to 1)(2 downto -15);
+                a: sfixed2_15_list_t(0 to 1);
             end record;
 
             type self_t is record
-                a: sfixed_list_t(0 to 1)(2 downto -15);
+                a: sfixed2_15_list_t(0 to 1);
                 \\next\\: register_t;
             end record;""")
 
@@ -688,6 +688,9 @@ def test_list_sfix(converter):
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
+
+    expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
+    assert expect == conv.get_typedefs()
 
 
 def test_class_datamodel2(converter):

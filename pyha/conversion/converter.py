@@ -6,7 +6,7 @@ from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
-from pyha.conversion.coupling import VHDLType, VHDLVariable
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -507,10 +507,9 @@ class ClassNodeConv(NodeConv):
         typedefs = []
         for val in VHDLType.get_typedef_vars():
             assert type(val) is list
-            if type(val[0]) is int:
-                typedefs.append(template.format('integer_list_t', 'integer'))
-            elif type(val[0]) is bool:
-                typedefs.append(template.format('boolean_list_t', 'boolean'))
+            name = pytype_to_vhdl(val)
+            name = name[:name.find('(')]  # cut array size
+            typedefs.append(template.format(name, pytype_to_vhdl(val[0])))
 
         return typedefs
 
