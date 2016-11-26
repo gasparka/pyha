@@ -439,7 +439,6 @@ class ClassNodeConv(NodeConv):
                 use ieee.math_real.all;
 
             library work;
-                use work.PyhaUtil.all;
                 use work.all;""")
 
     def get_reset_prototype(self):
@@ -503,11 +502,25 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 
+    def get_typedefs(self):
+        template = 'type {} is array (natural range <>) of {};'
+        typedefs = []
+        for val in VHDLType.get_typedef_vars():
+            assert type(val) is list
+            if type(val[0]) is int:
+                typedefs.append(template.format('integer_list_t', 'integer'))
+            elif type(val[0]) is bool:
+                typedefs.append(template.format('boolean_list_t', 'boolean'))
+
+        return typedefs
+
     def __str__(self):
         template = textwrap.dedent("""\
             {IMPORTS}
 
             package {NAME} is
+            {TYPEDEFS}
+
             {SELF_T}
 
             {FUNC_HEADERS}
@@ -524,6 +537,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = NameNodeConv.parse(self.name)
         sockets['IMPORTS'] = self.get_imports()
+        sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'

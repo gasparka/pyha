@@ -51,6 +51,17 @@ class VHDLType:
             return []
         return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
 
+    @classmethod
+    def get_typedefs(cls):
+        if cls._datamodel is None:
+            return []
+        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
+
+    @classmethod
+    def get_typedef_vars(cls):
+        """ Return all variables that require new type definition in VHDL, for example arrays"""
+        return [v for v in cls._datamodel.self_data.values() if type(v) is list]
+
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
 
@@ -63,6 +74,7 @@ class VHDLType:
         if tuple_init is not None:
             self.name = tuple_init[0]
             self.var_type = pytype_to_vhdl(tuple_init[1])
+            # self.var_typedef = self.deduce_typedef(tuple_init[1])
             return
 
         # hardcoded types

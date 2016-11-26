@@ -585,7 +585,7 @@ def test_class_datamodel(converter):
     assert expect == str(conv)
 
 
-def test_pytype_to_vhdl_list():
+def test_pytype_to_vhdl_l():
     inp = [0, 1, 2, 3]
     ret = pytype_to_vhdl(inp)
     assert ret == 'integer_list_t(0 to 3)'
@@ -599,12 +599,13 @@ def test_pytype_to_vhdl_list():
     assert ret == 'sfixed_list_t(0 to 4)(1 downto -2)'
 
 
-def test_list_int(converter):
+def test_datamodel_list_int(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
     datamodel = DataModel(self_data={'a': [0] * 12})
+
     expect = textwrap.dedent("""\
             type register_t is record
                 a: integer_list_t(0 to 11);
@@ -626,8 +627,11 @@ def test_list_int(converter):
 
     assert expect == str(conv.get_reset_str())
 
+    expect = ['type integer_list_t is array (natural range <>) of integer;']
+    assert expect == conv.get_typedefs()
 
-def test_list_boolean(converter):
+
+def test_datamodel_list_boolean(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -653,6 +657,9 @@ def test_list_boolean(converter):
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
+
+    expect = ['type boolean_list_t is array (natural range <>) of boolean;']
+    assert expect == conv.get_typedefs()
 
 
 def test_list_sfix(converter):
