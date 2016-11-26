@@ -81,21 +81,28 @@ class ShiftReg(HW):
     def __init__(self):
         self.shr_int = [1, 2, 3, 4]
         self.shr_bool = [True, False, False, True]
+        self.shr_sfix = [Sfix(0.5, 2, -18), Sfix(0.6, 2, -18),
+                         Sfix(-0.5, 2, -18), Sfix(2.1, 2, -18)]
 
-    def main(self, new_int, new_bool):
+    def main(self, new_int, new_bool, new_sfix):
         self.next.shr_int = [new_int] + self.shr_int[:-1]
         self.next.shr_bool = [new_bool] + self.shr_bool[:-1]
-        return self.shr_int[-1], self.shr_bool[-1]
+        self.next.shr_sfix = [new_sfix] + self.shr_sfix[:-1]
+        return self.shr_int[-1], self.shr_bool[-1], self.shr_sfix[-1]
 
 
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
 def dut_shr(request):
     dut = ShiftReg()
-    return Simulation(request.param, hw_model=dut, input_types=[int, bool])
+    return Simulation(request.param, hw_model=dut, input_types=[int, bool, Sfix(left=2, right=-18)])
 
 
 def test_shift_reg(dut_shr):
-    in_int = [0, -1, -2, -3]
-    in_bool = [False, False, False, True]
-    out_int, out_bool = dut_shr.main(in_int, in_bool)
-    assert (out_int == [4, 3, 2, 1]).all()
+    # first output values are initial valus defined in __init__
+    in_int = [0, -1, -2, -3, -4, -5]
+    in_bool = [False, False, False, True, True, True]
+    in_sfix = [Sfix(0.1, 2, -18), Sfix(0.2, 2, -18), Sfix(0.3, 2, -18),
+               Sfix(0.4, 2, -18), Sfix(0.5, 2, -18), Sfix(0.6, 2, -18)]
+    out_int, out_bool = dut_shr.main(in_int, in_bool, in_sfix)
+    assert (out_int == [4, 3, 2, 1, 0, -1]).all()
+    assert (out_bool.astype(bool) == [True, False, False, True, False, False]).all()

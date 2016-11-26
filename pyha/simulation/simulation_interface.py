@@ -140,6 +140,12 @@ class Simulation:
         if len(args) != len(self.input_types):
             raise InputTypesError('Your "Simulation(input_types=X)" does not match actual call!')
 
+        for x in args:
+            if type(x) is list:
+                if type(x[0]) is Sfix:
+                    raise InputTypesError(
+                        'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
+
         if self.simulation_type in (SIM_RTL, SIM_GATE) and self.cocosim is None:
             self.cocosim = self.prepare_hw_simulation()
 

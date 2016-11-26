@@ -263,6 +263,12 @@ def test_comb_multi_arguments_mismatch(comb_multi):
         comb_multi.main([1, 2], [False, True])
 
 
+def test_comb_multi_pass_sfixed(comb_multi):
+    with pytest.raises(InputTypesError):
+        comb_multi.main([1, 2], [False, True], [Sfix(0.5, 2, -8), Sfix(0.5, 2, -8)])
+
+
+
 def test_comb_multi_list(comb_multi):
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
