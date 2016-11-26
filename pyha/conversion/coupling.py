@@ -133,7 +133,7 @@ class VHDLType:
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:
-                var = var[int(x.value.value)]
+                var = var[int(str(x.value))]
 
         return var
 

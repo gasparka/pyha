@@ -82,9 +82,9 @@ class ShiftReg(HW):
         self.shr = [1, 2, 3, 4]
 
     def main(self, new_sample):
-        out = self.shr[-1]
+        # out = self.shr[-1]
         self.next.shr = [new_sample] + self.shr[:-1]
-        return out
+        return self.shr[-1]
 
 
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])

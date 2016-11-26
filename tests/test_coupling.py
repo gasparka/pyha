@@ -271,6 +271,22 @@ def test_typed_def_argument_return_self_indexing(converter):
     assert expect == str(conv)
 
 
+def test_typed_def_argument_return_self_indexing_negative(converter):
+    code = textwrap.dedent("""\
+        def a():
+            return self.b[-1]""")
+
+    datamodel = DataModel(self_data={'b': [-1, -2]})
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out integer) is
+
+        begin
+            ret_0 := self.b(self.b'length-1);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
 def test_typed_def_argument_return_self_subindexing(converter):
     code = textwrap.dedent("""\
         def a():
