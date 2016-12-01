@@ -93,6 +93,7 @@ class Simulation:
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, hw_model=None, input_types: List[object] = None):
+        self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
         self.input_types = input_types
         self.hw_model = hw_model
         self.model = model
@@ -117,7 +118,6 @@ class Simulation:
         # grab the already simulated model!
         self.hw_model = Simulation.hw_instances[self.hw_model.__class__.__name__]
         conv = Conversion(self.hw_model)
-        self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
         return CocotbAuto(Path(self.tmpdir.name), conv)
 
     @type_conversions
@@ -137,9 +137,12 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
-        if len(args) != len(self.input_types):
-            raise InputTypesError('Your "Simulation(input_types=X)" does not match actual call!')
+        # test if user provided legal 'input_types'
+        if self.simulation_type is not SIM_MODEL:
+            if self.input_types is None or (len(args) != len(self.input_types)):
+                raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
+        # test that there is not Sfix arguments
         for x in args:
             if type(x) is list:
                 if type(x[0]) is Sfix:
