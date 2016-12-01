@@ -92,21 +92,23 @@ class Simulation:
     """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
-    def __init__(self, simulation_type, model=None, hw_model=None, input_types: List[object] = None):
+    def __init__(self, simulation_type, hw_model=None, input_types: List[object] = None):
         self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
         self.input_types = input_types
         self.hw_model = hw_model
-        self.model = model
         self.simulation_type = simulation_type
 
         # direct output from dut call will be written here( without type conversions, pipeline fixes..)
         self.pure_output = []
 
-        if simulation_type == SIM_MODEL and model is None:
-            raise NoModelError('Trying to run "model" simulation but no model given!')
+        if self.hw_model is None:
+            raise NoModelError('Trying to run simulation but "hw_model" is None')
 
-        if simulation_type in (SIM_HW_MODEL, SIM_RTL, SIM_GATE) and hw_model is None:
-            raise NoModelError('Trying to run "hardware" simulation but no hardware model given!')
+        if not hasattr(self.hw_model, 'main'):
+            raise NoModelError('Your model has no "main" function')
+
+        if not hasattr(self.hw_model, 'model_main') and simulation_type is SIM_MODEL:
+            raise NoModelError('Trying to run "SIM_MODEL" simulation but your model has no "model_main" function!')
 
         # save ht HW model for conversion
         if simulation_type == SIM_HW_MODEL:
@@ -138,8 +140,8 @@ class Simulation:
 
     def main(self, *args) -> np.array:
         # test if user provided legal 'input_types'
-        if self.simulation_type is not SIM_MODEL:
-            if self.input_types is None or (len(args) != len(self.input_types)):
+        # if self.simulation_type is not SIM_MODEL:
+        if self.input_types is None or (len(args) != len(self.input_types)):
                 raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
         # test that there is not Sfix arguments
