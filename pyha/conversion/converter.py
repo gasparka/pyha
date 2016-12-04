@@ -1,9 +1,10 @@
 import logging
 import textwrap
 
-from redbaron import NameNode, Node, EndlNode
+from redbaron import NameNode, Node, EndlNode, DefNode
 from redbaron.nodes import AtomtrailersNode
 
+from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
@@ -48,8 +49,9 @@ class NodeConv:
             if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
-                    if xj.name != '__init__':  # init functions are ignored!
-                        self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
+                    if isinstance(xj, DefNode) and xj.name in SKIP_FUNCTIONS:
+                        continue
+                    self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
         # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:

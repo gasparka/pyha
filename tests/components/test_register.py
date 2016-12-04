@@ -27,7 +27,7 @@ def bits(request):
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
 def lazy_reg(request, bits):
     dut = LazySfixRegister()
-    return Simulation(request.param, hw_model=dut, input_types=[Sfix(0.0, 0, bits)])
+    return Simulation(request.param, model=dut, input_types=[Sfix(0.0, 0, bits)])
 
 
 def test_functionality(lazy_reg):
@@ -56,7 +56,7 @@ class Register(HW):
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
 def dut_inits(request):
     dut = Register()
-    return Simulation(request.param, hw_model=dut, input_types=[Sfix(0.0, 0, -18), int, bool])
+    return Simulation(request.param, model=dut, input_types=[Sfix(0.0, 0, -18), int, bool])
 
 
 def test_regs(dut_inits):
@@ -94,7 +94,7 @@ class ShiftReg(HW):
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
 def dut_shr(request):
     dut = ShiftReg()
-    return Simulation(request.param, hw_model=dut, input_types=[int, bool, Sfix(left=2, right=-18)])
+    return Simulation(request.param, model=dut, input_types=[int, bool, Sfix(left=2, right=-18)])
 
 
 def test_shift_reg(dut_shr):

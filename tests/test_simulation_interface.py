@@ -7,7 +7,7 @@ import pytest
 import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_GATE, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
+from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
     type_conversions, in_out_transpose, InputTypesError
 
 
@@ -24,17 +24,26 @@ def test_cocotb_version():
 
 
 def test_sim_no_model():
-    with pytest.raises(NoModelError):
-        Simulation(SIM_MODEL, None, None)
+    class NoMain(HW):
+        def model_main(self):
+            pass
+
+    class NoModelMain(HW):
+        def main(self):
+            pass
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_HW_MODEL, object(), None)
+        Simulation(SIM_MODEL, None)
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_RTL, None, None)
+        Simulation(SIM_HW_MODEL, NoMain(), None)
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_GATE, None, None)
+        Simulation(SIM_MODEL, NoModelMain(), None)
+
+    # this shall not raise as we are not simulating model
+    Simulation(SIM_HW_MODEL, NoModelMain(), None)
+
 
 
 def test_type_conversion():
@@ -103,11 +112,6 @@ def test_type_conversions_multi():
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_int(request):
-    class Dummy:
-        def main(self, in_int):
-            return [x * 2 for x in in_int]
-            # return in_int * 2
-
     class Dummy_HW(HW):
         def __init__(self):
             self.dummy = 0
@@ -116,7 +120,10 @@ def comb_int(request):
             ret = in_int * 2
             return ret
 
-    return Simulation(request.param, model=Dummy(), hw_model=Dummy_HW(), input_types=[int])
+        def model_main(self, in_int):
+            return [x * 2 for x in in_int]
+
+    return Simulation(request.param, model=Dummy_HW(), input_types=[int])
 
 
 
@@ -149,10 +156,6 @@ def test_comb_int_single(comb_int):
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_bool(request):
-    class Dummy:
-        def main(self, in_int):
-            return [not x for x in in_int]
-
     class Bool_HW(HW):
         def __init__(self):
             self.dummy = 0
@@ -161,7 +164,10 @@ def comb_bool(request):
             ret = not in_int
             return ret
 
-    return Simulation(request.param, model=Dummy(), hw_model=Bool_HW(), input_types=[bool])
+        def model_main(self, in_int):
+            return [not x for x in in_int]
+
+    return Simulation(request.param, model=Bool_HW(), input_types=[bool])
 
 
 def test_comb_bool_list(comb_bool):
@@ -192,10 +198,6 @@ def test_comb_bool_single(comb_bool):
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_sfix(request):
-    class Dummy:
-        def main(self, in_int):
-            return [x - 1.0 for x in in_int]
-
     class Sfix_HW(HW):
         def __init__(self):
             self.dummy = 0
@@ -204,7 +206,10 @@ def comb_sfix(request):
             ret = in_int - 1.0
             return ret
 
-    return Simulation(request.param, model=Dummy(), hw_model=Sfix_HW(), input_types=[Sfix(left=2, right=-8)])
+        def model_main(self, in_int):
+            return [x - 1.0 for x in in_int]
+
+    return Simulation(request.param, model=Sfix_HW(), input_types=[Sfix(left=2, right=-8)])
 
 
 def test_comb_sfix_list(comb_sfix):
@@ -235,12 +240,6 @@ def test_comb_sfix_single(comb_sfix):
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def comb_multi(request):
-    class Dummy:
-        def main(self, in_int, in_bool, in_sfix):
-            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
-            # return [not x for x in in_int]
-            # return [x - 1.0 for x in in_int]
-
     class Multi_HW(HW):
         def __init__(self):
             self.dummy = 0
@@ -251,7 +250,10 @@ def comb_multi(request):
             ret_sfix = in_sfix - 1.0
             return ret_int, ret_bool, ret_sfix
 
-    return Simulation(request.param, model=Dummy(), hw_model=Multi_HW(),
+        def model_main(self, in_int, in_bool, in_sfix):
+            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
+
+    return Simulation(request.param, model=Multi_HW(),
                       input_types=[int, bool, Sfix(left=2, right=-8)])
 
 
@@ -302,10 +304,6 @@ def test_comb_multi_single(comb_multi):
 #########################################
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_single(request):
-    class Dummy:
-        def main(self, in_sfix):
-            return [xf - 1 for xf in in_sfix]
-
     class SeqSingle_HW(HW):
         def __init__(self):
             self.get_delay()
@@ -315,10 +313,13 @@ def sequential_single(request):
             self.next.sfix_reg = in_sfix - 1.0
             return self.sfix_reg
 
+        def model_main(self, in_sfix):
+            return [xf - 1 for xf in in_sfix]
+
         def get_delay(self):
             return 1
 
-    return Simulation(request.param, model=Dummy(), hw_model=SeqSingle_HW(),
+    return Simulation(request.param, model=SeqSingle_HW(),
                       input_types=[Sfix(left=2, right=-8)])
 
 
@@ -331,10 +332,6 @@ def test_sequential_single(sequential_single):
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_single_delay2(request):
-    class Dummy:
-        def main(self, in_sfix):
-            return [xf - 1 for xf in in_sfix]
-
     class SeqSingle2_HW(HW):
         def __init__(self):
             self.get_delay()
@@ -346,10 +343,13 @@ def sequential_single_delay2(request):
             self.next.sfix_reg2 = self.sfix_reg
             return self.sfix_reg2
 
+        def model_main(self, in_sfix):
+            return [xf - 1 for xf in in_sfix]
+
         def get_delay(self):
             return 2
 
-    return Simulation(request.param, model=Dummy(), hw_model=SeqSingle2_HW(),
+    return Simulation(request.param, model=SeqSingle2_HW(),
                       input_types=[Sfix(left=2, right=-8)])
 
 
@@ -362,10 +362,6 @@ def test_sequential_single_delay2(sequential_single_delay2):
 
 @pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 def sequential_multi(request):
-    class Dummy:
-        def main(self, in_int, in_bool, in_sfix):
-            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
-
     class MultiSeq_HW(HW):
         def __init__(self):
             self.get_delay()
@@ -379,10 +375,13 @@ def sequential_multi(request):
             self.next.sfix_reg = in_sfix - 1.0
             return self.int_reg, self.bool_reg, self.sfix_reg
 
+        def model_main(self, in_int, in_bool, in_sfix):
+            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
+
         def get_delay(self):
             return 1
 
-    return Simulation(request.param, model=Dummy(), hw_model=MultiSeq_HW(),
+    return Simulation(request.param, model=MultiSeq_HW(),
                       input_types=[int, bool, Sfix(left=2, right=-8)])
 
 
@@ -411,7 +410,7 @@ def test_hw_sim_resets():
         def get_delay(self):
             return 1
 
-    dut = Simulation(SIM_HW_MODEL, hw_model=Rst_Hw(), input_types=[Sfix(left=0, right=-18)])
+    dut = Simulation(SIM_HW_MODEL, model=Rst_Hw(), input_types=[Sfix(left=0, right=-18)])
     dut.main([0.1])
     first_out = float(dut.pure_output[0])
     assert first_out == 0.5

@@ -30,7 +30,7 @@ def flush_pipeline(func):
     def flush_pipeline_wrap(self, *args, **kwargs):
         delay = 0
         with suppress(AttributeError):  # no get_delay()
-            delay = self.hw_model.get_delay()
+            delay = self.model.get_delay()
         if delay == 0:
             return func(self, *args, **kwargs)
 
@@ -92,32 +92,34 @@ class Simulation:
     """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
-    def __init__(self, simulation_type, model=None, hw_model=None, input_types: List[object] = None):
+    def __init__(self, simulation_type, model=None, input_types: List[object] = None):
+        self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
         self.input_types = input_types
-        self.hw_model = hw_model
         self.model = model
         self.simulation_type = simulation_type
 
         # direct output from dut call will be written here( without type conversions, pipeline fixes..)
         self.pure_output = []
 
-        if simulation_type == SIM_MODEL and model is None:
-            raise NoModelError('Trying to run "model" simulation but no model given!')
+        if self.model is None:
+            raise NoModelError('Trying to run simulation but "model" is None')
 
-        if simulation_type in (SIM_HW_MODEL, SIM_RTL, SIM_GATE) and hw_model is None:
-            raise NoModelError('Trying to run "hardware" simulation but no hardware model given!')
+        if not hasattr(self.model, 'main'):
+            raise NoModelError('Your model has no "main" function')
+
+        if not hasattr(self.model, 'model_main') and simulation_type is SIM_MODEL:
+            raise NoModelError('Trying to run "SIM_MODEL" simulation but your model has no "model_main" function!')
 
         # save ht HW model for conversion
         if simulation_type == SIM_HW_MODEL:
-            Simulation.hw_instances[hw_model.__class__.__name__] = hw_model
+            Simulation.hw_instances[model.__class__.__name__] = model
 
         self.cocosim = None
 
     def prepare_hw_simulation(self):
         # grab the already simulated model!
-        self.hw_model = Simulation.hw_instances[self.hw_model.__class__.__name__]
-        conv = Conversion(self.hw_model)
-        self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
+        self.model = Simulation.hw_instances[self.model.__class__.__name__]
+        conv = Conversion(self.model)
         return CocotbAuto(Path(self.tmpdir.name), conv)
 
     @type_conversions
@@ -126,8 +128,8 @@ class Simulation:
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.hw_model.next = deepcopy(self.hw_model.__initial_self__)
-            ret = [self.hw_model.main(*x) for x in args]
+            self.model.next = deepcopy(self.model.__initial_self__)
+            ret = [self.model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
@@ -137,9 +139,12 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
-        if len(args) != len(self.input_types):
-            raise InputTypesError('Your "Simulation(input_types=X)" does not match actual call!')
+        # test if user provided legal 'input_types'
+        # if self.simulation_type is not SIM_MODEL:
+        if self.input_types is None or (len(args) != len(self.input_types)):
+                raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
+        # test that there is not Sfix arguments
         for x in args:
             if type(x) is list:
                 if type(x[0]) is Sfix:
@@ -150,7 +155,6 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
-            return np.transpose(self.model.main(*args))
-
-        out = self.hw_simulation(*args)
-        return out
+            return np.transpose(self.model.model_main(*args))
+        else:
+            return self.hw_simulation(*args)
