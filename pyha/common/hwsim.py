@@ -10,6 +10,8 @@ from pyha.common.sfix import Sfix
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
 """
 
+# functions that will not be decorated/converted/parsed
+SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
@@ -188,6 +190,8 @@ class Meta(type):
 
         # decorate all methods
         for method_str in dir(ret):
+            if method_str in SKIP_FUNCTIONS:
+                continue
             method = getattr(ret, method_str)
             if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
                 new = PyhaFunc(method)
