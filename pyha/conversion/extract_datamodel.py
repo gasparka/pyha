@@ -49,7 +49,7 @@ def extract_locals(obj):
     ret = {}
     class_name = type(obj).__name__
     for method in dir(obj):
-        if method == '__init__': continue
+        if method in ('__init__', 'model_main'): continue
         call = getattr(obj, method)
         # if hasattr(call, 'knows_locals'):
         if isinstance(call, PyhaFunc):

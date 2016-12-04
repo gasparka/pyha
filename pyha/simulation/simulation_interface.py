@@ -155,6 +155,6 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
-            return np.transpose(self.model.main(*args))
+            return np.transpose(self.model.model_main(*args))
         else:
             return self.hw_simulation(*args)
