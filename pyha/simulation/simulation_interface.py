@@ -30,7 +30,7 @@ def flush_pipeline(func):
     def flush_pipeline_wrap(self, *args, **kwargs):
         delay = 0
         with suppress(AttributeError):  # no get_delay()
-            delay = self.hw_model.get_delay()
+            delay = self.model.get_delay()
         if delay == 0:
             return func(self, *args, **kwargs)
 
@@ -102,7 +102,7 @@ class Simulation:
         self.pure_output = []
 
         if self.model is None:
-            raise NoModelError('Trying to run simulation but "hw_model" is None')
+            raise NoModelError('Trying to run simulation but "model" is None')
 
         if not hasattr(self.model, 'main'):
             raise NoModelError('Your model has no "main" function')
