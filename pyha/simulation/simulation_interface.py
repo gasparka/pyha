@@ -92,34 +92,34 @@ class Simulation:
     """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
-    def __init__(self, simulation_type, hw_model=None, input_types: List[object] = None):
+    def __init__(self, simulation_type, model=None, input_types: List[object] = None):
         self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
         self.input_types = input_types
-        self.hw_model = hw_model
+        self.model = model
         self.simulation_type = simulation_type
 
         # direct output from dut call will be written here( without type conversions, pipeline fixes..)
         self.pure_output = []
 
-        if self.hw_model is None:
+        if self.model is None:
             raise NoModelError('Trying to run simulation but "hw_model" is None')
 
-        if not hasattr(self.hw_model, 'main'):
+        if not hasattr(self.model, 'main'):
             raise NoModelError('Your model has no "main" function')
 
-        if not hasattr(self.hw_model, 'model_main') and simulation_type is SIM_MODEL:
+        if not hasattr(self.model, 'model_main') and simulation_type is SIM_MODEL:
             raise NoModelError('Trying to run "SIM_MODEL" simulation but your model has no "model_main" function!')
 
         # save ht HW model for conversion
         if simulation_type == SIM_HW_MODEL:
-            Simulation.hw_instances[hw_model.__class__.__name__] = hw_model
+            Simulation.hw_instances[model.__class__.__name__] = model
 
         self.cocosim = None
 
     def prepare_hw_simulation(self):
         # grab the already simulated model!
-        self.hw_model = Simulation.hw_instances[self.hw_model.__class__.__name__]
-        conv = Conversion(self.hw_model)
+        self.model = Simulation.hw_instances[self.model.__class__.__name__]
+        conv = Conversion(self.model)
         return CocotbAuto(Path(self.tmpdir.name), conv)
 
     @type_conversions
@@ -128,8 +128,8 @@ class Simulation:
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.hw_model.next = deepcopy(self.hw_model.__initial_self__)
-            ret = [self.hw_model.main(*x) for x in args]
+            self.model.next = deepcopy(self.model.__initial_self__)
+            ret = [self.model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
@@ -156,6 +156,5 @@ class Simulation:
 
         if self.simulation_type == SIM_MODEL:
             return np.transpose(self.model.main(*args))
-
-        out = self.hw_simulation(*args)
-        return out
+        else:
+            return self.hw_simulation(*args)
