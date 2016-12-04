@@ -104,7 +104,7 @@ class Simulation:
         if self.model is None:
             raise NoModelError('Trying to run simulation but "model" is None')
 
-        if not hasattr(self.model, 'main'):
+        if not hasattr(self.model, 'main') and simulation_type in (SIM_HW_MODEL, SIM_RTL, SIM_GATE):
             raise NoModelError('Your model has no "main" function')
 
         if not hasattr(self.model, 'model_main') and simulation_type is SIM_MODEL:
@@ -140,11 +140,11 @@ class Simulation:
 
     def main(self, *args) -> np.array:
         # test if user provided legal 'input_types'
-        # if self.simulation_type is not SIM_MODEL:
-        if self.input_types is None or (len(args) != len(self.input_types)):
+        if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
+            if self.input_types is None or (len(args) != len(self.input_types)):
                 raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
-        # test that there is not Sfix arguments
+        # test that there are no Sfix arguments
         for x in args:
             if type(x) is list:
                 if type(x[0]) is Sfix:

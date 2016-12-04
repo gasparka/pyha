@@ -8,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose, InputTypesError
+    type_conversions, in_out_transpose, InputTypesError, SIM_GATE
 
 
 def test_ghdl_version():
@@ -39,10 +39,19 @@ def test_sim_no_model():
         Simulation(SIM_HW_MODEL, NoMain(), None)
 
     with pytest.raises(NoModelError):
+        Simulation(SIM_GATE, NoMain(), None)
+
+    with pytest.raises(NoModelError):
+        Simulation(SIM_RTL, NoMain(), None)
+
+    with pytest.raises(NoModelError):
         Simulation(SIM_MODEL, NoModelMain(), None)
 
     # this shall not raise as we are not simulating model
     Simulation(SIM_HW_MODEL, NoModelMain(), None)
+
+    # ok, not using main
+    Simulation(SIM_MODEL, NoMain(), None)
 
 
 
