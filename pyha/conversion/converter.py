@@ -1,7 +1,7 @@
 import logging
 import textwrap
 
-from redbaron import NameNode, Node, EndlNode
+from redbaron import NameNode, Node, EndlNode, DefNode
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.sfix import Sfix
@@ -48,8 +48,10 @@ class NodeConv:
             if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
-                    if xj.name != '__init__':  # init functions are ignored!
-                        self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
+                    # purpose is to ignore init and model_main functions for conversion
+                    if isinstance(xj, DefNode) and xj.name in ('__init__', 'model_main'):
+                        continue
+                    self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
         # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:
