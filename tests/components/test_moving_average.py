@@ -1,54 +1,90 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
 from pyha.common.hwsim import HW
-from pyha.simulation.simulation_interface import SIM_MODEL, Simulation
+from pyha.common.sfix import Sfix
+from pyha.common.util import is_power2
+from pyha.simulation.simulation_interface import SIM_MODEL, Simulation, SIM_HW_MODEL
+
+
+@pytest.fixture(scope='module', params=[SIM_MODEL, SIM_HW_MODEL])
+def dut(request):
+    return Simulation(request.param)
 
 
 class MovingAverage(HW):
     def __init__(self, window_len):
+        if window_len < 2:
+            raise Exception('Window length must be power >= 2')
+
+        if not is_power2(window_len):
+            raise Exception('Window length must be power of 2')
+
         self.window_len = window_len
+        self.window_pow = np.log2(window_len)
+        self.shift_register = [Sfix()] * self.window_len
+
+    def main(self, x):
+        self.next.shift_register = [x] + self.shift_register[:-1]
+
+        sum = Sfix()
+        for x in self.shift_register:
+            sum += x
+
+        return sum >> self.window_pow
+
+    def get_delay(self):
+        return 1
 
     def model_main(self, inputs):
-        return np.convolve(inputs, np.ones((self.window_len,)) / self.window_len, mode='full')
+        def ite_avg(i):
+            return sum(inputs[0 + i:self.window_len + i]) / self.window_len
+
+        return [ite_avg(i) for i in range(len(inputs) - self.window_len + 1)]
+        # return result
+        # return np.convolve(inputs, np.ones((self.window_len,)) / self.window_len, mode='full')
 
 
-@pytest.fixture(scope='module', params=[SIM_MODEL])
-def dut(request):
-    model = MovingAverage(4)
-    return Simulation(request.param, model=model)
+def test_window1(dut):
+    mov = MovingAverage(window_len=1)
+    dut.init(mov, input_types=[Sfix(left=4, right=-18)])
+
+    x = [0., 1., 2., 3., 4.]
+    expected = [0., 1., 2., 3., 4.]
+    y = dut.main(x)
+
+    assert expected == y.tolist()
 
 
-# New average = old average * (n-1)/n + new value /n
-def tst(inp):
-    N = 4
-    res = [0]
-    for i, x in enumerate(inp):
-        # if i == 0: continue
-        # res.append(res[i] + x - res[i] / N)
-        res.append(res[i] * (N - 1) / N + x / N)
+def test_window2(dut):
+    mov = MovingAverage(window_len=2)
+    dut.init(mov, input_types=[Sfix(left=4, right=-18)])
 
-    return res
-    # return [x/N for x in res]
+    x = [0., 1., 2., 3., 4.]
+    # expected = [0., 0.5, 1.5, 2.5, 3.5, 2.]
+    expected = [0.5, 1.5, 2.5, 3.5]
+    y = dut.main(x)
 
-
-def test_tmp():
-    inp = np.random.uniform(-1, 1, 128)
-    outp = tst(inp.tolist())
-
-    plt.plot(inp)
-    plt.plot(outp)
-    plt.show()
+    assert expected == y.tolist()
 
 
-def test_basic(dut):
-    inp = np.random.uniform(-1, 1, 128)
-    outp = dut.main(inp)
+def test_window3(dut):
+    mov = MovingAverage(window_len=3)
+    dut.init(mov, input_types=[Sfix(left=4, right=-18)])
 
-    outp2 = tst(inp.tolist())
+    x = [-0.2, 1.05, 2., -3.1, 4.]
+    expected = [-0.2 / 3, 0.85 / 3, 2.85 / 3, -0.05 / 3, 2.9 / 3, 0.9 / 3, 4 / 3]
+    y = dut.main(x)
 
-    plt.plot(inp)
-    plt.plot(outp)
-    plt.plot(outp2)
-    plt.show()
+    assert np.allclose(expected, y)
+
+# def test_basic(dut):
+#     inp = np.random.uniform(-1, 1, 128)
+#     outp = dut.main(inp)
+#
+#     # outp2 = tst(inp.tolist())
+#
+#     plt.plot(inp)
+#     plt.plot(outp)
+#     # plt.plot(outp2)
+#     plt.show()

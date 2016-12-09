@@ -2,6 +2,12 @@ import collections
 import inspect
 
 
+def is_power2(num):
+    # Author: A.Polino
+    'states if a number is a power of two'
+    return num != 0 and ((num & (num - 1)) == 0)
+
+
 def get_iterable(x):
     if isinstance(x, collections.Iterable):
         return x
