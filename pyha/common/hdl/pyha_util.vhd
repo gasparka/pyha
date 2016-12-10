@@ -6,20 +6,31 @@ library ieee;
   use ieee.fixed_pkg.all;
 
 package PyhaUtil is
-  function left_bound(x: sfixed)->integer;
-  function right_bound(x: sfixed)->integer;
+  function left_index(x: sfixed) return integer;
+  function right_index(x: sfixed) return integer;
+  -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
+  -- function resize(x: sfixed; \type\: sfixed) return sfixed;
 end package;
 
 
 package body PyhaUtil is
-  function left_bound(x: sfixed)->integer
+  function left_index(x: sfixed) return integer is
   begin
     return x'left;
   end function;
 
-  function right_bound(x: sfixed)->integer
+  function right_index(x: sfixed) return integer is
   begin
     return x'right;
   end function;
 
+  -- function resize(x: sfixed; left:integer; right:integer) return sfixed is
+  -- begin
+  --   return resize(x, left_index=>left, right_index=>right);
+  -- end function;
+  --
+  -- function resize(x: sfixed; \type\: sfixed) return sfixed is
+  -- begin
+  --   return resize(x, size_res);
+  -- end function;
 end package body;
