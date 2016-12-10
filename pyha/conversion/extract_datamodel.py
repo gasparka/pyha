@@ -72,6 +72,9 @@ class DataModel:
             self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
         else:
             dm = extract_datamodel(obj)
+
+            if len(dm) == 0:
+                dm['much_dummy_very_wow'] = 0  # this simplifies many testing code
             loc = extract_locals(obj)
             self.self_data = OrderedDict(sorted(dm.items()))
             self.locals = OrderedDict(sorted(loc.items()))
