@@ -140,7 +140,11 @@ class VHDLType:
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:
-                var = var[int(str(x.value))]
+                # index is soem variable -> just take first element
+                if isinstance(x.value, NameNode):
+                    var = var[0]
+                else:
+                    var = var[int(str(x.value))]
 
         return var
 
