@@ -35,8 +35,8 @@ class MovingAverage(HW):
                                left_index=self.window_pow + left_index(x),
                                right_index=right_index(x))
 
-        # ret = resize(self.sum >> self.window_pow, type=x)
-        ret = resize(self.sum, size_res=x)
+        ret = resize(self.sum >> self.window_pow, size_res=x)
+        # ret = resize(self.sum, size_res=x)
         return ret
 
     # def get_delay(self):
@@ -70,7 +70,7 @@ def test_window2(dut):
     # expected = [0., 0.5, 1.5, 2.5, 3.5, 2.]
     expected = [0.5, 1.5, 2.5, 3.5]
     y = dut.main(x)
-
+    print(y)
     # assert expected == y.tolist()
 
 

@@ -8,6 +8,7 @@ library ieee;
 package PyhaUtil is
   function left_index(x: sfixed) return integer;
   function right_index(x: sfixed) return integer;
+  function \>>\(x: sfixed; n: integer) return sfixed;
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
 end package;
@@ -24,6 +25,12 @@ package body PyhaUtil is
     return x'right;
   end function;
 
+  function \>>\(x: sfixed; n: integer) return sfixed is
+    variable outp: sfixed(x'left-n downto x'right-n);
+  begin
+    outp := x;
+    return outp;
+  end function;
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed is
   -- begin
   --   return resize(x, left_index=>left, right_index=>right);

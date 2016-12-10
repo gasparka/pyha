@@ -1236,6 +1236,17 @@ def test_list_post_append(converter):
     assert str(conv) == expect
 
 
+def test_binaryoperator_shift_right(converter):
+    code = textwrap.dedent("""\
+            a >> 1""")
+
+    expect = textwrap.dedent("""\
+            \>>\(a, 1)""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
 # TODO class conversion
 # TODO function calls
 
