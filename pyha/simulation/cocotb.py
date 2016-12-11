@@ -68,7 +68,8 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src_files)
+        pyha_util_py = pyha.__path__[0] + '/common/hdl/pyha_util.vhd'
+        self.environment['VHDL_SOURCES'] = pyha_util_py + ' ' + ' '.join(str(x) for x in self.src_files)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
@@ -110,6 +111,8 @@ class CocotbAuto(object):
                 if isinstance(self.conv.outputs[i], Sfix):
                     for j, val in enumerate(row):
                         outp[i][j] = (val * 2 ** self.conv.outputs[i].right)
+
+        outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = np.transpose(outp)
 
         return outp

@@ -1100,6 +1100,7 @@ def test_class_importlibs(converter):
                 use ieee.math_real.all;
 
             library work;
+                use work.PyhaUtil.all;
                 use work.all;""")
 
     conv = converter(code)
@@ -1231,6 +1232,17 @@ def test_list_post_append(converter):
 
     expect = textwrap.dedent("""\
             a & b""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_binaryoperator_shift_right(converter):
+    code = textwrap.dedent("""\
+            a >> 1""")
+
+    expect = textwrap.dedent("""\
+            \>>\(a, 1)""")
 
     conv = converter(code)
     assert str(conv) == expect

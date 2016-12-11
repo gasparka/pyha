@@ -19,6 +19,7 @@ class NoModelError(Exception):
 class InputTypesError(Exception):
     pass
 
+
 SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE = ['MODEL', 'HW_MODEL', 'RTL', 'GATE']
 
 
@@ -48,6 +49,7 @@ def flush_pipeline(func):
 
 def in_out_transpose(func):
     """ Transpose input before call and output after call """
+
     @wraps(func)
     def transposer_wrap(self, *args, **kwargs):
         # numpy cannot be used as it loses type info (converts everything to float)
@@ -55,7 +57,7 @@ def in_out_transpose(func):
 
         ret = func(self, *args, **kwargs)
 
-        with suppress(TypeError): # was one dimensional list
+        with suppress(TypeError):  # was one dimensional list
             ret = [list(x) for x in zip(*ret)]  # transpose
         return ret
 
@@ -94,27 +96,31 @@ class Simulation:
 
     def __init__(self, simulation_type, model=None, input_types: List[object] = None):
         self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
-        self.input_types = input_types
-        self.model = model
+        self.input_types = []
+        self.model = None
+        self.cocosim = None
         self.simulation_type = simulation_type
 
         # direct output from dut call will be written here( without type conversions, pipeline fixes..)
         self.pure_output = []
+        # if model is not None:
+        self.init(model, input_types)
 
+    def init(self, model=None, input_types: List[object] = None):
+        self.model = model
+        self.input_types = input_types
         if self.model is None:
             raise NoModelError('Trying to run simulation but "model" is None')
 
-        if not hasattr(self.model, 'main'):
+        if not hasattr(self.model, 'main') and self.simulation_type in (SIM_HW_MODEL, SIM_RTL, SIM_GATE):
             raise NoModelError('Your model has no "main" function')
 
-        if not hasattr(self.model, 'model_main') and simulation_type is SIM_MODEL:
+        if not hasattr(self.model, 'model_main') and self.simulation_type is SIM_MODEL:
             raise NoModelError('Trying to run "SIM_MODEL" simulation but your model has no "model_main" function!')
 
         # save ht HW model for conversion
-        if simulation_type == SIM_HW_MODEL:
+        if self.simulation_type == SIM_HW_MODEL:
             Simulation.hw_instances[model.__class__.__name__] = model
-
-        self.cocosim = None
 
     def prepare_hw_simulation(self):
         # grab the already simulated model!
@@ -140,11 +146,11 @@ class Simulation:
 
     def main(self, *args) -> np.array:
         # test if user provided legal 'input_types'
-        # if self.simulation_type is not SIM_MODEL:
-        if self.input_types is None or (len(args) != len(self.input_types)):
+        if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
+            if self.input_types is None or (len(args) != len(self.input_types)):
                 raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
-        # test that there is not Sfix arguments
+        # test that there are no Sfix arguments
         for x in args:
             if type(x) is list:
                 if type(x[0]) is Sfix:
@@ -158,3 +164,20 @@ class Simulation:
             return np.transpose(self.model.model_main(*args))
         else:
             return self.hw_simulation(*args)
+
+
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
+    if simulations is None:
+        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+    # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
+    assert simulations in [[SIM_MODEL], [SIM_MODEL, SIM_HW_MODEL], [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                           [SIM_HW_MODEL], [SIM_HW_MODEL, SIM_RTL]]
+
+    for sim_type in simulations:
+        dut = Simulation(sim_type, model=model, input_types=types)
+        hw_y = dut.main(*x)
+        try:
+            np.testing.assert_allclose(expected, hw_y, rtol)
+        except AssertionError:
+            print('\n\nSim "{}" failed:'.format(sim_type))
+            raise

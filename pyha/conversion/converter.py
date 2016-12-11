@@ -154,6 +154,8 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         if self.value == '+':
             if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
                 self.value = '&'
+        elif self.value == '>>':
+            return '\>>\({}, {})'.format(self.first, self.second)
         return '{} {} {}'.format(self.first, self.value, self.second)
 
 
@@ -441,6 +443,7 @@ class ClassNodeConv(NodeConv):
                 use ieee.math_real.all;
 
             library work;
+                use work.PyhaUtil.all;
                 use work.all;""")
 
     def get_reset_prototype(self):

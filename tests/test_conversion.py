@@ -4,7 +4,7 @@ import pytest
 
 import pyha
 from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion
+from pyha.conversion.conversion import Conversion, MultipleNodesError
 
 
 @pytest.fixture
@@ -64,5 +64,5 @@ def test_get_objects_rednode_twonodes():
     o.main(1)
     o.main(2)
 
-    with pytest.raises(Exception):
+    with pytest.raises(MultipleNodesError):
         d = Conversion(o)

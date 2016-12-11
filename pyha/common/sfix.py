@@ -6,11 +6,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def resize(fix, left=0, right=0, type=None, overflow_style='SATURATE'):
-    return fix.resize(left, right, type, overflow_style=overflow_style)
-
-
-
 # TODO: Verify stuff against VHDL library
 class Sfix(object):
     # Disables all quantization and saturating stuff
@@ -81,7 +76,6 @@ class Sfix(object):
                 return 2 ** self.left - 2 ** self.right
         else:
             return 2 ** self.left - 2 ** self.right
-
 
     def min_representable(self):
         return -2 ** self.left
@@ -196,10 +190,21 @@ class Sfix(object):
         assert self.left >= 0
         return -self.right + self.left + 1
 
-
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
 
     # TODO: add tests
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)
+
+
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE'):
+    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style)
+
+
+def left_index(x: Sfix):
+    return x.left
+
+
+def right_index(x: Sfix):
+    return x.right

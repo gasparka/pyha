@@ -2,6 +2,7 @@ from decimal import *
 
 import numpy as np
 import pytest
+
 from pyha.common.sfix import Sfix
 
 getcontext().prec = 128
@@ -135,6 +136,18 @@ def test_sign_bit():
     a = Sfix(-0.0102400000, 0, -18)
     assert a.sign_bit() == 1
 
+
+# def test_play_shift():
+#     # idol = 0.223 / 2
+#     # idol = 0.223 / 2
+#     a = Sfix(0.223, 2, -8)
+#     idol = a.val / 2
+#     b = a >> 1
+#     l = Sfix(a.val/2, 1, -9)
+#
+#     wrong = Sfix(a.val/2, 2, -8)
+#
+#     pass
 
 def test_shift_right():
     a = Sfix(0.223, 0, -8)
