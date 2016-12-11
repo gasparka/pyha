@@ -440,12 +440,11 @@ def test_locals_call_multitype_raises():
                 iflocal = True
 
     dut = A()
-
-    # must have > 3 calls
     dut.main(True)
-    dut.main(False)
     with pytest.raises(TypeNotConsistent) as e:
-        dut.main(128)
+        dut.main(False)
+
+        # cant test text cause locals discovery order can vary
 
 
 def test_locals_multitype_sfix():
@@ -480,11 +479,10 @@ def test_locals_multitype_sfix_raises():
                 iflocal = Sfix(0.0, 12, -1)
 
     dut = A()
-
     dut.main(True)
-    dut.main(False)
+
     with pytest.raises(TypeNotConsistent):
-        dut.main(True)
+        dut.main(False)
 
 
 def test_locals_multifunc():
