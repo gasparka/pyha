@@ -164,3 +164,20 @@ class Simulation:
             return np.transpose(self.model.model_main(*args))
         else:
             return self.hw_simulation(*args)
+
+
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
+    if simulations is None:
+        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+    # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
+    assert simulations in [[SIM_MODEL], [SIM_MODEL, SIM_HW_MODEL], [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                           [SIM_HW_MODEL], [SIM_HW_MODEL, SIM_RTL]]
+
+    for sim_type in simulations:
+        dut = Simulation(sim_type, model=model, input_types=types)
+        hw_y = dut.main(*x)
+        try:
+            np.testing.assert_allclose(expected, hw_y, rtol)
+        except AssertionError:
+            print('\n\nSim "{}" failed:'.format(sim_type))
+            raise
