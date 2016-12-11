@@ -103,8 +103,8 @@ class Simulation:
 
         # direct output from dut call will be written here( without type conversions, pipeline fixes..)
         self.pure_output = []
-        if model is not None:
-            self.init(model, input_types)
+        # if model is not None:
+        self.init(model, input_types)
 
     def init(self, model=None, input_types: List[object] = None):
         self.model = model
