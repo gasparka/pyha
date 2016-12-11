@@ -1100,6 +1100,7 @@ def test_class_importlibs(converter):
                 use ieee.math_real.all;
 
             library work;
+                use work.PyhaUtil.all;
                 use work.all;""")
 
     conv = converter(code)

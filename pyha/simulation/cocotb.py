@@ -111,6 +111,8 @@ class CocotbAuto(object):
                 if isinstance(self.conv.outputs[i], Sfix):
                     for j, val in enumerate(row):
                         outp[i][j] = (val * 2 ** self.conv.outputs[i].right)
-        outp = np.transpose(outp[0])
+
+        outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
+        outp = np.transpose(outp)
 
         return outp
