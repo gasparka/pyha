@@ -693,7 +693,7 @@ def test_list_sfix(converter):
     assert expect == conv.get_typedefs()
 
 
-def test_class_datamodel2(converter):
+def test_class_datamodel(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -726,6 +726,34 @@ def test_class_datamodel2(converter):
     assert expect == str(conv)
 
 
+def test_class_datamodel_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={
+        'out': Sfix(1.0, 0, -27),
+        'new': False,
+    })
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                \\new\\: boolean;
+                \\out\\: sfixed(0 downto -27);
+            end record;
+
+            type self_t is record
+                \\new\\: boolean;
+                \\out\\: sfixed(0 downto -27);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_datamodel()
+    assert expect == str(conv)
+
+
+
 def test_class_datamodel_make_self(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -743,6 +771,27 @@ def test_class_datamodel_make_self(converter):
     conv = conv.get_makeself_str()
     assert expect == str(conv)
 
+
+def test_class_datamodel_make_self_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={
+        'out': Sfix(1.0, 0, -27),
+        'new': False,
+    })
+
+    expect = textwrap.dedent("""\
+        procedure make_self(self_reg: register_t; self: out self_t) is
+        begin
+            self.\\new\\ := self_reg.\\new\\;
+            self.\\out\\ := self_reg.\\out\\;
+            self.\\next\\ := self_reg;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_makeself_str()
+    assert expect == str(conv)
 
 def test_class_datamodel_make_self_ignore_next(converter):
     code = textwrap.dedent("""\
@@ -813,6 +862,26 @@ def test_class_datamodel_reset(converter):
     conv = conv.get_reset_str()
     assert expect == str(conv)
 
+
+def test_class_datamodel_reset_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={
+        'out': Sfix(1.0, 0, -27),
+        'new': False,
+    })
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.\\new\\ := False;
+            self_reg.\\out\\ := to_sfixed(1.0, 0, -27);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_reset_str()
+    assert expect == str(conv)
 
 def test_class_datamodel_reset_prototype(converter):
     code = textwrap.dedent("""\

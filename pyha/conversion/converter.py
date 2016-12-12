@@ -460,18 +460,19 @@ class ClassNodeConv(NodeConv):
             return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
 
         variables = []
-        for key, val in VHDLType._datamodel.self_data.items():
-            if key == 'next': continue
-            if isinstance(val, Sfix):
-                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(val))
-            elif isinstance(val, list):
-                if isinstance(val[0], Sfix):
-                    lstr = '(' + ', '.join(sfixed_init(x) for x in val) + ')'
+        for var in VHDLType.get_self():
+            value = var.variable
+            key = var.name
+            if isinstance(value, Sfix):
+                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(value))
+            elif isinstance(value, list):
+                if isinstance(value[0], Sfix):
+                    lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
                 else:
-                    lstr = '(' + ', '.join(str(x) for x in val) + ')'
+                    lstr = '(' + ', '.join(str(x) for x in value) + ')'
                 tmp = 'self_reg.{} := {};'.format(key, lstr)
             else:
-                tmp = 'self_reg.{} := {};'.format(key, val)
+                tmp = 'self_reg.{} := {};'.format(key, value)
             variables.append(tmp)
 
         sockets = {'DATA': ''}
@@ -486,9 +487,8 @@ class ClassNodeConv(NodeConv):
             self.\\next\\ := self_reg;
         end procedure;""")
 
-        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=key)
-                     for key in VHDLType._datamodel.self_data
-                     if str(key) != 'next']
+        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
+                     for x in VHDLType.get_self()]
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)

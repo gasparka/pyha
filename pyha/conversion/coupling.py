@@ -1,3 +1,6 @@
+#TODO: This file is 100% mess, only works thanks to unit tests
+from typing import List
+
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
@@ -59,20 +62,26 @@ class VHDLType:
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
-
+        from pyha.conversion.converter import NameNodeConv
         self.value = value
         self.red_node = red_node
         self.port_direction = port_direction
-        self.var_type = var_type
-        self.name = name
-
+        self.variable = None
         if tuple_init is not None:
-            self.name = tuple_init[0]
-            self.var_type = pytype_to_vhdl(tuple_init[1])
+            self.name = str(NameNodeConv.parse(tuple_init[0]))
+            self.variable = tuple_init[1]
+            self.var_type = pytype_to_vhdl(self.variable)
             # self.var_typedef = self.deduce_typedef(tuple_init[1])
             return
 
-        # hardcoded types
+            # hardcoded types
+        self.var_type = var_type
+        if isinstance(name, NameNodeConv):
+            self.name = name
+        else:
+            assert isinstance(name, str)
+            self.name = NameNodeConv.parse(name)
+
         if str(name) == 'self_reg':
             self.var_type = 'register_t'
             self.port_direction = 'inout'
@@ -106,9 +115,9 @@ class VHDLType:
         if self._datamodel is None:  # support converter tests
             return self.var_type
 
-        var = self.get_var_datamodel()
+        self.variable = self.get_var_datamodel()
 
-        type = pytype_to_vhdl(var)
+        type = pytype_to_vhdl(self.variable)
         return type
 
     def get_var_datamodel(self):
