@@ -4,6 +4,7 @@ from typing import List
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import DataModel
 
@@ -29,6 +30,8 @@ def pytype_to_vhdl(var):
             left = var[0].left if var[0].left >= 0 else '_' + str(abs(var[0].left))
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
+    elif isinstance(var, HW):
+        return '{}.register_t'.format(type(var).__name__)
     else:
         assert 0
 

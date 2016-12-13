@@ -3,6 +3,7 @@ import textwrap
 import pytest
 from redbaron import RedBaron
 
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
@@ -585,18 +586,58 @@ def test_class_datamodel(converter):
     assert expect == str(conv)
 
 
+class A(HW):
+    def __init__(self):
+        self.reg = 0
+
+    def main(self):
+        pass
+
+
 def test_pytype_to_vhdl_l():
     inp = [0, 1, 2, 3]
     ret = pytype_to_vhdl(inp)
-    assert ret == 'integer_list_t(0 to 3)'
 
+    assert ret == 'integer_list_t(0 to 3)'
     inp = [True, False]
     ret = pytype_to_vhdl(inp)
-    assert ret == 'boolean_list_t(0 to 1)'
 
+    assert ret == 'boolean_list_t(0 to 1)'
     inp = [Sfix(0.2, 1, -2)] * 5
     ret = pytype_to_vhdl(inp)
+
     assert ret == 'sfixed1_2_list_t(0 to 4)'
+    ret = pytype_to_vhdl(A())
+    assert ret == 'A.register_t'
+
+
+def test_datamodel_submodule(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'sub': A()})
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                sub: A.register_t;
+            end record;
+
+            type self_t is record
+                sub: A.register_t;
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            A.reset(self_reg.sub);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
 
 
 def test_datamodel_list_int(converter):
@@ -753,7 +794,6 @@ def test_class_datamodel_reserved_name(converter):
     assert expect == str(conv)
 
 
-
 def test_class_datamodel_make_self(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -792,6 +832,7 @@ def test_class_datamodel_make_self_reserved_name(converter):
     conv = converter(code, datamodel)
     conv = conv.get_makeself_str()
     assert expect == str(conv)
+
 
 def test_class_datamodel_make_self_ignore_next(converter):
     code = textwrap.dedent("""\
@@ -882,6 +923,7 @@ def test_class_datamodel_reset_reserved_name(converter):
     conv = converter(code, datamodel)
     conv = conv.get_reset_str()
     assert expect == str(conv)
+
 
 def test_class_datamodel_reset_prototype(converter):
     code = textwrap.dedent("""\

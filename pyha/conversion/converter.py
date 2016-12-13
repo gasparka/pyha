@@ -4,7 +4,7 @@ import textwrap
 from redbaron import NameNode, Node, EndlNode, DefNode
 from redbaron.nodes import AtomtrailersNode
 
-from pyha.common.hwsim import SKIP_FUNCTIONS
+from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
@@ -471,6 +471,8 @@ class ClassNodeConv(NodeConv):
                 else:
                     lstr = '(' + ', '.join(str(x) for x in value) + ')'
                 tmp = 'self_reg.{} := {};'.format(key, lstr)
+            elif isinstance(value, HW):
+                tmp =  '{}.reset(self_reg.{});'.format(type(value).__name__, key)
             else:
                 tmp = 'self_reg.{} := {};'.format(key, value)
             variables.append(tmp)
