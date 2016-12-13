@@ -205,7 +205,7 @@ class DefNodeConv(NodeConv):
         self.function_calls_transform(red_node)
 
         super().__init__(red_node, parent)
-        self.name = NameNodeConv.parse(self.name)
+        self.name = escape_for_vhdl(self.name)
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -216,7 +216,7 @@ class DefNodeConv(NodeConv):
             return []
 
         def get_type(i: int, red):
-            name = NameNodeConv.parse('ret_' + str(i))
+            name = escape_for_vhdl('ret_' + str(i))
             return VHDLType(name, port_direction='out', red_node=red)
 
         # atomtrailers return len() > 1 for one return element
@@ -451,7 +451,7 @@ class ClassNodeConv(NodeConv):
                     lstr = '(' + ', '.join(str(x) for x in value) + ')'
                 tmp = 'self_reg.{} := {};'.format(key, lstr)
             elif isinstance(value, HW):
-                tmp =  '{}.reset(self_reg.{});'.format(type(value).__name__, key)
+                tmp = '{}.reset(self_reg.{});'.format(escape_for_vhdl(type(value).__name__), key)
             else:
                 tmp = 'self_reg.{} := {};'.format(key, value)
             variables.append(tmp)
@@ -520,7 +520,7 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = NameNodeConv.parse(self.name)
+        sockets['NAME'] = escape_for_vhdl(self.name)
         sockets['IMPORTS'] = self.get_imports()
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())

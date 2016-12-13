@@ -6,6 +6,7 @@ from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
+from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 
 
@@ -31,8 +32,7 @@ def pytype_to_vhdl(var):
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
     elif isinstance(var, HW):
-        from pyha.conversion.converter import NameNodeConv
-        return '{}.register_t'.format(NameNodeConv.parse(type(var).__name__))
+        return '{}.register_t'.format(escape_for_vhdl(type(var).__name__))
     else:
         assert 0
 
@@ -72,7 +72,7 @@ class VHDLType:
         self.port_direction = port_direction
         self.variable = None
         if tuple_init is not None:
-            self.name = str(NameNodeConv.parse(tuple_init[0]))
+            self.name = escape_for_vhdl(tuple_init[0])
             self.variable = tuple_init[1]
             self.var_type = pytype_to_vhdl(self.variable)
             # self.var_typedef = self.deduce_typedef(tuple_init[1])
@@ -84,7 +84,7 @@ class VHDLType:
             self.name = name
         else:
             assert isinstance(name, str)
-            self.name = NameNodeConv.parse(name)
+            self.name = escape_for_vhdl(name)
 
         if str(name) == 'self_reg':
             self.var_type = 'register_t'
