@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
-from pyha.common.hwsim import PyhaFunc, SKIP_FUNCTIONS
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
+
 
 
 class FunctionNotSimulated(Exception):
@@ -26,6 +27,8 @@ def is_convertible(obj):
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):
                 return True
+    elif isinstance(obj, HW):
+        return True
 
     return False
 
