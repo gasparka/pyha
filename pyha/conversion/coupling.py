@@ -31,7 +31,8 @@ def pytype_to_vhdl(var):
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
     elif isinstance(var, HW):
-        return '{}.register_t'.format(type(var).__name__)
+        from pyha.conversion.converter import NameNodeConv
+        return '{}.register_t'.format(NameNodeConv.parse(type(var).__name__))
     else:
         assert 0
 

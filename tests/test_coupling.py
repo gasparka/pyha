@@ -594,6 +594,14 @@ class A(HW):
         pass
 
 
+class Register(HW):
+    def __init__(self):
+        self.reg = 0
+
+    def main(self):
+        pass
+
+
 def test_pytype_to_vhdl_l():
     inp = [0, 1, 2, 3]
     ret = pytype_to_vhdl(inp)
@@ -611,7 +619,7 @@ def test_pytype_to_vhdl_l():
     assert ret == 'A.register_t'
 
 
-def test_datamodel_submodule(converter):
+def test_class_datamodel_submodule(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -638,6 +646,55 @@ def test_datamodel_submodule(converter):
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
+
+    expect = textwrap.dedent("""\
+        procedure make_self(self_reg: register_t; self: out self_t) is
+        begin
+            self.sub := self_reg.sub;
+            self.\\next\\ := self_reg;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_makeself_str()
+    assert expect == str(conv)
+
+
+def test_class_datamodel_submodule_reserved_name(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'sub': Register()})
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                sub: \\Register\\.register_t;
+            end record;
+
+            type self_t is record
+                sub: \\Register\\.register_t;
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            \\Register\\.reset(self_reg.sub);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+    expect = textwrap.dedent("""\
+        procedure make_self(self_reg: register_t; self: out self_t) is
+        begin
+            self.sub := self_reg.sub;
+            self.\\next\\ := self_reg;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_makeself_str()
+    assert expect == str(conv)
 
 
 def test_datamodel_list_int(converter):

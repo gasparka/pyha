@@ -1,12 +1,13 @@
 import logging
 import textwrap
 
+from pyexpat import expat_CAPI
 from redbaron import NameNode, Node, EndlNode, DefNode
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber
+from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
@@ -65,30 +66,8 @@ class NodeConv:
 
 
 class NameNodeConv(NodeConv):
-    vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
-                           'array', 'assert', 'attribute', 'begin', 'block', 'body',
-                           'buffer', 'bus', 'case', 'component', 'configuration',
-                           'constant', 'disconnect', 'downto', 'else', 'elsif', 'end',
-                           'entity', 'exit', 'file', 'for', 'function', 'generate', 'generic',
-                           'group', 'guarded', 'if', 'impure', 'in', 'inertial', 'inout', 'is',
-                           'label', 'library', 'linkage', 'literal', 'loop', 'map', 'mod',
-                           'nand', 'new', 'next', 'nor', 'not', 'null', 'of', 'on', 'open', 'or',
-                           'others', 'out', 'package', 'port', 'postponed', 'procedure',
-                           'process', 'pure', 'range', 'record', 'register', 'reject', 'rem',
-                           'report', 'return', 'rol', 'ror', 'select', 'severity', 'signal',
-                           'shared', 'sla', 'sll', 'sra', 'srl', 'subtype', 'then', 'to',
-                           'transport', 'type', 'unaffected', 'units', 'until', 'use',
-                           'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
-
-    @classmethod
-    def parse(cls, name: str):
-        if name.lower() in cls.vhdl_reserved_names \
-                or name[0] == '_':
-            return '\{}\\'.format(name)  # "escape" reserved name
-        return name
-
     def __str__(self):
-        return NameNodeConv.parse(self.red_node.value)
+        return escape_for_vhdl(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
