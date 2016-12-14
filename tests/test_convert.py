@@ -629,6 +629,15 @@ def test_def_complex(converter):
     assert str(conv) == expect
 
 
+def test_call_submodule(converter):
+    code = textwrap.dedent("""\
+            self.next.moving_average.main(x)""")
+
+    expect = textwrap.dedent("""\
+            unknown_type.main(self.next.moving_average, x, ret_0=>av)""")
+    conv = converter(code)
+    assert str(conv) == expect
+
 def test_call_resize(converter):
     code = textwrap.dedent("""\
             resize(self.counter, 0, -17)""")
@@ -794,6 +803,101 @@ def test_call_semicolon_multi(converter):
             end if;
             self.lol := lol.a();
         end procedure;""")
+    conv = converter(code)
+    assert str(conv) == expect
+
+def test_call_self(converter):
+    code = textwrap.dedent("""\
+            def a():
+                self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d();
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d(a)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(a, ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return_no_args(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_keyword(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d(a=self.b)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(a=>self.b, ret_0=>b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return2(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b, c = self.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(ret_0=>b, ret_1=>c);
+        end procedure;""")
+
+    conv = converter(code)
+    assert str(conv) == expect
+
+
+def test_call_self_return2_arugments(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b, c = self.d(loll, loom)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(loll, loom, ret_0=>b, ret_1=>c);
+        end procedure;""")
+
     conv = converter(code)
     assert str(conv) == expect
 
@@ -1105,102 +1209,6 @@ def test_class_importlibs(converter):
 
     conv = converter(code)
     conv = conv.get_imports()
-    assert str(conv) == expect
-
-
-def test_call_self(converter):
-    code = textwrap.dedent("""\
-            def a():
-                self.d()""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d();
-        end procedure;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_call_self_return(converter):
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d(a)""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d(a, ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_call_self_return_no_args(converter):
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d()""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d(ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_call_self_keyword(converter):
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d(a=self.b)""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d(a=>self.b, ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_call_self_return2(converter):
-    code = textwrap.dedent("""\
-            def a():
-                b, c = self.d()""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d(ret_0=>b, ret_1=>c);
-        end procedure;""")
-
-    conv = converter(code)
-    assert str(conv) == expect
-
-
-def test_call_self_return2_arugments(converter):
-    code = textwrap.dedent("""\
-            def a():
-                b, c = self.d(loll, loom)""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            d(loll, loom, ret_0=>b, ret_1=>c);
-        end procedure;""")
-
-    conv = converter(code)
     assert str(conv) == expect
 
 

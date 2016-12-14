@@ -1,8 +1,9 @@
 import logging
 import textwrap
 
+import numpy as np
 from pyexpat import expat_CAPI
-from redbaron import NameNode, Node, EndlNode, DefNode
+from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
@@ -77,11 +78,30 @@ class AtomtrailersNodeConv(NodeConv):
     def __str__(self):
 
         # remove 'self.' from function calls
-        if self.is_function_call() and str(self.value[0]) == 'self':
-            del self.value[0]
+        # if self.is_function_call() and str(self.value[0]) == 'self':
+        #     del self.value[0]
 
-        # basically on some occasions, dont separate nodes with '.'
+        # if self.is_function_call():
+        #     call =
+        #     pass
+
+
+        # basically on some occasions, dont separate nodes with '.' (for example indexing nodes)
+
+
         ret = str()
+        func = self.red_node.find('call')
+        call = 'unknown_type.' + str(func.previous) + str(func)
+        before_call = '.'.join(str(x) for x in self.red_node.value[:func.previous.index_on_parent])
+
+        call_red = RedBaron(call)
+        before_call_red = RedBaron(before_call)
+
+        args = call_red.find('call')
+        args.insert(0, before_call_red)
+
+        at = AtomtrailersNodeConv(call_red[0])
+        self.value = at.value
         for x in self.value:
             if isinstance(x, NameNodeConv):
                 ret += '.'
@@ -90,6 +110,7 @@ class AtomtrailersNodeConv(NodeConv):
             ret = ret[1:]
 
         # add semicolon for function calls
+        # this has to be here because only assignments end with semicolon in VHDL
         if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
             ret += ';'
 
