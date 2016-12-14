@@ -12,7 +12,9 @@ class DCRemoval(HW):
         self.new = Sfix()
 
     def main(self, x):
-        av = self.moving_average.main(x)
+        av = self.next.moving_average.main(x)
+        # TODO: self.call should error, self.next is correct...actually who cares?
+        # MovingAverage.main(self.next.moving_average, x, ret_0=>av)
         self.next.delay_x = x
         self.next.out = resize(self.delay_x-av, size_res=x)
         return self.out
