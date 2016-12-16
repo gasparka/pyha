@@ -4,6 +4,7 @@ from typing import List
 
 from redbaron import RedBaron
 
+from pyha.common.hwsim import HW
 from pyha.conversion.converter import convert
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
@@ -23,14 +24,16 @@ class Conversion:
         *top output types
     """
 
-    def __init__(self, main_obj):
+    def __init__(self, main_obj, is_child=False):
         self.main_obj = main_obj
         main_red = self.get_objects_rednode(main_obj)
         main_datamodel = DataModel(main_obj)
-        # main_datamodel = None
         self.main_conversion = convert(main_red, caller=None, datamodel=main_datamodel)
+        if not is_child:
+            self.top_vhdl = TopGenerator(main_obj)
 
-        self.top_vhdl = TopGenerator(main_obj)
+        # recursively convert all child modules
+        childs = [Conversion(x) for x in main_datamodel.self_data.values() if isinstance(x, HW)]
 
     @property
     def inputs(self) -> List[object]:

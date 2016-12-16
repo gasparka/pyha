@@ -45,8 +45,37 @@ def test_write_vhdl_files(dut, tmpdir):
 def test_inputs(dut):
     assert len(dut.inputs) == 1 and type(dut.inputs[0]) == int
 
+
 def test_outputs(dut):
     assert len(dut.outputs) == 1 and type(dut.outputs[0]) == int
+
+
+def test_convert_submodule():
+    class A(HW):
+        def __init__(self):
+            self.reg = 0
+
+        def main(self, a):
+            self.next.reg = a
+            return self.reg
+
+    class B(HW):
+        def __init__(self):
+            self.sub = A()
+
+        def main(self, a):
+            ret = self.sub.main(a)
+            return ret
+
+    dut = B()
+    # train object
+    dut.main(1)
+    dut.main(2)
+    b_main = dut.main
+    a_main = dut.sub.main
+    conv = Conversion(dut)
+    pass
+
 
 ##################################
 # MISC

@@ -9,7 +9,6 @@ class DCRemoval(HW):
         self.moving_average = MovingAverage(window_len)
         self.delay_x = Sfix()
         self.out = Sfix()
-        self.new = Sfix()
 
     def main(self, x):
         av = self.next.moving_average.main(x)
@@ -25,3 +24,29 @@ class DCRemoval(HW):
     def model_main(self, x):
         av = self.moving_average.model_main(x)
         return x - av
+
+
+class Tst(HW):
+    def __init__(self, window_len):
+        self.moving_average = MovingAverage(window_len)
+        self.moving_average2 = MovingAverage(window_len)
+        # self.delay_x = Sfix()
+        # self.out = Sfix()
+
+    def main(self, x):
+        av = self.moving_average.main(x)
+        av2 = self.moving_average2.main(av)
+        return av2
+        # xd = self.moving_average.match_delay(x)
+        # self.next.delay_x = x
+        # self.next.out = resize(self.delay_x-av, size_res=x)
+        # return self.out
+
+    def get_delay(self):
+        return 2
+
+    def model_main(self, x):
+        av = self.moving_average.model_main(x)
+        # return av
+        av2 = self.moving_average2.model_main(av)
+        return av2
