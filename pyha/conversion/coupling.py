@@ -14,6 +14,7 @@ class ExceptionCoupling(Exception):
     pass
 
 
+
 def pytype_to_vhdl(var):
     if type(var) is bool:
         return 'boolean'
@@ -32,7 +33,7 @@ def pytype_to_vhdl(var):
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
     elif isinstance(var, HW):
-        return '{}.register_t'.format(escape_for_vhdl(type(var).__name__))
+        return '{}'.format(escape_for_vhdl(type(var).__name__))
     else:
         assert 0
 
@@ -51,7 +52,17 @@ class VHDLType:
     def get_self(cls):
         if cls._datamodel is None:
             return []
-        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
+        ret = []
+        for k, v in cls._datamodel.self_data.items():
+            if k == 'next':
+                continue
+            t = VHDLType(tuple_init=(k, v))
+
+            #todo remove this hack
+            if isinstance(v, HW):
+                t.var_type += '.register_t'
+            ret.append(t)
+        return ret
 
     @classmethod
     def get_typedefs(cls):
@@ -150,6 +161,7 @@ class VHDLType:
         """
         var = self._datamodel.self_data
         for x in atom_trailer[1:]:
+            if str(x) == 'next': continue
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:

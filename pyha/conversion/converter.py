@@ -261,7 +261,7 @@ class DefNodeConv(NodeConv):
         call_args.insert(0, self_arg)
 
         if self_arg.dumps() not in ['self', 'self.next']:
-            self_type = VHDLType(str(self_arg[-1]), red_node=call)
+            self_type = VHDLType(str(self_arg[-1]), red_node=self_arg)
             rb = RedBaron('{}.{}'.format(self_type.var_type, call.dumps()))
             return rb[0]
 

@@ -351,6 +351,89 @@ def test_typed_def_argument_return_multiple(converter):
     assert expect == str(conv)
 
 
+def test_typed_def_call_submod_self(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            self.submod.main(b)""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(
+        self_data={'submod': D()},
+        locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            D.main(self.submod, b);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+def test_typed_def_call_submod_self_next(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            self.next.submod.main(b)""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(
+        self_data={'submod': D()},
+        locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            D.main(self.\\next\\.submod, b);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_call_submod_returns_local(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            c = self.submod.main(b)""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(
+        self_data={'submod': D()},
+        locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+            variable c: boolean;
+        begin
+            D.main(self.submod, b, ret_0=>c);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_call_submod_returns_self(converter):
+    code = textwrap.dedent("""\
+        def a(b):
+            self.c = self.submod.main(b)""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(
+        self_data={'submod': D()},
+        locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            D.main(self.submod, b, ret_0=>self.c);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
 def test_typed_def_infer_variable(converter):
     code = textwrap.dedent("""\
         def a(b):
@@ -506,7 +589,7 @@ def test_typed_def_complex(converter):
         'l': True,
         'o': Sfix(12, 12, -12)
     }},
-        self_data={'next': {'b': 12}})
+        self_data={'b': 12})
 
     expect = textwrap.dedent("""\
         procedure a(self: self_t; a: sfixed(0 downto -2); b: boolean:=\\next\\; ret_0:out sfixed(0 downto -2); ret_1:out integer) is
@@ -616,7 +699,7 @@ def test_pytype_to_vhdl_l():
 
     assert ret == 'sfixed1_2_list_t(0 to 4)'
     ret = pytype_to_vhdl(A())
-    assert ret == 'A.register_t'
+    assert ret == 'A'
 
 
 def test_class_datamodel_submodule(converter):
