@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from redbaron import RedBaron
 
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert, DefNodeConv
 
 
 @pytest.fixture
@@ -201,7 +201,7 @@ def test_if_single_body(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_if_two_statements(converter):
@@ -216,7 +216,7 @@ def test_if_two_statements(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_if_single_nested(converter):
@@ -234,7 +234,7 @@ def test_if_single_nested(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_if_else(converter):
@@ -252,7 +252,7 @@ def test_if_else(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_if_elif(converter):
@@ -270,7 +270,7 @@ def test_if_elif(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_if_complex(converter):
@@ -299,7 +299,7 @@ def test_if_complex(converter):
         end if;"""
     expect = textwrap.dedent(expect)
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def(converter):
@@ -314,7 +314,7 @@ def test_def(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_reserver_name(converter):
@@ -329,7 +329,7 @@ def test_def_reserver_name(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_statements(converter):
@@ -349,7 +349,7 @@ def test_def_statements(converter):
             end if;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument(converter):
@@ -364,7 +364,7 @@ def test_def_argument(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_default_value(converter):
@@ -379,7 +379,7 @@ def test_def_argument_default_value(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_multiple(converter):
@@ -394,7 +394,7 @@ def test_def_argument_multiple(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_return(converter):
@@ -409,7 +409,7 @@ def test_def_argument_return(converter):
             ret_0 := b;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_return_local_indexing(converter):
@@ -424,7 +424,7 @@ def test_def_argument_return_local_indexing(converter):
             ret_0 := b(1);
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_return_self(converter):
@@ -439,7 +439,7 @@ def test_def_argument_return_self(converter):
             ret_0 := self.b;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_argument_return_multiple(converter):
@@ -456,7 +456,7 @@ def test_def_argument_return_multiple(converter):
             ret_2 := d;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable(converter):
@@ -471,7 +471,7 @@ def test_def_infer_variable(converter):
             a := b;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_reject_because_argument(converter):
@@ -487,7 +487,7 @@ def test_def_infer_variable_reject_because_argument(converter):
             b := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_reject_because_argument_reserved(converter):
@@ -503,7 +503,7 @@ def test_def_infer_variable_reject_because_argument_reserved(converter):
             \\next\\ := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_reserved_name(converter):
@@ -518,7 +518,7 @@ def test_def_infer_variable_reserved_name(converter):
             \\next\\ := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_return(converter):
@@ -534,7 +534,7 @@ def test_def_infer_variable_return(converter):
             ret_0 := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_dublicate(converter):
@@ -551,7 +551,7 @@ def test_def_infer_variable_dublicate(converter):
             x := b;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_multiple(converter):
@@ -572,7 +572,7 @@ def test_def_infer_variable_multiple(converter):
             l := h;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_atomtrailer(converter):
@@ -589,7 +589,7 @@ def test_def_infer_variable_atomtrailer(converter):
             c.d := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_infer_variable_atomtrailer_argument(converter):
@@ -606,7 +606,7 @@ def test_def_infer_variable_atomtrailer_argument(converter):
             self.d := l;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_def_complex(converter):
@@ -626,17 +626,24 @@ def test_def_complex(converter):
             ret_1 := self.\\next\\.b;
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_submodule(converter):
     code = textwrap.dedent("""\
-            self.next.moving_average.main(x)""")
-
+            def a():
+                self.next.moving_average.main(x)
+                """)
     expect = textwrap.dedent("""\
-            unknown_type.main(self.next.moving_average, x, ret_0=>av)""")
+        procedure a is
+
+        begin
+            unknown_type.main(self.\\next\\.moving_average, x);
+        end procedure;""")
+
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
+
 
 def test_call_resize(converter):
     code = textwrap.dedent("""\
@@ -645,7 +652,7 @@ def test_call_resize(converter):
     expect = textwrap.dedent("""\
             resize(self.counter, 0, -17)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_resize_size_res(converter):
@@ -655,7 +662,7 @@ def test_call_resize_size_res(converter):
     expect = textwrap.dedent("""\
             resize(self.counter, size_res=>self.\\next\\.a)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_resize_keyword_params(converter):
@@ -665,7 +672,7 @@ def test_call_resize_keyword_params(converter):
     expect = textwrap.dedent("""\
             resize(self.counter, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_sfix(converter):
@@ -675,7 +682,7 @@ def test_call_sfix(converter):
     expect = textwrap.dedent("""\
             Sfix(0.95, 0, -17)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_sfix_keyword_params(converter):
@@ -685,7 +692,7 @@ def test_call_sfix_keyword_params(converter):
     expect = textwrap.dedent("""\
             Sfix(0.95, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_resize_sfix_combined(converter):
@@ -695,7 +702,23 @@ def test_call_resize_sfix_combined(converter):
     expect = textwrap.dedent("""\
             counter_small := resize(Sfix(0, 0, -self.scalebits + 1), size_res=>a);""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
+
+
+
+def test_call_semicolon_assign(converter):
+    code = textwrap.dedent("""\
+        def a():
+            self.a = a()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            self.a := a();
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
 
 
 def test_call_semicolon_def(converter):
@@ -710,7 +733,7 @@ def test_call_semicolon_def(converter):
             a();
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_semicolon_def2(converter):
@@ -729,7 +752,7 @@ def test_call_semicolon_def2(converter):
             c
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_semicolon_if_condition(converter):
@@ -743,7 +766,7 @@ def test_call_semicolon_if_condition(converter):
         end if;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_semicolon_if_body(converter):
@@ -757,7 +780,7 @@ def test_call_semicolon_if_body(converter):
         end if;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_semicolon_for(converter):
@@ -771,7 +794,7 @@ def test_call_semicolon_for(converter):
             end loop;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_semicolon_multi(converter):
@@ -785,7 +808,7 @@ def test_call_semicolon_multi(converter):
                     a()
             else:
                 a()
-            self.lol = lol.a()""")
+""")
 
     expect = textwrap.dedent("""\
         procedure a is
@@ -801,10 +824,60 @@ def test_call_semicolon_multi(converter):
             else
                 a();
             end if;
-            self.lol := lol.a();
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
+
+
+def test_call_simple():
+    # this is redbadon based transform
+    x = 'a(a)'
+    expect = 'a(a)'
+    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.d(a)'
+    expect = 'd(self, a)'
+    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.moving_average.main(x)'
+    expect = 'unknown_type.main(self.next.moving_average, x)'
+    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+
+def test_call_returns():
+    # this is redbadon based transform
+    x = 'b = self.a(a)'
+    expect = 'self.a(a, ret_0=b)'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'b = resize(a)'
+    expect = 'b = resize(a)'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=b)'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.b)'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.next.b)'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.b[0], self.next.b[1] = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
+    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
 
 def test_call_self(converter):
     code = textwrap.dedent("""\
@@ -815,11 +888,27 @@ def test_call_self(converter):
         procedure a is
 
         begin
-            d();
+            d(self);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
+
+
+def test_call_self_next(converter):
+    code = textwrap.dedent("""\
+            def a():
+                self.next.d()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(self.\\next\\);
+        end procedure;""")
+
+    conv = converter(code)
+    assert expect == str(conv)
 
 
 def test_call_self_return(converter):
@@ -829,13 +918,29 @@ def test_call_self_return(converter):
 
     expect = textwrap.dedent("""\
         procedure a is
-
+            variable b: unknown_type;
         begin
-            d(a, ret_0=>b);
+            d(self, a, ret_0=>b);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
+
+
+def test_call_return_to_self(converter):
+    code = textwrap.dedent("""\
+            def a():
+                self.b = self.d(a)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            d(self, a, ret_0=>self.b);
+        end procedure;""")
+
+    conv = converter(code)
+    assert expect == str(conv)
 
 
 def test_call_self_return_no_args(converter):
@@ -845,13 +950,13 @@ def test_call_self_return_no_args(converter):
 
     expect = textwrap.dedent("""\
         procedure a is
-
+            variable b: unknown_type;
         begin
-            d(ret_0=>b);
+            d(self, ret_0=>b);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_call_self_keyword(converter):
@@ -861,45 +966,47 @@ def test_call_self_keyword(converter):
 
     expect = textwrap.dedent("""\
         procedure a is
-
+            variable b: unknown_type;
         begin
-            d(a=>self.b, ret_0=>b);
+            d(self, a=>self.b, ret_0=>b);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_call_self_return2(converter):
+def test_call_self_return_two(converter):
     code = textwrap.dedent("""\
             def a():
                 b, c = self.d()""")
 
     expect = textwrap.dedent("""\
         procedure a is
-
+            variable b: unknown_type;
+            variable c: unknown_type;
         begin
-            d(ret_0=>b, ret_1=>c);
+            d(self, ret_0=>b, ret_1=>c);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
-def test_call_self_return2_arugments(converter):
+def test_call_self_return_two_arguments(converter):
     code = textwrap.dedent("""\
             def a():
                 b, c = self.d(loll, loom)""")
 
     expect = textwrap.dedent("""\
         procedure a is
-
+            variable b: unknown_type;
+            variable c: unknown_type;
         begin
-            d(loll, loom, ret_0=>b, ret_1=>c);
+            d(self, loll, loom, ret_0=>b, ret_1=>c);
         end procedure;""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing(converter):
@@ -909,7 +1016,7 @@ def test_indexing(converter):
     expect = textwrap.dedent("""\
             a(1)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_inc(converter):
@@ -919,7 +1026,7 @@ def test_indexing_inc(converter):
     expect = textwrap.dedent("""\
             a(b + 1)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_negative_index(converter):
@@ -929,7 +1036,7 @@ def test_indexing_negative_index(converter):
     expect = textwrap.dedent("""\
             a(a'length-1)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_negative_index2(converter):
@@ -939,7 +1046,7 @@ def test_indexing_negative_index2(converter):
     expect = textwrap.dedent("""\
             self.var(self.var'length-4)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_negative_index3(converter):
@@ -949,7 +1056,7 @@ def test_indexing_negative_index3(converter):
     expect = textwrap.dedent("""\
             self.\\next\\.var(self.\\next\\.var'length-4)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice(converter):
@@ -960,7 +1067,7 @@ def test_indexing_slice(converter):
             a(0 to 4)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice_no_lower(converter):
@@ -971,7 +1078,7 @@ def test_indexing_slice_no_lower(converter):
             a(0 to 1)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice_no_lower_negative_upper(converter):
@@ -982,7 +1089,7 @@ def test_indexing_slice_no_lower_negative_upper(converter):
             self.a(0 to self.a'high-1)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice_no_lower_negative_upper2(converter):
@@ -993,7 +1100,7 @@ def test_indexing_slice_no_lower_negative_upper2(converter):
             a(0 to a'high-2)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice_no_upper(converter):
@@ -1004,7 +1111,7 @@ def test_indexing_slice_no_upper(converter):
             a(1 to a'high)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_indexing_slice_no_upper_no_lower(converter):
@@ -1015,7 +1122,7 @@ def test_indexing_slice_no_upper_no_lower(converter):
             a(0 to a'high)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_length(converter):
@@ -1025,7 +1132,7 @@ def test_builtin_length(converter):
     expect = textwrap.dedent("""\
             len(self.taps)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range(converter):
@@ -1035,7 +1142,7 @@ def test_builtin_range(converter):
     expect = textwrap.dedent("""\
             \\range\\(self.taps)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range_int(converter):
@@ -1045,7 +1152,7 @@ def test_builtin_range_int(converter):
     expect = textwrap.dedent("""\
             \\range\\(10)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range_int_start(converter):
@@ -1055,7 +1162,7 @@ def test_builtin_range_int_start(converter):
     expect = textwrap.dedent("""\
             \\range\\(2, 5)""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range_int_start_step(converter):
@@ -1066,7 +1173,7 @@ def test_builtin_range_int_start_step(converter):
             \\range\\(2, 5, 2)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range_int_start_step_unit(converter):
@@ -1077,7 +1184,7 @@ def test_builtin_range_int_start_step_unit(converter):
             \\range\\(2, 5, 1)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_range_length(converter):
@@ -1087,7 +1194,7 @@ def test_builtin_range_length(converter):
     expect = textwrap.dedent("""\
             \\range\\(len(self.taps))""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_builtin_reverse_range_length(converter):
@@ -1097,7 +1204,7 @@ def test_builtin_reverse_range_length(converter):
     expect = textwrap.dedent("""\
             reverse(\\range\\(len(self.taps)))""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_for(converter):
@@ -1110,7 +1217,7 @@ def test_for(converter):
 
             end loop;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_for2(converter):
@@ -1123,7 +1230,7 @@ def test_for2(converter):
 
             end loop;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_for_body(converter):
@@ -1138,7 +1245,7 @@ def test_for_body(converter):
                 a(i + 1) := c;
             end loop;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_for_complex(converter):
@@ -1160,7 +1267,7 @@ def test_for_complex(converter):
                 end if;
             end loop;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 # def test_class_nocall(converter):
@@ -1187,7 +1294,7 @@ def test_class_call_modifications(converter):
         end procedure;""")
     conv = converter(code)
     conv = conv.get_call_str()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_class_importlibs(converter):
@@ -1209,7 +1316,7 @@ def test_class_importlibs(converter):
 
     conv = converter(code)
     conv = conv.get_imports()
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_list(converter):
@@ -1220,7 +1327,7 @@ def test_list(converter):
             a""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_list_append(converter):
@@ -1231,7 +1338,7 @@ def test_list_append(converter):
             a & b""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_list_post_append(converter):
@@ -1242,7 +1349,7 @@ def test_list_post_append(converter):
             a & b""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 def test_binaryoperator_shift_right(converter):
@@ -1253,7 +1360,7 @@ def test_binaryoperator_shift_right(converter):
             \>>\(a, 1)""")
 
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)
 
 
 # TODO class conversion

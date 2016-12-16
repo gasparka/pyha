@@ -117,7 +117,7 @@ class VHDLType:
 
     def deduce_type(self):
         if self._datamodel is None:  # support converter tests
-            return self.var_type
+            return self.var_type or 'unknown_type'
 
         self.variable = self.get_var_datamodel()
 
