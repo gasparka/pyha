@@ -943,6 +943,24 @@ def test_call_return_to_self(converter):
     assert expect == str(conv)
 
 
+def test_call_return_to_return(converter):
+    code = textwrap.dedent("""\
+            def a():
+                b = self.d(a)
+                return b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type) is
+            variable b: unknown_type;
+        begin
+            d(self, a, ret_0=>b);
+            ret_0 := b;
+        end procedure;""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_call_self_return_no_args(converter):
     code = textwrap.dedent("""\
             def a():
