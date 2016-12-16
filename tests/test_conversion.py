@@ -74,6 +74,7 @@ def test_convert_submodule():
     b_main = dut.main
     a_main = dut.sub.main
     conv = Conversion(dut)
+    paths = conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
     pass
 
 

@@ -25,15 +25,18 @@ class Conversion:
     """
 
     def __init__(self, main_obj, is_child=False):
+
+        self.is_child = is_child
         self.main_obj = main_obj
+        self.class_name = main_obj.__class__.__name__
         main_red = self.get_objects_rednode(main_obj)
         main_datamodel = DataModel(main_obj)
-        self.main_conversion = convert(main_red, caller=None, datamodel=main_datamodel)
+        self.main_conversion = str(convert(main_red, caller=None, datamodel=main_datamodel))
         if not is_child:
             self.top_vhdl = TopGenerator(main_obj)
 
         # recursively convert all child modules
-        childs = [Conversion(x) for x in main_datamodel.self_data.values() if isinstance(x, HW)]
+        self.childs = [Conversion(x, is_child=True) for x in main_datamodel.self_data.values() if isinstance(x, HW)]
 
     @property
     def inputs(self) -> List[object]:
@@ -44,13 +47,18 @@ class Conversion:
         return self.top_vhdl.get_object_return()
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
-        paths = [base_dir / 'main.vhd']
+
+        paths = [base_dir / '{}.vhd'.format(self.class_name if self.is_child else 'main')]
         with paths[-1].open('w') as f:
             f.write(str(self.main_conversion))
 
-        paths.append(base_dir / 'top.vhd')
-        with paths[-1].open('w') as f:
-            f.write(self.top_vhdl.make())
+        if not self.is_child:
+            paths.append(base_dir / 'top.vhd')
+            with paths[-1].open('w') as f:
+                f.write(self.top_vhdl.make())
+
+        for x in self.childs:
+            paths.extend(x.write_vhdl_files(base_dir))
 
         return paths
 
