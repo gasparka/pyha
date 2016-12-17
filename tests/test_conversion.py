@@ -39,7 +39,7 @@ def test_get_objects_rednode_badtype(dut):
 def test_write_vhdl_files(dut, tmpdir):
     tmpdir = Path(str(tmpdir))
     files = dut.write_vhdl_files(tmpdir)
-    assert files[0] == tmpdir / 'main.vhd' and files[0].is_file()
+    assert files[0] == tmpdir / 'Dummy.vhd' and files[0].is_file()
     assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
