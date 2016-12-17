@@ -58,6 +58,7 @@ def extract_locals(obj):
         # if hasattr(call, 'knows_locals'):
         if isinstance(call, PyhaFunc):
             if call.calls == 0:
+                continue
                 raise FunctionNotSimulated(class_name, call.func.__name__)
 
             for key, val in call.locals.items():

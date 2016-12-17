@@ -48,23 +48,21 @@ class Conversion:
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
 
-        paths = [base_dir / '{}.vhd'.format(self.class_name if self.is_child else 'main')]
+        paths = []
+        for x in self.childs:
+            paths.extend(x.write_vhdl_files(base_dir))  # recusion here
+
+        paths.append(base_dir / '{}.vhd'.format(self.class_name))
         with paths[-1].open('w') as f:
             f.write(str(self.main_conversion))
 
+        # add top_generator file
         if not self.is_child:
             paths.append(base_dir / 'top.vhd')
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
-        for x in self.childs:
-            paths.extend(x.write_vhdl_files(base_dir))
-
         return paths
-
-    def discover_child_entities(self):
-        # TODO: future
-        pass
 
     def get_objects_rednode(self, obj):
         source_path = self.get_objects_source_path(obj)
