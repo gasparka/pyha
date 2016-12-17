@@ -6,24 +6,28 @@ from pyha.components.moving_average import MovingAverage
 
 class DCRemoval(HW):
     def __init__(self, window_len):
-        self.moving_average = MovingAverage(window_len)
+        self.avg1 = MovingAverage(window_len)
+        self.avg2 = MovingAverage(window_len)
         self.delay_x = Sfix()
+        self.delay_x2 = Sfix()
         self.out = Sfix()
 
     def main(self, x):
-        av = self.next.moving_average.main(x)
-        # TODO: self.call should error, self.next is correct...actually who cares?
-        # MovingAverage.main(self.next.moving_average, x, ret_0=>av)
+        av1 = self.next.avg1.main(x)
+        av2 = self.next.avg2.main(av1)
+
         self.next.delay_x = x
-        self.next.out = resize(self.delay_x-av, size_res=x)
+        self.next.delay_x2 = self.delay_x
+        self.next.out = resize(self.delay_x2 - av2, size_res=x)
         return self.out
 
     def get_delay(self):
-        return 2
+        return 3
 
     def model_main(self, x):
-        av = self.moving_average.model_main(x)
-        return x - av
+        av1 = self.avg1.model_main(x)
+        av2 = self.avg2.model_main(av1)
+        return x - av2
 
 
 class Tst(HW):
