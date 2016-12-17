@@ -1,5 +1,4 @@
-#TODO: This file is 100% mess, only works thanks to unit tests
-from typing import List
+# TODO: This file is 100% mess, only works thanks to unit tests
 
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -12,7 +11,6 @@ from pyha.conversion.extract_datamodel import DataModel
 
 class ExceptionCoupling(Exception):
     pass
-
 
 
 def pytype_to_vhdl(var):
@@ -33,9 +31,17 @@ def pytype_to_vhdl(var):
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
     elif isinstance(var, HW):
-        return '{}'.format(escape_for_vhdl(type(var).__name__))
+        idstr = get_instance_vhdl_name(var)
+        return idstr
     else:
         assert 0
+
+
+def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
+    if variable is not None:
+        name = type(variable).__name__
+        id = variable.pyha_instance_id
+    return escape_for_vhdl('{}_{}'.format(name, id))
 
 
 class VHDLType:
@@ -49,6 +55,12 @@ class VHDLType:
         cls._datamodel = dm
 
     @classmethod
+    def get_self_vhdl_name(cls):
+        if cls._datamodel.obj is None:
+            return 'unknown_name'
+        return get_instance_vhdl_name(cls._datamodel.obj)
+
+    @classmethod
     def get_self(cls):
         if cls._datamodel is None:
             return []
@@ -58,7 +70,7 @@ class VHDLType:
                 continue
             t = VHDLType(tuple_init=(k, v))
 
-            #todo remove this hack
+            # todo remove this hack
             if isinstance(v, HW):
                 t.var_type += '.register_t'
             ret.append(t)

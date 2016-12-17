@@ -6,6 +6,7 @@ from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
 from pyha.conversion.converter import convert
+from pyha.conversion.coupling import get_instance_vhdl_name
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
@@ -24,19 +25,19 @@ class Conversion:
         *top output types
     """
 
-    def __init__(self, main_obj, is_child=False):
+    def __init__(self, obj, is_child=False):
 
         self.is_child = is_child
-        self.main_obj = main_obj
-        self.class_name = main_obj.__class__.__name__
-        main_red = self.get_objects_rednode(main_obj)
-        main_datamodel = DataModel(main_obj)
-        self.main_conversion = str(convert(main_red, caller=None, datamodel=main_datamodel))
+        self.obj = obj
+        self.class_name = obj.__class__.__name__
+        red_node = self.get_objects_rednode(obj)
+        self.datamodel = DataModel(obj)
+        self.vhdl_conversion = str(convert(red_node, caller=None, datamodel=self.datamodel))
         if not is_child:
-            self.top_vhdl = TopGenerator(main_obj)
+            self.top_vhdl = TopGenerator(obj)
 
         # recursively convert all child modules
-        self.childs = [Conversion(x, is_child=True) for x in main_datamodel.self_data.values() if isinstance(x, HW)]
+        self.childs = [Conversion(x, is_child=True) for x in self.datamodel.self_data.values() if isinstance(x, HW)]
 
     @property
     def inputs(self) -> List[object]:
@@ -52,9 +53,11 @@ class Conversion:
         for x in self.childs:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
-        paths.append(base_dir / '{}.vhd'.format(self.class_name))
+        # paths.append(base_dir / '{}.vhd'.format(self.class_name))
+        fname = get_instance_vhdl_name(self.obj)
+        paths.append(base_dir / '{}.vhd'.format(fname))
         with paths[-1].open('w') as f:
-            f.write(str(self.main_conversion))
+            f.write(str(self.vhdl_conversion))
 
         # add top_generator file
         if not self.is_child:

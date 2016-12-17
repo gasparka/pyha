@@ -94,7 +94,7 @@ def test_input_type_conversion(basic_obj):
 
 def test_dut_name(basic_obj):
     dut = basic_obj
-    expect = '\\Register\\'
+    expect = 'Register_0'
 
     res = TopGenerator(dut)
 
@@ -158,7 +158,7 @@ def test_full(basic_obj, tmpdir):
                     architecture arch of top is
                     begin
                         process(clk, rst_n)
-                            variable self: \\Register\\.register_t;
+                            variable self: Register_0.register_t;
                             -- input variables
                             variable var_in0: integer;
                             variable var_in1: sfixed(2 downto -17);
@@ -170,7 +170,7 @@ def test_full(basic_obj, tmpdir):
                             variable var_out2: sfixed(5 downto -8);
                         begin
                         if (not rst_n) then
-                            \\Register\\.reset(self);
+                            Register_0.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
                             var_in0 := to_integer(signed(in0));
@@ -178,7 +178,7 @@ def test_full(basic_obj, tmpdir):
                             var_in2 := True when in2 = '1' else False;
 
                             --call the main entry
-                            \\Register\\.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+                            Register_0.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -252,7 +252,7 @@ def test_simple_full(simple_obj):
                     architecture arch of top is
                     begin
                         process(clk, rst_n)
-                            variable self: Simple.register_t;
+                            variable self: Simple_0.register_t;
                             -- input variables
                             variable var_in0: integer;
 
@@ -260,13 +260,13 @@ def test_simple_full(simple_obj):
                             variable var_out0: integer;
                         begin
                         if (not rst_n) then
-                            Simple.reset(self);
+                            Simple_0.reset(self);
                         elsif rising_edge(clk) then
                             --convert slv to normal types
                             var_in0 := to_integer(signed(in0));
 
                             --call the main entry
-                            Simple.main(self, var_in0, ret_0=>var_out0);
+                            Simple_0.main(self, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
                             out0 <= std_logic_vector(to_signed(var_out0, 32));

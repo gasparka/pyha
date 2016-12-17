@@ -366,10 +366,11 @@ def test_typed_def_call_submod_self(converter):
         procedure a(b: boolean) is
 
         begin
-            D.main(self.submod, b);
+            D_0.main(self.submod, b);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
+
 
 def test_typed_def_call_submod_self_next(converter):
     code = textwrap.dedent("""\
@@ -386,7 +387,7 @@ def test_typed_def_call_submod_self_next(converter):
         procedure a(b: boolean) is
 
         begin
-            D.main(self.\\next\\.submod, b);
+            D_0.main(self.\\next\\.submod, b);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -407,7 +408,7 @@ def test_typed_def_call_submod_returns_local(converter):
         procedure a(b: boolean) is
             variable c: boolean;
         begin
-            D.main(self.submod, b, ret_0=>c);
+            D_0.main(self.submod, b, ret_0=>c);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -428,7 +429,7 @@ def test_typed_def_call_submod_returns_self(converter):
         procedure a(b: boolean) is
 
         begin
-            D.main(self.submod, b, ret_0=>self.c);
+            D_0.main(self.submod, b, ret_0=>self.c);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -648,6 +649,26 @@ def test_datamodel_to_self2():
     assert str(s) == '[a: sfixed(0 downto -27), b: sfixed(2 downto -27), c: integer, d: boolean]'
 
 
+class Tc(HW):
+    pass
+
+
+Tcobj = Tc()
+def test_class_name(converter):
+
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(obj=Tcobj, self_data={'a': Sfix(0.0, 0, -27)})
+    expect = textwrap.dedent("""\
+            Tc_0""")
+
+    conv = converter(code, datamodel)
+    conv = conv.get_name()
+    assert expect == str(conv)
+
+
 def test_class_datamodel(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -677,6 +698,8 @@ class A(HW):
         pass
 
 
+Aobj = A()
+
 class Register(HW):
     def __init__(self):
         self.reg = 0
@@ -698,8 +721,8 @@ def test_pytype_to_vhdl_l():
     ret = pytype_to_vhdl(inp)
 
     assert ret == 'sfixed1_2_list_t(0 to 4)'
-    ret = pytype_to_vhdl(A())
-    assert ret == 'A'
+    ret = pytype_to_vhdl(Aobj)
+    assert ret == 'A_0'
 
 
 def test_class_datamodel_submodule(converter):
@@ -707,15 +730,15 @@ def test_class_datamodel_submodule(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'sub': A()})
+    datamodel = DataModel(self_data={'sub': Aobj})
 
     expect = textwrap.dedent("""\
             type register_t is record
-                sub: A.register_t;
+                sub: A_0.register_t;
             end record;
 
             type self_t is record
-                sub: A.register_t;
+                sub: A_0.register_t;
                 \\next\\: register_t;
             end record;""")
 
@@ -725,7 +748,7 @@ def test_class_datamodel_submodule(converter):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            A.reset(self_reg.sub);
+            A_0.reset(self_reg.sub);
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -750,11 +773,11 @@ def test_class_datamodel_submodule_reserved_name(converter):
 
     expect = textwrap.dedent("""\
             type register_t is record
-                sub: \\Register\\.register_t;
+                sub: Register_0.register_t;
             end record;
 
             type self_t is record
-                sub: \\Register\\.register_t;
+                sub: Register_0.register_t;
                 \\next\\: register_t;
             end record;""")
 
@@ -764,7 +787,7 @@ def test_class_datamodel_submodule_reserved_name(converter):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            \\Register\\.reset(self_reg.sub);
+            Register_0.reset(self_reg.sub);
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -1093,7 +1116,7 @@ def test_class_full(converter):
     })
 
     expect = textwrap.dedent("""\
-        package Tc is
+        package unknown_name is
 
 
             type register_t is record
@@ -1114,7 +1137,7 @@ def test_class_full(converter):
             procedure main(self_reg:inout register_t);
         end package;
 
-        package body Tc is
+        package body unknown_name is
             procedure reset(self_reg: inout register_t) is
             begin
                 self_reg.a := to_sfixed(1.0, 2, -27);
@@ -1155,7 +1178,7 @@ def test_class_full_reserved_name(converter):
         'd': False,
     })
     expect = textwrap.dedent("""\
-        package \\Register\\ is
+        package unknown_name is
 
 
             type register_t is record
@@ -1170,7 +1193,7 @@ def test_class_full_reserved_name(converter):
             procedure main(self_reg:inout register_t);
         end package;
 
-        package body \\Register\\ is
+        package body unknown_name is
             procedure reset(self_reg: inout register_t) is
             begin
                 self_reg.d := False;
@@ -1207,7 +1230,7 @@ def test_class_full_endl_bug(converter):
         'd': False,
     })
     expect = textwrap.dedent("""\
-            package \\Register\\ is
+            package unknown_name is
 
 
                 type register_t is record
@@ -1222,7 +1245,7 @@ def test_class_full_endl_bug(converter):
                 procedure main(self_reg:inout register_t);
             end package;
 
-            package body \\Register\\ is
+            package body unknown_name is
                 procedure reset(self_reg: inout register_t) is
                 begin
                     self_reg.d := False;
@@ -1265,7 +1288,7 @@ def test_class_full_get_delay(converter):
         locals={'main': {'new_value': Sfix(0.0, 0, -27)}, 'get_delay': {}})
 
     expect = textwrap.dedent("""\
-            package \\Register\\ is
+            package unknown_name is
 
 
                 type register_t is record
@@ -1281,7 +1304,7 @@ def test_class_full_get_delay(converter):
                 procedure get_delay(self: self_t; ret_0:out integer);
             end package;
 
-            package body \\Register\\ is
+            package body unknown_name is
                 procedure reset(self_reg: inout register_t) is
                 begin
                     self_reg.a := to_sfixed(0.0, 0, -27);
