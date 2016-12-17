@@ -211,6 +211,27 @@ def test_datamodel_mixed():
     assert result == expect
 
 
+def test_datamodel_submodule():
+    class A(HW):
+        def __init__(self):
+            self.reg = 0
+
+        def main(self, *args, **kwargs):
+            pass
+
+    class B(HW):
+        def __init__(self):
+            self.submodule = A()
+
+        def main(self, *args, **kwargs):
+            pass
+
+
+    dut = B()
+    dut.main()
+    result = extract_datamodel(dut)
+    assert type(result['submodule']) == A
+
 def test_localss():
     class A(HW):
         def tst(self):

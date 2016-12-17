@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
-from pyha.common.hwsim import PyhaFunc, SKIP_FUNCTIONS
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
+
 
 
 class FunctionNotSimulated(Exception):
@@ -26,6 +27,8 @@ def is_convertible(obj):
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):
                 return True
+    elif isinstance(obj, HW):
+        return True
 
     return False
 
@@ -40,7 +43,8 @@ def extract_datamodel(obj):
                 val = Sfix(val.init_val, last.left, last.right)
             elif isinstance(val, list) and isinstance(val[0], Sfix):
                 val = [Sfix(new_val.init_val, last_val.left, last_val.right) for new_val, last_val in zip(val, last)]
-
+            elif isinstance(val, HW):
+                val = last
             ret.update({key: val})
     return ret
 
@@ -54,6 +58,7 @@ def extract_locals(obj):
         # if hasattr(call, 'knows_locals'):
         if isinstance(call, PyhaFunc):
             if call.calls == 0:
+                continue
                 raise FunctionNotSimulated(class_name, call.func.__name__)
 
             for key, val in call.locals.items():

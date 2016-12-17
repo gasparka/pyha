@@ -1,12 +1,14 @@
 import logging
 import textwrap
 
-from redbaron import NameNode, Node, EndlNode, DefNode
+import numpy as np
+from pyexpat import expat_CAPI
+from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
 from redbaron.nodes import AtomtrailersNode
 
-from pyha.common.hwsim import SKIP_FUNCTIONS
+from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber
+from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
@@ -65,30 +67,8 @@ class NodeConv:
 
 
 class NameNodeConv(NodeConv):
-    vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
-                           'array', 'assert', 'attribute', 'begin', 'block', 'body',
-                           'buffer', 'bus', 'case', 'component', 'configuration',
-                           'constant', 'disconnect', 'downto', 'else', 'elsif', 'end',
-                           'entity', 'exit', 'file', 'for', 'function', 'generate', 'generic',
-                           'group', 'guarded', 'if', 'impure', 'in', 'inertial', 'inout', 'is',
-                           'label', 'library', 'linkage', 'literal', 'loop', 'map', 'mod',
-                           'nand', 'new', 'next', 'nor', 'not', 'null', 'of', 'on', 'open', 'or',
-                           'others', 'out', 'package', 'port', 'postponed', 'procedure',
-                           'process', 'pure', 'range', 'record', 'register', 'reject', 'rem',
-                           'report', 'return', 'rol', 'ror', 'select', 'severity', 'signal',
-                           'shared', 'sla', 'sll', 'sra', 'srl', 'subtype', 'then', 'to',
-                           'transport', 'type', 'unaffected', 'units', 'until', 'use',
-                           'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
-
-    @classmethod
-    def parse(cls, name: str):
-        if name.lower() in cls.vhdl_reserved_names \
-                or name[0] == '_':
-            return '\{}\\'.format(name)  # "escape" reserved name
-        return name
-
     def __str__(self):
-        return NameNodeConv.parse(self.red_node.value)
+        return escape_for_vhdl(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
@@ -98,11 +78,63 @@ class AtomtrailersNodeConv(NodeConv):
     def __str__(self):
 
         # remove 'self.' from function calls
-        if self.is_function_call() and str(self.value[0]) == 'self':
-            del self.value[0]
+        # if self.is_function_call() and str(self.value[0]) == 'self':
+        #     del self.value[0]
+
+        # if self.is_function_call():
+        #     call =
+        #     pass
+
+
+        # basically on some occasions, dont separate nodes with '.' (for example indexing nodes)
+
+        # out_str = ''
+        # for token, next_token in zip(self.value, self.value[1:] + [None]):
+        #     # start function call
+        #     if isinstance(next_token, CallNodeConv):
+        #         func_call = str(token) + str(next_token)
+        #         self_arg = out_str
+        #         args_start = func_call.find('(')
+        #
+        #         tmp = func_call[:args_start] + self_arg + func_call[args_start:]
+        #         pass
+        #     else:
+        #         out_str += str(token)
+
+
+        # ret = str()
+        # func = self.red_node.find('call')
+        # call = 'unknown_type.' + str(func.previous) + str(func)
+        # before_call = '.'.join(str(x) for x in self.red_node.value[:func.previous.index_on_parent])
+        #
+        # call_red = RedBaron(call)
+        # before_call_red = RedBaron(before_call)
+        #
+        # args = call_red.find('call')
+        # args.insert(0, before_call_red)
+        #
+        # at = AtomtrailersNodeConv(call_red[0])
+        # self.value = at.value
+        # for x in self.value:
+        #     if isinstance(x, NameNodeConv):
+        #         ret += '.'
+        #     ret += str(x)
+        # if ret[0] == '.':
+        #     ret = ret[1:]
+
+        # add semicolon for function calls
+        # this has to be here because only assignments end with semicolon in VHDL
+        # if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
+        #     ret += ';'
+        #
+        # return ret
+
+        # # remove 'self.' from function calls
+        # if self.is_function_call() and str(self.value[0]) == 'self':
+        #     del self.value[0]
 
         # basically on some occasions, dont separate nodes with '.'
-        ret = str()
+        ret = ''
         for x in self.value:
             if isinstance(x, NameNodeConv):
                 ret += '.'
@@ -111,8 +143,9 @@ class AtomtrailersNodeConv(NodeConv):
             ret = ret[1:]
 
         # add semicolon for function calls
-        if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
-            ret += ';'
+        # wat = self.red_node.previous_rendered
+        # if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
+        #     ret += ';'
 
         return ret
 
@@ -202,31 +235,84 @@ class ElifNodeConv(NodeConv):
         return 'elseif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
 
 
-class DefNodeConv(NodeConv):
-    def function_calls_transform(self, red_node):
-        # find all assignment nodes, check if they contain 'self' function call
-        # -> transform
-        assigns = red_node.find_all('assign')
-        for i, x in enumerate(assigns):
-            if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
-                call = x('call')
-                if len(call) == 1:  # some function is called
-                    call = call[0]
-                    if len(x.target) == 1:
-                        call.append(str(x.target))
-                        call.value[-1].target = 'ret_0'
-                    else:
-                        for j, argx in enumerate(x.target):
-                            call.append(str(argx))
-                            call.value[-1].target = 'ret_{}'.format(j)
 
-                    x.replace(x.value)
+
+class DefNodeConv(NodeConv):
+
+    @staticmethod
+    def pycall_to_vhdl(red_node):
+        """
+        Main work is to add 'self' argument to function call
+        self.d(a) -> d(self, a)
+
+        If function owner is not self then 'unknown_type' is prepended.
+        self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+        """
+        call_args = red_node.find('call')
+        call_name = call_args.previous
+        i = call_name.index_on_parent
+        if i == 0: return red_node # input is something like a()
+        call = red_node[i:]
+
+
+        self_arg = red_node
+        del self_arg[i:]
+
+        call_args.insert(0, self_arg)
+
+        if self_arg.dumps() not in ['self', 'self.next']:
+            self_type = VHDLType(str(self_arg[-1]), red_node=self_arg)
+            rb = RedBaron('{}.{}'.format(self_type.var_type, call.dumps()))
+            return rb[0]
+
+        return RedBaron(call.dumps())[0]
+
+    @staticmethod
+    def pycall_returns_to_vhdl(x: AssignmentNode):
+        """
+        Convert function calls, that return into variable into VHDL format.
+        b = self.a(a) ->
+            self.a(a, ret_0=b)
+
+        self.next.b[0], self.next.b[1] = self.a(self.a) ->
+            self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])
+
+        """
+        if str(x.value[0]) != 'self':
+            # most likely call to 'resize' no operatons needed
+            return x
+
+        call = x.call
+        if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
+            call.append(str(x.target))
+            call.value[-1].target = 'ret_0'
+        else:
+            for j, argx in enumerate(x.target):
+                call.append(str(argx))
+                call.value[-1].target = 'ret_{}'.format(j)
+        return x.value
+
+
+    def apply_function_call_transforms(self, red_node):
+        assigns = red_node.find_all('assign')
+        for x in assigns:
+            if x.call is not None:
+                new = DefNodeConv.pycall_returns_to_vhdl(x.copy())
+                x.replace(new)
+
+        DefNodeConv.pycall_returns_to_vhdl(red_node)
+        atoms = red_node.find_all('atomtrailers')
+        for i, x in enumerate(atoms):
+            if x.call is not None:
+                new = DefNodeConv.pycall_to_vhdl(x.copy())
+                x.replace(new)
 
     def __init__(self, red_node, parent=None):
-        self.function_calls_transform(red_node)
+        self.original_red_node = red_node.copy()
+        self.apply_function_call_transforms(red_node)
 
         super().__init__(red_node, parent)
-        self.name = NameNodeConv.parse(self.name)
+        self.name = escape_for_vhdl(self.name)
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -237,7 +323,7 @@ class DefNodeConv(NodeConv):
             return []
 
         def get_type(i: int, red):
-            name = NameNodeConv.parse('ret_' + str(i))
+            name = escape_for_vhdl('ret_' + str(i))
             return VHDLType(name, port_direction='out', red_node=red)
 
         # atomtrailers return len() > 1 for one return element
@@ -247,17 +333,30 @@ class DefNodeConv(NodeConv):
         return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
-        assigns = self.red_node.value('assign')
-        variables = [VHDLVariable(NameNodeConv(red_node=x.target), red_node=x) for x in assigns if
-                     isinstance(x.target, NameNode)]
+        # uses red_node that has not been modified by 'call transforms'
+        assigns = self.original_red_node.value('assign')
 
-        # retarded code to eliminate duplicate names
+        variables = []
+        for x in assigns:
+            if isinstance(x.target, NameNode):
+                variables.append(VHDLVariable(NameNodeConv(red_node=x.target), red_node=x))
+            elif isinstance(x.target, TupleNode):
+                for node in x.target:
+                    variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
+
+
+
+        # this will work in python 3.6
+        # remove_duplicates = {str(x.name):x for x in variables}
+        # variables = remove_duplicates.values()
+        # retarded code to eliminate duplicate names (using dict sucks cause random order)
         tmp = []
         for x in variables:
             names = [str(x.name) for x in tmp]
             if str(x.name) not in names:
                 tmp.append(x)
         variables = tmp
+
 
         # remove variables that are actually arguments
         args = [str(x.target.name) for x in self.arguments]
@@ -313,9 +412,14 @@ class CallNodeConv(NodeConv):
     #     assert 0
 
     def __str__(self):
-        # if self.function_name() == 'len':
-        #     return '(' + ', '.join(str(x) for x in self.value) + ')'
-        return '(' + ', '.join(str(x) for x in self.value) + ')'
+        base = '(' + ', '.join(str(x) for x in self.value) + ')'
+        if str(self.red_node.parent) == 'make_self(self_reg, self)':
+            return base + ';' # fixes some random bug
+
+        is_assign = self.red_node.parent_find('assign')
+        if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
+            base += ';'
+        return base
 
 
 class CallArgumentNodeConv(NodeConv):
@@ -460,18 +564,21 @@ class ClassNodeConv(NodeConv):
             return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
 
         variables = []
-        for key, val in VHDLType._datamodel.self_data.items():
-            if key == 'next': continue
-            if isinstance(val, Sfix):
-                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(val))
-            elif isinstance(val, list):
-                if isinstance(val[0], Sfix):
-                    lstr = '(' + ', '.join(sfixed_init(x) for x in val) + ')'
+        for var in VHDLType.get_self():
+            value = var.variable
+            key = var.name
+            if isinstance(value, Sfix):
+                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(value))
+            elif isinstance(value, list):
+                if isinstance(value[0], Sfix):
+                    lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
                 else:
-                    lstr = '(' + ', '.join(str(x) for x in val) + ')'
+                    lstr = '(' + ', '.join(str(x) for x in value) + ')'
                 tmp = 'self_reg.{} := {};'.format(key, lstr)
+            elif isinstance(value, HW):
+                tmp = '{}.reset(self_reg.{});'.format(escape_for_vhdl(type(value).__name__), key)
             else:
-                tmp = 'self_reg.{} := {};'.format(key, val)
+                tmp = 'self_reg.{} := {};'.format(key, value)
             variables.append(tmp)
 
         sockets = {'DATA': ''}
@@ -486,9 +593,8 @@ class ClassNodeConv(NodeConv):
             self.\\next\\ := self_reg;
         end procedure;""")
 
-        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=key)
-                     for key in VHDLType._datamodel.self_data
-                     if str(key) != 'next']
+        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
+                     for x in VHDLType.get_self()]
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
@@ -539,7 +645,7 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = NameNodeConv.parse(self.name)
+        sockets['NAME'] = escape_for_vhdl(self.name)
         sockets['IMPORTS'] = self.get_imports()
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())

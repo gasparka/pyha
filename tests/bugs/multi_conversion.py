@@ -51,4 +51,4 @@ def test_def_argument(converter):
 
         end procedure;""")
     conv = converter(code)
-    assert str(conv) == expect
+    assert expect == str(conv)

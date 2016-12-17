@@ -1,7 +1,7 @@
 import textwrap
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import tabber
+from pyha.common.util import tabber, escape_for_vhdl
 from pyha.conversion.coupling import pytype_to_vhdl
 
 
@@ -116,8 +116,7 @@ class TopGenerator:
 
     def object_class_name(self) -> str:
         # make sure we escape reserved names
-        from pyha.conversion.converter import NameNodeConv
-        return str(NameNodeConv.parse(self.simulated_object.__class__.__name__))
+        return escape_for_vhdl(self.simulated_object.__class__.__name__)
 
     def make_call_arguments(self) -> str:
 

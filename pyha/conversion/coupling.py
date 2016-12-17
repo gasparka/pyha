@@ -1,12 +1,18 @@
+#TODO: This file is 100% mess, only works thanks to unit tests
+from typing import List
+
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
+from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 
 
 class ExceptionCoupling(Exception):
     pass
+
 
 
 def pytype_to_vhdl(var):
@@ -26,6 +32,8 @@ def pytype_to_vhdl(var):
             left = var[0].left if var[0].left >= 0 else '_' + str(abs(var[0].left))
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
+    elif isinstance(var, HW):
+        return '{}'.format(escape_for_vhdl(type(var).__name__))
     else:
         assert 0
 
@@ -44,7 +52,17 @@ class VHDLType:
     def get_self(cls):
         if cls._datamodel is None:
             return []
-        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
+        ret = []
+        for k, v in cls._datamodel.self_data.items():
+            if k == 'next':
+                continue
+            t = VHDLType(tuple_init=(k, v))
+
+            #todo remove this hack
+            if isinstance(v, HW):
+                t.var_type += '.register_t'
+            ret.append(t)
+        return ret
 
     @classmethod
     def get_typedefs(cls):
@@ -59,20 +77,26 @@ class VHDLType:
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
-
+        from pyha.conversion.converter import NameNodeConv
         self.value = value
         self.red_node = red_node
         self.port_direction = port_direction
-        self.var_type = var_type
-        self.name = name
-
+        self.variable = None
         if tuple_init is not None:
-            self.name = tuple_init[0]
-            self.var_type = pytype_to_vhdl(tuple_init[1])
+            self.name = escape_for_vhdl(tuple_init[0])
+            self.variable = tuple_init[1]
+            self.var_type = pytype_to_vhdl(self.variable)
             # self.var_typedef = self.deduce_typedef(tuple_init[1])
             return
 
-        # hardcoded types
+            # hardcoded types
+        self.var_type = var_type
+        if isinstance(name, NameNodeConv):
+            self.name = name
+        else:
+            assert isinstance(name, str)
+            self.name = escape_for_vhdl(name)
+
         if str(name) == 'self_reg':
             self.var_type = 'register_t'
             self.port_direction = 'inout'
@@ -104,11 +128,11 @@ class VHDLType:
 
     def deduce_type(self):
         if self._datamodel is None:  # support converter tests
-            return self.var_type
+            return self.var_type or 'unknown_type'
 
-        var = self.get_var_datamodel()
+        self.variable = self.get_var_datamodel()
 
-        type = pytype_to_vhdl(var)
+        type = pytype_to_vhdl(self.variable)
         return type
 
     def get_var_datamodel(self):
@@ -137,6 +161,7 @@ class VHDLType:
         """
         var = self._datamodel.self_data
         for x in atom_trailer[1:]:
+            if str(x) == 'next': continue
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:
