@@ -166,6 +166,13 @@ class Simulation:
             return self.hw_simulation(*args)
 
 
+def convert_to_folder(model, types, path, *x):
+    dut = Simulation(SIM_HW_MODEL, model=model, input_types=types)
+    hw_y = dut.main(*x)
+
+    conv = Conversion(dut)
+    conv.write_vhdl_files(Path(path))
+
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]

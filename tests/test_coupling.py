@@ -803,6 +803,38 @@ def test_class_datamodel_submodule_reserved_name(converter):
     assert expect == str(conv)
 
 
+def test_class_datamodel_submodule_list(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': [Register(), Register()]})
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: integer_list_t(0 to 11);
+            end record;
+
+            type self_t is record
+                a: integer_list_t(0 to 11);
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+    expect = ['type integer_list_t is array (natural range <>) of integer;']
+    assert expect == conv.get_typedefs()
+
+
 def test_datamodel_list_int(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
