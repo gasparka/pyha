@@ -111,17 +111,42 @@ def case2():
         def __init__(self):
             self.regor = False
 
+        def main(self, x):
+            return x
+
     class A2(HW):
         def __init__(self, reg_init):
             self.reg = reg_init
             self.submodule = C2()
 
+        def main(self, x):
+            r = self.next.submodule.main(1)
+            self.next.reg = x
+            return self.reg
+
     class B2(HW):
         def __init__(self):
             self.sublist = [A2(2), A2(128)]
 
+        def main(self, a, b):
+            r0 = self.next.sublist[0].main(a)
+            r1 = self.next.sublist[1].main(b)
+            return r0, r1
+
     dut = B2()
+    dut.main(1, 1)
+    dut.main(1, 1)
     return dut
+
+
+def test_sim_case2(case2):
+    x = [range(16), range(16)]
+    expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+                [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+    dut = case2
+
+    assert_sim_match(dut, [int, int], expected, *x,
+                     simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
 def test_reset_maker_case2(case2):
@@ -166,7 +191,7 @@ def test_reset_maker_case3(case3):
     conv, datamodel = get_objects_datamodel_conversion(case3)
 
     expect = [
-        'self_reg.self_reg.\\ror\\ := 554;',
+        'self_reg.\\ror\\ := 554;',
         'self_reg.sublist(0).reg := 2;',
         'self_reg.sublist(0).submodule.nested_list(0).\\register\\ := to_sfixed(0.563, 0, -18);',
         'self_reg.sublist(0).submodule.nested_list(1).\\register\\ := to_sfixed(0.563, 0, -18);',

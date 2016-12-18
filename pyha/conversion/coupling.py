@@ -46,18 +46,21 @@ def reset_maker(self_data, recursion_depth=0):
         return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
 
     variables = []
+    prefix = 'self_reg.' if recursion_depth == 0 else ''
     for key, value in self_data.items():
+        if key == 'next':
+            continue
         key = escape_for_vhdl(key)
         tmp = None
         if isinstance(value, Sfix):
-            tmp = '{} := {};'.format(key, sfixed_init(value))
+            tmp = '{} := {};'.format(prefix + key, sfixed_init(value))
 
         # list of submodules
         elif isinstance(value, list) and isinstance(value[0], HW):
             for i, x in enumerate(value):
                 dm = DataModel(x)
                 vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = ['{}({}).{}'.format(key, i, var) for var in vars]
+                vars = ['{}({}).{}'.format(prefix + key, i, var) for var in vars]
                 variables.extend(vars)
 
         elif isinstance(value, list):
@@ -65,22 +68,21 @@ def reset_maker(self_data, recursion_depth=0):
                 lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
             else:
                 lstr = '(' + ', '.join(str(x) for x in value) + ')'
-            tmp = '{} := {};'.format(key, lstr)
+            tmp = '{} := {};'.format(prefix + key, lstr)
         elif isinstance(value, HW):
             if recursion_depth == 0:
                 tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
             else:
                 dm = DataModel(value)
                 vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = ['{}.{}'.format(key, var) for var in vars]
+                vars = ['{}.{}'.format(prefix + key, var) for var in vars]
                 variables.extend(vars)
         else:
-            tmp = '{} := {};'.format(key, value)
+            tmp = '{} := {};'.format(prefix + key, value)
 
         if tmp is not None:
             variables.append(tmp)
-        if recursion_depth == 0:
-            variables = ['{}.{}'.format('self_reg', var) for var in variables]
+
     return variables
 
 
