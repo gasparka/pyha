@@ -1,11 +1,13 @@
 import textwrap
+from pathlib import Path
 
 import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.conversion.conversion import get_objects_datamodel_conversion
+from pyha.conversion.conversion import get_objects_datamodel_conversion, Conversion
 from pyha.conversion.coupling import reset_maker
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
 @pytest.fixture
@@ -33,19 +35,28 @@ def simple():
     return dut
 
 
+def test_simple_conversion_files(simple):
+    conv = Conversion(simple)
+    paths = conv.write_vhdl_files(Path('/tmp/'))
+    names = [x.name for x in paths]
+    assert names == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
+
+
 def test_simple_datamodel_training(simple):
     conv, datamodel = get_objects_datamodel_conversion(simple)
     assert datamodel.self_data['sublist'][0].main.calls == 2
     assert datamodel.self_data['sublist'][1].main.calls == 2
 
 
-def test_simple_datamodel(simple):
+def test_simple_typedefs(simple):
     conv, datamodel = get_objects_datamodel_conversion(simple)
     assert 'sublist' in datamodel.self_data
 
-    expect = ['type A_0_list_t is array (natural range <>) of A_0;']
+    expect = ['type A_0_list_t is array (natural range <>) of A_0.register_t;']
     assert expect == conv.get_typedefs()
 
+def test_simple_datamodel(simple):
+    conv, datamodel = get_objects_datamodel_conversion(simple)
     data_conversion = conv.get_datamodel()
     expect = textwrap.dedent("""\
                 type register_t is record
@@ -84,6 +95,13 @@ def test_reset_maker(simple):
 
 
 def test_simple_sim(simple):
+    x = [range(16), range(16)]
+    expected = [[0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+                [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+    dut = simple
+
+    assert_sim_match(dut, [int, int], expected, *x,
+                     simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
 @pytest.fixture

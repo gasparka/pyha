@@ -55,7 +55,12 @@ class Conversion:
             self.top_vhdl = TopGenerator(obj)
 
         # recursively convert all child modules
-        self.childs = [Conversion(x, is_child=True) for x in self.datamodel.self_data.values() if isinstance(x, HW)]
+        self.childs = []
+        for x in self.datamodel.self_data.values():
+            if isinstance(x, HW):
+                self.childs.append(Conversion(x, is_child=True))
+            elif isinstance(x, list) and isinstance(x[0], HW):
+                self.childs.append(Conversion(x[0], is_child=True))  # in case of list of submodules
 
     @property
     def inputs(self) -> List[object]:
