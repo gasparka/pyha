@@ -55,6 +55,7 @@ def test_simple_typedefs(simple):
     expect = ['type A_0_list_t is array (natural range <>) of A_0.register_t;']
     assert expect == conv.get_typedefs()
 
+
 def test_simple_datamodel(simple):
     conv, datamodel = get_objects_datamodel_conversion(simple)
     data_conversion = conv.get_datamodel()

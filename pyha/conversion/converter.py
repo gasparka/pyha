@@ -4,7 +4,7 @@ import textwrap
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
 from redbaron.nodes import AtomtrailersNode
 
-from pyha.common.hwsim import SKIP_FUNCTIONS
+from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
@@ -590,7 +590,11 @@ class ClassNodeConv(NodeConv):
             assert type(val) is list
             name = pytype_to_vhdl(val)
             name = name[:name.find('(')]  # cut array size
-            typedefs.append(template.format(name, pytype_to_vhdl(val[0])))
+
+            type_name = pytype_to_vhdl(val[0])
+            if isinstance(val[0], HW):
+                type_name += '.register_t'
+            typedefs.append(template.format(name, type_name))
 
         return typedefs
 

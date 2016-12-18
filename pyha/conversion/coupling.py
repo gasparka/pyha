@@ -127,11 +127,12 @@ class VHDLType:
             ret.append(t)
         return ret
 
-    @classmethod
-    def get_typedefs(cls):
-        if cls._datamodel is None:
-            return []
-        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
+    #
+    # @classmethod
+    # def get_typedefs(cls):
+    #     if cls._datamodel is None:
+    #         return []
+    #     return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
 
     @classmethod
     def get_typedef_vars(cls):
@@ -228,7 +229,7 @@ class VHDLType:
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:
-                # index is soem variable -> just take first element
+                # index is some variable -> just take first element
                 if isinstance(x.value, NameNode):
                     var = var[0]
                 else:
