@@ -2,9 +2,8 @@ from pathlib import Path
 
 import pytest
 
-import pyha
 from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion, MultipleNodesError
+from pyha.conversion.conversion import Conversion, MultipleNodesError, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
@@ -21,13 +20,8 @@ def dut():
     return Conversion(o)
 
 
-def test_get_objects_source_path(dut):
-    path = dut.get_objects_source_path(dut)
-    assert path == pyha.__path__[0] + '/conversion/conversion.py'
-
-
 def test_get_objects_rednode(dut):
-    red = dut.get_objects_rednode(dut.obj)
+    red = get_objects_rednode(dut.obj)
     assert red.name == 'Dummy'
 
 
@@ -119,6 +113,7 @@ def test_convert_submodule_name_conflict():
     #
     # assert_sim_match(dut, [int], expected, x,
     #                  simulations=[SIM_HW_MODEL, SIM_RTL])
+
 
 ##################################
 # MISC

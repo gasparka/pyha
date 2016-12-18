@@ -27,6 +27,8 @@ def is_convertible(obj):
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):
                 return True
+            elif isinstance(obj[0], HW):  # list of submodules
+                return True
     elif isinstance(obj, HW):
         return True
 

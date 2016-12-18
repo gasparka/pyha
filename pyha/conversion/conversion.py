@@ -11,6 +11,24 @@ from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
 
+def get_objects_rednode(obj):
+    source_path = inspect.getsourcefile(type(obj))
+    source = open(source_path).read()
+    red_list = RedBaron(source)('class', name=obj.__class__.__name__)
+    if len(red_list) != 1:
+        raise MultipleNodesError('Found {} definitions of "{}" class'.
+                                 format(len(red_list), obj.__class__.__name__))
+
+    return red_list[0]
+
+
+def get_objects_datamodel_conversion(obj):
+    red_node = get_objects_rednode(obj)
+    datamodel = DataModel(obj)
+    conv = convert(red_node, caller=None, datamodel=datamodel)
+    return conv, datamodel
+
+
 class MultipleNodesError(Exception):
     pass
 
@@ -30,9 +48,9 @@ class Conversion:
         self.is_child = is_child
         self.obj = obj
         self.class_name = obj.__class__.__name__
-        red_node = self.get_objects_rednode(obj)
-        self.datamodel = DataModel(obj)
-        self.vhdl_conversion = str(convert(red_node, caller=None, datamodel=self.datamodel))
+        self.conv, self.datamodel = get_objects_datamodel_conversion(obj)
+
+        self.vhdl_conversion = str(self.conv)
         if not is_child:
             self.top_vhdl = TopGenerator(obj)
 
@@ -67,15 +85,6 @@ class Conversion:
 
         return paths
 
-    def get_objects_rednode(self, obj):
-        source_path = self.get_objects_source_path(obj)
-        source = open(source_path).read()
-        red_list = RedBaron(source)('class', name=obj.__class__.__name__)
-        if len(red_list) != 1:
-            raise MultipleNodesError('Found {} definitions of "{}" class'.
-                                     format(len(red_list), obj.__class__.__name__))
 
-        return red_list[0]
-
-    def get_objects_source_path(self, obj) -> str:
-        return inspect.getsourcefile(type(obj))
+        # def get_objects_source_path(self, obj) -> str:
+        #     return inspect.getsourcefile(type(obj))
