@@ -1,15 +1,13 @@
 import logging
 import textwrap
 
-import numpy as np
-from pyexpat import expat_CAPI
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
-from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, get_instance_vhdl_name
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -235,10 +233,7 @@ class ElifNodeConv(NodeConv):
         return 'elseif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
 
 
-
-
 class DefNodeConv(NodeConv):
-
     @staticmethod
     def pycall_to_vhdl(red_node):
         """
@@ -251,9 +246,8 @@ class DefNodeConv(NodeConv):
         call_args = red_node.find('call')
         call_name = call_args.previous
         i = call_name.index_on_parent
-        if i == 0: return red_node # input is something like a()
+        if i == 0: return red_node  # input is something like a()
         call = red_node[i:]
-
 
         self_arg = red_node
         del self_arg[i:]
@@ -291,7 +285,6 @@ class DefNodeConv(NodeConv):
                 call.append(str(argx))
                 call.value[-1].target = 'ret_{}'.format(j)
         return x.value
-
 
     def apply_function_call_transforms(self, red_node):
         assigns = red_node.find_all('assign')
@@ -344,8 +337,6 @@ class DefNodeConv(NodeConv):
                 for node in x.target:
                     variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
 
-
-
         # this will work in python 3.6
         # remove_duplicates = {str(x.name):x for x in variables}
         # variables = remove_duplicates.values()
@@ -356,7 +347,6 @@ class DefNodeConv(NodeConv):
             if str(x.name) not in names:
                 tmp.append(x)
         variables = tmp
-
 
         # remove variables that are actually arguments
         args = [str(x.target.name) for x in self.arguments]
@@ -414,7 +404,7 @@ class CallNodeConv(NodeConv):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
         if str(self.red_node.parent) == 'make_self(self_reg, self)':
-            return base + ';' # fixes some random bug
+            return base + ';'  # fixes some random bug
 
         is_assign = self.red_node.parent_find('assign')
         if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
@@ -576,7 +566,7 @@ class ClassNodeConv(NodeConv):
                     lstr = '(' + ', '.join(str(x) for x in value) + ')'
                 tmp = 'self_reg.{} := {};'.format(key, lstr)
             elif isinstance(value, HW):
-                tmp = '{}.reset(self_reg.{});'.format(escape_for_vhdl(type(value).__name__), key)
+                tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
             else:
                 tmp = 'self_reg.{} := {};'.format(key, value)
             variables.append(tmp)
@@ -624,6 +614,9 @@ class ClassNodeConv(NodeConv):
 
         return typedefs
 
+    def get_name(self):
+        return VHDLType.get_self_vhdl_name()
+
     def __str__(self):
         template = textwrap.dedent("""\
             {IMPORTS}
@@ -645,7 +638,7 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = escape_for_vhdl(self.name)
+        sockets['NAME'] = self.get_name()
         sockets['IMPORTS'] = self.get_imports()
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())

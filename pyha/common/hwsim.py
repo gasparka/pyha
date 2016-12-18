@@ -13,6 +13,7 @@ Purpose: Make python class simulatable as hardware, mainly provide 'register' be
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
+
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
         message = 'Assigment to self.{}, did you mean self.next.{}?\nClass: {}'.format(
@@ -177,10 +178,13 @@ class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
+    instance_count = 0
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
+        ret.pyha_instance_id = cls.instance_count
+        cls.instance_count += 1
 
         # save the initial self values
         # all registers will be derived from these values!

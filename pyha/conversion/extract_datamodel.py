@@ -36,6 +36,8 @@ def is_convertible(obj):
 def extract_datamodel(obj):
     ret = {}
     for key, val in obj.__dict__['__initial_self__'].__dict__.items():
+        if key == 'pyha_instance_id':
+            continue
         if is_convertible(val):
             last = obj.next.__dict__[key]
             # for Sfix use the initial value but LATEST bounds
@@ -73,6 +75,7 @@ def extract_locals(obj):
 
 class DataModel:
     def __init__(self, obj=None, self_data=None, locals=None):
+        self.obj = obj
         if obj is None:
             self.self_data = None if self_data is None else OrderedDict(sorted(self_data.items(), key=lambda t: t[0]))
             self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
