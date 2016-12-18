@@ -47,7 +47,7 @@ def extract_datamodel(obj):
                 val = Sfix(val.init_val, last.left, last.right)
             elif isinstance(val, list) and isinstance(val[0], Sfix):
                 val = [Sfix(new_val.init_val, last_val.left, last_val.right) for new_val, last_val in zip(val, last)]
-            elif isinstance(val, HW):
+            elif isinstance(val, HW) or (isinstance(val, list) and isinstance(val[0], HW)):
                 val = last
             ret.update({key: val})
     return ret

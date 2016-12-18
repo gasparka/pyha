@@ -4,10 +4,9 @@ import textwrap
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
 from redbaron.nodes import AtomtrailersNode
 
-from pyha.common.hwsim import SKIP_FUNCTIONS, HW
-from pyha.common.sfix import Sfix
+from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
-from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, get_instance_vhdl_name
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -550,26 +549,7 @@ class ClassNodeConv(NodeConv):
         {DATA}
         end procedure;""")
 
-        def sfixed_init(val):
-            return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
-
-        variables = []
-        for var in VHDLType.get_self():
-            value = var.variable
-            key = var.name
-            if isinstance(value, Sfix):
-                tmp = 'self_reg.{} := {};'.format(key, sfixed_init(value))
-            elif isinstance(value, list):
-                if isinstance(value[0], Sfix):
-                    lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
-                else:
-                    lstr = '(' + ', '.join(str(x) for x in value) + ')'
-                tmp = 'self_reg.{} := {};'.format(key, lstr)
-            elif isinstance(value, HW):
-                tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
-            else:
-                tmp = 'self_reg.{} := {};'.format(key, value)
-            variables.append(tmp)
+        variables = VHDLType.get_reset()
 
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
