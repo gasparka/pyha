@@ -217,7 +217,10 @@ class VHDLType:
             name = self._real_name()
             var = self._datamodel.locals[self._defined_in_function()][name]
             if isinstance(var, list):
-                index = int(self.red_node.value[1].value.value)
+                try:
+                    index = int(self.red_node.value[1].value.value)
+                except AttributeError:
+                    index = int(self.red_node.value[1].value)
                 var = var[index]
         return var
 

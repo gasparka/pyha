@@ -1348,6 +1348,17 @@ def test_list(converter):
     assert expect == str(conv)
 
 
+def test_list_multiple(converter):
+    code = textwrap.dedent("""\
+            [1, 2, 3, 4]""")
+
+    expect = textwrap.dedent("""\
+            (1, 2, 3, 4)""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_list_append(converter):
     code = textwrap.dedent("""\
             [a] + b""")
@@ -1404,3 +1415,5 @@ def test_redbaron_bug120(converter):
     red.call.append('c')
     with pytest.raises(Exception):
         red.help(True)
+
+

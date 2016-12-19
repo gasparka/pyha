@@ -440,8 +440,11 @@ class UnitaryOperatorNodeConv(NodeConv):
 
 class ListNodeConv(NodeConv):
     def __str__(self):
-        assert len(self.value) == 1
-        return str(self.value[0])
+        if self.value == 1:
+            return str(self.value[0]) # [a] -> a
+        else:
+            ret = '({})'.format(', '.join(str(x) for x in self.value))
+            return ret
 
 
 class EndlNodeConv(NodeConv):

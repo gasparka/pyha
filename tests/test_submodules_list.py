@@ -204,3 +204,38 @@ def test_reset_maker_case3(case3):
     ret = reset_maker(datamodel.self_data)
 
     assert expect == ret
+
+
+@pytest.fixture
+def case_for():
+    class A4(HW):
+        def __init__(self, reg_init):
+            self.reg = reg_init
+
+        def main(self, x):
+            self.next.reg = x
+            return self.reg
+
+    class B4(HW):
+        def __init__(self):
+            self.sublist = [A4(i) for i in range(4)]
+
+        def main(self, x):
+            outs = [0, 0, 0, 0]
+            for i in range(len(self.next.sublist)):
+                outs[i] = self.next.sublist[i].main(x)
+
+            return outs[0]
+
+
+
+    dut = B4()
+    return dut
+
+def test_sim_case_for(case_for):
+    x = list(range(16))
+    expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    dut = case_for
+
+    assert_sim_match(dut, [int], expected, x,
+                     simulations=[SIM_HW_MODEL, SIM_RTL])
