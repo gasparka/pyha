@@ -129,13 +129,6 @@ class VHDLType:
             ret.append(t)
         return ret
 
-    #
-    # @classmethod
-    # def get_typedefs(cls):
-    #     if cls._datamodel is None:
-    #         return []
-    #     return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
-
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
@@ -216,12 +209,15 @@ class VHDLType:
         else:  # dealing with locals (includes all arguments!)
             name = self._real_name()
             var = self._datamodel.locals[self._defined_in_function()][name]
-            if isinstance(var, list):
-                try:
-                    index = int(self.red_node.value[1].value.value)
-                except AttributeError:
-                    index = int(self.red_node.value[1].value)
-                var = var[index]
+            try:
+                if isinstance(self.red_node[1], GetitemNode):
+                    try:
+                        index = int(self.red_node.value[1].value.value)
+                    except AttributeError:
+                        index = int(self.red_node.value[1].value)
+                    var = var[index]
+            except:
+                pass
         return var
 
     def walk_self_data(self, atom_trailer):

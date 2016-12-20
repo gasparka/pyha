@@ -623,6 +623,24 @@ def test_typed_def_infer_variable_dublicate2(converter):
     assert expect == str(conv)
 
 
+def test_typed_def_infer_variable_list(converter):
+    code = textwrap.dedent("""\
+        def a():
+            l = [1, 2, 3, 4]""")
+
+    datamodel = DataModel(locals={'a': {
+        'l': [1, 2, 3, 4],
+    }})
+    expect = textwrap.dedent("""\
+        procedure a is
+            variable l: integer_list_t(0 to 3);
+        begin
+            l := (1, 2, 3, 4);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
 def test_datamodel_to_self_ignore_next():
     datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27), 'next': {'lol': 'loom'}})
     VHDLType.set_datamodel(datamodel)
@@ -654,8 +672,9 @@ class Tc(HW):
 
 
 Tcobj = Tc()
-def test_class_name(converter):
 
+
+def test_class_name(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -699,6 +718,7 @@ class A(HW):
 
 
 Aobj = A()
+
 
 class Register(HW):
     def __init__(self):
