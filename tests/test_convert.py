@@ -1143,66 +1143,66 @@ def test_indexing_slice_no_upper_no_lower(converter):
     assert expect == str(conv)
 
 
-def test_builtin_length(converter):
-    code = textwrap.dedent("""\
-            len(self.taps)""")
-
-    expect = textwrap.dedent("""\
-            len(self.taps)""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_builtin_range(converter):
-    code = textwrap.dedent("""\
-            range(self.taps)""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(self.taps)""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_builtin_range_int(converter):
-    code = textwrap.dedent("""\
-            range(10)""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(10)""")
-    conv = converter(code)
-    assert expect == str(conv)
+# def test_builtin_length(converter):
+#     code = textwrap.dedent("""\
+#             len(self.taps)""")
+#
+#     expect = textwrap.dedent("""\
+#             len(self.taps)""")
+#     conv = converter(code)
+#     assert expect == str(conv)
+#
+#
+# def test_builtin_range(converter):
+#     code = textwrap.dedent("""\
+#             range(self.taps)""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(self.taps)""")
+#     conv = converter(code)
+#     assert expect == str(conv)
 
 
-def test_builtin_range_int_start(converter):
-    code = textwrap.dedent("""\
-            range(2, 5)""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(2, 5)""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_builtin_range_int_start_step(converter):
-    code = textwrap.dedent("""\
-            range(2, 5, 2)""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(2, 5, 2)""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_builtin_range_int_start_step_unit(converter):
-    code = textwrap.dedent("""\
-            range(2, 5, 1)""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(2, 5, 1)""")
-
-    conv = converter(code)
-    assert expect == str(conv)
+# def test_builtin_range_int(converter):
+#     code = textwrap.dedent("""\
+#             range(10)""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(10)""")
+#     conv = converter(code)
+#     assert expect == str(conv)
+#
+#
+# def test_builtin_range_int_start(converter):
+#     code = textwrap.dedent("""\
+#             range(2, 5)""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(2, 5)""")
+#     conv = converter(code)
+#     assert expect == str(conv)
+#
+#
+# def test_builtin_range_int_start_step(converter):
+#     code = textwrap.dedent("""\
+#             range(2, 5, 2)""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(2, 5, 2)""")
+#
+#     conv = converter(code)
+#     assert expect == str(conv)
+#
+#
+# def test_builtin_range_int_start_step_unit(converter):
+#     code = textwrap.dedent("""\
+#             range(2, 5, 1)""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(2, 5, 1)""")
+#
+#     conv = converter(code)
+#     assert expect == str(conv)
 
 
 def test_builtin_range_length(converter):

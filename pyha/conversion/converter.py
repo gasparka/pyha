@@ -1,6 +1,7 @@
 import logging
 import textwrap
 
+from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
 from redbaron.nodes import AtomtrailersNode
 
@@ -497,9 +498,23 @@ class ForNodeConv(NodeConv):
                 for {ITERATOR} in {RANGE} loop
                 {BODY}
                 end loop;""")
+
+
         sockets = {'ITERATOR': str(self.iterator)}
-        sockets['RANGE'] = str(self.target)
+        range = str(self.target)
+        range_len_pattern = parse('\\range\\(len({}))', str(self.target))
+        if range_len_pattern is not None:
+            range = range_len_pattern[0] + "'range"
+        else:
+            range_pattern = parse('\\range\\({})', str(self.target))
+            if range_pattern is not None:
+                range = '0 to {}'.format(range_pattern[0])
+            else:
+                assert 0
+        sockets['RANGE'] = range
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+        wat = parse('\\range\\(lenn({}))', str(self.target))
+        wat2 = parse('\\range\\({})', str(self.target))
         return template.format(**sockets)
 
 
