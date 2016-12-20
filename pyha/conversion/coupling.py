@@ -132,7 +132,13 @@ class VHDLType:
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
-        return [v for v in cls._datamodel.self_data.values() if type(v) is list]
+        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is list]
+
+        for func in cls._datamodel.locals.values():
+            for var in func.values():
+                if type(var) == list:
+                    typedefs.append(var)
+        return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):

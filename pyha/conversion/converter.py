@@ -597,7 +597,9 @@ class ClassNodeConv(NodeConv):
             type_name = pytype_to_vhdl(val[0])
             if isinstance(val[0], HW):
                 type_name += '.register_t'
-            typedefs.append(template.format(name, type_name))
+            new_tp = template.format(name, type_name)
+            if new_tp not in typedefs:
+                typedefs.append(template.format(name, type_name))
 
         return typedefs
 

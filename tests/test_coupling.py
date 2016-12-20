@@ -623,24 +623,6 @@ def test_typed_def_infer_variable_dublicate2(converter):
     assert expect == str(conv)
 
 
-def test_typed_def_infer_variable_list(converter):
-    code = textwrap.dedent("""\
-        def a():
-            l = [1, 2, 3, 4]""")
-
-    datamodel = DataModel(locals={'a': {
-        'l': [1, 2, 3, 4],
-    }})
-    expect = textwrap.dedent("""\
-        procedure a is
-            variable l: integer_list_t(0 to 3);
-        begin
-            l := (1, 2, 3, 4);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
 def test_datamodel_to_self_ignore_next():
     datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27), 'next': {'lol': 'loom'}})
     VHDLType.set_datamodel(datamodel)
@@ -821,6 +803,54 @@ def test_class_datamodel_submodule_reserved_name(converter):
     conv = converter(code, datamodel)
     conv = conv.get_makeself_str()
     assert expect == str(conv)
+
+
+def test_class_infer_local_variable_list(converter):
+    code = textwrap.dedent("""\
+            def a():
+                l = [1, 2, 3, 4]""")
+
+    datamodel = DataModel(self_data={}, locals={'a': {
+        'l': [1, 2, 3, 4],
+    }})
+    expect = textwrap.dedent("""\
+        procedure a is
+            variable l: integer_list_t(0 to 3);
+        begin
+            l := (1, 2, 3, 4);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+    code = textwrap.dedent("""\
+        class Tc(HW):
+            def a():
+                l = [1, 2, 3, 4]""")
+
+    datamodel = DataModel(self_data={}, locals={'a': {
+        'l': [1, 2, 3, 4],
+    }})
+
+    conv = converter(code, datamodel)
+    expect = ['type integer_list_t is array (natural range <>) of integer;']
+    assert expect == conv.get_typedefs()
+
+
+def test_typedefs_duplicate(converter):
+
+    code = textwrap.dedent("""\
+        class Tc(HW):
+            def a():
+                l = [1, 2, 3, 4]""")
+
+    datamodel = DataModel(self_data={'b': [1, 2]}, locals={'a': {
+        'l': [1, 2, 3, 4],
+    }})
+
+    conv = converter(code, datamodel)
+    expect = ['type integer_list_t is array (natural range <>) of integer;']
+    assert expect == conv.get_typedefs()
 
 
 def test_datamodel_list_int(converter):
