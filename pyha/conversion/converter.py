@@ -501,21 +501,25 @@ class ForNodeConv(NodeConv):
 
 
         sockets = {'ITERATOR': str(self.iterator)}
-        range = str(self.target)
-        range_len_pattern = parse('\\range\\(len({}))', str(self.target))
-        if range_len_pattern is not None:
-            range = range_len_pattern[0] + "'range"
-        else:
-            range_pattern = parse('\\range\\({})', str(self.target))
-            if range_pattern is not None:
-                range = '0 to {}'.format(range_pattern[0])
-            else:
-                assert 0
-        sockets['RANGE'] = range
+        sockets['RANGE'] = self.range_to_vhdl(str(self.target))
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
         wat = parse('\\range\\(lenn({}))', str(self.target))
         wat2 = parse('\\range\\({})', str(self.target))
         return template.format(**sockets)
+
+    def range_to_vhdl(self, pyrange):
+        range_len_pattern = parse('\\range\\(len({}))', pyrange)
+        if range_len_pattern is not None:
+            return range_len_pattern[0] + "'range"
+        else:
+            range_pattern = parse('\\range\\({})', pyrange)
+            if range_pattern is not None:
+                two_args = parse('{},{}', range_pattern[0])
+                if two_args is not None:
+                    return '{} to {}'.format(two_args[0].strip(), two_args[1].strip())
+                else:
+                    return '0 to {}'.format(range_pattern[0])
+        assert 0
 
 
 class ClassNodeConv(NodeConv):

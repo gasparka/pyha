@@ -227,10 +227,9 @@ def case_for():
 
             return outs[0]
 
-
-
     dut = B4()
     return dut
+
 
 def test_sim_case_for(case_for):
     x = list(range(16))

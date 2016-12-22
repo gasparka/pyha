@@ -785,11 +785,11 @@ def test_call_semicolon_if_body(converter):
 
 def test_call_semicolon_for(converter):
     code = textwrap.dedent("""\
-        for i in a():
+        for i in range(len(a)):
             a()""")
 
     expect = textwrap.dedent("""\
-            for i in a() loop
+            for i in a'range loop
                 a();
             end loop;""")
 
@@ -804,7 +804,7 @@ def test_call_semicolon_multi(converter):
             o = a()
             if a():
                 a()
-                for x in a():
+                for x in range(len(a)):
                     a()
             else:
                 a()
@@ -818,7 +818,7 @@ def test_call_semicolon_multi(converter):
             o := a();
             if a() then
                 a();
-                for x in a() loop
+                for x in a'range loop
                     a();
                 end loop;
             else
@@ -1205,24 +1205,24 @@ def test_indexing_slice_no_upper_no_lower(converter):
 #     assert expect == str(conv)
 
 
-def test_builtin_range_length(converter):
-    code = textwrap.dedent("""\
-            range(len(self.taps))""")
-
-    expect = textwrap.dedent("""\
-            \\range\\(len(self.taps))""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_builtin_reverse_range_length(converter):
-    code = textwrap.dedent("""\
-            reverse(range(len(self.taps)))""")
-
-    expect = textwrap.dedent("""\
-            reverse(\\range\\(len(self.taps)))""")
-    conv = converter(code)
-    assert expect == str(conv)
+# def test_builtin_range_length(converter):
+#     code = textwrap.dedent("""\
+#             range(len(self.taps))""")
+#
+#     expect = textwrap.dedent("""\
+#             \\range\\(len(self.taps))""")
+#     conv = converter(code)
+#     assert expect == str(conv)
+#
+#
+# def test_builtin_reverse_range_length(converter):
+#     code = textwrap.dedent("""\
+#             reverse(range(len(self.taps)))""")
+#
+#     expect = textwrap.dedent("""\
+#             reverse(\\range\\(len(self.taps)))""")
+#     conv = converter(code)
+#     assert expect == str(conv)
 
 
 def test_for(converter):
@@ -1231,20 +1231,46 @@ def test_for(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in \\range\\(10) loop
+            for i in 0 to 10 loop
 
             end loop;""")
     conv = converter(code)
     assert expect == str(conv)
 
 
-def test_for2(converter):
+def test_for_from_to(converter):
     code = textwrap.dedent("""\
             for ite in range(2, 5):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in \\range\\(2, 5) loop
+            for ite in 2 to 5 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_from_to_variables(converter):
+    code = textwrap.dedent("""\
+            for ite in range(var, self.var2):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for ite in var to self.var2 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_from_to_variables_whitespaces(converter):
+    code = textwrap.dedent("""\
+            for ite in range(var ,   self.var2  ):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for ite in var to self.var2 loop
 
             end loop;""")
     conv = converter(code)
@@ -1258,7 +1284,7 @@ def test_for_body(converter):
                 a[i + 1] = c""")
 
     expect = textwrap.dedent("""\
-            for i in \\range\\(len(a)) loop
+            for i in a'range loop
                 a(i) := b;
                 a(i + 1) := c;
             end loop;""")
@@ -1276,7 +1302,7 @@ def test_for_complex(converter):
                 self.sm[i] = self.sm[i - 1] + self.mul[i]""")
 
     expect = textwrap.dedent("""\
-            for i in \\range\\(len(self.taps)) loop
+            for i in self.taps'range loop
                 self.mul(i) := x * self.taps(i);
                 if i = 0 then
                     self.sm(0) := self.mul(i);
