@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from pyha.common.sfix import Sfix
 from pyha.components.dc_removal import DCRemoval
+from pyha.conversion.conversion import Conversion
 
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
 
@@ -22,8 +25,8 @@ def test_basic():
     assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 
-    # conv = Conversion(dut)
-    # conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
+    conv = Conversion(dut)
+    conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
 
 # def test_basic():
 #     x = [2] * 8 + [-2] * 8

@@ -1225,6 +1225,19 @@ def test_indexing_slice_no_upper_no_lower(converter):
 #     assert expect == str(conv)
 
 
+def test_forrr(converter):
+    code = textwrap.dedent("""\
+            for x in arr:
+                x.main()""")
+
+    expect = textwrap.dedent("""\
+            for i in 0 to 10 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_for(converter):
     code = textwrap.dedent("""\
             for i in range(10):

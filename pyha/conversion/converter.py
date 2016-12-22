@@ -442,7 +442,7 @@ class UnitaryOperatorNodeConv(NodeConv):
 class ListNodeConv(NodeConv):
     def __str__(self):
         if len(self.value) == 1:
-            return str(self.value[0]) # [a] -> a
+            return str(self.value[0])  # [a] -> a
         else:
             ret = '({})'.format(', '.join(str(x) for x in self.value))
             return ret
@@ -493,21 +493,35 @@ class SliceNodeConv(GetitemNodeConv):
 
 
 class ForNodeConv(NodeConv):
+
+    def __init__(self, red_node, parent):
+        range = red_node.target
+        ite = red_node.iterator
+        f = red_node.value.find_all(ite.__class__.__name__, value=ite.value)
+        for x in f:
+            new = RedBaron('{}[_i_]'.format(range))[0]
+            x.replace(new)
+        red_node.iterator = '_i_'
+
+        self.is_short_python_for = True
+
+        super().__init__(red_node, parent)
+
     def __str__(self):
         template = textwrap.dedent("""\
                 for {ITERATOR} in {RANGE} loop
                 {BODY}
                 end loop;""")
 
-
         sockets = {'ITERATOR': str(self.iterator)}
         sockets['RANGE'] = self.range_to_vhdl(str(self.target))
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
-        wat = parse('\\range\\(lenn({}))', str(self.target))
-        wat2 = parse('\\range\\({})', str(self.target))
         return template.format(**sockets)
 
     def range_to_vhdl(self, pyrange):
+        if self.is_short_python_for:
+            return "{}'range".format(pyrange)
+
         range_len_pattern = parse('\\range\\(len({}))', pyrange)
         if range_len_pattern is not None:
             return range_len_pattern[0] + "'range"
@@ -519,6 +533,12 @@ class ForNodeConv(NodeConv):
                     return '{} to {}'.format(two_args[0].strip(), two_args[1].strip())
                 else:
                     return '0 to {}'.format(range_pattern[0])
+
+        # at this point range was not:
+        # range(len(x))
+        # range(x)
+        # range(x, y)
+        # assume
         assert 0
 
 
