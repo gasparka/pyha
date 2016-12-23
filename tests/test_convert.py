@@ -1231,8 +1231,8 @@ def test_forrr(converter):
                 x.main()""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to 10 loop
-
+            for \\_i_\\ in arr'range loop
+                arr(\\_i_\\).main(x);
             end loop;""")
     conv = converter(code)
     assert expect == str(conv)

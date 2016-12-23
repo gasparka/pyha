@@ -74,76 +74,11 @@ class AtomtrailersNodeConv(NodeConv):
         return any(isinstance(x, CallNodeConv) for x in self.value)
 
     def __str__(self):
-
-        # remove 'self.' from function calls
-        # if self.is_function_call() and str(self.value[0]) == 'self':
-        #     del self.value[0]
-
-        # if self.is_function_call():
-        #     call =
-        #     pass
-
-
-        # basically on some occasions, dont separate nodes with '.' (for example indexing nodes)
-
-        # out_str = ''
-        # for token, next_token in zip(self.value, self.value[1:] + [None]):
-        #     # start function call
-        #     if isinstance(next_token, CallNodeConv):
-        #         func_call = str(token) + str(next_token)
-        #         self_arg = out_str
-        #         args_start = func_call.find('(')
-        #
-        #         tmp = func_call[:args_start] + self_arg + func_call[args_start:]
-        #         pass
-        #     else:
-        #         out_str += str(token)
-
-
-        # ret = str()
-        # func = self.red_node.find('call')
-        # call = 'unknown_type.' + str(func.previous) + str(func)
-        # before_call = '.'.join(str(x) for x in self.red_node.value[:func.previous.index_on_parent])
-        #
-        # call_red = RedBaron(call)
-        # before_call_red = RedBaron(before_call)
-        #
-        # args = call_red.find('call')
-        # args.insert(0, before_call_red)
-        #
-        # at = AtomtrailersNodeConv(call_red[0])
-        # self.value = at.value
-        # for x in self.value:
-        #     if isinstance(x, NameNodeConv):
-        #         ret += '.'
-        #     ret += str(x)
-        # if ret[0] == '.':
-        #     ret = ret[1:]
-
-        # add semicolon for function calls
-        # this has to be here because only assignments end with semicolon in VHDL
-        # if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
-        #     ret += ';'
-        #
-        # return ret
-
-        # # remove 'self.' from function calls
-        # if self.is_function_call() and str(self.value[0]) == 'self':
-        #     del self.value[0]
-
-        # basically on some occasions, dont separate nodes with '.'
         ret = ''
-        for x in self.value:
-            if isinstance(x, NameNodeConv):
-                ret += '.'
-            ret += str(x)
-        if ret[0] == '.':
-            ret = ret[1:]
-
-        # add semicolon for function calls
-        # wat = self.red_node.previous_rendered
-        # if self.is_function_call() and isinstance(self.red_node.previous_rendered, EndlNode):
-        #     ret += ';'
+        for i, x in enumerate(self.value):
+            # add '.' infront if NameNode
+            new = '.{}' if isinstance(x, NameNodeConv) and i != 0 else '{}'
+            ret += new.format(x)
 
         return ret
 
@@ -240,7 +175,7 @@ class DefNodeConv(NodeConv):
         Main work is to add 'self' argument to function call
         self.d(a) -> d(self, a)
 
-        If function owner is not self then 'unknown_type' is prepended.
+        If function owner is not exactly 'self' then 'unknown_type' is prepended.
         self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
         """
         call_args = red_node.find('call')
