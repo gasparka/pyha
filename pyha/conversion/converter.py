@@ -556,6 +556,15 @@ def convert(red: Node, caller=None, datamodel=None):
     assert type(caller) is not DataModel
     VHDLType.set_datamodel(datamodel)
 
+    # delete __init__, not converting this
+    f = red.find('def', name='__init__')
+    f.parent.remove(f)
+
+    # delete model_main, not converting this
+    f = red.find('def', name='model_main')
+    f.parent.remove(f)
+
+    # init.replace(RedBaron(''))
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
@@ -589,7 +598,7 @@ def redbaron_pycall_to_vhdl(red_node):
         if i == 0: return red_node  # input is something like a()
         call = red_node[i:]
         self_arg = red_node
-        del self_arg[i:]
+        del self_arg[i:]  # BREAKS HERE
         call_args.insert(0, self_arg)
         if self_arg.dumps() not in ['self', 'self.next']:
             self_type = VHDLType(str(self_arg[-1]), red_node=self_arg)
