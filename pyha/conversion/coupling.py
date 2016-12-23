@@ -1,6 +1,6 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
 
-from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.hwsim import HW
@@ -260,6 +260,8 @@ class VHDLType:
             name = str(self.red_node)
         elif isinstance(self.red_node, AssignmentNode):
             name = str(self.red_node.target)
+        elif isinstance(self.red_node, CallArgumentNode):
+            name = str(self.red_node.value)
         else:
             name = str(self.red_node)
 

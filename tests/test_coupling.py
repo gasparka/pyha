@@ -858,7 +858,7 @@ def test_datamodel_list_int(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [0] * 12})
+    datamodel = DataModel(self_data={'a': [0] * 12}, locals={})
 
     expect = textwrap.dedent("""\
             type register_t is record
@@ -890,7 +890,7 @@ def test_datamodel_list_boolean(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [False, True, False, True]})
+    datamodel = DataModel(self_data={'a': [False, True, False, True]}, locals={})
     expect = textwrap.dedent("""\
             type register_t is record
                 a: boolean_list_t(0 to 3);
@@ -921,7 +921,7 @@ def test_list_sfix(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]})
+    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]}, locals={})
     expect = textwrap.dedent("""\
             type register_t is record
                 a: sfixed2_15_list_t(0 to 1);
@@ -1163,7 +1163,7 @@ def test_class_full(converter):
         'c': 25,
         'd': False,
         'next': {'lol': 'loom'}
-    })
+    }, locals={})
 
     expect = textwrap.dedent("""\
         package unknown_name is
@@ -1226,7 +1226,7 @@ def test_class_full_reserved_name(converter):
 
     datamodel = DataModel(self_data={
         'd': False,
-    })
+    }, locals={})
     expect = textwrap.dedent("""\
         package unknown_name is
 
@@ -1278,7 +1278,7 @@ def test_class_full_endl_bug(converter):
 
     datamodel = DataModel(self_data={
         'd': False,
-    })
+    }, locals={})
     expect = textwrap.dedent("""\
             package unknown_name is
 
