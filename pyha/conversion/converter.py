@@ -195,7 +195,6 @@ class DefNodeConv(NodeConv):
         return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
-        # uses red_node that has not been modified by 'call transforms'
         assigns = self.red_node.value('assign')
 
         variables = []
@@ -205,6 +204,14 @@ class DefNodeConv(NodeConv):
             elif isinstance(x.target, TupleNode):
                 for node in x.target:
                     variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
+
+        call_args = self.red_node.value('call_argument')
+        call_args = [x for x in call_args if str(x)[:4] == 'ret_']
+        for x in call_args:
+            if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
+                continue
+            variables.append(VHDLVariable(NameNodeConv(red_node=x.value), red_node=x))
+
 
         # this will work in python 3.6
         # remove_duplicates = {str(x.name):x for x in variables}
@@ -265,11 +272,6 @@ class PassNodeConv(NodeConv):
 
 
 class CallNodeConv(NodeConv):
-    # def function_name(self):
-    #     if isinstance(self.parent, AtomtrailersNodeConv):
-    #         return self.parent.value[0].value
-    #     assert 0
-
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
         if str(self.red_node.parent) == 'make_self(self_reg, self)':
@@ -409,6 +411,8 @@ class ClassNodeConv(NodeConv):
 
         super().__init__(red_node, parent)
 
+        # adds to vhdl main function:
+        #         variable self: self_t;
         self.callf = [x for x in self.value if str(x.name) == 'main']
         if len(self.callf):
             self.callf = self.callf[0]
@@ -553,8 +557,8 @@ def convert(red: Node, caller=None, datamodel=None):
     VHDLType.set_datamodel(datamodel)
 
     red = redbaron_pyfor_to_vhdl(red)
-    red = redbaron_pycall_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
+    red = redbaron_pycall_to_vhdl(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 
