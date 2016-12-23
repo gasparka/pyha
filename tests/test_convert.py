@@ -3,7 +3,126 @@ import textwrap
 import pytest
 from redbaron import RedBaron
 
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert, DefNodeConv
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert, redbaron_pycall_to_vhdl, \
+    redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl
+
+
+def test_redbaron_call_simple():
+    # this is redbadon based transform
+    x = 'a(a)'
+    expect = 'a(a)'
+    y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.d(a)'
+    expect = 'd(self, a)'
+    y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.moving_average.main(x)'
+    expect = 'unknown_type.main(self.next.moving_average, x)'
+    y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+
+def test_redbaron_call_returns():
+    # this is redbadon based transform
+    x = 'b = self.a(a)'
+    expect = 'self.a(a, ret_0=b)'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'b = resize(a)'
+    expect = 'b = resize(a)'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=b)'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.b)'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.b = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.next.b)'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.next.b[0], self.next.b[1] = self.a(self.a)'
+    expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
+    y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+
+def test_redbaron_for():
+    code = textwrap.dedent("""\
+            for x in arr:
+                x.main()""")
+    expect = textwrap.dedent("""\
+            for _i_ in arr:
+                arr[_i_].main()
+                """)
+
+    y = redbaron_pyfor_to_vhdl(RedBaron(code)[0])
+    assert expect == y.dumps()
+
+
+def test_redbaron_for2():
+    code = textwrap.dedent("""\
+            for itm in lol:
+                l = a + itm
+                caller(itm)""")
+
+    expect = textwrap.dedent("""\
+            for _i_ in lol:
+                l = a + lol[_i_]
+                caller(lol[_i_])
+                """)
+
+    y = redbaron_pyfor_to_vhdl(RedBaron(code)[0])
+    assert expect == y.dumps()
+
+
+def test_def_for_redbaron(converter):
+    code = textwrap.dedent("""\
+            def a():
+                for x in arr:
+                    x.main()""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            for \\_i_\\ in arr'range loop
+                unknown_type.main(arr(\\_i_\\));
+            end loop;
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_def_for_redbaron2(converter):
+    code = textwrap.dedent("""\
+            def a():
+                for item in cool_array:
+                    b = a + item
+                    self.func(item)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+            variable b: unknown_type;
+        begin
+            for \\_i_\\ in cool_array'range loop
+                b := a + cool_array(\\_i_\\);
+                func(self, cool_array(\\_i_\\));
+            end loop;
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
 
 
 @pytest.fixture
@@ -828,57 +947,6 @@ def test_call_semicolon_multi(converter):
     assert expect == str(conv)
 
 
-def test_call_simple():
-    # this is redbadon based transform
-    x = 'a(a)'
-    expect = 'a(a)'
-    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'self.d(a)'
-    expect = 'd(self, a)'
-    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'self.next.moving_average.main(x)'
-    expect = 'unknown_type.main(self.next.moving_average, x)'
-    y = DefNodeConv.pycall_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-
-def test_call_returns():
-    # this is redbadon based transform
-    x = 'b = self.a(a)'
-    expect = 'self.a(a, ret_0=b)'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'b = resize(a)'
-    expect = 'b = resize(a)'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'b = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=b)'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'self.b = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=self.b)'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'self.next.b = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=self.next.b)'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-    x = 'self.next.b[0], self.next.b[1] = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
-    y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
-    assert expect == y.dumps()
-
-
 def test_call_self(converter):
     code = textwrap.dedent("""\
             def a():
@@ -1223,44 +1291,6 @@ def test_indexing_slice_no_upper_no_lower(converter):
 #             reverse(\\range\\(len(self.taps)))""")
 #     conv = converter(code)
 #     assert expect == str(conv)
-
-
-def test_def_for_redbaron(converter):
-    code = textwrap.dedent("""\
-            def a():
-                for x in arr:
-                    x.main()""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-
-        begin
-            for \\_i_\\ in arr'range loop
-                unknown_type.main(arr(\\_i_\\));
-            end loop;
-        end procedure;""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_def_for_redbaron2(converter):
-    code = textwrap.dedent("""\
-            def a():
-                for item in cool_array:
-                    b = a + item
-                    self.func(item)""")
-
-    expect = textwrap.dedent("""\
-        procedure a is
-            variable b: unknown_type;
-        begin
-            for \\_i_\\ in cool_array'range loop
-                b := a + cool_array(\\_i_\\);
-                func(self, cool_array(\\_i_\\));
-            end loop;
-        end procedure;""")
-    conv = converter(code)
-    assert expect == str(conv)
 
 
 def test_for(converter):

@@ -14,9 +14,12 @@ class DCRemoval(HW):
     def main(self, x):
 
         # run sample trough all moving averages
+        # tmp = x
+        # for i in range(len(self.mavg)):
+        #     tmp = self.next.mavg[i].main(tmp)
         tmp = x
-        for i in range(len(self.mavg)):
-            tmp = self.next.mavg[i].main(tmp)
+        for mav in self.next.mavg:
+            tmp = mav.main(tmp)
 
         self.next.delay_x = x
         self.next.delay_x2 = self.delay_x
@@ -28,7 +31,7 @@ class DCRemoval(HW):
 
     def model_main(self, x):
         tmp = x
-        for mav in self.mavg:
+        for mav in self.next.mavg:
             tmp = mav.model_main(tmp)
 
         return x - tmp
