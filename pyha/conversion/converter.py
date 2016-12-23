@@ -1,5 +1,8 @@
+# TODO: some nodes make changes to AST by using redbaron, it would be good to refactor all these modifications into one step that runs before actual conversion.
+# currently some tests must use 'def a(): x' just because DefNodeConv makes some AST conversions.
 import logging
 import textwrap
+from contextlib import suppress
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
@@ -228,7 +231,6 @@ class DefNodeConv(NodeConv):
                 new = DefNodeConv.pycall_returns_to_vhdl(x.copy())
                 x.replace(new)
 
-        DefNodeConv.pycall_returns_to_vhdl(red_node)
         atoms = red_node.find_all('atomtrailers')
         for i, x in enumerate(atoms):
             if x.call is not None:
@@ -428,17 +430,25 @@ class SliceNodeConv(GetitemNodeConv):
 
 
 class ForNodeConv(NodeConv):
+    def python_for_to_vhdl(self, red_node):
+        # if for range contains call to 'range' -> skip
+        with suppress(Exception):
+            if red_node.target('call')[0].previous.value == 'range':
+                return
 
-    def __init__(self, red_node, parent):
         range = red_node.target
         ite = red_node.iterator
+
         f = red_node.value.find_all(ite.__class__.__name__, value=ite.value)
         for x in f:
             new = RedBaron('{}[_i_]'.format(range))[0]
             x.replace(new)
         red_node.iterator = '_i_'
-
         self.is_short_python_for = True
+
+    def __init__(self, red_node, parent):
+        self.is_short_python_for = False
+        self.python_for_to_vhdl(red_node)
 
         super().__init__(red_node, parent)
 

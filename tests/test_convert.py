@@ -705,7 +705,6 @@ def test_call_resize_sfix_combined(converter):
     assert expect == str(conv)
 
 
-
 def test_call_semicolon_assign(converter):
     code = textwrap.dedent("""\
         def a():
@@ -878,6 +877,7 @@ def test_call_returns():
     expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
     y = DefNodeConv.pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
+
 
 def test_call_self(converter):
     code = textwrap.dedent("""\
@@ -1225,15 +1225,40 @@ def test_indexing_slice_no_upper_no_lower(converter):
 #     assert expect == str(conv)
 
 
-def test_forrr(converter):
+def test_def_for_redbaron(converter):
     code = textwrap.dedent("""\
-            for x in arr:
-                x.main()""")
+            def a():
+                for x in arr:
+                    x.main()""")
 
     expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
             for \\_i_\\ in arr'range loop
-                arr(\\_i_\\).main(x);
-            end loop;""")
+                unknown_type.main(arr(\\_i_\\));
+            end loop;
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_def_for_redbaron2(converter):
+    code = textwrap.dedent("""\
+            def a():
+                for item in cool_array:
+                    b = a + item
+                    self.func(item)""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+            variable b: unknown_type;
+        begin
+            for \\_i_\\ in cool_array'range loop
+                b := a + cool_array(\\_i_\\);
+                func(self, cool_array(\\_i_\\));
+            end loop;
+        end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
 
@@ -1454,5 +1479,3 @@ def test_redbaron_bug120(converter):
     red.call.append('c')
     with pytest.raises(Exception):
         red.help(True)
-
-
