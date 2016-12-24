@@ -557,12 +557,14 @@ def convert(red: Node, caller=None, datamodel=None):
     VHDLType.set_datamodel(datamodel)
 
     # delete __init__, not converting this
-    f = red.find('def', name='__init__')
-    f.parent.remove(f)
+    with suppress(AttributeError):
+        f = red.find('def', name='__init__')
+        f.parent.remove(f)
 
     # delete model_main, not converting this
-    f = red.find('def', name='model_main')
-    f.parent.remove(f)
+    with suppress(AttributeError):
+        f = red.find('def', name='model_main')
+        f.parent.remove(f)
 
     # init.replace(RedBaron(''))
     red = redbaron_pyfor_to_vhdl(red)
@@ -589,28 +591,32 @@ def redbaron_pycall_to_vhdl(red_node):
 
     If function owner is not exactly 'self' then 'unknown_type' is prepended.
     self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+
+    self.d(a) -> d(self, a)
+    self.next.d(a) -> d(self.next, a)
+    local.d() -> type.d(local)
+    self.local.d() -> type.d(self.local)
+
     """
 
     def modify_call(red_node):
         call_args = red_node.find('call')
-        call_name = call_args.previous
-        i = call_name.index_on_parent
-        if i == 0: return red_node  # input is something like a()
-        call = red_node[i:]
-        self_arg = red_node
-        del self_arg[i:]  # BREAKS HERE
-        call_args.insert(0, self_arg)
-        if self_arg.dumps() not in ['self', 'self.next']:
-            self_type = VHDLType(str(self_arg[-1]), red_node=self_arg)
-            rb = RedBaron('{}.{}'.format(self_type.var_type, call.dumps()))
-            return rb[0]
-        return RedBaron(call.dumps())[0]
+        i = call_args.previous.index_on_parent
+        if i == 0:
+            return red_node  # input is something like a()
+        prefix = red_node[:i]
+        del red_node[:i]
+        call_args.insert(0, prefix)
+
+        if prefix.dumps() not in ['self', 'self.next']:
+            v = VHDLType(str(prefix[-1]), red_node=red_node)
+            red_node.insert(0, v.var_type)
 
     atoms = red_node.find_all('atomtrailers')
     for i, x in enumerate(atoms):
         if x.call is not None:
-            new = modify_call(x.copy())
-            x.replace(new)
+            modify_call(x)
+
     return red_node
 
 
