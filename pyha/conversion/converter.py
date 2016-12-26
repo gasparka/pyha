@@ -5,7 +5,7 @@ import textwrap
 from contextlib import suppress
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -217,7 +217,6 @@ class DefNodeConv(NodeConv):
             else:
                 variables.append(VHDLVariable(escape_for_vhdl(str(x.value)), red_node=x.value))
 
-
         # this will work in python 3.6
         # remove_duplicates = {str(x.name):x for x in variables}
         # variables = remove_duplicates.values()
@@ -323,12 +322,15 @@ class ListNodeConv(NodeConv):
 
 class EndlNodeConv(NodeConv):
     def __str__(self):
+        if isinstance(self.red_node.previous_rendered, CommentNode):
+            return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
 
 class CommentNodeConv(NodeConv):
     def __str__(self):
         return '--' + self.value[1:]
+
 
 # this is mostly array indexing
 class GetitemNodeConv(NodeConv):

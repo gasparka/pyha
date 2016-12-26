@@ -21,8 +21,10 @@ def test_basic():
     assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
 
-    # conv = Conversion(dut)
-    # conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
+    from pyha.conversion.conversion import Conversion
+    conv = Conversion(dut)
+    from pathlib import Path
+    conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
 
 # def test_basic():
 #     x = [2] * 8 + [-2] * 8

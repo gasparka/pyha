@@ -323,6 +323,26 @@ def test_def(converter):
     assert expect == str(conv)
 
 
+def test_def_comment(converter):
+    code = textwrap.dedent("""\
+        def a():
+            # informative comment
+            # wat
+            pass""")
+
+    expect = textwrap.dedent("""\
+        procedure a is
+
+        begin
+            -- informative comment
+            -- wat
+
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+
 def test_def_reserver_name(converter):
     code = textwrap.dedent("""\
         def label():
