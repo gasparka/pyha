@@ -6,6 +6,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
+from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
@@ -604,12 +605,17 @@ def redbaron_pycall_to_vhdl(red_node):
         i = call_args.previous.index_on_parent
         if i == 0:
             return red_node  # input is something like a()
-        prefix = red_node[:i]
+        prefix = red_node.copy()
+        del prefix[i:]
         del red_node[:i]
-        call_args.insert(0, prefix)
 
+        # this happens when 'redbaron_pyfor_to_vhdl' does some node replacements
+        if isinstance(prefix.value, DotProxyList) and len(prefix) == 1:
+            prefix = prefix[0]
+
+        call_args.insert(0, prefix)
         if prefix.dumps() not in ['self', 'self.next']:
-            v = VHDLType(str(prefix[-1]), red_node=red_node)
+            v = VHDLType(str(prefix[-1]), red_node=prefix)
             red_node.insert(0, v.var_type)
 
     atoms = red_node.find_all('atomtrailers')

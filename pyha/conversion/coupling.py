@@ -255,14 +255,15 @@ class VHDLType:
         if isinstance(self.red_node, DefArgumentNode):
             name = str(self.red_node.target)
         elif isinstance(self.red_node, AtomtrailersNode):
-            if len(self.red_node('call')):
-                arr = self.red_node.find('getitem')
-                if arr:
-                    return str(arr.previous)
-                else:
-                    return self.name
-            if len(self.red_node('getitem')):
-                return str(self.red_node[0])
+            # if len(self.red_node('call')):
+            #     arr = self.red_node.find('getitem')
+            #     if arr:
+            #         return str(arr.previous)
+            #     else:
+            #         return self.name
+            getitem = self.red_node.find('getitem')
+            if getitem is not None:
+                return str(getitem.previous)
             name = str(self.red_node)
         elif isinstance(self.red_node, AssignmentNode):
             name = str(self.red_node.target)
