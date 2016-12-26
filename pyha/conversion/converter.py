@@ -326,6 +326,10 @@ class EndlNodeConv(NodeConv):
         return ''
 
 
+class CommentNodeConv(NodeConv):
+    def __str__(self):
+        return '--' + self.value[1:]
+
 # this is mostly array indexing
 class GetitemNodeConv(NodeConv):
     # turn python [] indexing to () indexing

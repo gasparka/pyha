@@ -16,6 +16,12 @@ def converter():
     return Conv()
 
 
+def test_comment(converter):
+    code = '# this is comment'
+    conv = converter(code)
+    assert str(conv) == '-- this is comment'
+
+
 def test_name(converter):
     code = 'test'
     conv = converter(code)
