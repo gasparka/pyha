@@ -11,15 +11,15 @@ from pyha.conversion.extract_datamodel import DataModel
 
 
 def test_redbaron_call_simple():
-    # x = 'a(a)'
-    # expect = 'a(a)'
-    # y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
-    # assert expect == y.dumps()
-    #
-    # x = 'self.d(a)'
-    # expect = 'd(self, a)'
-    # y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
-    # assert expect == y.dumps()
+    x = 'a(a)'
+    expect = 'a(a)'
+    y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
+
+    x = 'self.d(a)'
+    expect = 'd(self, a)'
+    y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
+    assert expect == y.dumps()
 
     x = 'self.next.moving_average.main(x)'
     expect = 'unknown_type.main(self.next.moving_average, x)'
@@ -286,6 +286,51 @@ def test_typed_def_for_call(converter):
         begin
             for \\_i_\\ in self.\\next\\.arr'range loop
                 D_0.call(self.\\next\\.arr(\\_i_\\));
+            end loop;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_for_call_return(converter):
+    code = textwrap.dedent("""\
+            def f():
+                for x in self.next.arr:
+                    a = x.call()""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'f': {'a': 1}}, self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure f is
+            variable a: integer;
+        begin
+            for \\_i_\\ in self.\\next\\.arr'range loop
+                D_0.call(self.\\next\\.arr(\\_i_\\), ret_0=>a);
+            end loop;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_for_call_return_multi(converter):
+    code = textwrap.dedent("""\
+            def f():
+                for x in self.next.arr:
+                    a, b = x.call()""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'f': {'a': 1, 'b': False}}, self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure f is
+            variable a: integer;
+            variable b: boolean;
+        begin
+            for \\_i_\\ in self.\\next\\.arr'range loop
+                D_0.call(self.\\next\\.arr(\\_i_\\), ret_0=>a, ret_1=>b);
             end loop;
         end procedure;""")
     conv = converter(code, datamodel)

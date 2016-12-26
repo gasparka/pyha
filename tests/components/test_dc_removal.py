@@ -3,7 +3,6 @@ from pathlib import Path
 from pyha.common.sfix import Sfix
 from pyha.components.dc_removal import DCRemoval
 from pyha.conversion.conversion import Conversion
-
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
 
 

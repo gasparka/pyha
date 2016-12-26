@@ -5,7 +5,7 @@ import textwrap
 from contextlib import suppress
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, RedBaron, AssignmentNode, TupleNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -641,9 +641,13 @@ def redbaron_pycall_returns_to_vhdl(red_node):
     """
 
     def modify_call(x: AssignmentNode):
-        if str(x.value[0]) != 'self':
-            # most likely call to 'resize' no operatons needed
-            return x
+        if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
+            try:
+                if str(x.value[0][0]) != 'self':  # this is some shit that happnes after 'for' transforms
+                    return x
+            except:
+                return x
+
         call = x.call
         if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
             call.append(str(x.target))
@@ -671,15 +675,15 @@ def redbaron_pyfor_to_vhdl(red_node):
 
         range = red_node.target
         ite = red_node.iterator
-        f = red_node.value.find_all(ite.__class__.__name__, value=ite.value)
-        for x in f:
-            new = RedBaron('{}[_i_]'.format(range))[0]
-            x.replace(new)
+
+        red_node(ite.__class__.__name__, value=ite.value) \
+            .map(lambda x: x.replace('{}[_i_]'.format(range)))
+
         red_node.iterator = '_i_'
         return red_node
 
     fors = red_node.find_all('for')
     for x in fors:
-        new = modify_for(x.copy())
-        x.replace(new)
+        modify_for(x)
+
     return red_node
