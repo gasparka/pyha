@@ -1,7 +1,6 @@
-#TODO: This file is 100% mess, only works thanks to unit tests
-from typing import List
+# TODO: This file is 100% mess, only works thanks to unit tests
 
-from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.hwsim import HW
@@ -12,7 +11,6 @@ from pyha.conversion.extract_datamodel import DataModel
 
 class ExceptionCoupling(Exception):
     pass
-
 
 
 def pytype_to_vhdl(var):
@@ -32,10 +30,67 @@ def pytype_to_vhdl(var):
             left = var[0].left if var[0].left >= 0 else '_' + str(abs(var[0].left))
             right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
             return 'sfixed{}{}{}'.format(left, right, arr_token)
+        elif isinstance(var[0], HW):
+            return pytype_to_vhdl(var[0]) + arr_token
+        else:
+            assert 0
     elif isinstance(var, HW):
-        return '{}'.format(escape_for_vhdl(type(var).__name__))
+        idstr = get_instance_vhdl_name(var)
+        return idstr
     else:
         assert 0
+
+
+def reset_maker(self_data, recursion_depth=0):
+    def sfixed_init(val):
+        return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
+
+    variables = []
+    prefix = 'self_reg.' if recursion_depth == 0 else ''
+    for key, value in self_data.items():
+        if key == 'next':
+            continue
+        key = escape_for_vhdl(key)
+        tmp = None
+        if isinstance(value, Sfix):
+            tmp = '{} := {};'.format(prefix + key, sfixed_init(value))
+
+        # list of submodules
+        elif isinstance(value, list) and isinstance(value[0], HW):
+            for i, x in enumerate(value):
+                dm = DataModel(x)
+                vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
+                vars = ['{}({}).{}'.format(prefix + key, i, var) for var in vars]
+                variables.extend(vars)
+
+        elif isinstance(value, list):
+            if isinstance(value[0], Sfix):
+                lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
+            else:
+                lstr = '(' + ', '.join(str(x) for x in value) + ')'
+            tmp = '{} := {};'.format(prefix + key, lstr)
+        elif isinstance(value, HW):
+            if recursion_depth == 0:
+                tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
+            else:
+                dm = DataModel(value)
+                vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
+                vars = ['{}.{}'.format(prefix + key, var) for var in vars]
+                variables.extend(vars)
+        else:
+            tmp = '{} := {};'.format(prefix + key, value)
+
+        if tmp is not None:
+            variables.append(tmp)
+
+    return variables
+
+
+def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
+    if variable is not None:
+        name = type(variable).__name__
+        id = variable.pyha_instance_id
+    return escape_for_vhdl('{}_{}'.format(name, id))
 
 
 class VHDLType:
@@ -49,6 +104,16 @@ class VHDLType:
         cls._datamodel = dm
 
     @classmethod
+    def get_reset(cls):
+        return reset_maker(cls._datamodel.self_data)
+
+    @classmethod
+    def get_self_vhdl_name(cls):
+        if cls._datamodel.obj is None:
+            return 'unknown_name'
+        return get_instance_vhdl_name(cls._datamodel.obj)
+
+    @classmethod
     def get_self(cls):
         if cls._datamodel is None:
             return []
@@ -58,22 +123,22 @@ class VHDLType:
                 continue
             t = VHDLType(tuple_init=(k, v))
 
-            #todo remove this hack
+            # todo remove this hack
             if isinstance(v, HW):
                 t.var_type += '.register_t'
             ret.append(t)
         return ret
 
     @classmethod
-    def get_typedefs(cls):
-        if cls._datamodel is None:
-            return []
-        return [VHDLType(tuple_init=(k, v)) for k, v in cls._datamodel.self_data.items() if k != 'next']
-
-    @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
-        return [v for v in cls._datamodel.self_data.values() if type(v) is list]
+        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is list]
+
+        for func in cls._datamodel.locals.values():
+            for var in func.values():
+                if type(var) == list:
+                    typedefs.append(var)
+        return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
                  tuple_init=None):
@@ -150,9 +215,15 @@ class VHDLType:
         else:  # dealing with locals (includes all arguments!)
             name = self._real_name()
             var = self._datamodel.locals[self._defined_in_function()][name]
-            if isinstance(var, list):
-                index = int(self.red_node.value[1].value.value)
-                var = var[index]
+            try:
+                if isinstance(self.red_node[1], GetitemNode):
+                    try:
+                        index = int(self.red_node.value[1].value.value)
+                    except AttributeError:
+                        index = int(self.red_node.value[1].value)
+                    var = var[index]
+            except:
+                pass
         return var
 
     def walk_self_data(self, atom_trailer):
@@ -165,7 +236,7 @@ class VHDLType:
             if not isinstance(x, GetitemNode):
                 var = var[str(x)]
             else:
-                # index is soem variable -> just take first element
+                # index is some variable -> just take first element
                 if isinstance(x.value, NameNode):
                     var = var[0]
                 else:
@@ -184,11 +255,23 @@ class VHDLType:
         if isinstance(self.red_node, DefArgumentNode):
             name = str(self.red_node.target)
         elif isinstance(self.red_node, AtomtrailersNode):
-            if len(self.red_node('getitem')):
-                return str(self.red_node[0])
+            # if len(self.red_node('call')):
+            #     arr = self.red_node.find('getitem')
+            #     if arr:
+            #         return str(arr.previous)
+            #     else:
+            #         return self.name
+            getitem = self.red_node.find('getitem')
+            if getitem is not None:
+                return str(getitem.previous)
             name = str(self.red_node)
         elif isinstance(self.red_node, AssignmentNode):
             name = str(self.red_node.target)
+        elif isinstance(self.red_node, CallArgumentNode):
+            getitem = self.red_node.find('getitem')
+            if getitem is not None:
+                return str(getitem.previous)
+            name = str(self.red_node.value)
         else:
             name = str(self.red_node)
 

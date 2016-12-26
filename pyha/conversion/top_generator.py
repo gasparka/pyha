@@ -1,8 +1,8 @@
 import textwrap
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import tabber, escape_for_vhdl
-from pyha.conversion.coupling import pytype_to_vhdl
+from pyha.common.util import tabber
+from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
 
 
 class NotTrainedError(Exception):
@@ -116,7 +116,7 @@ class TopGenerator:
 
     def object_class_name(self) -> str:
         # make sure we escape reserved names
-        return escape_for_vhdl(self.simulated_object.__class__.__name__)
+        return get_instance_vhdl_name(self.simulated_object)
 
     def make_call_arguments(self) -> str:
 

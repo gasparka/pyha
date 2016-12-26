@@ -2,9 +2,8 @@ from pathlib import Path
 
 import pytest
 
-import pyha
 from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion, MultipleNodesError
+from pyha.conversion.conversion import Conversion, MultipleNodesError, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
@@ -21,13 +20,8 @@ def dut():
     return Conversion(o)
 
 
-def test_get_objects_source_path(dut):
-    path = dut.get_objects_source_path(dut)
-    assert path == pyha.__path__[0] + '/conversion/conversion.py'
-
-
 def test_get_objects_rednode(dut):
-    red = dut.get_objects_rednode(dut.main_obj)
+    red = get_objects_rednode(dut.obj)
     assert red.name == 'Dummy'
 
 
@@ -39,7 +33,7 @@ def test_get_objects_rednode_badtype(dut):
 def test_write_vhdl_files(dut, tmpdir):
     tmpdir = Path(str(tmpdir))
     files = dut.write_vhdl_files(tmpdir)
-    assert files[0] == tmpdir / 'Dummy.vhd' and files[0].is_file()
+    assert files[0] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
     assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
@@ -83,7 +77,42 @@ def test_convert_submodule():
     # a_main = dut.sub.main
     # conv = Conversion(dut)
     # paths = conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
-    pass
+    # pass
+
+
+def test_convert_submodule_name_conflict():
+    class A2(HW):
+        def __init__(self):
+            self.reg = 0
+
+        def main(self, a):
+            self.next.reg = a
+            return self.reg
+
+    class B2(HW):
+        def __init__(self):
+            self.sub = A2()
+            self.sub2 = A2()
+
+        def main(self, a):
+            ret = self.next.sub.main(a)
+            ret2 = self.next.sub2.main(ret)
+            return ret2
+
+    dut = B2()
+    # train object
+    dut.main(1)
+    dut.main(2)
+    conv = Conversion(dut)
+    paths = conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
+    names = [x.name for x in paths]
+    assert names == ['A2_0.vhd', 'A2_1.vhd', 'B2_0.vhd', 'top.vhd']
+    # x = list(range(16))
+    # expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    # dut = B()
+    #
+    # assert_sim_match(dut, [int], expected, x,
+    #                  simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
 ##################################
