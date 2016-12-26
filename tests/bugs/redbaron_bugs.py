@@ -1,7 +1,6 @@
 from redbaron import RedBaron
 
 
-# @pytest.mark.skip
 def test_redbaron_insert():
     red_node = RedBaron('self.a.main(x)')[0]
     call_args = red_node.find('call')

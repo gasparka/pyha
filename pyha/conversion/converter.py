@@ -211,7 +211,11 @@ class DefNodeConv(NodeConv):
         for x in call_args:
             if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
                 continue
-            variables.append(VHDLVariable(NameNodeConv(red_node=x.value), red_node=x))
+            getitem = x.value.getitem
+            if getitem is not None:
+                variables.append(VHDLVariable(escape_for_vhdl(str(getitem.previous)), red_node=x.value))
+            else:
+                variables.append(VHDLVariable(escape_for_vhdl(str(x.value)), red_node=x.value))
 
 
         # this will work in python 3.6
@@ -567,7 +571,6 @@ def convert(red: Node, caller=None, datamodel=None):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
 
-    # init.replace(RedBaron(''))
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)

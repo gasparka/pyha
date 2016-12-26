@@ -268,6 +268,9 @@ class VHDLType:
         elif isinstance(self.red_node, AssignmentNode):
             name = str(self.red_node.target)
         elif isinstance(self.red_node, CallArgumentNode):
+            getitem = self.red_node.find('getitem')
+            if getitem is not None:
+                return str(getitem.previous)
             name = str(self.red_node.value)
         else:
             name = str(self.red_node)

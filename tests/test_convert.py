@@ -1231,12 +1231,26 @@ def test_for_complex(converter):
     assert expect == str(conv)
 
 
-# def test_class_nocall(converter):
-#     code = textwrap.dedent("""\
-#             class Register(HW):
-#                 pass""")
-#
-#     assert 0
+def test_def_for_return(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            for i in range(len(list)):
+                outs[i] = list[i]
+            return outs[0]""")
+
+    expect = textwrap.dedent("""\
+        procedure b(ret_0:out unknown_type) is
+            variable outs: unknown_type;
+        begin
+            outs := (0, 0, 0, 0);
+            for i in list'range loop
+                outs(i) := list(i);
+            end loop;
+            ret_0 := outs(0);
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
 
 
 def test_class_call_modifications(converter):
@@ -1297,6 +1311,18 @@ def test_list_multiple(converter):
 
     expect = textwrap.dedent("""\
             (1, 2, 3, 4)""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_list_multiple_assign(converter):
+    code = textwrap.dedent("""\
+            a = [1, 2, 3, 4]
+            """)
+
+    expect = textwrap.dedent("""\
+            a := (1, 2, 3, 4);""")
 
     conv = converter(code)
     assert expect == str(conv)

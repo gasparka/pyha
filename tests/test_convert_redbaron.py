@@ -290,3 +290,98 @@ def test_typed_def_for_call(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
+
+
+def test_typed_def_infer_var(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            outs[i] = 1""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
+                          self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure b is
+            variable outs: integer_list_t(0 to 3);
+        begin
+            outs := (0, 0, 0, 0);
+            outs(i) := 1;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_infer_var_call(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            outs[i] = self.arr[i].main()""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
+                          self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure b is
+            variable outs: integer_list_t(0 to 3);
+        begin
+            outs := (0, 0, 0, 0);
+            D_0.main(self.arr(i), ret_0=>outs(i));
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_infer_var_call_tuple(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            outs[i], outs[i+1], b = self.arr[i].main()""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0], 'b': False}},
+                          self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure b is
+            variable outs: integer_list_t(0 to 3);
+            variable b: boolean;
+        begin
+            outs := (0, 0, 0, 0);
+            D_0.main(self.arr(i), ret_0=>outs(i), ret_1=>outs(i + 1), ret_2=>b);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_for_combined(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            for i in range(len(self.next.arr)):
+                outs[i] = self.next.arr[i].main(x)
+
+            return outs[0]""")
+
+    class D(HW):
+        pass
+
+    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
+                          self_data={'arr': [D(), D()]})
+    expect = textwrap.dedent("""\
+        procedure b(ret_0:out integer) is
+            variable outs: integer_list_t(0 to 3);
+        begin
+            outs := (0, 0, 0, 0);
+            for i in self.\\next\\.arr'range loop
+                D_0.main(self.\\next\\.arr(i), x, ret_0=>outs(i));
+            end loop;
+            ret_0 := outs(0);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)

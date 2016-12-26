@@ -539,6 +539,29 @@ def test_typed_def_infer_variable_dublicate2(converter):
     assert expect == str(conv)
 
 
+def test_def_for_return(converter):
+    code = textwrap.dedent("""\
+        def b():
+            outs = [0, 0, 0, 0]
+            for i in range(len(list)):
+                outs[i] = list[i]
+            return outs[0]""")
+
+    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}})
+    expect = textwrap.dedent("""\
+        procedure b(ret_0:out integer) is
+            variable outs: integer_list_t(0 to 3);
+        begin
+            outs := (0, 0, 0, 0);
+            for i in list'range loop
+                outs(i) := list(i);
+            end loop;
+            ret_0 := outs(0);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
 def test_datamodel_to_self_ignore_next():
     datamodel = DataModel(self_data={'a': Sfix(0.0, 0, -27), 'next': {'lol': 'loom'}})
     VHDLType.set_datamodel(datamodel)
