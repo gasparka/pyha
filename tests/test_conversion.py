@@ -104,7 +104,7 @@ def test_convert_submodule_name_conflict():
     dut.main(1)
     dut.main(2)
     conv = Conversion(dut)
-    paths = conv.write_vhdl_files(Path('/home/gaspar/git/pyha/playground/conv'))
+    paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
     assert names == ['A2_0.vhd', 'A2_1.vhd', 'B2_0.vhd', 'top.vhd']
     # x = list(range(16))
