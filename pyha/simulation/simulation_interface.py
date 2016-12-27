@@ -2,14 +2,12 @@ from contextlib import suppress
 from copy import deepcopy
 from functools import wraps
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
 
 from pyha.common.sfix import Sfix
-from pyha.conversion.conversion import Conversion
-from pyha.simulation.cocotb import CocotbAuto
+from pyha.simulation.sim_provider import SimProvider
 
 
 class NoModelError(Exception):
@@ -95,9 +93,11 @@ class Simulation:
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, input_types: List[object] = None):
-        self.tmpdir = TemporaryDirectory()  # use self. to keep dir alive
+        # self.tmpdir = TemporaryDirectory().name
+        self.tmpdir = '/home/gaspar/git/pyha/playground/conv'
         self.input_types = []
         self.model = None
+        self.sim = None
         self.cocosim = None
         self.simulation_type = simulation_type
 
@@ -125,8 +125,13 @@ class Simulation:
     def prepare_hw_simulation(self):
         # grab the already simulated model!
         self.model = Simulation.hw_instances[self.model.__class__.__name__]
-        conv = Conversion(self.model)
-        return CocotbAuto(Path(self.tmpdir.name), conv)
+        self.sim = SimProvider(Path(self.tmpdir), self.model, self.simulation_type)
+        return self.sim.main()
+        # conv = Conversion(self.model)
+        # quartus = None
+        # if self.simulation_type is SIM_GATE:
+        #     make_quartus_project(Path(self.tmpdir.name), conv)
+        # return CocotbAuto(Path(self.tmpdir.name), conv)
 
     @type_conversions
     @in_out_transpose
@@ -165,13 +170,6 @@ class Simulation:
         else:
             return self.hw_simulation(*args)
 
-
-def convert_to_folder(model, types, path, *x):
-    dut = Simulation(SIM_HW_MODEL, model=model, input_types=types)
-    hw_y = dut.main(*x)
-
-    conv = Conversion(dut)
-    conv.write_vhdl_files(Path(path))
 
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
     if simulations is None:
