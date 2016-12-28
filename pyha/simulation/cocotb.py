@@ -62,7 +62,7 @@ class CocotbAuto(object):
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
-        self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+        # self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 

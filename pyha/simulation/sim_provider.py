@@ -1,4 +1,5 @@
 import logging
+import subprocess
 from collections import OrderedDict
 from pathlib import Path
 
@@ -7,11 +8,10 @@ from pyha import common
 from pyha.conversion.conversion import Conversion
 from pyha.simulation.cocotb import CocotbAuto
 
-logger = logging.getLogger(__name__)
-
 
 class SimProvider:
     def __init__(self, base_path, model, sim_type, copy_sources_dst='/home/gaspar/git/pyha/playground'):
+        self.logger = logging.getLogger(__name__)
         self.copy_sources_dst = copy_sources_dst  # copy tmp dir of all sources to here
         self.sim_type = sim_type
         self.base_path = base_path
@@ -37,7 +37,10 @@ class SimProvider:
 
     def main(self):
         src = self.get_conversion_sources()
-        self.make_quartus_project()
+        # self.make_quartus_project()
+        # vho = self.make_quartus_netlist()
+        # src = [str(vho)]
+        src = ['/home/gaspar/git/pyha/playground/conv/simulation/modelsim/quartus_project.vho']
         # dir_util.copy_tree(str(self.base_path), str(self.copy_sources_dst))
         return CocotbAuto(self.base_path, src, self.conv.outputs)
 
@@ -75,6 +78,20 @@ class SimProvider:
         outpath = self.base_path / 'quartus_project.qpf'
         with outpath.open('w') as f:
             f.write('PROJECT_REVISION = "quartus_project"')
+
+    def make_quartus_netlist(self):
+        self.logger.info('Running quartus map...will take time.')
+        make_process = subprocess.call(['quartus_map', 'quartus_project'], cwd=str(self.base_path))
+        assert make_process == 0
+
+        self.logger.info('Running netlist writer.')
+        make_process = subprocess.call(['quartus_eda', 'quartus_project'], cwd=str(self.base_path))
+        assert make_process == 0
+
+        self.logger.info('Successfully generated gate-level hdl!')
+        return self.base_path / 'simulation/modelsim/quartus_project.vho'
+
+
 
             #
             # def make(self):
