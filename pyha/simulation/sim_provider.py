@@ -36,11 +36,13 @@ class SimProvider:
         return src
 
     def main(self):
+        from pyha.simulation.simulation_interface import SIM_GATE
         src = self.get_conversion_sources()
-        # self.make_quartus_project()
-        # vho = self.make_quartus_netlist()
-        # src = [str(vho)]
-        src = ['/home/gaspar/git/pyha/playground/conv/simulation/modelsim/quartus_project.vho']
+        if self.sim_type == SIM_GATE:
+            self.make_quartus_project()
+            vho = self.make_quartus_netlist()
+            src = [str(vho)]
+        # src = ['/home/gaspar/git/pyha/playground/conv/simulation/modelsim/quartus_project.vho']
         # dir_util.copy_tree(str(self.base_path), str(self.copy_sources_dst))
         return CocotbAuto(self.base_path, src, self.conv.outputs)
 

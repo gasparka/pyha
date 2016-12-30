@@ -1,6 +1,6 @@
 from pyha.common.sfix import Sfix
 from pyha.components.dc_removal import DCRemoval
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 def test_basic():
@@ -19,7 +19,7 @@ def test_basic():
     #                   x)
 
     assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     from pyha.conversion.conversion import Conversion
     conv = Conversion(dut)

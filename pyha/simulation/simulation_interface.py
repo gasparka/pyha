@@ -176,7 +176,10 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
     assert simulations in [[SIM_MODEL], [SIM_MODEL, SIM_HW_MODEL], [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                           [SIM_HW_MODEL], [SIM_HW_MODEL, SIM_RTL]]
+                           [SIM_HW_MODEL], [SIM_HW_MODEL, SIM_RTL],
+                           [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                           [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                           [SIM_HW_MODEL, SIM_GATE]]
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types)

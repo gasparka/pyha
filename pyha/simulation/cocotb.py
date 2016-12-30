@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import subprocess
@@ -45,6 +46,7 @@ include $(COCOTB)/makefiles/Makefile.sim
 
 class CocotbAuto(object):
     def __init__(self, base_path, src, outputs, sim_folder='coco_sim'):
+        self.logger = logging.getLogger(__name__)
         self.outputs = outputs
         self.src = src
         self.base_path = base_path
@@ -62,7 +64,11 @@ class CocotbAuto(object):
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
-        # self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+
+        self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+
+        if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
+            self.environment['GHDL_OPTIONS'] = '--ieee=synopsys'  # TODO: push PR to cocotb
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
@@ -77,7 +83,7 @@ class CocotbAuto(object):
         self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
 
     def run(self, *input_data):
-
+        self.logger.info('Running COCOTB simulation....')
         # convert all Sfix elements to 'integer' form
         input_data = np.vectorize(
             lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
@@ -90,9 +96,8 @@ class CocotbAuto(object):
 
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
-        except subprocess.CalledProcessError:
-            raise Exception(
-                'Something went wrong with RTL simulation, scroll to very top and see if there are GHDL errors.')
+        except subprocess.CalledProcessError as err:
+            print(err.args[0])
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(float)
