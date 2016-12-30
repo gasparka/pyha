@@ -1,7 +1,9 @@
+import logging
 from contextlib import suppress
 from copy import deepcopy
 from functools import wraps
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
@@ -92,9 +94,14 @@ class Simulation:
     """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
-    def __init__(self, simulation_type, model=None, input_types: List[object] = None):
+    def __init__(self, simulation_type, model=None, input_types: List[object] = None, dir_path=None):
+        self.logger = logging.getLogger(__name__)
         # self.tmpdir = TemporaryDirectory().name
-        self.tmpdir = '/home/gaspar/git/pyha/playground/conv'
+        self.dir_path = dir_path
+        if self.dir_path is None:
+            self.keep_me_alive = TemporaryDirectory()
+            self.dir_path = self.keep_me_alive.name
+
         self.input_types = []
         self.model = None
         self.sim = None
@@ -125,7 +132,7 @@ class Simulation:
     def prepare_hw_simulation(self):
         # grab the already simulated model!
         self.model = Simulation.hw_instances[self.model.__class__.__name__]
-        self.sim = SimProvider(Path(self.tmpdir), self.model, self.simulation_type)
+        self.sim = SimProvider(Path(self.dir_path), self.model, self.simulation_type)
         return self.sim.main()
         # conv = Conversion(self.model)
         # quartus = None
@@ -150,6 +157,7 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
+        self.logger.info('Running {} simulation!'.format(self.simulation_type))
         # test if user provided legal 'input_types'
         if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
             if self.input_types is None or (len(args) != len(self.input_types)):
@@ -171,18 +179,21 @@ class Simulation:
             return self.hw_simulation(*args)
 
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05):
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, dir_path=None):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
-    assert simulations in [[SIM_MODEL], [SIM_MODEL, SIM_HW_MODEL], [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                           [SIM_HW_MODEL], [SIM_HW_MODEL, SIM_RTL],
+    assert simulations in [[SIM_MODEL],
+                           [SIM_MODEL, SIM_HW_MODEL],
+                           [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                           [SIM_HW_MODEL],
+                           [SIM_HW_MODEL, SIM_RTL],
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
 
     for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, input_types=types)
+        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
         try:
             np.testing.assert_allclose(expected, hw_y, rtol)
