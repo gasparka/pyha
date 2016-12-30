@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import suppress
 from copy import deepcopy
 from functools import wraps
@@ -191,6 +192,13 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, d
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
+
+    # for travis build, skip all the tests involving quartus
+    with suppress(KeyError):  # env var not set
+        if SIM_GATE in simulations and int(os.environ['PYHA_NO_QUARTUS']):
+            simulations.remove(SIM_GATE)
+            logging.getLogger(__name__).warning(
+                'Not running SIM_GATE tests as environment variable "PYHA_NO_QUARTUS" is True!!!')
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
