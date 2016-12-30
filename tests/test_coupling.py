@@ -666,6 +666,40 @@ def test_pytype_to_vhdl_l():
     assert ret == 'A_0'
 
 
+def test_datamodel_constant(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                pass""")
+
+    datamodel = DataModel(self_data={'a': 1, 'b_const': 2})
+
+    expect = textwrap.dedent("""\
+            type register_t is record
+                a: integer;
+                b_const: integer;
+            end record;
+
+            type self_t is record
+                a: integer;
+                b_const: integer;
+                \\next\\: register_t;
+            end record;""")
+
+    conv = converter(code, datamodel)
+    assert expect == str(conv.get_datamodel())
+
+    expect = textwrap.dedent("""\
+        procedure make_self(self_reg: register_t; self: out self_t) is
+        begin
+            self.a := self_reg.a;
+            self.b_const := 2;
+            self.\\next\\ := self_reg;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_makeself_str()
+    assert expect == str(conv)
+
+
 def test_class_datamodel_submodule(converter):
     code = textwrap.dedent("""\
             class Tc(HW):

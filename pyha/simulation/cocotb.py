@@ -1,12 +1,14 @@
+import logging
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
+
 import pyha
 from pyha.common.sfix import Sfix
-from pyha.conversion.conversion import Conversion
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -43,9 +45,10 @@ include $(COCOTB)/makefiles/Makefile.sim
 
 
 class CocotbAuto(object):
-    def __init__(self, base_path, conv: Conversion, sim_folder='coco_sim'):
-        self.conv = conv
-        self.src_files = conv.write_vhdl_files(base_path)
+    def __init__(self, base_path, src, outputs, sim_folder='coco_sim'):
+        self.logger = logging.getLogger(__name__)
+        self.outputs = outputs
+        self.src = src
         self.base_path = base_path
         self.sim_folder = sim_folder
 
@@ -61,24 +64,27 @@ class CocotbAuto(object):
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
+
         self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+
+        if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
+            altera_libs = pyha.__path__[0] + '/common/hdl/altera_ghdl_libs'
+            self.environment['GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys'  # TODO: push PR to cocotb
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        pyha_util_py = pyha.__path__[0] + '/common/hdl/pyha_util.vhd'
-        self.environment['VHDL_SOURCES'] = pyha_util_py + ' ' + ' '.join(str(x) for x in self.src_files)
+        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
-        self.environment['OUTPUT_VARIABLES'] = str(len(self.conv.outputs))
+        self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
 
     def run(self, *input_data):
-        import numpy as np
-
+        self.logger.info('Running COCOTB simulation....')
         # convert all Sfix elements to 'integer' form
         input_data = np.vectorize(
             lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
@@ -91,9 +97,8 @@ class CocotbAuto(object):
 
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
-        except subprocess.CalledProcessError:
-            raise Exception(
-                'Something went wrong with RTL simulation, scroll to very top and see if there are GHDL errors.')
+        except subprocess.CalledProcessError as err:
+            print(err.args[0])
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(float)
@@ -101,16 +106,16 @@ class CocotbAuto(object):
         # FIXME: fix this retarded solution, combien with Sfix to 'integer'part and implement in decorator, maybe after transpose decorator!
         # convert 'integer' form back to Sfix
         outp = np.transpose(outp)
-        assert len(self.conv.outputs) > 0
-        if len(self.conv.outputs) == 1:
-            if isinstance(self.conv.outputs[0], Sfix):
+        assert len(self.outputs) > 0
+        if len(self.outputs) == 1:
+            if isinstance(self.outputs[0], Sfix):
                 for i, val in enumerate(outp):
-                    outp[i] = (val * 2 ** self.conv.outputs[0].right)
+                    outp[i] = (val * 2 ** self.outputs[0].right)
         else:
             for i, row in enumerate(outp):
-                if isinstance(self.conv.outputs[i], Sfix):
+                if isinstance(self.outputs[i], Sfix):
                     for j, val in enumerate(row):
-                        outp[i][j] = (val * 2 ** self.conv.outputs[i].right)
+                        outp[i][j] = (val * 2 ** self.outputs[i].right)
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = np.transpose(outp)

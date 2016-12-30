@@ -469,8 +469,16 @@ class ClassNodeConv(NodeConv):
             self.\\next\\ := self_reg;
         end procedure;""")
 
-        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
-                     for x in VHDLType.get_self()]
+        # variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
+        #              for x in VHDLType.get_self()]
+        variables = []
+        for var in VHDLType.get_self():
+            # inital hack that turns variables ending with _const to 'constants'
+            if var.name[-6:] == '_const':
+                assert isinstance(var.variable, int)
+                variables += ['self.{} := {};'.format(var.name, var.variable)]
+            else:
+                variables += ['self.{k} := self_reg.{k};'.format(k=var.name)]
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
