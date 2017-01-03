@@ -6,6 +6,28 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class ComplexSfix:
+    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
+        self.init_val = val
+        self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+        self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+
+    @property
+    def left(self):
+        assert self.real.left == self.imag.left
+        return self.real.left
+
+    @property
+    def right(self):
+        assert self.real.right == self.imag.right
+        return self.real.right
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+
 # TODO: Verify stuff against VHDL library
 class Sfix(object):
     # Disables all quantization and saturating stuff
@@ -31,6 +53,7 @@ class Sfix(object):
         Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
+        assert left >= right
         # if left == None:
         #     raise Exception('Left bound for Sfix is None!')
         #

@@ -198,7 +198,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, d
         if SIM_GATE in simulations and int(os.environ['PYHA_NO_QUARTUS']):
             simulations.remove(SIM_GATE)
             logging.getLogger(__name__).warning(
-                'Not running SIM_GATE tests as environment variable "PYHA_NO_QUARTUS" is True!!!')
+                'Not running SIM_GATE tests because environment variable "PYHA_NO_QUARTUS" is True!!!')
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)

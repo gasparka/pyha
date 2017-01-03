@@ -4,7 +4,7 @@ from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, Ca
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 
@@ -20,6 +20,9 @@ def pytype_to_vhdl(var):
         return 'integer'
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
+    elif type(var) is ComplexSfix:
+        left, right = bounds_to_str(var)
+        return 'complex_sfix{}{}'.format(left, right)
     elif type(var) is list:
         arr_token = '_list_t(0 to {})'.format(len(var) - 1)
         if type(var[0]) is bool:
@@ -27,8 +30,7 @@ def pytype_to_vhdl(var):
         elif type(var[0]) is int:
             return 'integer' + arr_token
         elif type(var[0]) is Sfix:
-            left = var[0].left if var[0].left >= 0 else '_' + str(abs(var[0].left))
-            right = var[0].right if var[0].right >= 0 else '_' + str(abs(var[0].right))
+            left, right = bounds_to_str(var[0])
             return 'sfixed{}{}{}'.format(left, right, arr_token)
         elif isinstance(var[0], HW):
             return pytype_to_vhdl(var[0]) + arr_token
@@ -39,6 +41,12 @@ def pytype_to_vhdl(var):
         return idstr
     else:
         assert 0
+
+
+def bounds_to_str(var):
+    left = var.left if var.left >= 0 else '_' + str(abs(var.left))
+    right = var.right if var.right >= 0 else '_' + str(abs(var.right))
+    return left, right
 
 
 def reset_maker(self_data, recursion_depth=0):

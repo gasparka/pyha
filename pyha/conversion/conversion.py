@@ -22,11 +22,16 @@ def get_objects_rednode(obj):
     return red_list[0]
 
 
-def get_objects_datamodel_conversion(obj):
+def get_conversion_datamodel(obj):
     red_node = get_objects_rednode(obj)
     datamodel = DataModel(obj)
     conv = convert(red_node, caller=None, datamodel=datamodel)
     return conv, datamodel
+
+
+def get_conversion(obj):
+    conv, _ = get_conversion_datamodel(obj)
+    return conv
 
 
 class MultipleNodesError(Exception):
@@ -48,7 +53,7 @@ class Conversion:
         self.is_child = is_child
         self.obj = obj
         self.class_name = obj.__class__.__name__
-        self.conv, self.datamodel = get_objects_datamodel_conversion(obj)
+        self.conv, self.datamodel = get_conversion_datamodel(obj)
 
         self.vhdl_conversion = str(self.conv)
         if not is_child:

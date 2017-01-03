@@ -1386,27 +1386,3 @@ def test_binaryoperator_shift_right(converter):
     conv = converter(code)
     assert expect == str(conv)
 
-
-# TODO class conversion
-# TODO function calls
-
-def test_redbaron_bug119():
-    # https://github.com/PyCQA/redbaron/issues/119
-    # is this fixed in 0.6.2??
-    from redbaron import RedBaron
-    import textwrap
-    code = textwrap.dedent("""\
-        def a():
-            pass""")
-    red = RedBaron(code)[0]
-    red.value.insert(0, 'a')  # <- problem here
-
-
-def test_redbaron_bug120(converter):
-    # https: // github.com / PyCQA / redbaron / issues / 120
-    # adding new argumetn breaks help()
-    code = 'a(b)'
-    red = RedBaron(code)[0]
-    red.call.append('c')
-    with pytest.raises(Exception):
-        red.help(True)
