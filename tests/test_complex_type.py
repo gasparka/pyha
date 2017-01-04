@@ -105,7 +105,11 @@ def test_reg_conversion_top_entity(reg):
            '(real=>to_sfixed(in0(27 downto 14), 1, -12), imag=>to_sfixed(in0(13 downto 0), 1, -12));' \
            == res.make_input_type_conversions()
 
+
+    # output
     assert 'out0: out std_logic_vector(27 downto 0);' == res.make_entity_outputs()
+    assert 'variable var_out0: complex_sfix1_12;' == res.make_output_variables()
+    assert 'out0 <= to_slv(var_out0.real) & to_slv(var_out0.imag);' == res.make_output_type_conversions()
 
     # expect = textwrap.dedent("""\
     #             out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -125,6 +129,7 @@ def test_reg_simulate(reg):
     expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL])
+                     simulations=[SIM_HW_MODEL, SIM_RTL])
 
 # list of complex!
+# top converter duplicate definitions?

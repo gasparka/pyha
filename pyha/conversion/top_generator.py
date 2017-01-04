@@ -82,6 +82,8 @@ class TopGenerator:
             return "'1' when {} else '0'".format(var_name)
         elif type(var) == Sfix:
             return 'to_slv({})'.format(var_name)
+        elif type(var) == ComplexSfix:
+            return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
         else:
             assert 0
 
@@ -108,6 +110,15 @@ class TopGenerator:
     def make_input_type_conversions(self) -> str:
         return '\n'.join('var_in{} := {};'.format(i, self.vhdl_slv_to_normal(x, 'in{}'.format(i)))
                          for i, x in enumerate(self.get_object_inputs()))
+
+    def make_complex_types(self):
+        complex_vars = []
+        for x in self.get_object_inputs() + self.get_object_return():
+            if type(x) is ComplexSfix:
+                new = x.vhdl_type_define()
+                if new not in complex_vars:
+                    complex_vars.append(new)
+        return '\n'.join(x for x in complex_vars)
 
     def make_imports(self) -> str:
         return textwrap.dedent("""\
@@ -156,6 +167,7 @@ class TopGenerator:
                 end entity;
 
                 architecture arch of top is
+                {COMPLEX_TYPES}
                 begin
                     process(clk, rst_n)
                         variable self: {DUT_NAME}.register_t;
@@ -190,6 +202,7 @@ class TopGenerator:
         sockets['ENTITY_INPUTS'] = tab(self.make_entity_inputs())
         sockets['ENTITY_OUTPUTS'] = tab(
             self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
+        sockets['COMPLEX_TYPES'] = tab(self.make_complex_types())
         sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
         sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
         sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
@@ -201,3 +214,4 @@ class TopGenerator:
         #     f.write(res)
 
         return res
+

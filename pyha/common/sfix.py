@@ -1,4 +1,5 @@
 import logging
+import textwrap
 
 import numpy as np
 
@@ -38,6 +39,17 @@ class ComplexSfix:
 
     def vhdl_reset(self):
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
+
+    def vhdl_type_define(self):
+        template = textwrap.dedent("""\
+            type {NAME} is record
+                real: {DTYPE};
+                imag: {DTYPE};
+            end record;""")
+
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return template.format(**{'NAME': pytype_to_vhdl(self),
+                   'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
 
 
 # TODO: Verify stuff against VHDL library

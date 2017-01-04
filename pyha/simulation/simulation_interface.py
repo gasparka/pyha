@@ -210,6 +210,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, d
         hw_y = dut.main(*x)
         try:
             np.testing.assert_allclose(expected, hw_y, rtol)
-        except AssertionError:
+        except AssertionError as e:
             print('\n\nSim "{}" failed:'.format(sim_type))
-            raise
+            print(e.args[0])

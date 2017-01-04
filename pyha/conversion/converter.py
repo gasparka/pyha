@@ -498,18 +498,9 @@ class ClassNodeConv(NodeConv):
         return template.format(**sockets)
 
     def get_complex_types(self):
-        template = textwrap.dedent("""\
-            type {NAME} is record
-                real: {DTYPE};
-                imag: {DTYPE};
-            end record;""")
-
         l = []
         for val in VHDLType.get_complex_vars():
-            sockets = {'NAME': pytype_to_vhdl(val),
-                       'DTYPE': 'sfixed({} downto {})'.format(val.left, val.right)}
-
-            newl = template.format(**sockets)
+            newl = val.vhdl_type_define()
             if newl not in l:
                 l.append(newl)
         return l
@@ -540,6 +531,7 @@ class ClassNodeConv(NodeConv):
             {IMPORTS}
 
             package {NAME} is
+            {COMPLEX_TYPES}
             {TYPEDEFS}
 
             {SELF_T}
@@ -558,6 +550,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
         sockets['IMPORTS'] = self.get_imports()
+        sockets['COMPLEX_TYPES'] = '\n'.join(tabber(x) for x in self.get_complex_types())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
