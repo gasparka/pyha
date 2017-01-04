@@ -497,6 +497,24 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 
+    def get_complex_types(self):
+        template = textwrap.dedent("""\
+            type {NAME} is record
+                real: {DTYPE};
+                imag: {DTYPE};
+            end record;""")
+
+        l = []
+        for val in VHDLType.get_complex_vars():
+            sockets = {'NAME': pytype_to_vhdl(val),
+                       'DTYPE': 'sfixed({} downto {})'.format(val.left, val.right)}
+
+            newl = template.format(**sockets)
+            if newl not in l:
+                l.append(newl)
+        return l
+        # return template.format(**sockets)
+
     def get_typedefs(self):
         template = 'type {} is array (natural range <>) of {};'
         typedefs = []

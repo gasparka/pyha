@@ -50,9 +50,6 @@ def bounds_to_str(var):
 
 
 def reset_maker(self_data, recursion_depth=0):
-    def sfixed_init(val):
-        return 'to_sfixed({}, {}, {})'.format(val.init_val, val.left, val.right)
-
     variables = []
     prefix = 'self_reg.' if recursion_depth == 0 else ''
     for key, value in self_data.items():
@@ -60,8 +57,8 @@ def reset_maker(self_data, recursion_depth=0):
             continue
         key = escape_for_vhdl(key)
         tmp = None
-        if isinstance(value, Sfix):
-            tmp = '{} := {};'.format(prefix + key, sfixed_init(value))
+        if isinstance(value, (Sfix, ComplexSfix)):
+            tmp = '{} := {};'.format(prefix + key, value.vhdl_reset())
 
         # list of submodules
         elif isinstance(value, list) and isinstance(value[0], HW):
@@ -73,7 +70,7 @@ def reset_maker(self_data, recursion_depth=0):
 
         elif isinstance(value, list):
             if isinstance(value[0], Sfix):
-                lstr = '(' + ', '.join(sfixed_init(x) for x in value) + ')'
+                lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
             else:
                 lstr = '(' + ', '.join(str(x) for x in value) + ')'
             tmp = '{} := {};'.format(prefix + key, lstr)
@@ -137,15 +134,25 @@ class VHDLType:
             ret.append(t)
         return ret
 
+
+    @classmethod
+    def get_complex_vars(cls):
+        typedefs = cls._get_vars_by_type(ComplexSfix)
+        return typedefs
+
+    @classmethod
+    def _get_vars_by_type(cls, find_type):
+        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is find_type]
+        for func in cls._datamodel.locals.values():
+            for var in func.values():
+                if type(var) == find_type:
+                    typedefs.append(var)
+        return typedefs
+
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
-        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is list]
-
-        for func in cls._datamodel.locals.values():
-            for var in func.values():
-                if type(var) == list:
-                    typedefs.append(var)
+        typedefs = cls._get_vars_by_type(list)
         return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,

@@ -1,6 +1,6 @@
 import textwrap
 
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
 from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
 
@@ -54,7 +54,7 @@ class TopGenerator:
             return 'std_logic_vector(31 downto 0)'
         elif type(var) == bool:
             return 'std_logic'
-        elif type(var) == Sfix:
+        elif type(var) in (Sfix, ComplexSfix):
             return var.to_stdlogic()
         else:
             assert 0
@@ -66,6 +66,12 @@ class TopGenerator:
             return "True when {} = '1' else False".format(var_name)
         elif type(var) == Sfix:
             return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
+        elif type(var) == ComplexSfix:
+            size = int(var.bitwidth())
+            mid = size // 2
+            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size-1, mid, var.left, var.right)
+            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid-1, 0, var.left, var.right)
+            return '(real=>{}, imag=>{})'.format(real, imag)
         else:
             assert 0
 

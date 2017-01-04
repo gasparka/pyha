@@ -27,6 +27,18 @@ class ComplexSfix:
             return self.__dict__ == other.__dict__
         return False
 
+    def __call__(self, x):
+        return ComplexSfix(x, self.left, self.right)
+
+    def bitwidth(self):
+        return (self.left + abs(self.right))*2 + 2
+
+    def to_stdlogic(self):
+        return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
+
+    def vhdl_reset(self):
+        return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
+
 
 # TODO: Verify stuff against VHDL library
 class Sfix(object):
@@ -213,12 +225,15 @@ class Sfix(object):
         assert self.left >= 0
         return -self.right + self.left + 1
 
+    def __call__(self, x: float):
+        return Sfix(x, self.left, self.right)
+
+
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
 
-    # TODO: add tests
-    def __call__(self, x: float):
-        return Sfix(x, self.left, self.right)
+    def vhdl_reset(self):
+        return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE'):
