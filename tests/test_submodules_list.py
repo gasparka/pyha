@@ -39,7 +39,7 @@ def test_simple_conversion_files(simple):
     conv = Conversion(simple)
     paths = conv.write_vhdl_files(Path('/tmp/'))
     names = [x.name for x in paths]
-    assert names == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
+    assert names[1:] == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
 
 
 def test_simple_datamodel_training(simple):

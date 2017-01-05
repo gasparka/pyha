@@ -70,20 +70,6 @@ def test_reg_conversion_datamodel(reg):
     assert expect == dm
 
 
-def test_reg_conversion_complexdefs(reg):
-    conv = get_conversion(reg)
-
-    expect = textwrap.dedent("""\
-            type complex_sfix1_12 is record
-                real: sfixed(1 downto -12);
-                imag: sfixed(1 downto -12);
-            end record;""")
-
-    dm = conv.get_complex_types()
-    assert len(dm) == 1
-    assert expect == dm[0]
-
-
 def test_reg_conversion_reset(reg):
     conv = get_conversion(reg)
 
@@ -106,20 +92,11 @@ def test_reg_conversion_top_entity(reg):
            '(real=>to_sfixed(in0(27 downto 14), 1, -12), imag=>to_sfixed(in0(13 downto 0), 1, -12));' \
            == res.make_input_type_conversions()
 
-
     # output
     assert 'out0: out std_logic_vector(27 downto 0);' == res.make_entity_outputs()
     assert 'variable var_out0: complex_sfix1_12;' == res.make_output_variables()
     assert 'out0 <= to_slv(var_out0.real) & to_slv(var_out0.imag);' == res.make_output_type_conversions()
 
-    # expect = textwrap.dedent("""\
-    #             out0 <= std_logic_vector(to_signed(var_out0, 32));
-    #             out1 <= '1' when var_out1 else '0';
-    #             out2 <= to_slv(var_out2);""")
-    #
-    # res = TopGenerator(dut)
-    #
-    # assert expect == res.make_output_type_conversions()
 
 def test_reg_complex_types_generation(reg):
     conv = Conversion(reg)
@@ -137,8 +114,6 @@ def test_reg_complex_types_generation(reg):
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
         assert expect == f.read()
-
-
 
 
 def test_reg_simulate(reg):
