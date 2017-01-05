@@ -32,6 +32,9 @@ def test_py_implementation():
     assert a.right == -4
 
 
+def test_fixed_value():
+
+
 @pytest.fixture
 def reg():
     class A(HW):
@@ -114,6 +117,7 @@ def test_reg_complex_types_generation(reg):
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
         assert expect == f.read()
+
 
 
 def test_reg_simulate(reg):

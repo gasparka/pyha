@@ -3,12 +3,13 @@ import os
 import shutil
 import subprocess
 import sys
+from functools import wraps
 from pathlib import Path
 
 import numpy as np
 
 import pyha
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -44,6 +45,23 @@ include $(COCOTB)/makefiles/Makefile.sim
 """
 
 
+def std_logic_conversions(func):
+    """ Convert input data to std_logic and output data to 'normal types' (sfix for example) """
+    def to_std_logic(x):
+        if isinstance(x, (Sfix, ComplexSfix)):
+            return x.fixed_value()
+        else:
+            return x
+    @wraps(func)
+    def wrap(self, *args):
+        input_data = np.vectorize(to_std_logic)(args)
+
+        ret = func(self, *input_data)
+        return ret
+
+    return wrap
+
+
 class CocotbAuto(object):
     def __init__(self, base_path, src, outputs, sim_folder='coco_sim'):
         self.logger = logging.getLogger(__name__)
@@ -59,7 +77,7 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        # self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
@@ -83,11 +101,12 @@ class CocotbAuto(object):
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
         self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
 
+    @std_logic_conversions
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
-        # convert all Sfix elements to 'integer' form
-        input_data = np.vectorize(
-            lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
+        # # convert all Sfix elements to 'integer' form
+        # input_data = np.vectorize(
+        #     lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
 
         np.save(str(self.base_path / 'input.npy'), input_data)
 

@@ -32,13 +32,18 @@ class ComplexSfix:
         return ComplexSfix(x, self.left, self.right)
 
     def bitwidth(self):
-        return (self.left + abs(self.right))*2 + 2
+        return (self.left + abs(self.right)) * 2 + 2
 
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
 
     def vhdl_reset(self):
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
+
+    def fixed_value(self):
+        real = self.real.fixed_value()
+        imag = self.imag.fixed_value()
+        # return (real << self.bitwidth()) / 2 or imag
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
@@ -49,7 +54,7 @@ class ComplexSfix:
 
         from pyha.conversion.coupling import pytype_to_vhdl
         return template.format(**{'NAME': pytype_to_vhdl(self),
-                   'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
 
 
 # TODO: Verify stuff against VHDL library
@@ -239,7 +244,6 @@ class Sfix(object):
 
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)
-
 
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
