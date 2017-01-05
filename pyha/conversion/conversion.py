@@ -1,12 +1,14 @@
 import inspect
+import textwrap
 from pathlib import Path
 from typing import List
 
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
+from pyha.common.util import get_iterable
 from pyha.conversion.converter import convert
-from pyha.conversion.coupling import get_instance_vhdl_name
+from pyha.conversion.coupling import get_instance_vhdl_name, VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
@@ -47,7 +49,8 @@ class Conversion:
         *top input types
         *top output types
     """
-
+    # collect all complex types in the design
+    complex_types = []
     def __init__(self, obj, is_child=False):
 
         self.is_child = is_child
@@ -58,6 +61,8 @@ class Conversion:
         self.vhdl_conversion = str(self.conv)
         if not is_child:
             self.top_vhdl = TopGenerator(obj)
+            Conversion.complex_types = []
+        Conversion.complex_types.append(VHDLType.get_complex_vars())
 
         # recursively convert all child modules
         self.childs = []
@@ -93,8 +98,30 @@ class Conversion:
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
+            paths.insert(0, base_dir / 'complex_types.vhd')
+            with paths[0].open('w') as f:
+                f.write(self.make_vhdl_complex_types())
+
         return paths
 
 
         # def get_objects_source_path(self, obj) -> str:
         #     return inspect.getsourcefile(type(obj))
+
+    def make_vhdl_complex_types(self):
+        template = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            {COMPLEX_TYPES}
+            end package;""")
+
+        costr = []
+        for x in self.complex_types:
+            for xx in get_iterable(x):
+                new = xx.vhdl_type_define()
+                if new not in costr:
+                    costr.append(new)
+
+        return template.format(COMPLEX_TYPES='\n'.join(x for x in costr))

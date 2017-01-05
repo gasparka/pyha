@@ -129,6 +129,7 @@ class TopGenerator:
                 use ieee.math_real.all;
 
             library work;
+                use work.ComplexTypes.all;
                 use work.all;""")
 
     def object_class_name(self) -> str:
@@ -167,7 +168,6 @@ class TopGenerator:
                 end entity;
 
                 architecture arch of top is
-                {COMPLEX_TYPES}
                 begin
                     process(clk, rst_n)
                         variable self: {DUT_NAME}.register_t;
@@ -202,7 +202,6 @@ class TopGenerator:
         sockets['ENTITY_INPUTS'] = tab(self.make_entity_inputs())
         sockets['ENTITY_OUTPUTS'] = tab(
             self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
-        sockets['COMPLEX_TYPES'] = tab(self.make_complex_types())
         sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
         sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
         sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())

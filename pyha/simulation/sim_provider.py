@@ -19,7 +19,7 @@ class SimProvider:
         self.conv = Conversion(self.model)
 
     def get_conversion_sources(self):
-        src = [pyha.__path__[0] + '/common/hdl/pyha_util.vhd']
+        src = [pyha.__path__[0] + '/common/hdl/pyha_util.vhd', pyha.__path__[0] + '/common/hdl/complex_types.vhd']
         src += self.conv.write_vhdl_files(self.base_path)
         return src
 

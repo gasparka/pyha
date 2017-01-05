@@ -1,10 +1,11 @@
 import textwrap
 
 import pytest
+from pathlib import Path
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.conversion.conversion import get_conversion
+from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
@@ -119,6 +120,23 @@ def test_reg_conversion_top_entity(reg):
     # res = TopGenerator(dut)
     #
     # assert expect == res.make_output_type_conversions()
+
+def test_reg_complex_types_generation(reg):
+    conv = Conversion(reg)
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.fixed_pkg.all;
+
+        package ComplexTypes is
+        type complex_sfix1_12 is record
+            real: sfixed(1 downto -12);
+            imag: sfixed(1 downto -12);
+        end record;
+        end package;""")
+
+    files = conv.write_vhdl_files(Path('/tmp/'))
+    with files[0].open('r') as f:
+        assert expect == f.read()
 
 
 

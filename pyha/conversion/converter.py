@@ -442,6 +442,7 @@ class ClassNodeConv(NodeConv):
                 use ieee.math_real.all;
 
             library work;
+                use work.ComplexTypes.all;
                 use work.PyhaUtil.all;
                 use work.all;""")
 
@@ -497,15 +498,6 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         return template.format(**sockets)
 
-    def get_complex_types(self):
-        l = []
-        for val in VHDLType.get_complex_vars():
-            newl = val.vhdl_type_define()
-            if newl not in l:
-                l.append(newl)
-        return l
-        # return template.format(**sockets)
-
     def get_typedefs(self):
         template = 'type {} is array (natural range <>) of {};'
         typedefs = []
@@ -531,7 +523,6 @@ class ClassNodeConv(NodeConv):
             {IMPORTS}
 
             package {NAME} is
-            {COMPLEX_TYPES}
             {TYPEDEFS}
 
             {SELF_T}
@@ -550,7 +541,6 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
         sockets['IMPORTS'] = self.get_imports()
-        sockets['COMPLEX_TYPES'] = '\n'.join(tabber(x) for x in self.get_complex_types())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
