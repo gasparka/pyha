@@ -33,6 +33,42 @@ def test_py_implementation():
 
 
 def test_fixed_value():
+    a = ComplexSfix(1 + 0.5j, 0, -2)
+    assert a.real.val == 0.75  # quantized
+    assert a.real.fixed_value() == 3
+
+    assert a.imag.val == 0.5
+    assert a.imag.fixed_value() == 2
+    r = a.fixed_value()
+    assert r == 26
+
+
+def test_fixed_value2():
+    a = ComplexSfix(1 + 1.95j, 1, -16)
+    assert a.real.val == 1.0
+    assert a.real.fixed_value() == 65536
+
+    assert a.imag.val == 1.9499969482421875
+    assert a.imag.fixed_value() == 127795
+    r = a.fixed_value()
+    assert r == 17179996979
+
+def test_fixed_value3():
+    a = ComplexSfix(-1 - 0.5j, 0, -2)
+    assert a.real.val == -1
+    assert a.real.fixed_value() == -4
+
+    assert a.imag.val == -0.5
+    assert a.imag.fixed_value() == -2
+    r = a.fixed_value()
+    assert r == -26
+
+
+
+def test_fixed_value_too_large_bitwidth():
+    a = ComplexSfix(1 + 1.95j, 16, -16)
+    with pytest.raises(AssertionError):
+        a.fixed_value()
 
 
 @pytest.fixture
@@ -117,7 +153,6 @@ def test_reg_complex_types_generation(reg):
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
         assert expect == f.read()
-
 
 
 def test_reg_simulate(reg):

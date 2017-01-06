@@ -41,9 +41,11 @@ class ComplexSfix:
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
 
     def fixed_value(self):
+        assert self.bitwidth() <= 64 # must fit into numpy int, this is cocotb related?
         real = self.real.fixed_value()
         imag = self.imag.fixed_value()
-        # return (real << self.bitwidth()) / 2 or imag
+        mask = (2 ** (self.bitwidth() // 2)) - 1
+        return (real << (self.bitwidth() // 2)) | (imag & mask)
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
@@ -163,6 +165,9 @@ class Sfix(object):
     # TODO: test, rounding not needed?
     def fixed_value(self):
         return int(np.round(self.val / 2 ** self.right))
+
+    # def from_fixed(self, val, right):
+    #     return (val * 2 ** self.outputs[i].right)
 
     def __str__(self):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
