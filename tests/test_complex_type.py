@@ -53,6 +53,7 @@ def test_fixed_value2():
     r = a.fixed_value()
     assert r == 17179996979
 
+
 def test_fixed_value3():
     a = ComplexSfix(-1 - 0.5j, 0, -2)
     assert a.real.val == -1
@@ -62,7 +63,6 @@ def test_fixed_value3():
     assert a.imag.fixed_value() == -2
     r = a.fixed_value()
     assert r == -26
-
 
 
 def test_fixed_value_too_large_bitwidth():
@@ -161,6 +161,45 @@ def test_reg_simulate(reg):
     expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL])
+
+
+@pytest.fixture
+def shr():
+    class A1(HW):
+        def __init__(self):
+            self.reg = [ComplexSfix(0.5 + 1.2j, 1, -18), ComplexSfix(0.5 + 0.2j, 1, -18),
+                        ComplexSfix(0.1 + 1.2j, 1, -18), ComplexSfix(0.2 - 1.2j, 1, -18)]
+
+        def main(self, x):
+            self.next.reg = [x] + self.reg[:-1]
+            return self.reg[-1]
+
+
+    dut = A1()
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
+    return dut
+
+
+def test_shr_conversion_reset(shr):
+    conv = get_conversion(shr)
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.reg := ((real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(0.2, 1, -18)), (real=>to_sfixed(0.1, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.2, 1, -18), imag=>to_sfixed(-1.2, 1, -18)));
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())
+
+def test_shr_simulate(shr):
+    dut = shr
+    x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+    expected = [ 0.200001-1.200001j,  0.099998+1.200001j,  0.500000+0.200001j,
+                0.500000+1.200001j,  0.500000+0.099998j]
+
+    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL])
 
 # list of complex!

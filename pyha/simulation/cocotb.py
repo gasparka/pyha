@@ -127,7 +127,7 @@ class CocotbAuto(object):
         outp = np.transpose(outp)
 
         def getSignedNumber(number, bitLength):
-            #http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
+            # http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
             mask = (2 ** bitLength) - 1
             if number & (1 << (bitLength - 1)):
                 return number | ~mask
@@ -143,11 +143,11 @@ class CocotbAuto(object):
                     mask = (2 ** (self.outputs[i].bitwidth() // 2)) - 1
                     real = (val >> (self.outputs[i].bitwidth() // 2))
                     real = getSignedNumber(real & mask, self.outputs[i].bitwidth() // 2)
-                    real = real * (2 ** self.outputs[i].right)
+                    real *= 2 ** self.outputs[i].right
 
                     imag = getSignedNumber(val & mask, self.outputs[i].bitwidth() // 2)
-                    imag = imag * (2 ** self.outputs[i].right)
-                    outp[i][j] =  real + imag * 1j
+                    imag *= 2 ** self.outputs[i].right
+                    outp[i][j] = real + imag * 1j
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = np.transpose(outp)

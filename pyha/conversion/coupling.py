@@ -32,6 +32,9 @@ def pytype_to_vhdl(var):
         elif type(var[0]) is Sfix:
             left, right = bounds_to_str(var[0])
             return 'sfixed{}{}{}'.format(left, right, arr_token)
+        elif type(var[0]) is ComplexSfix:
+            left, right = bounds_to_str(var[0])
+            return 'complex_sfix{}{}{}'.format(left, right, arr_token)
         elif isinstance(var[0], HW):
             return pytype_to_vhdl(var[0]) + arr_token
         else:
@@ -69,7 +72,7 @@ def reset_maker(self_data, recursion_depth=0):
                 variables.extend(vars)
 
         elif isinstance(value, list):
-            if isinstance(value[0], Sfix):
+            if isinstance(value[0], (Sfix, ComplexSfix)):
                 lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
             else:
                 lstr = '(' + ', '.join(str(x) for x in value) + ')'
