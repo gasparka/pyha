@@ -175,7 +175,6 @@ def shr():
             self.next.reg = [x] + self.reg[:-1]
             return self.reg[-1]
 
-
     dut = A1()
     dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
     dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
@@ -193,14 +192,48 @@ def test_shr_conversion_reset(shr):
 
     assert expect == str(conv.get_reset_str())
 
+
 def test_shr_simulate(shr):
     dut = shr
     x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expected = [ 0.200001-1.200001j,  0.099998+1.200001j,  0.500000+0.200001j,
-                0.500000+1.200001j,  0.500000+0.099998j]
+    expected = [0.200001 - 1.200001j, 0.099998 + 1.200001j, 0.500000 + 0.200001j,
+                0.500000 + 1.200001j, 0.500000 + 0.099998j]
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL])
 
-# list of complex!
-# top converter duplicate definitions?
+
+@pytest.fixture
+def more_regs():
+    class A3(HW):
+        def __init__(self):
+            self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -12)
+            self.reg1 = ComplexSfix(0.5 + 1.2j, 1, -21)
+            self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
+
+        def main(self, x0, x1, x2):
+            self.next.reg0 = x0
+            self.next.reg1 = x1
+            self.next.reg2 = x2
+            return self.reg0, self.reg1, self.reg2
+
+    dut = A3()
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21))
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21))
+    return dut
+
+
+def test_more_regs_simulate(more_regs):
+    dut = more_regs
+    x = [[0.5 + 0.1j, 0.5 + 0.1j, 0.5 + 0.1j],
+         [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
+         [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
+    expected = [[ 0.500000+1.199951j,  0.500000+0.100098j,  0.500000+0.100098j],
+   [ 0.500000+1.2j     ,  0.500000-0.090088j,  0.500000-0.090088j],
+              [ 0.679932-0.987061j, -0.500000+0.1j     , -0.500000+0.1j     ]]
+
+    assert_sim_match(dut,
+                     [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
+                     expected, *x, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL],
+                     dir_path='/home/gaspar/git/pyha/playground/conv')
