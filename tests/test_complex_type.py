@@ -1,7 +1,7 @@
 import textwrap
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
@@ -228,9 +228,9 @@ def test_more_regs_simulate(more_regs):
     x = [[0.5 + 0.1j, 0.5 + 0.1j, 0.5 + 0.1j],
          [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
          [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[ 0.500000+1.199951j,  0.500000+0.100098j,  0.500000+0.100098j],
-   [ 0.500000+1.2j     ,  0.500000-0.090088j,  0.500000-0.090088j],
-              [ 0.679932-0.987061j, -0.500000+0.1j     , -0.500000+0.1j     ]]
+    expected = [[0.500000 + 1.199951j, 0.500000 + 0.100098j, 0.500000 + 0.100098j],
+                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
+                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
     assert_sim_match(dut,
                      [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
