@@ -3,7 +3,6 @@ import os
 import shutil
 import subprocess
 import sys
-from functools import wraps
 from pathlib import Path
 
 import numpy as np
@@ -77,7 +76,7 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        # self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'

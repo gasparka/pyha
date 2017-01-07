@@ -1,14 +1,14 @@
 import textwrap
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 def test_py_implementation():
@@ -228,12 +228,11 @@ def test_more_regs_simulate(more_regs):
     x = [[0.5 + 0.1j, 0.5 + 0.1j, 0.5 + 0.1j],
          [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
          [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[ 0.500000+1.199951j,  0.500000+0.100098j,  0.500000+0.100098j],
-   [ 0.500000+1.2j     ,  0.500000-0.090088j,  0.500000-0.090088j],
-              [ 0.679932-0.987061j, -0.500000+0.1j     , -0.500000+0.1j     ]]
+    expected = [[0.500000 + 1.199951j, 0.500000 + 0.100098j, 0.500000 + 0.100098j],
+                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
+                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
     assert_sim_match(dut,
                      [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
                      expected, *x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL],
-                     dir_path='/home/gaspar/git/pyha/playground/conv')
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
