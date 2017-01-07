@@ -223,6 +223,27 @@ def more_regs():
     return dut
 
 
+def test_more_regs_complex_types_generation(more_regs):
+    conv = Conversion(more_regs)
+    expect = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            type complex_sfix1_12 is record
+                real: sfixed(1 downto -12);
+                imag: sfixed(1 downto -12);
+            end record;
+            type complex_sfix1_21 is record
+                real: sfixed(1 downto -21);
+                imag: sfixed(1 downto -21);
+            end record;
+            end package;""")
+
+    files = conv.write_vhdl_files(Path('/tmp/'))
+    with files[0].open('r') as f:
+        assert expect == f.read()
+
 def test_more_regs_simulate(more_regs):
     dut = more_regs
     x = [[0.5 + 0.1j, 0.5 + 0.1j, 0.5 + 0.1j],
