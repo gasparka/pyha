@@ -87,7 +87,15 @@ def reg():
     return dut
 
 
-def test_self_consistensy(reg):
+def test_reg_delay(reg):
+    dut = reg
+    next = ComplexSfix(1 + 1j, 1, -12)
+    dut.main(ComplexSfix(1 + 1j, 1, -12))
+    assert dut.next.reg == next
+    assert dut.reg != next
+
+
+def test_reg_self_consistensy(reg):
     with pytest.raises(TypeNotConsistent):
         reg.main(ComplexSfix(0 + 0j, 1, -22))
 
@@ -269,7 +277,7 @@ def test_more_regs_simulate(more_regs):
 def comp_reg():
     class A4(HW):
         def __init__(self):
-            self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -18)
+            self.reg0 = ComplexSfix(0 + 0j, 1, -18)
 
         def main(self, x0):
             self.next.reg0.real = x0.real
@@ -277,11 +285,9 @@ def comp_reg():
             return self.reg0
 
         def get_delay(self):
-            return 1
+            return 0
 
     dut = A4()
-    dut.main(ComplexSfix(0 + 0j, 1, -18))
-    dut.main(ComplexSfix(1 + 1j, 1, -18))
     return dut
 
 

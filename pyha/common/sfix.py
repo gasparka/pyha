@@ -32,7 +32,7 @@ class ComplexSfix:
         return ComplexSfix(x, self.left, self.right)
 
     def __str__(self):
-        return '{:.2f}{}{:.2f}j [{}:{}]'.format(self.real.val, '-' if self.imag.val < 0.0 else '+', self.imag.val,
+        return '{:.2f}{}{:.2f}j [{}:{}]'.format(self.real.val, '' if self.imag.val < 0.0 else '+', self.imag.val,
                                                 self.left, self.right)
 
     def __repr__(self):
