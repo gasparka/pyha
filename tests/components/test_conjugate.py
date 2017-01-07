@@ -1,6 +1,6 @@
 from pyha.common.sfix import ComplexSfix
 from pyha.components.conjugate import Conjugate
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 def test_basic():
@@ -10,6 +10,5 @@ def test_basic():
     dut = Conjugate()
 
     assert_sim_match(dut, [ComplexSfix(left=0, right=-18)], expected, x,
-                     # simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      )
