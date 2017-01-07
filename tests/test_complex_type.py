@@ -62,7 +62,7 @@ def test_fixed_value3():
     assert a.imag.val == -0.5
     assert a.imag.fixed_value() == -2
     r = a.fixed_value()
-    assert r == -26
+    assert r == 38
 
 
 def test_fixed_value_too_large_bitwidth():
@@ -258,6 +258,7 @@ def test_more_regs_complex_types_generation(more_regs):
     with files[0].open('r') as f:
         assert expect == f.read()
 
+
 def test_more_regs_simulate(more_regs):
     dut = more_regs
     x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
@@ -273,7 +274,6 @@ def test_more_regs_simulate(more_regs):
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
-
 @pytest.fixture
 def comp_reg():
     class A4(HW):
@@ -286,7 +286,7 @@ def comp_reg():
             return self.reg
 
         def get_delay(self):
-            return 0
+            return 1
 
     dut = A4()
     return dut
@@ -310,8 +310,18 @@ def test_comp_reg_delay(comp_reg):
 
 def test_comp_reg_simulate(comp_reg):
     dut = comp_reg
-    inputs = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expect = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+    inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+    expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL])
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+def test_comp_reg_simulate2(comp_reg):
+    # -real made cocotb code fail
+    dut = comp_reg
+    inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+    expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+
+    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

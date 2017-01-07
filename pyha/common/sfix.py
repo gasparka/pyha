@@ -61,7 +61,7 @@ class ComplexSfix:
         real = self.real.fixed_value()
         imag = self.imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
-        return (real << (self.bitwidth() // 2)) | (imag & mask)
+        return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
