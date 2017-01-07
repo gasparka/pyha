@@ -1,16 +1,17 @@
-from pyha.common.hwsim import HW
-from pyha.common.sfix import resize, Sfix
-from pyha.components.moving_average import MovingAverage
 import numpy as np
+
+from pyha.common.hwsim import HW
+from pyha.common.sfix import resize, ComplexSfix
 
 
 class Conjugate(HW):
     def __init__(self):
-        self.outi = Sfix()
-        self.outq = Sfix()
+        self.outreg = ComplexSfix()
 
     def main(self, x):
-        pass
+        self.next.outreg.real = x.real
+        self.next.outreg.imag = resize(-x.imag, size_res=x.imag)
+        return self.outreg
 
     def get_delay(self):
         return 1

@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 from six import iteritems, with_metaclass
 
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -102,7 +102,7 @@ class PyhaFunc:
         for key, value in new.items():
             if key in old:
                 old_value = old[key]
-                if isinstance(value, Sfix):
+                if isinstance(value, (Sfix, ComplexSfix)):
                     if value.left != old_value.left or value.right != old_value.right:
                         if old_value.left == 0 and old_value.right == 0:
                             # sfix lazy init
