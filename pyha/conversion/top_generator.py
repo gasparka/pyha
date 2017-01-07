@@ -1,6 +1,6 @@
 import textwrap
 
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
 from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
 
@@ -54,7 +54,7 @@ class TopGenerator:
             return 'std_logic_vector(31 downto 0)'
         elif type(var) == bool:
             return 'std_logic'
-        elif type(var) == Sfix:
+        elif type(var) in (Sfix, ComplexSfix):
             return var.to_stdlogic()
         else:
             assert 0
@@ -66,6 +66,12 @@ class TopGenerator:
             return "True when {} = '1' else False".format(var_name)
         elif type(var) == Sfix:
             return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
+        elif type(var) == ComplexSfix:
+            size = int(var.bitwidth())
+            mid = size // 2
+            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size-1, mid, var.left, var.right)
+            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid-1, 0, var.left, var.right)
+            return '(real=>{}, imag=>{})'.format(real, imag)
         else:
             assert 0
 
@@ -76,6 +82,8 @@ class TopGenerator:
             return "'1' when {} else '0'".format(var_name)
         elif type(var) == Sfix:
             return 'to_slv({})'.format(var_name)
+        elif type(var) == ComplexSfix:
+            return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
         else:
             assert 0
 
@@ -103,6 +111,15 @@ class TopGenerator:
         return '\n'.join('var_in{} := {};'.format(i, self.vhdl_slv_to_normal(x, 'in{}'.format(i)))
                          for i, x in enumerate(self.get_object_inputs()))
 
+    def make_complex_types(self):
+        complex_vars = []
+        for x in self.get_object_inputs() + self.get_object_return():
+            if type(x) is ComplexSfix:
+                new = x.vhdl_type_define()
+                if new not in complex_vars:
+                    complex_vars.append(new)
+        return '\n'.join(x for x in complex_vars)
+
     def make_imports(self) -> str:
         return textwrap.dedent("""\
             library ieee;
@@ -112,6 +129,7 @@ class TopGenerator:
                 use ieee.math_real.all;
 
             library work;
+                use work.ComplexTypes.all;
                 use work.all;""")
 
     def object_class_name(self) -> str:
@@ -195,3 +213,4 @@ class TopGenerator:
         #     f.write(res)
 
         return res
+

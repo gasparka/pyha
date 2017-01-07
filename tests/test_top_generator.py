@@ -111,6 +111,7 @@ def test_imports(basic_obj):
             use ieee.math_real.all;
 
         library work;
+            use work.ComplexTypes.all;
             use work.all;""")
 
     res = TopGenerator(dut)
@@ -137,6 +138,7 @@ def test_full(basic_obj, tmpdir):
                         use ieee.math_real.all;
 
                     library work;
+                        use work.ComplexTypes.all;
                         use work.all;
 
                     entity  top is
@@ -235,6 +237,7 @@ def test_simple_full(simple_obj):
                         use ieee.math_real.all;
 
                     library work;
+                        use work.ComplexTypes.all;
                         use work.all;
 
                     entity  top is

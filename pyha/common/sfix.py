@@ -1,9 +1,62 @@
 import logging
+import textwrap
 
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class ComplexSfix:
+    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
+        self.init_val = val
+        self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+        self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+
+    @property
+    def left(self):
+        assert self.real.left == self.imag.left
+        return self.real.left
+
+    @property
+    def right(self):
+        assert self.real.right == self.imag.right
+        return self.real.right
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def __call__(self, x):
+        return ComplexSfix(x, self.left, self.right)
+
+    def bitwidth(self):
+        return (self.left + abs(self.right)) * 2 + 2
+
+    def to_stdlogic(self):
+        return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
+
+    def vhdl_reset(self):
+        return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
+
+    def fixed_value(self):
+        assert self.bitwidth() <= 64 # must fit into numpy int, this is cocotb related?
+        real = self.real.fixed_value()
+        imag = self.imag.fixed_value()
+        mask = (2 ** (self.bitwidth() // 2)) - 1
+        return (real << (self.bitwidth() // 2)) | (imag & mask)
+
+    def vhdl_type_define(self):
+        template = textwrap.dedent("""\
+            type {NAME} is record
+                real: {DTYPE};
+                imag: {DTYPE};
+            end record;""")
+
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return template.format(**{'NAME': pytype_to_vhdl(self),
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
 
 
 # TODO: Verify stuff against VHDL library
@@ -31,6 +84,7 @@ class Sfix(object):
         Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
+        assert left >= right
         # if left == None:
         #     raise Exception('Left bound for Sfix is None!')
         #
@@ -112,6 +166,9 @@ class Sfix(object):
     def fixed_value(self):
         return int(np.round(self.val / 2 ** self.right))
 
+    # def from_fixed(self, val, right):
+    #     return (val * 2 ** self.outputs[i].right)
+
     def __str__(self):
         return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
 
@@ -190,12 +247,14 @@ class Sfix(object):
         assert self.left >= 0
         return -self.right + self.left + 1
 
+    def __call__(self, x: float):
+        return Sfix(x, self.left, self.right)
+
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
 
-    # TODO: add tests
-    def __call__(self, x: float):
-        return Sfix(x, self.left, self.right)
+    def vhdl_reset(self):
+        return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE'):

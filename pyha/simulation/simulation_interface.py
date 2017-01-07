@@ -9,7 +9,7 @@ from typing import List
 
 import numpy as np
 
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -81,6 +81,8 @@ def type_conversions(func):
                     ret.append(output_types(x))
                 elif type(x) == Sfix:
                     ret.append(float(x))
+                elif type(x) == ComplexSfix:
+                    ret.append(float(x.real)+float(x.imag)*1j)
                 else:
                     ret.append(x)
             return ret
@@ -194,17 +196,19 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, d
                            [SIM_HW_MODEL, SIM_GATE]]
 
     # for travis build, skip all the tests involving quartus
-    with suppress(KeyError):  # env var not set
-        if SIM_GATE in simulations and int(os.environ['PYHA_NO_QUARTUS']):
-            simulations.remove(SIM_GATE)
-            logging.getLogger(__name__).warning(
-                'Not running SIM_GATE tests as environment variable "PYHA_NO_QUARTUS" is True!!!')
+    if SIM_GATE in simulations:
+        with suppress(KeyError):
+            if int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
+                simulations.remove(SIM_GATE)
+                logging.getLogger(__name__).warning(
+                    'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
+
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
-        try:
-            np.testing.assert_allclose(expected, hw_y, rtol)
-        except AssertionError:
-            print('\n\nSim "{}" failed:'.format(sim_type))
-            raise
+        # try:
+        np.testing.assert_allclose(expected, hw_y, rtol)
+        # except AssertionError as e:
+        #     print('\n\nSim "{}" failed:'.format(sim_type))
+        #     print(e.args[0])

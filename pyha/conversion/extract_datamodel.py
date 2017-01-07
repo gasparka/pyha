@@ -1,8 +1,7 @@
 from collections import OrderedDict
 
 from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
-from pyha.common.sfix import Sfix
-
+from pyha.common.sfix import Sfix, ComplexSfix
 
 
 class FunctionNotSimulated(Exception):
@@ -19,7 +18,7 @@ class VariableNotConvertible(Exception):
 
 
 def is_convertible(obj):
-    allowed_types = [Sfix, int, bool]
+    allowed_types = [ComplexSfix, Sfix, int, bool]
     if type(obj) in allowed_types:
         return True
     elif isinstance(obj, list):
@@ -45,6 +44,8 @@ def extract_datamodel(obj):
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
                 val = Sfix(val.init_val, last.left, last.right)
+            elif isinstance(val, ComplexSfix):
+                val = ComplexSfix(val.init_val, last.left, last.right)
             elif isinstance(val, list) and isinstance(val[0], Sfix):
                 val = [Sfix(new_val.init_val, last_val.left, last_val.right) for new_val, last_val in zip(val, last)]
             elif isinstance(val, HW):

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, ComplexSfix
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -42,6 +42,23 @@ COCOTB_MAKEFILE_TEMPLATE = """
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
 """
+
+
+# def std_logic_conversions(func):
+#     """ Convert input data to std_logic and output data to 'normal types' (sfix for example) """
+#     def to_std_logic(x):
+#         if isinstance(x, (Sfix, ComplexSfix)):
+#             return x.fixed_value()
+#         else:
+#             return x
+#     @wraps(func)
+#     def wrap(self, *args):
+#         input_data = np.vectorize(to_std_logic)(args)
+#
+#         ret = func(self, *input_data)
+#         return ret
+#
+#     return wrap
 
 
 class CocotbAuto(object):
@@ -83,11 +100,12 @@ class CocotbAuto(object):
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
         self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
 
+    # @std_logic_conversions
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
-        # convert all Sfix elements to 'integer' form
+        # # convert all Sfix elements to 'integer' form
         input_data = np.vectorize(
-            lambda x: x.fixed_value() if isinstance(x, Sfix) else x)(input_data)
+            lambda x: x.fixed_value() if isinstance(x, (Sfix, ComplexSfix)) else x)(input_data)
 
         np.save(str(self.base_path / 'input.npy'), input_data)
 
@@ -101,21 +119,34 @@ class CocotbAuto(object):
             print(err.args[0])
 
         outp = np.load(str(self.base_path / 'output.npy'))
-        outp = outp.astype(float)
+        outp = outp.astype(complex)
 
         # FIXME: fix this retarded solution, combien with Sfix to 'integer'part and implement in decorator, maybe after transpose decorator!
         # convert 'integer' form back to Sfix
         outp = np.transpose(outp)
-        assert len(self.outputs) > 0
-        if len(self.outputs) == 1:
-            if isinstance(self.outputs[0], Sfix):
-                for i, val in enumerate(outp):
-                    outp[i] = (val * 2 ** self.outputs[0].right)
-        else:
-            for i, row in enumerate(outp):
+
+        def getSignedNumber(number, bitLength):
+            # http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
+            mask = (2 ** bitLength) - 1
+            if number & (1 << (bitLength - 1)):
+                return number | ~mask
+            else:
+                return number & mask
+
+        for i, row in enumerate(outp):
+            for j, val in enumerate(row):
                 if isinstance(self.outputs[i], Sfix):
-                    for j, val in enumerate(row):
-                        outp[i][j] = (val * 2 ** self.outputs[i].right)
+                    outp[i][j] = (val * 2 ** self.outputs[i].right)
+                elif isinstance(self.outputs[i], ComplexSfix):
+                    val = int(val.real)
+                    mask = (2 ** (self.outputs[i].bitwidth() // 2)) - 1
+                    real = (val >> (self.outputs[i].bitwidth() // 2))
+                    real = getSignedNumber(real & mask, self.outputs[i].bitwidth() // 2)
+                    real *= 2 ** self.outputs[i].right
+
+                    imag = getSignedNumber(val & mask, self.outputs[i].bitwidth() // 2)
+                    imag *= 2 ** self.outputs[i].right
+                    outp[i][j] = real + imag * 1j
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = np.transpose(outp)

@@ -5,7 +5,7 @@ import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.conversion.conversion import get_objects_datamodel_conversion, Conversion
+from pyha.conversion.conversion import get_conversion_datamodel, Conversion
 from pyha.conversion.coupling import reset_maker
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
@@ -39,17 +39,17 @@ def test_simple_conversion_files(simple):
     conv = Conversion(simple)
     paths = conv.write_vhdl_files(Path('/tmp/'))
     names = [x.name for x in paths]
-    assert names == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
+    assert names[1:] == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
 
 
 def test_simple_datamodel_training(simple):
-    conv, datamodel = get_objects_datamodel_conversion(simple)
+    conv, datamodel = get_conversion_datamodel(simple)
     assert datamodel.self_data['sublist'][0].main.calls == 2
     assert datamodel.self_data['sublist'][1].main.calls == 2
 
 
 def test_simple_typedefs(simple):
-    conv, datamodel = get_objects_datamodel_conversion(simple)
+    conv, datamodel = get_conversion_datamodel(simple)
     assert 'sublist' in datamodel.self_data
 
     expect = ['type A_0_list_t is array (natural range <>) of A_0.register_t;']
@@ -57,7 +57,7 @@ def test_simple_typedefs(simple):
 
 
 def test_simple_datamodel(simple):
-    conv, datamodel = get_objects_datamodel_conversion(simple)
+    conv, datamodel = get_conversion_datamodel(simple)
     data_conversion = conv.get_datamodel()
     expect = textwrap.dedent("""\
                 type register_t is record
@@ -73,7 +73,7 @@ def test_simple_datamodel(simple):
 
 
 def test_simple_reset(simple):
-    conv, datamodel = get_objects_datamodel_conversion(simple)
+    conv, datamodel = get_conversion_datamodel(simple)
 
     data_conversion = conv.get_reset_str()
     expect = textwrap.dedent("""\
@@ -87,7 +87,7 @@ def test_simple_reset(simple):
 
 
 def test_reset_maker(simple):
-    conv, datamodel = get_objects_datamodel_conversion(simple)
+    conv, datamodel = get_conversion_datamodel(simple)
 
     expect = ['self_reg.sublist(0).reg := 0;', 'self_reg.sublist(1).reg := 0;']
     ret = reset_maker(datamodel.self_data)
@@ -150,7 +150,7 @@ def test_sim_case2(case2):
 
 
 def test_reset_maker_case2(case2):
-    conv, datamodel = get_objects_datamodel_conversion(case2)
+    conv, datamodel = get_conversion_datamodel(case2)
 
     expect = [
         'self_reg.sublist(0).reg := 2;',
@@ -188,7 +188,7 @@ def case3():
 
 
 def test_reset_maker_case3(case3):
-    conv, datamodel = get_objects_datamodel_conversion(case3)
+    conv, datamodel = get_conversion_datamodel(case3)
 
     expect = [
         'self_reg.\\ror\\ := 554;',

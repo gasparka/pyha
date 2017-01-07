@@ -33,8 +33,9 @@ def test_get_objects_rednode_badtype(dut):
 def test_write_vhdl_files(dut, tmpdir):
     tmpdir = Path(str(tmpdir))
     files = dut.write_vhdl_files(tmpdir)
-    assert files[0] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
-    assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
+    # 0 is complex support file
+    assert files[1] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
+    assert files[2] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
 def test_inputs(dut):
@@ -106,7 +107,7 @@ def test_convert_submodule_name_conflict():
     conv = Conversion(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
-    assert names == ['A2_0.vhd', 'A2_1.vhd', 'B2_0.vhd', 'top.vhd']
+    assert names[1:] == ['A2_0.vhd', 'A2_1.vhd', 'B2_0.vhd', 'top.vhd']
     # x = list(range(16))
     # expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     # dut = B()
