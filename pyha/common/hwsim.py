@@ -1,5 +1,5 @@
 import sys
-from copy import deepcopy
+from copy import deepcopy, copy
 
 import numpy as np
 from six import iteritems, with_metaclass
@@ -39,9 +39,7 @@ def deepish_copy(org):
     much, much faster than deepcopy, for a dict of the simple python types.
     """
     out = dict().fromkeys(org)
-    # for k,v in org.iteritems():
 
-    # for k,v in org.items():
     for k, v in iteritems(org):
         try:
             out[k] = v.copy()  # dicts, sets
@@ -49,7 +47,11 @@ def deepish_copy(org):
             try:
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
-                out[k] = v  # ints
+                # Without this assign to imag or real will fuck up everything
+                if isinstance(v, ComplexSfix):
+                    out[k] = copy(v)
+                else:
+                    out[k] = v  # ints
 
     return out
 

@@ -273,22 +273,39 @@ def test_more_regs_simulate(more_regs):
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
+
 @pytest.fixture
 def comp_reg():
     class A4(HW):
         def __init__(self):
-            self.reg0 = ComplexSfix(0 + 0j, 1, -18)
+            self.reg = ComplexSfix(0 + 0j, 1, -18)
 
         def main(self, x0):
-            self.next.reg0.real = x0.real
-            self.next.reg0.imag = x0.imag
-            return self.reg0
+            self.next.reg.real = x0.real
+            self.next.reg.imag = x0.imag
+            return self.reg
 
         def get_delay(self):
             return 0
 
     dut = A4()
     return dut
+
+
+def test_comp_reg_self_consistensy(comp_reg):
+    with pytest.raises(TypeNotConsistent):
+        comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
+
+
+def test_comp_reg_delay(comp_reg):
+    dut = comp_reg
+    next = ComplexSfix(1 + 1j, 1, -18)
+    dut.main(next)
+    assert dut.next.reg.real == next.real
+    assert dut.next.reg.imag == next.imag
+
+    assert dut.reg.real != next.real
+    assert dut.reg.imag != next.imag
 
 
 def test_comp_reg_simulate(comp_reg):

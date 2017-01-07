@@ -150,12 +150,7 @@ class Simulation:
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
             self.model.next = deepcopy(self.model.__initial_self__)
-
-            # wtf = []
-            # for x in args:
-            #     wtf.append(copy(self.model.main(*x)))
-            # ret = [self.model.main(*x) for x in args]
-            # ret = wtf
+            ret = [self.model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:

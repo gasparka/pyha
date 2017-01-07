@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
         self.init_val = val
-        self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+        self._real = Sfix(val.real, left, right, overflow_style=overflow_style)
         self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
 
     @property
@@ -22,6 +22,15 @@ class ComplexSfix:
     def right(self):
         assert self.real.right == self.imag.right
         return self.real.right
+
+    @property
+    def real(self):
+        return self._real
+
+    @real.setter
+    def real(self, value):
+        import copy
+        self._real = copy.deepcopy(value)
 
     def __eq__(self, other):
         if type(other) is type(self):
