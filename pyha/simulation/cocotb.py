@@ -86,7 +86,8 @@ class CocotbAuto(object):
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             altera_libs = pyha.__path__[0] + '/common/hdl/altera_ghdl_libs'
-            self.environment['GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys'  # TODO: push PR to cocotb
+            self.environment[
+                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'  # TODO: push PR to cocotb
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
