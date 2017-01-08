@@ -5,7 +5,7 @@ import textwrap
 from contextlib import suppress
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -309,6 +309,11 @@ class FloatNodeConv(NodeConv):
 
 class UnitaryOperatorNodeConv(NodeConv):
     pass
+
+
+class AssertNodeConv(NodeConv):
+    def __str__(self):
+        return '--' + super().__str__()
 
 
 class ListNodeConv(NodeConv):
@@ -629,6 +634,9 @@ def redbaron_pycall_to_vhdl(red_node):
         i = call_args.previous.index_on_parent
         if i == 0:
             return red_node  # input is something like a()
+
+        if isinstance(red_node.parent, AssertNode):
+            return red_node
         prefix = red_node.copy()
         del prefix[i:]
         del red_node[:i]

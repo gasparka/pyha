@@ -33,6 +33,7 @@ class ComplexMultiply(HW):
         self.outreg = ComplexSfix()
 
     def main(self, a, b):
+        assert a.has_same_bounds(b)
         # self.next.real_xu = a.real * b.real
         # self.next.real_yv = a.imag * b.imag
         # self.next.outreg.real = resize(self.real_xu - self.real_yv,

@@ -49,6 +49,11 @@ class ComplexSfix:
     def __repr__(self):
         return str(self)
 
+    def has_same_bounds(self, other):
+        if self.left == other.left and self.right == other.right:
+            return True
+        return False
+
     def bitwidth(self):
         return (self.left + abs(self.right)) * 2 + 2
 
