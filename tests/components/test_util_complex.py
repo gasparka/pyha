@@ -40,5 +40,22 @@ def test_multiply():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, y, a, b,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      rtol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     # dir_path='/home/gaspar/git/pyha/playground/conv'
+                     )
+
+
+def test_multiply_harmonic():
+    import numpy as np
+    # 2hz signal
+    t = np.linspace(0, 2, 1024)
+    a = np.exp(1j * 2 * np.pi * 2 * t)
+
+    # 4hz signal
+    b = np.exp(1j * 2 * np.pi * 4 * t)
+
+    dut = ComplexMultiply()
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, a * b, a, b,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                     rtol=1e-4,
+                     # dir_path='/home/gaspar/git/pyha/playground/conv'
                      )

@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 fixed_truncate = 'fixed_truncate'
+fixed_round = 'fixed_round'
 
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
@@ -77,7 +78,7 @@ class ComplexSfix:
 
 
 # TODO: Verify stuff against VHDL library
-class Sfix(object):
+class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = False
 
@@ -100,7 +101,8 @@ class Sfix(object):
     def set_float_mode(x):
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE'):
+    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE', round_style=fixed_round):
+        self.round_style = round_style
         assert left >= right
         # if left == None:
         #     raise Exception('Left bound for Sfix is None!')
@@ -176,7 +178,12 @@ class Sfix(object):
 
     def quantize(self):
         fix = self.val / 2 ** self.right
-        fix = np.round(fix)
+
+        if self.round_style is fixed_round:
+            fix = np.round(fix)
+        else:
+            fix = int(fix)
+
         self.val = fix * 2 ** self.right
 
     # TODO: test, rounding not needed?
@@ -195,11 +202,11 @@ class Sfix(object):
     def __float__(self):
         return float(self.val)
 
-    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE'):
+    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE', round_style=fixed_round):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
-        return Sfix(self.val, left, right, overflow_style=overflow_style)
+        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __add__(self, other):
         return Sfix(self.val + other.val,
@@ -274,8 +281,8 @@ class Sfix(object):
         return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE'):
-    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style)
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE', round_style=fixed_round):
+    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 
 def left_index(x: Sfix):

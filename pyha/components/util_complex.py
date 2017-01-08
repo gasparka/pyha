@@ -33,15 +33,25 @@ class ComplexMultiply(HW):
         self.outreg = ComplexSfix()
 
     def main(self, a, b):
-        self.next.real_xu = a.real * b.real
-        self.next.real_yv = a.imag * b.imag
+        # self.next.real_xu = a.real * b.real
+        # self.next.real_yv = a.imag * b.imag
+        # self.next.outreg.real = resize(self.real_xu - self.real_yv,
+        #                                size_res=a.real, round_style=fixed_truncate)
+        #
+        # self.next.imag_xv = a.real * b.imag
+        # self.next.imag_yu = a.imag * b.real
+        # self.next.outreg.imag = resize(self.imag_xv + self.imag_yu,
+        #                                size_res=a.imag, round_style=fixed_truncate)
+
+        self.next.real_xu = resize(a.real * b.real, size_res=a.real, round_style=fixed_truncate)
+        self.next.real_yv = resize(a.imag * b.imag, size_res=a.real, round_style=fixed_truncate)
         self.next.outreg.real = resize(self.real_xu - self.real_yv,
                                        size_res=a.real, round_style=fixed_truncate)
 
-        self.next.imag_xv = a.real * b.imag
-        self.next.imag_yu = a.imag * b.real
+        self.next.imag_xv = resize(a.real * b.imag, size_res=a.real, round_style=fixed_truncate)
+        self.next.imag_yu = resize(a.imag * b.real, size_res=a.real, round_style=fixed_truncate)
         self.next.outreg.imag = resize(self.imag_xv + self.imag_yu,
-                                       size_res=a.imag, round_style=fixed_truncate)
+                                       size_res=a.real, round_style=fixed_truncate)
 
         return self.outreg
 
