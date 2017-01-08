@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import HW, TypeNotConsistent
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -62,7 +62,7 @@ def test_fixed_value3():
     assert a.imag.val == -0.5
     assert a.imag.fixed_value() == -2
     r = a.fixed_value()
-    assert r == -26
+    assert r == 38
 
 
 def test_fixed_value_too_large_bitwidth():
@@ -85,6 +85,19 @@ def reg():
     dut.main(ComplexSfix(0.5 + 1.2j, 1, -12))
     dut.main(ComplexSfix(0.5 + 1.2j, 1, -12))
     return dut
+
+
+def test_reg_delay(reg):
+    dut = reg
+    next = ComplexSfix(1 + 1j, 1, -12)
+    dut.main(ComplexSfix(1 + 1j, 1, -12))
+    assert dut.next.reg == next
+    assert dut.reg != next
+
+
+def test_reg_self_consistensy(reg):
+    with pytest.raises(TypeNotConsistent):
+        reg.main(ComplexSfix(0 + 0j, 1, -22))
 
 
 def test_reg_datamodel(reg):
@@ -139,6 +152,7 @@ def test_reg_conversion_top_entity(reg):
 
 def test_reg_complex_types_generation(reg):
     conv = Conversion(reg)
+
     expect = textwrap.dedent("""\
         library ieee;
             use ieee.fixed_pkg.all;
@@ -213,13 +227,14 @@ def more_regs():
 
         def main(self, x0, x1, x2):
             self.next.reg0 = x0
+            self.next.reg0 = x0
             self.next.reg1 = x1
             self.next.reg2 = x2
             return self.reg0, self.reg1, self.reg2
 
     dut = A3()
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21))
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21))
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
+    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
     return dut
 
 
@@ -244,16 +259,70 @@ def test_more_regs_complex_types_generation(more_regs):
     with files[0].open('r') as f:
         assert expect == f.read()
 
+
 def test_more_regs_simulate(more_regs):
     dut = more_regs
-    x = [[0.5 + 0.1j, 0.5 + 0.1j, 0.5 + 0.1j],
+    x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
          [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
          [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[0.500000 + 1.199951j, 0.500000 + 0.100098j, 0.500000 + 0.100098j],
+    expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
                 [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
                 [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
     assert_sim_match(dut,
                      [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
                      expected, *x, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+@pytest.fixture
+def comp_reg():
+    class A4(HW):
+        def __init__(self):
+            self.reg = ComplexSfix(0 + 0j, 1, -18)
+
+        def main(self, x0):
+            self.next.reg.real = x0.real
+            self.next.reg.imag = x0.imag
+            return self.reg
+
+        def get_delay(self):
+            return 1
+
+    dut = A4()
+    return dut
+
+
+def test_comp_reg_self_consistensy(comp_reg):
+    with pytest.raises(TypeNotConsistent):
+        comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
+
+
+def test_comp_reg_delay(comp_reg):
+    dut = comp_reg
+    next = ComplexSfix(1 + 1j, 1, -18)
+    dut.main(next)
+    assert dut.next.reg.real == next.real
+    assert dut.next.reg.imag == next.imag
+
+    assert dut.reg.real != next.real
+    assert dut.reg.imag != next.imag
+
+
+def test_comp_reg_simulate(comp_reg):
+    dut = comp_reg
+    inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+    expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+
+    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+def test_comp_reg_simulate2(comp_reg):
+    # -real made cocotb code fail
+    dut = comp_reg
+    inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+    expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+
+    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

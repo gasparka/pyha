@@ -36,8 +36,7 @@ class SimProvider:
 
     def make_quartus_project(self):
         rules = OrderedDict()
-        rules['FAMILY'] = '"Cyclone V"'
-        rules['DEVICE'] = '5CEBA7F27C7'
+        rules['DEVICE'] = 'EP4CE40F23C8'
         rules['TOP_LEVEL_ENTITY'] = 'top'
         rules['PROJECT_OUTPUT_DIRECTORY'] = 'output_files'
 

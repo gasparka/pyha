@@ -5,7 +5,7 @@ import textwrap
 from contextlib import suppress
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -311,6 +311,11 @@ class UnitaryOperatorNodeConv(NodeConv):
     pass
 
 
+class AssertNodeConv(NodeConv):
+    def __str__(self):
+        return '--' + super().__str__()
+
+
 class ListNodeConv(NodeConv):
     def __str__(self):
         if len(self.value) == 1:
@@ -328,6 +333,11 @@ class EndlNodeConv(NodeConv):
 
 
 class CommentNodeConv(NodeConv):
+    def __str__(self):
+        return '--' + self.value[1:]
+
+
+class StringNodeConv(NodeConv):
     def __str__(self):
         return '--' + self.value[1:]
 
@@ -545,7 +555,8 @@ class ClassNodeConv(NodeConv):
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
-        sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)
+        sockets['FUNC_HEADERS'] += '\n'.join(
+            tabber(x.get_prototype()) for x in self.value if isinstance(x, DefNodeConv))
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
@@ -623,6 +634,9 @@ def redbaron_pycall_to_vhdl(red_node):
         i = call_args.previous.index_on_parent
         if i == 0:
             return red_node  # input is something like a()
+
+        if isinstance(red_node.parent, AssertNode):
+            return red_node
         prefix = red_node.copy()
         del prefix[i:]
         del red_node[:i]
