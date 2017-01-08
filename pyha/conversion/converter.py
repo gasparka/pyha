@@ -332,6 +332,11 @@ class CommentNodeConv(NodeConv):
         return '--' + self.value[1:]
 
 
+class StringNodeConv(NodeConv):
+    def __str__(self):
+        return '--' + self.value[1:]
+
+
 # this is mostly array indexing
 class GetitemNodeConv(NodeConv):
     # turn python [] indexing to () indexing
@@ -544,7 +549,8 @@ class ClassNodeConv(NodeConv):
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
-        sockets['FUNC_HEADERS'] += '\n'.join(tabber(x.get_prototype()) for x in self.value)
+        sockets['FUNC_HEADERS'] += '\n'.join(
+            tabber(x.get_prototype()) for x in self.value if isinstance(x, DefNodeConv))
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())

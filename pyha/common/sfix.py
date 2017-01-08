@@ -6,6 +6,7 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+fixed_truncate = 'fixed_truncate'
 
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):

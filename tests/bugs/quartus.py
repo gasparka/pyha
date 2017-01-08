@@ -6,6 +6,8 @@ from pyha.common.sfix import resize
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
+# integers into resize functions must be constant or quartus fails
+# it fails to derive constantness from register values
 class ResizeBoundNotConstant(HW):
     def __init__(self, window_len):
         self.window_len = window_len
