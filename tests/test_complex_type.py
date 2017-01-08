@@ -152,6 +152,7 @@ def test_reg_conversion_top_entity(reg):
 
 def test_reg_complex_types_generation(reg):
     conv = Conversion(reg)
+
     expect = textwrap.dedent("""\
         library ieee;
             use ieee.fixed_pkg.all;
