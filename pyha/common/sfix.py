@@ -114,8 +114,8 @@ class Sfix:
         #
         # if right == None:
         #     raise Exception('Right bound for Sfix is None!')
-
-        if not isinstance(val, (float, int)):
+        val = float(val)
+        if type(val) not in [float, int]:
             raise Exception('Value must be float or int!')
         self.right = right
         self.left = left
@@ -258,11 +258,11 @@ class Sfix:
 
     # TODO: add tests
     def __lt__(self, other):
-        return self.val < other
+        return bool(self.val < other)
 
     # TODO: add tests
     def __gt__(self, other):
-        return self.val > other
+        return bool(self.val > other)
 
     # TODO: add tests
     def __neg__(self):
