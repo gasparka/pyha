@@ -411,7 +411,7 @@ class ForNodeConv(NodeConv):
                 else:
                     len = parse('len({}){}', range_pattern[0])
                     if len is not None:
-                        return "0 to {}'length{}".format(len[0], len[1])
+                        return "0 to {}'length{}-1".format(len[0], len[1])
                     return '0 to {}'.format(range_pattern[0])
 
         # at this point range was not:

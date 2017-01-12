@@ -1,7 +1,7 @@
 import numpy as np
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import resize, Sfix
+from pyha.common.sfix import resize, Sfix, fixed_truncate
 
 
 class CordicAtom(HW):
@@ -103,13 +103,19 @@ class CordicCore(HW):
         for i in range(len(self.phase_lut_fix) - 1):
             direction = self.y[i] < 0
             if direction:
-                self.next.x[i + 1] = resize(self.x[i] - (self.y[i] >> i), size_res=self.x[i])
-                self.next.y[i + 1] = resize(self.y[i] + (self.x[i] >> i), size_res=self.y[i])
-                self.next.phase[i + 1] = resize(self.phase[i] - self.phase_lut_fix[i], size_res=self.phase[i])
+                self.next.x[i + 1] = resize(self.x[i] - (self.y[i] >> i), size_res=self.x[i],
+                                            round_style=fixed_truncate)
+                self.next.y[i + 1] = resize(self.y[i] + (self.x[i] >> i), size_res=self.y[i],
+                                            round_style=fixed_truncate)
+                self.next.phase[i + 1] = resize(self.phase[i] - self.phase_lut_fix[i], size_res=self.phase[i],
+                                                round_style=fixed_truncate)
             else:
-                self.next.x[i + 1] = resize(self.x[i] + (self.y[i] >> i), size_res=self.x[i])
-                self.next.y[i + 1] = resize(self.y[i] - (self.x[i] >> i), size_res=self.y[i])
-                self.next.phase[i + 1] = resize(self.phase[i] + self.phase_lut_fix[i], size_res=self.phase[i])
+                self.next.x[i + 1] = resize(self.x[i] + (self.y[i] >> i), size_res=self.x[i],
+                                            round_style=fixed_truncate)
+                self.next.y[i + 1] = resize(self.y[i] - (self.x[i] >> i), size_res=self.y[i],
+                                            round_style=fixed_truncate)
+                self.next.phase[i + 1] = resize(self.phase[i] + self.phase_lut_fix[i], size_res=self.phase[i],
+                                                round_style=fixed_truncate)
 
         return self.x[-1], self.y[-1], self.phase[-1]
 

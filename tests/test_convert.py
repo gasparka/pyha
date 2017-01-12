@@ -1227,7 +1227,7 @@ def test_for_simple_range(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to 10 loop
+            for i in 0 to 10 - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1240,7 +1240,7 @@ def test_for_from_to(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in 2 to 5 loop
+            for ite in 2 to 5 -1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1253,7 +1253,7 @@ def test_for_from_to_variables(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in var to self.var2 loop
+            for ite in var to self.var2 -1 loop
 
             end loop;""")
     conv = converter(code)

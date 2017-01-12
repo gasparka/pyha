@@ -36,9 +36,9 @@ def test_core_vectoring():
     expect = [abs * 1.646760, [0.0] * len(inputs), ang]
     dut = CordicCore(iterations=18)
 
-    assert_sim_match(dut, [ComplexSfix(left=2, right=-17), Sfix(left=2, right=-17)],
+    assert_sim_match(dut, [ComplexSfix(left=2, right=-15), Sfix(left=2, right=-15)],
                      expect, inputs, phase,
-                     rtol=1e-5,
+                     rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
