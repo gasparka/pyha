@@ -204,7 +204,8 @@ class DefNodeConv(NodeConv):
                 variables.append(VHDLVariable(NameNodeConv(red_node=x.target), red_node=x))
             elif isinstance(x.target, TupleNode):
                 for node in x.target:
-                    variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
+                    # variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
+                    variables.append(VHDLVariable(str(node), red_node=node))
 
         call_args = self.red_node.value('call_argument')
         call_args = [x for x in call_args if str(x)[:4] == 'ret_']
@@ -408,6 +409,9 @@ class ForNodeConv(NodeConv):
                 if two_args is not None:
                     return '{} to {}'.format(two_args[0].strip(), two_args[1].strip())
                 else:
+                    len = parse('len({}){}', range_pattern[0])
+                    if len is not None:
+                        return "0 to {}'length{}".format(len[0], len[1])
                     return '0 to {}'.format(range_pattern[0])
 
         # at this point range was not:
@@ -510,6 +514,17 @@ class ClassNodeConv(NodeConv):
 
     def get_typedefs(self):
         template = 'type {} is array (natural range <>) of {};'
+        # template = textwrap.dedent("""\
+        #     'type {} is array (natural range <>) of {};'
+        #
+        #     type register_t is record
+        #     {DATA}
+        #     end record;
+        #
+        #     type self_t is record
+        #     {DATA}
+        #         \\next\\: register_t;
+        #     end record;""")
         typedefs = []
         for val in VHDLType.get_typedef_vars():
             assert type(val) is list
