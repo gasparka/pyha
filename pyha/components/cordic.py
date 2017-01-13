@@ -35,6 +35,42 @@ class CordicAtom(HW):
         return res
 
 
+class CordicCoreAlt(HW):
+    def __init__(self, iterations):
+        self.iterations = iterations
+
+        self.iterations = iterations
+        self.phase_lut = [np.arctan(2 ** -i) for i in range(self.iterations)]
+        self.phase_lut_fix = [Sfix(x, 0, -17) for x in self.phase_lut]
+
+        self.pipeline = [CordicAtom() for _ in range(self.iterations)]
+
+    def main(self, c, phase):
+        nx = c.real
+        ny = c.imag
+        np = phase
+        for i, atom in enumerate(self.next.pipeline):
+            nx, ny, np = atom.main(i, nx, ny, np, self.phase_lut_fix[i])
+
+        return nx, ny, np
+
+    def get_delay(self):
+        return self.iterations
+
+    def model_main(self, c, phase):
+        def cord_model(c, phase):
+            x = c.real
+            y = c.imag
+            for i, adj in enumerate(self.phase_lut):
+                sign = 1 if y < 0 else -1
+                x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
+            return x, y, phase
+
+        return [cord_model(x, xx) for x, xx in zip(c, phase)]
+
+
+
+
 class CordicCore(HW):
     def __init__(self, iterations):
         self.iterations = iterations
@@ -101,23 +137,23 @@ class CordicCore(HW):
         #         pn = resize(p + adj, size_res=p)
 
         for i in range(len(self.phase_lut_fix) - 1):
-            direction = self.y[i] < 0
-            if direction:
-                self.next.x[i + 1] = resize(self.x[i] - (self.y[i] >> i), size_res=self.x[i],
-                                            round_style=fixed_truncate)
-                self.next.y[i + 1] = resize(self.y[i] + (self.x[i] >> i), size_res=self.y[i],
-                                            round_style=fixed_truncate)
-                self.next.phase[i + 1] = resize(self.phase[i] - self.phase_lut_fix[i], size_res=self.phase[i],
-                                                round_style=fixed_truncate)
-            else:
-                self.next.x[i + 1] = resize(self.x[i] + (self.y[i] >> i), size_res=self.x[i],
-                                            round_style=fixed_truncate)
-                self.next.y[i + 1] = resize(self.y[i] - (self.x[i] >> i), size_res=self.y[i],
-                                            round_style=fixed_truncate)
-                self.next.phase[i + 1] = resize(self.phase[i] + self.phase_lut_fix[i], size_res=self.phase[i],
-                                                round_style=fixed_truncate)
+            self.next.x[i+1], self.next.y[i+1], self.next.phase[i+1] = \
+                self.pipeline_step(i, self.x[i], self.y[i], self.phase[i])
 
         return self.x[-1], self.y[-1], self.phase[-1]
+
+    def pipeline_step(self, i, x, y, p):
+        direction = y < 0
+        if direction:
+            next_x = resize(x - (y >> i), size_res=x)
+            next_y = resize(y + (x >> i), size_res=y)
+            next_phase = resize(p - self.phase_lut_fix[i], size_res=p)
+        else:
+            next_x = resize(x + (y >> i), size_res=x)
+            next_y = resize(y - (x >> i), size_res=y)
+            next_phase = resize(p + self.phase_lut_fix[i], size_res=p)
+
+        return next_x, next_y, next_phase
 
     def get_delay(self):
         return self.iterations

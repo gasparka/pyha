@@ -1,7 +1,7 @@
 import numpy as np
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom
+from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
@@ -21,9 +21,29 @@ def test_atom():
     dut = CordicAtom()
     assert_sim_match(dut, [int] + [Sfix(left=2, right=-17)] * 4, expect, *inputs,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4
-                     # dir_path='/home/gaspar/git/pyha/playground/conv'
+                     rtol=1e-4,
+                     atol=1e-5,
+                     dir_path='/home/gaspar/git/pyha/playground/conv'
 
+                     )
+
+
+
+def test_core_alt_vectoring():
+    inputs = [0.5 + 0.1j, 1 + 0j, 0 + 1j, 0.234 + 0.9j]
+    phase = [0.0] * len(inputs)
+
+    ang = np.angle(inputs)
+    abs = np.abs(inputs)
+    expect = [abs * 1.646760, [0.0] * len(inputs), ang]
+    dut = CordicCoreAlt(iterations=18)
+
+    assert_sim_match(dut, [ComplexSfix(left=2, right=-17), Sfix(left=2, right=-17)],
+                     expect, inputs, phase,
+                     rtol=1e-4,
+                     atol=1e-4,  # zeroes make trouble
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                     dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 
@@ -36,7 +56,7 @@ def test_core_vectoring():
     expect = [abs * 1.646760, [0.0] * len(inputs), ang]
     dut = CordicCore(iterations=18)
 
-    assert_sim_match(dut, [ComplexSfix(left=2, right=-15), Sfix(left=2, right=-15)],
+    assert_sim_match(dut, [ComplexSfix(left=2, right=-17), Sfix(left=2, right=-17)],
                      expect, inputs, phase,
                      rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble
