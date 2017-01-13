@@ -1435,7 +1435,29 @@ def test_binaryoperator_shift_right(converter):
             a >> 1""")
 
     expect = textwrap.dedent("""\
-            \>>\(a, 1)""")
+            a sra 1""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_binaryoperator_shift_right_priority(converter):
+    code = textwrap.dedent("""\
+            (a >> 1)""")
+
+    expect = textwrap.dedent("""\
+            (a sra 1)""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_binaryoperator_shift_left(converter):
+    code = textwrap.dedent("""\
+            a << b""")
+
+    expect = textwrap.dedent("""\
+            a sla b""")
 
     conv = converter(code)
     assert expect == str(conv)

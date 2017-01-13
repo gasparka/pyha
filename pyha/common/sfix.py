@@ -246,9 +246,14 @@ class Sfix:
     def __rshift__(self, other):
         n = 2 ** other
         return Sfix(self.val / n,
-                    self.left - other,
-                    self.right - other,
-                    init_only=True)
+                    self.left,
+                    self.right)
+
+    def __lshift__(self, other):
+        n = 2 ** other
+        return Sfix(self.val * n,
+                    self.left,
+                    self.right)
 
     def __abs__(self):
         return Sfix(abs(self.val),
