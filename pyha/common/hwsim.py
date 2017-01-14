@@ -100,8 +100,8 @@ class PyhaFunc:
 
     def dict_types_consistent_check(self, new, old):
         """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-        if self.calls < 3:
-            return
+        # if self.calls < 3:
+        #     return
         for key, value in new.items():
             if key in old:
                 old_value = old[key]
@@ -110,7 +110,7 @@ class PyhaFunc:
                         if old_value.left == 0 and old_value.right == 0:
                             # sfix lazy init
                             continue
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                            # raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif type(value) != type(old_value):
                     raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif isinstance(value, list):
