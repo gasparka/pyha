@@ -1,7 +1,7 @@
 import numpy as np
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import resize, Sfix, right_index, left_index, fixed_wrap
+from pyha.common.sfix import resize, Sfix, right_index, left_index
 
 
 # Decent cordic overview
@@ -72,8 +72,6 @@ class CordicCoreAlt(HW):
         return [cord_model(x, xx) for x, xx in zip(c, phase)]
 
 
-
-
 class CordicCore(HW):
     def __init__(self, iterations):
         self.iterations = iterations
@@ -113,27 +111,35 @@ class CordicCore(HW):
     #     return resize(xn, x), resize(yn, y), resize(pn, p)
 
     def main(self, c, phase):
-        self.next.x[0] = resize(c.real, left_index=left_index(c.real) + 1, right_index=right_index(c.real))
-        self.next.y[0] = resize(c.imag, left_index=left_index(c.imag) + 1, right_index=right_index(c.imag))
+        # grow inputs 1 bit because abs(1+1i) = 1.4 and another for CORDIC gain
+        self.next.x[0] = resize(c.real, left_index=left_index(c.real) + 2, right_index=right_index(c.real))
+        self.next.y[0] = resize(c.imag, left_index=left_index(c.imag) + 2, right_index=right_index(c.imag))
         self.next.phase[0] = phase
 
         for i in range(len(self.phase_lut_fix) - 1):
-            self.next.x[i+1], self.next.y[i+1], self.next.phase[i+1] = \
+            self.next.x[i + 1], self.next.y[i + 1], self.next.phase[i + 1] = \
                 self.pipeline_step(i, self.x[i], self.y[i], self.phase[i], self.phase_lut_fix[i])
 
         return self.x[-1], self.y[-1], self.phase[-1]
 
     def pipeline_step(self, i, x, y, p, p_adj):
         direction = y < 0
+        # if direction:
+        #     next_x = resize(x - (y >> i), size_res=x, overflow_style=fixed_wrap)
+        #     next_y = resize(y + (x >> i), size_res=y, overflow_style=fixed_wrap)
+        #     next_phase = resize(p - p_adj, size_res=p, overflow_style=fixed_wrap)
+        # else:
+        #     next_x = resize(x + (y >> i), size_res=x, overflow_style=fixed_wrap)
+        #     next_y = resize(y - (x >> i), size_res=y, overflow_style=fixed_wrap)
+        #     next_phase = resize(p + p_adj, size_res=p, overflow_style=fixed_wrap)
         if direction:
-            next_x = resize(x - (y >> i), size_res=x, overflow_style=fixed_wrap)
-            next_y = resize(y + (x >> i), size_res=y, overflow_style=fixed_wrap)
-            next_phase = resize(p - p_adj, size_res=p, overflow_style=fixed_wrap)
+            next_x = resize(x - (y >> i), size_res=x)
+            next_y = resize(y + (x >> i), size_res=y)
+            next_phase = resize(p - p_adj, size_res=p)
         else:
-            next_x = resize(x + (y >> i), size_res=x, overflow_style=fixed_wrap)
-            next_y = resize(y - (x >> i), size_res=y, overflow_style=fixed_wrap)
-            next_phase = resize(p + p_adj, size_res=p, overflow_style=fixed_wrap)
-
+            next_x = resize(x + (y >> i), size_res=x)
+            next_y = resize(y - (x >> i), size_res=y)
+            next_phase = resize(p + p_adj, size_res=p)
         return next_x, next_y, next_phase
 
     def get_delay(self):
@@ -148,25 +154,54 @@ class CordicCore(HW):
                 x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
             return x, y, phase
 
-        return [cord_model(x, xx) for x, xx in zip(c, phase)]
+        # return [cord_model(x, xx) for x, xx in zip(c, phase)]
+        return cord_model(c, phase)
 
 
-class ToPolar:
-    def model_main(self, c, phase):
-        abs_list = []
-        phase_list = []
+class ToPolar(HW):
+    def __init__(self):
+        self.core = CordicCore(17)
+
+    def main(self, c):
+        phase = Sfix(0., 2, -17)
+        if c.real < 0. and c.imag > 0.:  # 2 quadrant
+            c.real = resize(-c.real, size_res=c.real)
+            c.imag = resize(-c.imag, size_res=c.imag)
+            phase = Sfix(np.pi, 2, -17)
+            # x, y, phase = -x, -y, np.pi
+        elif c.real < 0. and c.imag < 0.:  # 3 quadrant
+            c.real = resize(-c.real, size_res=c.real)
+            c.imag = resize(-c.imag, size_res=c.imag)
+            phase = Sfix(-np.pi, 2, -17)
+
+        ret = self.core.main(c, phase)
+        return ret[0] * (1 / 1.646760), ret[2]
+
+    def get_delay(self):
+        return self.core.iterations
+
+    def model_main(self, cin):
+        # abs_list = []
+        # phase_list = []
+        retl = []
         inital_rotation = False
-        for x, y in zip(x_list, y_list):
+        for c in cin:
             # initial rotation
             # shift input to 1 or 4 quadrant (because CORDIC only works in pi range)
             phase = 0
-            if x < 0 and y > 0:  # 2 quadrant
-                x, y, phase = -x, -y, np.pi
-            elif x < 0 and y < 0:  # 3 quadrant
-                x, y, phase = -x, -y, -np.pi
+            if c.real < 0 and c.imag > 0:  # 2 quadrant
+                c = -c
+                phase = np.pi
+                # x, y, phase = -x, -y, np.pi
+            elif c.real < 0 and c.imag < 0:  # 3 quadrant
+                c = -c
+                phase = -np.pi
+                # x, y, phase = -x, -y, -np.pi
 
-            x, _, phase = self.kernel(x, y, phase, mode='VECTOR')
+            x, _, phase = self.core.model_main(c, phase)
 
-            abs_list.append(x * 1 / 1.646760)
-            phase_list.append(phase)
-        return abs_list, phase_list
+            retl.append([x * 1 / 1.646760, phase])
+            # abs_list.append(x * 1 / 1.646760)
+            # phase_list.append(phase)
+        # return abs_list, phase_list
+        return retl
