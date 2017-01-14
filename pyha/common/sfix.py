@@ -166,6 +166,9 @@ class Sfix:
         return self.val < self.min_representable() or \
                self.val > self.max_representable()
 
+    def is_lazy_init(self):
+        return self.left == 0 and self.right == 0
+
     def saturate(self):
         old = self.val
         if self.val > self.max_representable():
@@ -174,7 +177,8 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-        logger.warning('Saturation {} -> {}'.format(old, self.val))
+        if not self.is_lazy_init():
+            logger.warning('Saturation {} -> {}'.format(old, self.val))
 
         # TODO: tests break
         # raise Exception('Saturation {} -> {}'.format(old, self.val))
@@ -218,6 +222,8 @@ class Sfix:
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __add__(self, other):
+        if type(other) == float:
+            other = Sfix(other, self.left, self.right)
         return Sfix(self.val + other.val,
                     max(self.left, other.left) + 1,
                     min(self.right, other.right),

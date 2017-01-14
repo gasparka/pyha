@@ -216,6 +216,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             l.error('\t\t"{}" failed'.format(sim_type))
             l.error('##############################################################')
             l.error('##############################################################')
+
             raise
         #     print('\n\nSim "{}" failed:'.format(sim_type))
         #     print(e.args[0])
