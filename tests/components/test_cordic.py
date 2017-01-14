@@ -54,9 +54,9 @@ def test_core_vectoring():
     ang = np.angle(inputs)
     abs = np.abs(inputs)
     expect = [abs * 1.646760, [0.0] * len(inputs), ang]
-    dut = CordicCore(iterations=18)
+    dut = CordicCore(iterations=17)
 
-    assert_sim_match(dut, [ComplexSfix(left=2, right=-17), Sfix(left=2, right=-17)],
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-17), Sfix(left=2, right=-17)],
                      expect, inputs, phase,
                      rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble

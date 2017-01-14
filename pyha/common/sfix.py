@@ -9,8 +9,11 @@ logger = logging.getLogger(__name__)
 fixed_truncate = 'fixed_truncate'
 fixed_round = 'fixed_round'
 
+fixed_saturate = 'fixed_saturate'
+fixed_wrap = 'fixed_wrap'
+
 class ComplexSfix:
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
+    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         self.init_val = val
         self._real = Sfix(val.real, left, right, overflow_style=overflow_style)
         self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
@@ -106,7 +109,8 @@ class Sfix:
     def set_float_mode(x):
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE', round_style=fixed_round):
+    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
+                 round_style=fixed_round):
         self.round_style = round_style
         assert left >= right
         # if left == None:
@@ -126,12 +130,12 @@ class Sfix:
         if init_only or Sfix._float_mode:
             return
 
-        if overflow_style is 'SATURATE':
+        if overflow_style is fixed_saturate:
             if self.overflows() and overflow_style:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style is 'WRAP':  # TODO: add tests
+        elif overflow_style is fixed_wrap:  # TODO: add tests
             self.quantize()
             self.wrap()
         else:
@@ -207,7 +211,7 @@ class Sfix:
     def __float__(self):
         return float(self.val)
 
-    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE', round_style=fixed_round):
+    def resize(self, left=0, right=0, type=None, overflow_style=fixed_saturate, round_style=fixed_round):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
@@ -291,7 +295,7 @@ class Sfix:
         return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE', round_style=fixed_round):
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
     return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 
