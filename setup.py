@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pip.req import parse_requirements
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -23,11 +23,8 @@ setup(
     author="Gaspar Karm",
     author_email='gkarm@live.com',
     url='https://github.com/petspats/pyha',
-    packages=[
-        'pyha',
-    ],
-    package_dir={'pyha':
-                     'pyha'},
+    packages=find_packages(),
+
     include_package_data=True,
     install_requires=requirements,
     license="Apache Software License 2.0",
