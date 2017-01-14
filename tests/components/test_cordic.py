@@ -1,8 +1,9 @@
 import numpy as np
+import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar
+from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Exp
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
@@ -177,5 +178,31 @@ def test_angle():
                      rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble
                      simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     )
+
+
+@pytest.fixture(scope='function', params=[.25, .50, .75, 1, 2, 4, 8])
+def periodfix(request):
+    fs = 64
+    periods = float(request.param)
+    freq = 1
+    phase_inc = 2 * np.pi * freq / fs
+    phase_list = np.arange(0, periods * fs * phase_inc, phase_inc)
+    return phase_list
+
+
+def test_period(periodfix):
+    ref = np.exp(periodfix * 1j)
+
+    inputs = periodfix
+    expect = ref
+
+    dut = Exp()
+    assert_sim_match(dut, [Sfix(left=0, right=-17)],
+                     expect, inputs,
+                     rtol=1e-5,
+                     # atol=1e-6,  # zeroes make trouble
+                     simulations=[SIM_MODEL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
