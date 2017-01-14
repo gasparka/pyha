@@ -205,3 +205,48 @@ class ToPolar(HW):
             # phase_list.append(phase)
         # return abs_list, phase_list
         return retl
+
+
+class Exp(HW):
+    def __init__(self, iterations=18):
+        self.iterations = iterations
+        self.phase_lut = [np.arctan(2 ** -i) for i in range(iterations)]
+
+    def kernel(self, x, y, phase, mode='ROTATE'):
+        if mode == 'ROTATE':
+            comp = lambda y, phase: -1 if phase < 0 else 1
+        elif mode == 'VECTOR':
+            comp = lambda y, phase: 1 if y < 0 else -1
+        else:
+            raise Exception('Mode is shit!')
+
+        for i, adj in enumerate(self.phase_lut):
+            sign = comp(y, phase)
+            x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
+        return x, y, phase
+
+    def model_main(self, phase_list):
+        sign = 1
+        res = []
+        wrap_acc = 0
+        start_x = 1 / 1.646760
+
+        for phase_acc in phase_list:
+            phase_acc += wrap_acc
+
+            if phase_acc > np.pi / 2:  # cordic only works from -pi/2 to pi/2
+                wrap_acc -= np.pi
+                start_x = -start_x
+                # sign *= -1  # need to sign invert 2,3 quadrant
+                phase_acc -= np.pi
+            elif phase_acc < -np.pi / 2:
+                wrap_acc += np.pi
+                start_x = -start_x
+                # sign *= -1  # need to sign invert 2,3 quadrant
+                phase_acc += np.pi
+
+            x, y, _ = self.kernel(x=start_x, y=0, phase=phase_acc, mode='ROTATE')
+            # res.append([sign * x, sign * y])
+            res.append(x + y * 1j)
+
+        return res
