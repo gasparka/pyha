@@ -82,7 +82,7 @@ def type_conversions(func):
                 elif type(x) == Sfix:
                     ret.append(float(x))
                 elif type(x) == ComplexSfix:
-                    ret.append(float(x.real)+float(x.imag)*1j)
+                    ret.append(float(x.real) + float(x.imag) * 1j)
                 else:
                     ret.append(x)
             return ret
@@ -182,6 +182,17 @@ class Simulation:
             return self.hw_simulation(*args)
 
 
+def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+                           fuck_it=False):
+    """ Instead of asserting anything return outputs of each simulation """
+    outs = []
+    for sim_type in simulations:
+        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
+        hw_y = dut.main(*x)
+        outs.append(hw_y)
+    return outs
+
+
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
@@ -203,7 +214,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
                 logging.getLogger(__name__).warning(
                     'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
 
-
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
@@ -219,5 +229,5 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             l.error('##############################################################')
 
             raise
-        #     print('\n\nSim "{}" failed:'.format(sim_type))
-        #     print(e.args[0])
+            #     print('\n\nSim "{}" failed:'.format(sim_type))
+            #     print(e.args[0])
