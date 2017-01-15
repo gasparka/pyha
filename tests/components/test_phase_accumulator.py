@@ -3,7 +3,7 @@ import numpy as np
 
 from pyha.common.sfix import Sfix
 from pyha.components.phase_accumulator import PhaseAccumlator
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_GATE, SIM_HW_MODEL, SIM_RTL
 
 
 def test_basic():
@@ -22,12 +22,14 @@ def test_basic():
 
     dut = PhaseAccumlator()
 
-    assert_sim_match(dut, [Sfix(left=2, right=-32)],
+    assert_sim_match(dut, [Sfix(left=2, right=-17)],
                      expect, inputs,
                      rtol=1e-6,
                      # atol=1e-9,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                     # simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     dir_path='/home/gaspar/git/pyha/playground/conv',
+                     fuck_it=True
                      )
 
 

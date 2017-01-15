@@ -13,43 +13,34 @@ entity  top is
         clk, rst_n: in std_logic;
 
         -- inputs
-        in0: in std_logic_vector(35 downto 0);
-        in1: in std_logic_vector(19 downto 0);
+        in0: in std_logic_vector(19 downto 0);
 
         -- outputs
-        out0: out std_logic_vector(18 downto 0);
-        out1: out std_logic_vector(18 downto 0);
-        out2: out std_logic_vector(19 downto 0)
+        out0: out std_logic_vector(19 downto 0)
     );
 end entity;
 
 architecture arch of top is
 begin
     process(clk, rst_n)
-        variable self: CordicCore_0.register_t;
+        variable self: PhaseAccumlator_0.register_t;
         -- input variables
-        variable var_in0: complex_sfix0_17;
-        variable var_in1: sfixed(2 downto -17);
+        variable var_in0: sfixed(2 downto -17);
 
         --output variables
-        variable var_out0: sfixed(1 downto -17);
-        variable var_out1: sfixed(1 downto -17);
-        variable var_out2: sfixed(2 downto -17);
+        variable var_out0: sfixed(2 downto -17);
     begin
     if (not rst_n) then
-        CordicCore_0.reset(self);
+        PhaseAccumlator_0.reset(self);
     elsif rising_edge(clk) then
         --convert slv to normal types
-        var_in0 := (real=>to_sfixed(in0(35 downto 18), 0, -17), imag=>to_sfixed(in0(17 downto 0), 0, -17));
-        var_in1 := to_sfixed(in1, 2, -17);
+        var_in0 := to_sfixed(in0, 2, -17);
 
         --call the main entry
-        CordicCore_0.main(self, var_in0, var_in1, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+        PhaseAccumlator_0.main(self, var_in0, ret_0=>var_out0);
 
         --convert normal types to slv
         out0 <= to_slv(var_out0);
-        out1 <= to_slv(var_out1);
-        out2 <= to_slv(var_out2);
       end if;
 
     end process;

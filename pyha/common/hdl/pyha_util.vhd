@@ -4,6 +4,8 @@ library ieee;
   use ieee.numeric_std.all;
   use ieee.fixed_float_types.all;
   use ieee.fixed_pkg.all;
+  use ieee.math_real.all;
+
 
 package PyhaUtil is
   function left_index(x: sfixed) return integer;
@@ -58,3 +60,9 @@ package body PyhaUtil is
   --   return resize(x, size_res);
   -- end function;
 end package body;
+
+
+
+package np is
+  constant  pi :  real := 3.14159_26535_89793_23846;
+end package;
