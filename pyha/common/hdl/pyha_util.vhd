@@ -11,6 +11,8 @@ package PyhaUtil is
   function left_index(x: sfixed) return integer;
   function right_index(x: sfixed) return integer;
   function \>>\(x: sfixed; n: integer) return sfixed;
+  function Sfix(a:real; left_index, right_index:integer) return sfixed;
+
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
   -- type range_t is array (natural range <>) of integer;
@@ -40,6 +42,10 @@ package body PyhaUtil is
     return outp;
   end function;
 
+  function Sfix(a:real; left_index, right_index:integer) return sfixed is
+  begin
+    return to_sfixed(a, left_index, right_index);
+  end function;
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;
   -- begin
