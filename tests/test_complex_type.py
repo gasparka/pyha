@@ -326,3 +326,57 @@ def test_comp_reg_simulate2(comp_reg):
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+@pytest.fixture
+def complex_inits_return():
+    class A5(HW):
+        def __init__(self):
+            self.reg0 = ComplexSfix()
+
+        def main(self, x0, x1, x2, x3):
+            self.next.reg0 = ComplexSfix(x0, x1)
+            ret = ComplexSfix(x2, x3)
+            return self.reg0, ret
+
+    dut = A5()
+    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+    return dut
+
+
+def test_complex_inits_return_complex_types_generation(complex_inits_return):
+    conv = Conversion(complex_inits_return)
+    expect = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            type complex_sfix0_18 is record
+                real: sfixed(0 downto -18);
+                imag: sfixed(0 downto -18);
+            end record;
+            type complex_sfix0_32 is record
+                real: sfixed(0 downto -32);
+                imag: sfixed(0 downto -32);
+            end record;
+            end package;""")
+
+    files = conv.write_vhdl_files(Path('/tmp/'))
+    with files[0].open('r') as f:
+        assert expect == f.read()
+
+
+def test_complex_inits_return_simulate(complex_inits_return):
+    dut = complex_inits_return
+    x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
+         [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
+         [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
+    expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
+                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
+                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
+
+    assert_sim_match(dut,
+                     [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
+                     expected, *x, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
