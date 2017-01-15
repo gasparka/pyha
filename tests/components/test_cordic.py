@@ -192,17 +192,35 @@ def periodfix(request):
     return phase_list
 
 
-def test_period(periodfix):
-    ref = np.exp(periodfix * 1j)
+# @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4, 8])
+@pytest.mark.parametrize('period', [1])
+def test_period(period):
+    fs = 64
+    freq = 1
+    phase_inc = 2 * np.pi * freq / fs
+    phase_cumsum = np.arange(0, period * fs * phase_inc, phase_inc)
 
-    inputs = periodfix
+    ref = np.exp(phase_cumsum * 1j)
+
+    pil = np.diff(phase_cumsum) / np.pi
+    pil = np.insert(pil, 0, [0.0])
+
+    inputs = pil
     expect = ref
 
     dut = Exp()
-    assert_sim_match(dut, [Sfix(left=0, right=-17)],
+    # outs = debug_assert_sim_match(dut, [Sfix(left=0, right=-27)],
+    assert_sim_match(dut, [Sfix(left=0, right=-32)],
                      expect, inputs,
                      rtol=1e-5,
-                     # atol=1e-6,  # zeroes make trouble
-                     simulations=[SIM_MODEL],
+                     atol=1e-5,  # zeroes make trouble
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
+
+    import matplotlib.pyplot as plt
+    plt.plot(outs[0].real)
+    plt.plot(outs[1].real)
+    plt.plot(outs[0].imag)
+    plt.plot(outs[1].imag)
+    plt.show()
