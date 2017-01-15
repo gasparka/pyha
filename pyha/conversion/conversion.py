@@ -115,7 +115,13 @@ class Conversion:
 
             package ComplexTypes is
             {COMPLEX_TYPES}
-            end package;""")
+            {INIT_HEADERS}
+            end package;
+
+            package body ComplexTypes is
+            {INIT_FUNCTIONS}
+            end package body;
+            """)
 
         costr = []
         for x in self.complex_types:

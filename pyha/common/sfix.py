@@ -14,9 +14,14 @@ fixed_wrap = 'fixed_wrap'
 
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
-        self.init_val = val
-        self._real = Sfix(val.real, left, right, overflow_style=overflow_style)
-        self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+        if type(val) is Sfix and type(left) is Sfix:
+            self.init_val = val.init_val + left.init_val * 1j
+            self.real = val
+            self.imag = left
+        else:
+            self.init_val = val
+            self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+            self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
 
     @property
     def left(self):
@@ -28,14 +33,6 @@ class ComplexSfix:
         assert self.real.right == self.imag.right
         return self.real.right
 
-    @property
-    def real(self):
-        return self._real
-
-    @real.setter
-    def real(self, value):
-        import copy
-        self._real = copy.deepcopy(value)
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -75,6 +72,18 @@ class ComplexSfix:
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
+            type {NAME} is record
+                real: {DTYPE};
+                imag: {DTYPE};
+            end record;""")
+
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return template.format(**{'NAME': pytype_to_vhdl(self),
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+
+    def vhdl_init_function_header(self):
+        template = textwrap.dedent("""\
+            function ComplexSfix(a, b: sfixed({RIGHT} downto {LEFT}) return {NAME};
             type {NAME} is record
                 real: {DTYPE};
                 imag: {DTYPE};
