@@ -172,7 +172,7 @@ class ElseNodeConv(NodeConv):
 class ElifNodeConv(NodeConv):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
-        return 'elseif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
+        return 'elsif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
 
 
 class DefNodeConv(NodeConv):

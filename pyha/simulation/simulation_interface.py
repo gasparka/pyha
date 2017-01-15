@@ -182,7 +182,7 @@ class Simulation:
             return self.hw_simulation(*args)
 
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None):
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
@@ -207,6 +207,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
+        if fuck_it: continue
         try:
             np.testing.assert_allclose(expected, hw_y, rtol, atol=atol)
         except AssertionError as e:

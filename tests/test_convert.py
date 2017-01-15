@@ -286,7 +286,7 @@ def test_if_elif(converter):
     expect = """\
         if a then
             a := b;
-        elseif b then
+        elsif b then
             b := a;
         end if;"""
     expect = textwrap.dedent(expect)
@@ -310,7 +310,7 @@ def test_if_complex(converter):
         if a = b and c /= self.\\next\\.b then
             if a /= c then
                 b := a;
-            elseif \\next\\ = c or a /= b then
+            elsif \\next\\ = c or a /= b then
                 a := b;
             else
                 \\next\\ := a;
