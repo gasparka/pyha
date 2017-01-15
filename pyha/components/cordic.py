@@ -1,7 +1,7 @@
 import numpy as np
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import resize, Sfix, right_index, left_index
+from pyha.common.sfix import resize, Sfix, right_index, left_index, fixed_wrap, fixed_truncate, ComplexSfix
 
 
 # Decent cordic overview
@@ -164,12 +164,12 @@ class ToPolar(HW):
 
     def main(self, c):
         phase = Sfix(0., 2, -17)
-        if c.real < 0. and c.imag > 0.:  # 2 quadrant
+        if c.real < 0.0 and c.imag > 0.0:
             c.real = resize(-c.real, size_res=c.real)
             c.imag = resize(-c.imag, size_res=c.imag)
             phase = Sfix(np.pi, 2, -17)
             # x, y, phase = -x, -y, np.pi
-        elif c.real < 0. and c.imag < 0.:  # 3 quadrant
+        elif c.real < 0. and c.imag < 0.0:
             c.real = resize(-c.real, size_res=c.real)
             c.imag = resize(-c.imag, size_res=c.imag)
             phase = Sfix(-np.pi, 2, -17)
@@ -189,11 +189,11 @@ class ToPolar(HW):
             # initial rotation
             # shift input to 1 or 4 quadrant (because CORDIC only works in pi range)
             phase = 0
-            if c.real < 0 and c.imag > 0:  # 2 quadrant
+            if c.real < 0 and c.imag > 0:
                 c = -c
                 phase = np.pi
                 # x, y, phase = -x, -y, np.pi
-            elif c.real < 0 and c.imag < 0:  # 3 quadrant
+            elif c.real < 0 and c.imag < 0:
                 c = -c
                 phase = -np.pi
                 # x, y, phase = -x, -y, -np.pi
@@ -207,26 +207,79 @@ class ToPolar(HW):
         return retl
 
 
-class Exp(HW):
-    def __init__(self, iterations=18):
+class Cordic(HW):
+    def __init__(self, iterations):
         self.iterations = iterations
-        self.phase_lut = [np.arctan(2 ** -i) for i in range(iterations)]
 
-    def kernel(self, x, y, phase, mode='ROTATE'):
-        if mode == 'ROTATE':
-            comp = lambda y, phase: -1 if phase < 0 else 1
-        elif mode == 'VECTOR':
-            comp = lambda y, phase: 1 if y < 0 else -1
+        self.iterations = iterations + 1
+        self.phase_lut = [np.arctan(2 ** -i) / np.pi for i in range(self.iterations)]
+        self.phase_lut_fix = [Sfix(x, 0, -32) for x in self.phase_lut]
+
+        # pipeline registers
+        self.x = [Sfix()] * self.iterations
+        self.y = [Sfix()] * self.iterations
+        self.phase = [Sfix()] * self.iterations
+
+    def main(self, x, y, phase):
+        self.next.y[0] = resize(y, size_res=y)
+        self.next.x[0] = resize(x, size_res=x)
+        self.next.phase[0] = resize(phase, size_res=phase)
+        if phase > 0.5:
+            # > np.pi/2
+            self.next.x[0] = resize(-x, size_res=x)
+            self.next.phase[0] = resize(phase - 1.0, size_res=phase)
+        elif phase < -0.5:
+            # < -np.pi/2
+            self.next.x[0] = resize(-x, size_res=x)
+            self.next.phase[0] = resize(phase + 1.0, size_res=phase)
+
+        for i in range(len(self.phase_lut_fix) - 1):
+            self.next.x[i + 1], self.next.y[i + 1], self.next.phase[i + 1] = \
+                self.pipeline_step(i, self.x[i], self.y[i], self.phase[i], self.phase_lut_fix[i])
+
+        return self.x[-1], self.y[-1], self.phase[-1]
+
+    def pipeline_step(self, i, x, y, p, p_adj):
+        direction = p > 0
+
+        if direction:
+            next_x = resize(x - (y >> i), size_res=x)
+            next_y = resize(y + (x >> i), size_res=y)
+            next_phase = resize(p - p_adj, size_res=p)
         else:
-            raise Exception('Mode is shit!')
+            next_x = resize(x + (y >> i), size_res=x)
+            next_y = resize(y - (x >> i), size_res=y)
+            next_phase = resize(p + p_adj, size_res=p)
+        return next_x, next_y, next_phase
 
-        for i, adj in enumerate(self.phase_lut):
-            sign = comp(y, phase)
-            x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
-        return x, y, phase
+    def get_delay(self):
+        return self.iterations
+
+
+class Exp(HW):
+    def __init__(self):
+        self.cordic = Cordic(17)
+
+        self.phase_acc = Sfix()
+
+    def main(self, phase_inc):
+        self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
+                                     round_style=fixed_truncate)
+
+        start_x = Sfix(1 / 1.646760, 0, -17)
+        start_y = Sfix(0.0, 0, -17)
+        x, y, phase = self.cordic.main(start_x, start_y, self.phase_acc)
+        retc = ComplexSfix(x, y)
+        return retc
+
+    def get_delay(self):
+        r = self.cordic.iterations + 1
+        return r
 
     def model_main(self, phase_list):
-        sign = 1
+        p = np.cumsum(phase_list * np.pi)
+        return np.exp(p * 1j)
+
         res = []
         wrap_acc = 0
         start_x = 1 / 1.646760
@@ -234,16 +287,15 @@ class Exp(HW):
         for phase_acc in phase_list:
             phase_acc += wrap_acc
 
-            if phase_acc > np.pi / 2:  # cordic only works from -pi/2 to pi/2
-                wrap_acc -= np.pi
+            # cordic only works from -pi/2 to pi/2
+            if phase_acc > 0.5:
+                wrap_acc -= 1.0
                 start_x = -start_x
-                # sign *= -1  # need to sign invert 2,3 quadrant
-                phase_acc -= np.pi
-            elif phase_acc < -np.pi / 2:
-                wrap_acc += np.pi
+                phase_acc -= 1.0
+            elif phase_acc < -0.5:
+                wrap_acc += 1.0
                 start_x = -start_x
-                # sign *= -1  # need to sign invert 2,3 quadrant
-                phase_acc += np.pi
+                phase_acc += 1.0
 
             x, y, _ = self.kernel(x=start_x, y=0, phase=phase_acc, mode='ROTATE')
             # res.append([sign * x, sign * y])
