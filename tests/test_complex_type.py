@@ -13,16 +13,16 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 def test_py_implementation():
     a = ComplexSfix()
-    assert a.real == Sfix(0.0, 0, 0, overflow_style='SATURATE')
-    assert a.imag == Sfix(0.0, 0, 0, overflow_style='SATURATE')
+    assert a.real == Sfix(0.0, 0, 0)
+    assert a.imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0)
-    assert a.real == Sfix(0.0, 0, 0, overflow_style='SATURATE')
-    assert a.imag == Sfix(0.0, 0, 0, overflow_style='SATURATE')
+    assert a.real == Sfix(0.0, 0, 0)
+    assert a.imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0.5 + 1.2j, 1, -12)
-    assert a.real == Sfix(0.5, 1, -12, overflow_style='SATURATE')
-    assert a.imag == Sfix(1.2, 1, -12, overflow_style='SATURATE')
+    assert a.real == Sfix(0.5, 1, -12)
+    assert a.imag == Sfix(1.2, 1, -12)
 
     a = ComplexSfix(0.699 + 0.012j, 0, -4)
     assert a.real.val == 0.6875
