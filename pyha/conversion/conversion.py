@@ -114,20 +114,23 @@ class Conversion:
                 use ieee.fixed_pkg.all;
 
             package ComplexTypes is
-            {COMPLEX_TYPES}
-            {INIT_HEADERS}
+            {TYPES}
             end package;
 
             package body ComplexTypes is
-            {INIT_FUNCTIONS}
+            {FUNCTIONS}
             end package body;
             """)
 
-        costr = []
+        types = []
+        functions = []
         for x in self.complex_types:
             for xx in get_iterable(x):
-                new = xx.vhdl_type_define()
-                if new not in costr:
-                    costr.append(new)
+                new_type = xx.vhdl_type_define()
+                new_function = xx.vhdl_init_function()
+                if new_type not in types:
+                    types.append(new_type)
+                    functions.append(new_function)
 
-        return template.format(COMPLEX_TYPES='\n'.join(x for x in costr))
+        return template.format(TYPES='\n'.join(x for x in types),
+                               FUNCTIONS='\n'.join(x for x in functions))

@@ -12,6 +12,7 @@ fixed_round = 'fixed_round'
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
 
+
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
@@ -32,7 +33,6 @@ class ComplexSfix:
     def right(self):
         assert self.real.right == self.imag.right
         return self.real.right
-
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -64,34 +64,41 @@ class ComplexSfix:
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
 
     def fixed_value(self):
-        assert self.bitwidth() <= 64 # must fit into numpy int, this is cocotb related?
+        assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
         real = self.real.fixed_value()
         imag = self.imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
         return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
+
+    def vhdl_type_name(self):
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return pytype_to_vhdl(self)
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
             type {NAME} is record
                 real: {DTYPE};
                 imag: {DTYPE};
-            end record;""")
+            end record;
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME};
+            """)
 
-        from pyha.conversion.coupling import pytype_to_vhdl
-        return template.format(**{'NAME': pytype_to_vhdl(self),
-                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
 
-    def vhdl_init_function_header(self):
+    def vhdl_init_function(self):
         template = textwrap.dedent("""\
-            function ComplexSfix(a, b: sfixed({RIGHT} downto {LEFT}) return {NAME};
-            type {NAME} is record
-                real: {DTYPE};
-                imag: {DTYPE};
-            end record;""")
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME} is
+            begin
+                return (a, b);
+            end function;
+            """)
 
-        from pyha.conversion.coupling import pytype_to_vhdl
-        return template.format(**{'NAME': pytype_to_vhdl(self),
-                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
 
 
 # TODO: Verify stuff against VHDL library
@@ -189,8 +196,8 @@ class Sfix:
         if not self.is_lazy_init():
             logger.warning('Saturation {} -> {}'.format(old, self.val))
 
-        # TODO: tests break
-        # raise Exception('Saturation {} -> {}'.format(old, self.val))
+            # TODO: tests break
+            # raise Exception('Saturation {} -> {}'.format(old, self.val))
 
     # TODO: add tests
     def wrap(self):
