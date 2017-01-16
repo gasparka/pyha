@@ -356,11 +356,29 @@ def test_complex_inits_return_complex_types_generation(complex_inits_return):
                 real: sfixed(0 downto -18);
                 imag: sfixed(0 downto -18);
             end record;
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+
             type complex_sfix0_32 is record
                 real: sfixed(0 downto -32);
                 imag: sfixed(0 downto -32);
             end record;
-            end package;""")
+            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32;
+
+            end package;
+
+            package body ComplexTypes is
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+            begin
+                return (a, b);
+            end function;
+
+            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32 is
+            begin
+                return (a, b);
+            end function;
+
+            end package body;
+            """)
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
@@ -369,14 +387,15 @@ def test_complex_inits_return_complex_types_generation(complex_inits_return):
 
 def test_complex_inits_return_simulate(complex_inits_return):
     dut = complex_inits_return
-    x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
-         [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
-         [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
-                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
-                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
+    x = [[-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, 0.1234],
+         [-0.24, -0.24, -0.24, 0.1234]]
+    expected = [
+        [0.000000 + 0.j, -0.240002 - 0.240002j, -0.240002 - 0.240002j, -0.240002 - 0.240002j],
+        [-0.240000 - 0.24j, -0.240000 - 0.24j, -0.240000 - 0.24j, 0.1234 + 0.1234j]
+    ]
 
     assert_sim_match(dut,
-                     [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
+                     [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
+                      Sfix(left=0, right=-32)],
                      expected, *x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
