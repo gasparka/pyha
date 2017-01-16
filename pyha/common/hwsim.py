@@ -110,7 +110,7 @@ class PyhaFunc:
                         if old_value.left == 0 and old_value.right == 0:
                             # sfix lazy init
                             continue
-                            # raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif type(value) != type(old_value):
                     raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif isinstance(value, list):
