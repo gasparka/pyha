@@ -162,7 +162,18 @@ def test_reg_complex_types_generation(reg):
             real: sfixed(1 downto -12);
             imag: sfixed(1 downto -12);
         end record;
-        end package;""")
+        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+
+        end package;
+
+        package body ComplexTypes is
+        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+        begin
+            return (a, b);
+        end function;
+
+        end package body;
+        """)
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
@@ -249,11 +260,29 @@ def test_more_regs_complex_types_generation(more_regs):
                 real: sfixed(1 downto -12);
                 imag: sfixed(1 downto -12);
             end record;
+            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+
             type complex_sfix1_21 is record
                 real: sfixed(1 downto -21);
                 imag: sfixed(1 downto -21);
             end record;
-            end package;""")
+            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
+
+            end package;
+
+            package body ComplexTypes is
+            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+            begin
+                return (a, b);
+            end function;
+
+            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
+            begin
+                return (a, b);
+            end function;
+
+            end package body;
+            """)
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
