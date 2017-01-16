@@ -28,6 +28,16 @@ def test_name(converter):
     assert str(conv) == 'test'
 
 
+#
+# def test_name_nodeconv(converter):
+#     code = 'self.next.x[0]'
+#     red = RedBaron(code)[0]
+#     n = NameNodeConv(red_node=red)
+#     nstr = str(n)
+#     conv = converter(code)
+#     assert str(conv) == 'test'
+
+
 def test_name2(converter):
     code = 'Register'
     conv = converter(code)
@@ -198,6 +208,11 @@ def test_assign_associative_boolean(converter):
     assert str(conv) == 'a := b = c and (val < b or val > a);'
 
 
+def test_assign_multi(converter):
+    'self.next.x[0], self.next.y[0], self.next.phase[0] = c.real, c.imag, phase'
+    assert 0
+
+
 def test_if_single_body(converter):
     code = """if a:
         a = b"""
@@ -271,7 +286,7 @@ def test_if_elif(converter):
     expect = """\
         if a then
             a := b;
-        elseif b then
+        elsif b then
             b := a;
         end if;"""
     expect = textwrap.dedent(expect)
@@ -295,7 +310,7 @@ def test_if_complex(converter):
         if a = b and c /= self.\\next\\.b then
             if a /= c then
                 b := a;
-            elseif \\next\\ = c or a /= b then
+            elsif \\next\\ = c or a /= b then
                 a := b;
             else
                 \\next\\ := a;
@@ -340,7 +355,6 @@ def test_def_comment(converter):
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
-
 
 
 def test_def_reserver_name(converter):
@@ -1168,13 +1182,52 @@ def test_indexing_slice_no_upper_no_lower(converter):
 #     assert expect == str(conv)
 
 
-def test_for(converter):
+def test_for_rl(converter):
+    code = textwrap.dedent("""\
+            for i in range(len(self.next.b)):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in self.\\next\\.b'range loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_rl_arith(converter):
+    code = textwrap.dedent("""\
+            for i in range(len(self.next.b) + 1):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in 0 to self.\\next\\.b'length + 1 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_rl_arith2(converter):
+    code = textwrap.dedent("""\
+            for i in range(len(self.next.b) - 10):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in 0 to self.\\next\\.b'length - 10 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_simple_range(converter):
     code = textwrap.dedent("""\
             for i in range(10):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to 10 loop
+            for i in 0 to 10 - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1187,7 +1240,7 @@ def test_for_from_to(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in 2 to 5 loop
+            for ite in 2 to 5 -1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1200,7 +1253,7 @@ def test_for_from_to_variables(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in var to self.var2 loop
+            for ite in var to self.var2 -1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1382,8 +1435,29 @@ def test_binaryoperator_shift_right(converter):
             a >> 1""")
 
     expect = textwrap.dedent("""\
-            \>>\(a, 1)""")
+            a sra 1""")
 
     conv = converter(code)
     assert expect == str(conv)
 
+
+def test_binaryoperator_shift_right_priority(converter):
+    code = textwrap.dedent("""\
+            (a >> 1)""")
+
+    expect = textwrap.dedent("""\
+            (a sra 1)""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_binaryoperator_shift_left(converter):
+    code = textwrap.dedent("""\
+            a << b""")
+
+    expect = textwrap.dedent("""\
+            a sla b""")
+
+    conv = converter(code)
+    assert expect == str(conv)

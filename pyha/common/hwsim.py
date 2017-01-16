@@ -100,7 +100,8 @@ class PyhaFunc:
 
     def dict_types_consistent_check(self, new, old):
         """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-
+        # if self.calls < 3:
+        #     return
         for key, value in new.items():
             if key in old:
                 old_value = old[key]

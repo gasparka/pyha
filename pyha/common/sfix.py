@@ -9,11 +9,20 @@ logger = logging.getLogger(__name__)
 fixed_truncate = 'fixed_truncate'
 fixed_round = 'fixed_round'
 
+fixed_saturate = 'fixed_saturate'
+fixed_wrap = 'fixed_wrap'
+
+
 class ComplexSfix:
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style='SATURATE'):
-        self.init_val = val
-        self._real = Sfix(val.real, left, right, overflow_style=overflow_style)
-        self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
+        if type(val) is Sfix and type(left) is Sfix:
+            self.init_val = val.init_val + left.init_val * 1j
+            self.real = val
+            self.imag = left
+        else:
+            self.init_val = val
+            self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+            self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
 
     @property
     def left(self):
@@ -24,15 +33,6 @@ class ComplexSfix:
     def right(self):
         assert self.real.right == self.imag.right
         return self.real.right
-
-    @property
-    def real(self):
-        return self._real
-
-    @real.setter
-    def real(self, value):
-        import copy
-        self._real = copy.deepcopy(value)
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -64,22 +64,41 @@ class ComplexSfix:
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
 
     def fixed_value(self):
-        assert self.bitwidth() <= 64 # must fit into numpy int, this is cocotb related?
+        assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
         real = self.real.fixed_value()
         imag = self.imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
         return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
+
+    def vhdl_type_name(self):
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return pytype_to_vhdl(self)
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
             type {NAME} is record
                 real: {DTYPE};
                 imag: {DTYPE};
-            end record;""")
+            end record;
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME};
+            """)
 
-        from pyha.conversion.coupling import pytype_to_vhdl
-        return template.format(**{'NAME': pytype_to_vhdl(self),
-                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
+
+    def vhdl_init_function(self):
+        template = textwrap.dedent("""\
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME} is
+            begin
+                return (a, b);
+            end function;
+            """)
+
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
 
 
 # TODO: Verify stuff against VHDL library
@@ -106,7 +125,8 @@ class Sfix:
     def set_float_mode(x):
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style='SATURATE', round_style=fixed_round):
+    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
+                 round_style=fixed_round):
         self.round_style = round_style
         assert left >= right
         # if left == None:
@@ -114,8 +134,8 @@ class Sfix:
         #
         # if right == None:
         #     raise Exception('Right bound for Sfix is None!')
-
-        if not isinstance(val, (float, int)):
+        val = float(val)
+        if type(val) not in [float, int]:
             raise Exception('Value must be float or int!')
         self.right = right
         self.left = left
@@ -126,12 +146,12 @@ class Sfix:
         if init_only or Sfix._float_mode:
             return
 
-        if overflow_style is 'SATURATE':
+        if overflow_style is fixed_saturate:
             if self.overflows() and overflow_style:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style is 'WRAP':  # TODO: add tests
+        elif overflow_style is fixed_wrap:  # TODO: add tests
             self.quantize()
             self.wrap()
         else:
@@ -162,6 +182,9 @@ class Sfix:
         return self.val < self.min_representable() or \
                self.val > self.max_representable()
 
+    def is_lazy_init(self):
+        return self.left == 0 and self.right == 0
+
     def saturate(self):
         old = self.val
         if self.val > self.max_representable():
@@ -170,10 +193,11 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-        logger.warning('Saturation {} -> {}'.format(old, self.val))
+        if not self.is_lazy_init():
+            logger.warning('Saturation {} -> {}'.format(old, self.val))
 
-        # TODO: tests break
-        # raise Exception('Saturation {} -> {}'.format(old, self.val))
+            # TODO: tests break
+            # raise Exception('Saturation {} -> {}'.format(old, self.val))
 
     # TODO: add tests
     def wrap(self):
@@ -207,13 +231,15 @@ class Sfix:
     def __float__(self):
         return float(self.val)
 
-    def resize(self, left=0, right=0, type=None, overflow_style='SATURATE', round_style=fixed_round):
+    def resize(self, left=0, right=0, type=None, overflow_style=fixed_saturate, round_style=fixed_round):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __add__(self, other):
+        if type(other) == float:
+            other = Sfix(other, self.left, self.right)
         return Sfix(self.val + other.val,
                     max(self.left, other.left) + 1,
                     min(self.right, other.right),
@@ -246,9 +272,14 @@ class Sfix:
     def __rshift__(self, other):
         n = 2 ** other
         return Sfix(self.val / n,
-                    self.left - other,
-                    self.right - other,
-                    init_only=True)
+                    self.left,
+                    self.right)
+
+    def __lshift__(self, other):
+        n = 2 ** other
+        return Sfix(self.val * n,
+                    self.left,
+                    self.right)
 
     def __abs__(self):
         return Sfix(abs(self.val),
@@ -258,11 +289,11 @@ class Sfix:
 
     # TODO: add tests
     def __lt__(self, other):
-        return self.val < other
+        return bool(self.val < other)
 
     # TODO: add tests
     def __gt__(self, other):
-        return self.val > other
+        return bool(self.val > other)
 
     # TODO: add tests
     def __neg__(self):
@@ -286,7 +317,7 @@ class Sfix:
         return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='SATURATE', round_style=fixed_round):
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
     return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 

@@ -382,6 +382,54 @@ def test_typed_def_infer_variable_self_reject(converter):
     assert expect == str(conv)
 
 
+def test_typed_def_infer_variable_self_indexing(converter):
+    # should not create variable
+    code = textwrap.dedent("""\
+        def a(b):
+            self.c[0] = b""")
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            self.c(0) := b;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_infer_variable_selfnext_indexing(converter):
+    # should not create variable
+    code = textwrap.dedent("""\
+        def a(b):
+            self.next.c[0] = b""")
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            self.\\next\\.c(0) := b;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_typed_def_infer_variable_selfnext_indexing_resize(converter):
+    # should not create variable
+    code = textwrap.dedent("""\
+        def a(b):
+            self.next.c[0] = resize(b, size_res=self.x[i])""")
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}})
+    expect = textwrap.dedent("""\
+        procedure a(b: boolean) is
+
+        begin
+            self.\\next\\.c(0) := resize(b, size_res=>self.x(i));
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
 def test_typed_def_infer_variable_argument_reject(converter):
     # no variable infered because assignment is to argument
     code = textwrap.dedent("""\
