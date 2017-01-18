@@ -32,7 +32,7 @@ def test_datamodel(t0):
     assert datamodel.self_data['mode'] == TestEnum.ENUM1
 
 
-def test_convert_datamodel(t0):
+def test_vhdl_datamodel(t0):
     conv = get_conversion(t0)
 
     expect = textwrap.dedent("""\
@@ -48,8 +48,19 @@ def test_convert_datamodel(t0):
     assert expect == dm
 
 
-def test_convert_enum_define(t0):
+def test_vhdl_enum_define(t0):
     conv = get_conversion(t0)
     expect = ['type TestEnum is (ENUM0,ENUM1,ENUM2,ENUM3);']
     dm = conv.get_enumdefs()
     assert expect == dm
+
+def test_vhdl_reset(t0):
+    conv = get_conversion(t0)
+
+    expect = textwrap.dedent("""\
+        procedure reset(self_reg: inout register_t) is
+        begin
+            self_reg.mode := ENUM1;
+        end procedure;""")
+
+    assert expect == str(conv.get_reset_str())

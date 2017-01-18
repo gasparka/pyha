@@ -624,6 +624,7 @@ def convert(red: Node, caller=None, datamodel=None):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
 
+    red = redbaron_enum_to_vhdl(red)
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
@@ -639,6 +640,18 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 #####################################################################
+
+def redbaron_enum_to_vhdl(red_node):
+    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
+    VHDL does not allow  this, only ENUMVALUE must be written"""
+    enums = VHDLType.get_enum_vars()
+    for x in enums:
+        type_name = type(x).__name__
+        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+        for i, node in enumerate(red_names):
+            red_names[i].replace(node[1])
+
+    return red_node
 
 
 def redbaron_pycall_to_vhdl(red_node):
