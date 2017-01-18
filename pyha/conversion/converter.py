@@ -522,17 +522,6 @@ class ClassNodeConv(NodeConv):
 
     def get_typedefs(self):
         template = 'type {} is array (natural range <>) of {};'
-        # template = textwrap.dedent("""\
-        #     'type {} is array (natural range <>) of {};'
-        #
-        #     type register_t is record
-        #     {DATA}
-        #     end record;
-        #
-        #     type self_t is record
-        #     {DATA}
-        #         \\next\\: register_t;
-        #     end record;""")
         typedefs = []
         for val in VHDLType.get_typedef_vars():
             assert type(val) is list
@@ -544,9 +533,22 @@ class ClassNodeConv(NodeConv):
                 type_name += '.register_t'
             new_tp = template.format(name, type_name)
             if new_tp not in typedefs:
-                typedefs.append(template.format(name, type_name))
+                typedefs.append(new_tp)
 
         return typedefs
+
+    def get_enumdefs(self):
+        template = 'type {} is ({});'
+        vals = []
+        for val in VHDLType.get_enum_vars():
+            name = pytype_to_vhdl(val)
+
+            types = ','.join([x.name for x in type(val)])
+            new_tp = template.format(name, types)
+            if new_tp not in vals:
+                vals.append(new_tp)
+
+        return vals
 
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
@@ -556,6 +558,7 @@ class ClassNodeConv(NodeConv):
             {IMPORTS}
 
             package {NAME} is
+            {ENUMDEFS}
             {TYPEDEFS}
 
             {SELF_T}
@@ -574,6 +577,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
         sockets['IMPORTS'] = self.get_imports()
+        sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 

@@ -46,3 +46,10 @@ def test_convert_datamodel(t0):
             end record;""")
     dm = conv.get_datamodel()
     assert expect == dm
+
+
+def test_convert_enum_define(t0):
+    conv = get_conversion(t0)
+    expect = ['type TestEnum is (ENUM0,ENUM1,ENUM2,ENUM3);']
+    dm = conv.get_enumdefs()
+    assert expect == dm

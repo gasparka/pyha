@@ -148,17 +148,22 @@ class VHDLType:
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
-        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is find_type]
+        ret = [v for v in cls._datamodel.self_data.values() if isinstance(v, find_type)]
         for func in cls._datamodel.locals.values():
             for var in func.values():
-                if type(var) == find_type:
-                    typedefs.append(var)
-        return typedefs
+                if isinstance(var, find_type):
+                    ret.append(var)
+        return ret
 
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
         typedefs = cls._get_vars_by_type(list)
+        return typedefs
+
+    @classmethod
+    def get_enum_vars(cls):
+        typedefs = cls._get_vars_by_type(Enum)
         return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
