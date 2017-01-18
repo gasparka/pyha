@@ -319,6 +319,11 @@ class AssertNodeConv(NodeConv):
     def __str__(self):
         return '--' + super().__str__()
 
+class PrintNodeConv(NodeConv):
+    def __str__(self):
+        # return 'report to_string({});'.format(self.red_node.value[0].value)
+        return "report to_string(to_real({}));".format(self.red_node.value[0].value)
+
 
 class ListNodeConv(NodeConv):
     def __str__(self):
