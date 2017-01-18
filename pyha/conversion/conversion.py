@@ -82,6 +82,7 @@ class Conversion:
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
 
+        # todo: makedirs
         paths = []
         for x in self.childs:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
