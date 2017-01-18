@@ -3,8 +3,9 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Exp
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Exp, Cordic
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
+    debug_assert_sim_match, assert_model_rtl_match
 
 
 def test_atom():
@@ -182,19 +183,19 @@ def test_angle():
                      )
 
 
-@pytest.fixture(scope='function', params=[.25, .50, .75, 1, 2, 4, 8])
-def periodfix(request):
-    fs = 64
-    periods = float(request.param)
-    freq = 1
-    phase_inc = 2 * np.pi * freq / fs
-    phase_list = np.arange(0, periods * fs * phase_inc, phase_inc)
-    return phase_list
+def test_cordic_model_rtl_match():
+    # TODO: if i set phase lut precision to -18 this fails, why?
+    np.random.seed(123456)
+    inputs = (np.random.rand(3, 5) * 2 - 1) * 0.5
+
+    dut = Cordic(18)
+    assert_model_rtl_match(dut, [Sfix(left=0, right=-17)] * 3, *inputs)
 
 
-# @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4, 8])
-@pytest.mark.parametrize('period', [1])
-def test_period(period):
+
+@pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
+# @pytest.mark.parametrize('period', [0.75])
+def test_nco(period):
     fs = 64
     freq = 1
     phase_inc = 2 * np.pi * freq / fs
@@ -209,18 +210,15 @@ def test_period(period):
     expect = ref
 
     dut = Exp()
-    # outs = debug_assert_sim_match(dut, [Sfix(left=0, right=-27)],
-    assert_sim_match(dut, [Sfix(left=0, right=-32)],
+    sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+    if period == 4:
+        sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+    # outs = debug_assert_sim_match(dut, [Sfix(left=0, right=-24)],
+    assert_sim_match(dut, [Sfix(left=0, right=-18)],
                      expect, inputs,
-                     rtol=1e-5,
-                     atol=1e-5,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     rtol=1e-4,
+                     simulations=sims,
+                     dir_path='/home/gaspar/git/pyha/playground/conv',
+                     # fuck_it=True
                      )
 
-    import matplotlib.pyplot as plt
-    plt.plot(outs[0].real)
-    plt.plot(outs[1].real)
-    plt.plot(outs[0].imag)
-    plt.plot(outs[1].imag)
-    plt.show()

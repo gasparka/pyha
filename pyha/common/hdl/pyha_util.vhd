@@ -45,7 +45,7 @@ package body PyhaUtil is
   function Sfix(a:real; left_index, right_index:integer) return sfixed is
   begin
     -- buggy if default guard bits!
-    return to_sfixed(a, left_index, right_index, guard_bits=>8);
+    return to_sfixed(a, left_index, right_index, guard_bits=>16);
   end function;
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;

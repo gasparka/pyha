@@ -193,7 +193,19 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
     return outs
 
 
+def assert_model_rtl_match(model, types, *x):
+    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    # import matplotlib.pyplot as plt
+    # outs = np.array(outs).astype(float)
+    # plt.plot(outs[0])
+    # plt.plot(outs[1])
+    # plt.show()
+
+
+
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+    l = logging.getLogger(__name__)
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
@@ -217,11 +229,13 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
-        if fuck_it: continue
+
+        if fuck_it:
+            l.error('FUKC_IT MODE!')
+            continue
         try:
             np.testing.assert_allclose(expected, hw_y, rtol, atol=atol)
         except AssertionError as e:
-            l = logging.getLogger(__name__)
             l.error('##############################################################')
             l.error('##############################################################')
             l.error('\t\t"{}" failed'.format(sim_type))

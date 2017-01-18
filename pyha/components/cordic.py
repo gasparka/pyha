@@ -208,12 +208,12 @@ class ToPolar(HW):
 
 
 class Cordic(HW):
-    def __init__(self, iterations):
+    def __init__(self, iterations, mode):
         self.iterations = iterations
 
         self.iterations = iterations + 1
         self.phase_lut = [np.arctan(2 ** -i) / np.pi for i in range(self.iterations)]
-        self.phase_lut_fix = [Sfix(x, 0, -32) for x in self.phase_lut]
+        self.phase_lut_fix = [Sfix(x, 0, -24) for x in self.phase_lut]
 
         # pipeline registers
         self.x = [Sfix()] * self.iterations
@@ -240,26 +240,36 @@ class Cordic(HW):
         return self.x[-1], self.y[-1], self.phase[-1]
 
     def pipeline_step(self, i, x, y, p, p_adj):
+        # saturation is important for x and y if NCO mode
         direction = p > 0
 
         if direction:
             next_x = resize(x - (y >> i), size_res=x)
             next_y = resize(y + (x >> i), size_res=y)
-            next_phase = resize(p - p_adj, size_res=p)
+            next_phase = resize(p - p_adj, size_res=p, overflow_style=fixed_wrap)
         else:
             next_x = resize(x + (y >> i), size_res=x)
             next_y = resize(y - (x >> i), size_res=y)
-            next_phase = resize(p + p_adj, size_res=p)
+            next_phase = resize(p + p_adj, size_res=p, overflow_style=fixed_wrap)
         return next_x, next_y, next_phase
 
     def get_delay(self):
         return self.iterations
 
+    def model_main(self, x, y, phase):
+        def cord_model(x, y, phase):
+            for i, adj in enumerate(self.phase_lut):
+                sign = 1 if phase > 0 else -1
+                x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
+            return x, y, phase
+
+        return [cord_model(xx, yy, pp) for xx, yy, pp in zip(x, y, phase)]
+        # return cord_model(c, phase)
+
 
 class Exp(HW):
     def __init__(self):
-        self.cordic = Cordic(17)
-
+        self.cordic = Cordic(16)
         self.phase_acc = Sfix()
 
     def main(self, phase_inc):
@@ -268,7 +278,7 @@ class Exp(HW):
 
         start_x = Sfix(1.0 / 1.646760, 0, -17)
         start_y = Sfix(0.0, 0, -17)
-        x, y, phase = self.cordic.main(start_x, start_y, self.phase_acc)
+        x, y, phase = self.next.cordic.main(start_x, start_y, self.phase_acc)
         retc = ComplexSfix(x, y)
         return retc
 
@@ -279,26 +289,3 @@ class Exp(HW):
     def model_main(self, phase_list):
         p = np.cumsum(phase_list * np.pi)
         return np.exp(p * 1j)
-
-        res = []
-        wrap_acc = 0.0
-        start_x = 1.0 / 1.646760
-
-        for phase_acc in phase_list:
-            phase_acc += wrap_acc
-
-            # cordic only works from -pi/2 to pi/2
-            if phase_acc > 0.5:
-                wrap_acc -= 1.0
-                start_x = -start_x
-                phase_acc -= 1.0
-            elif phase_acc < -0.5:
-                wrap_acc += 1.0
-                start_x = -start_x
-                phase_acc += 1.0
-
-            x, y, _ = self.kernel(x=start_x, y=0, phase=phase_acc, mode='ROTATE')
-            # res.append([sign * x, sign * y])
-            res.append(x + y * 1j)
-
-        return res
