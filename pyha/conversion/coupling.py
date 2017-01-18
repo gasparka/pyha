@@ -1,4 +1,5 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
+from enum import Enum
 
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -42,6 +43,8 @@ def pytype_to_vhdl(var):
     elif isinstance(var, HW):
         idstr = get_instance_vhdl_name(var)
         return idstr
+    elif isinstance(var, Enum):
+        return type(var).__name__
     else:
         assert 0
 
