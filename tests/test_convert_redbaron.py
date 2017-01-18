@@ -454,22 +454,22 @@ def test_enum_local_var_assign(converter):
     assert expect == str(conv)
 
 
-def test_enum_local_var_assign(converter):
+def test_enum_self_var_assign(converter):
     class EnumType(Enum):
         ENUMVALUE = 0
 
     code = textwrap.dedent("""\
         def f():
-            a = EnumType.ENUMVALUE""")
+            self.a = EnumType.ENUMVALUE""")
 
-    datamodel = DataModel(locals={'f': {'a': EnumType.ENUMVALUE}},
-                          self_data={})
+    datamodel = DataModel(locals={},
+                          self_data={'a': EnumType.ENUMVALUE})
 
     expect = textwrap.dedent("""\
         procedure f is
-            variable a: EnumType;
+
         begin
-            a := ENUMVALUE;
+            self.a := ENUMVALUE;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
