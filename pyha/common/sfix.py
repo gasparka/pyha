@@ -202,7 +202,7 @@ class Sfix:
     # TODO: add tests
     def wrap(self):
         fmin = self.min_representable()
-        fmax = self.max_representable()
+        fmax = 2 ** self.left # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
 
     def quantize(self):
