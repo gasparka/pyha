@@ -21,6 +21,7 @@ def assert_exact_match(model, types, *x):
     # plt.plot(outs[1])
     # plt.show()
 
+
 def test_shift_right():
     class t0(HW):
         def main(self, x, n):
@@ -143,7 +144,6 @@ def test_sfix_constants(bits):
 
 @pytest.mark.parametrize('right', range(-1, -32, -1))
 @pytest.mark.parametrize('left', range(2))
-# @pytest.mark.parametrize('bits', [-2])
 def test_sfix_wrapper(left, right):
     class T9(HW):
         def __init__(self):
@@ -157,21 +157,52 @@ def test_sfix_wrapper(left, right):
         def get_delay(self):
             return 1
 
-    x = (np.random.rand(1024*2*2*2)*2)-1
+    x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
     assert_exact_match(T9(), [Sfix(0, left, right)], x)
 
-    # expect = [np.pi] * len(x)
-    #
-    #
-    # outs = debug_assert_sim_match(T8(), [int],
-    # # assert_sim_match(dut, [Sfix(left=0, right=-32)],
-    #                  expect, x,
-    #                  rtol=1e-9,
-    #                  atol=1e-9,  # zeroes make trouble
-    #                  simulations=[SIM_HW_MODEL, SIM_RTL],
-    #                  dir_path='/home/gaspar/git/pyha/playground/conv'
-    #                  )
-    #
-    # print(outs)
-    # assert_exact_match(T8(), [int], expect, x)
-    # assert_match(T8(), [int], expect, x)
+
+# @pytest.mark.parametrize('right', range(-9, -18, -1))
+@pytest.mark.parametrize('shift_i', range(18))
+def test_sfix_add_shift_right_resize(shift_i):
+    right = -18
+    left = 0
+
+    class T10(HW):
+        def main(self, x, y, i):
+            ret = resize(x - (y >> i), size_res=x)
+            return ret
+
+    x = (np.random.rand(1024) * 2) - 1
+    y = (np.random.rand(1024) * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
+
+
+@pytest.mark.parametrize('shift_i', range(8))
+def test_sfix_shift_right(shift_i):
+    right = -18
+    left = 2
+
+    class T12(HW):
+        def main(self, x, i):
+            ret = x >> i
+            return ret
+
+    x = (np.random.rand(1024) * 2 * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
+
+
+@pytest.mark.parametrize('shift_i', range(8))
+def test_sfix_shift_left(shift_i):
+    right = -18
+    left = 6
+
+    class T13(HW):
+        def main(self, x, i):
+            ret = x << i
+            return ret
+
+    x = (np.random.rand(1024) * 2 * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T13(), [Sfix(0, left, right), int], x, i)

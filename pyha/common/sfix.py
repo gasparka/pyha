@@ -12,7 +12,6 @@ fixed_round = 'fixed_round'
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
 
-
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
@@ -103,6 +102,10 @@ class ComplexSfix:
 
 # TODO: Verify stuff against VHDL library
 class Sfix:
+    # original idea was to use float for internal computations, now it has turned out that\
+    # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
+    # to implement stuff as integer arithmetic
+
     # Disables all quantization and saturating stuff
     _float_mode = False
 
@@ -270,16 +273,20 @@ class Sfix:
         return 1
 
     def __rshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val / n,
+        o = int(self.val / 2 ** self.right)
+        o = (o >> other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    init_only=True)
 
     def __lshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val * n,
+        o = int(self.val / 2 ** self.right)
+        o = (o << other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    overflow_style=fixed_wrap)
 
     def __abs__(self):
         return Sfix(abs(self.val),
