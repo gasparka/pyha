@@ -7,7 +7,7 @@ from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPola
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     debug_assert_sim_match, assert_model_rtl_match
 
-
+#TODO: model not tied to hw_model
 def test_atom():
     phase_lut = [np.arctan(2 ** -i) for i in range(32)]
     i = [0, 1, 2, 3, 4, 5]
@@ -69,56 +69,52 @@ def test_core_vectoring():
 
 def test_polar_quadrant_i():
     inputs = [0.234 + 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs)]
+    expect = [np.abs(inputs), np.angle(inputs)/ np.pi]
 
     dut = ToPolar()
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     atol=1e-5,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 
 def test_polar_quadrant_ii():
     inputs = [-0.934 + 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs)]
+    expect = [np.abs(inputs), np.angle(inputs)/ np.pi]
 
     dut = ToPolar()
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     atol=1e-5,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 
 def test_polar_quadrant_iii():
     inputs = [-0.934 - 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs)]
+    expect = [np.abs(inputs), np.angle(inputs)/ np.pi]
 
     dut = ToPolar()
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     atol=1e-5,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 
 def test_polar_quadrant_iv():
     inputs = [+0.934 - 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs)]
+    expect = [np.abs(inputs), np.angle(inputs)/ np.pi]
 
     dut = ToPolar()
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     atol=1e-5,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
@@ -138,7 +134,7 @@ def test_angle():
     ref_instantaneous_phase = np.angle(analytic_signal)
 
     inputs = analytic_signal
-    expect = [ref_abs, ref_instantaneous_phase]
+    expect = [ref_abs, ref_instantaneous_phase / np.pi]
 
     dut = ToPolar()
 
@@ -146,13 +142,14 @@ def test_angle():
                      expect, inputs,
                      rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 
 def test_cordic_model_rtl_match():
     # TODO: if i set phase lut precision to -18 this fails, why?
+    # TODO: model should also match
     np.random.seed(123456)
     inputs = (np.random.rand(3, 5) * 2 - 1) * 0.5
 
@@ -163,9 +160,7 @@ def test_cordic_model_rtl_match():
     assert_model_rtl_match(dut, [Sfix(left=0, right=-17)] * 3, *inputs)
 
 
-
 @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
-# @pytest.mark.parametrize('period', [0.75])
 def test_nco(period):
     fs = 64
     freq = 1
@@ -182,8 +177,8 @@ def test_nco(period):
 
     dut = NCO()
     sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
-    # if period == 4:
-    #     sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+    if period == 4:
+        sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
     # outs = debug_assert_sim_match(dut, [Sfix(left=0, right=-24)],
     assert_sim_match(dut, [Sfix(left=0, right=-18)],
                      expect, inputs,
@@ -192,4 +187,3 @@ def test_nco(period):
                      dir_path='/home/gaspar/git/pyha/playground/conv',
                      # fuck_it=True
                      )
-

@@ -162,51 +162,49 @@ class CordicCore(HW):
 
 class ToPolar(HW):
     def __init__(self):
-        self.core = CordicCore(17)
+        self.core = Cordic(17, CordicMode.VECTORING)
+        self.out_abs = Sfix()
+        self.out_angle = Sfix()
 
     def main(self, c):
-        phase = Sfix(0., 2, -17)
-        if c.real < 0.0 and c.imag > 0.0:
-            c.real = resize(-c.real, size_res=c.real)
-            c.imag = resize(-c.imag, size_res=c.imag)
-            phase = Sfix(np.pi, 2, -17)
-            # x, y, phase = -x, -y, np.pi
-        elif c.real < 0. and c.imag < 0.0:
-            c.real = resize(-c.real, size_res=c.real)
-            c.imag = resize(-c.imag, size_res=c.imag)
-            phase = Sfix(-np.pi, 2, -17)
+        phase = Sfix(0.0, 0, -17)
 
-        ret = self.core.main(c, phase)
-        return ret[0] * (1 / 1.646760), ret[2]
+        abs, _, angle = self.next.core.main(c.real, c.imag, phase)
+        self.next.out_abs = resize(abs * (1.0 / 1.646760), size_res=abs)
+        self.next.out_angle = angle
+        return self.out_abs, self.out_angle
 
     def get_delay(self):
-        return self.core.iterations
+        r = self.core.iterations + 1
+        return r
 
     def model_main(self, cin):
-        # abs_list = []
-        # phase_list = []
-        retl = []
-        inital_rotation = False
-        for c in cin:
-            # initial rotation
-            # shift input to 1 or 4 quadrant (because CORDIC only works in pi range)
-            phase = 0
-            if c.real < 0 and c.imag > 0:
-                c = -c
-                phase = np.pi
-                # x, y, phase = -x, -y, np.pi
-            elif c.real < 0 and c.imag < 0:
-                c = -c
-                phase = -np.pi
-                # x, y, phase = -x, -y, -np.pi
-
-            x, _, phase = self.core.model_main(c, phase)
-
-            retl.append([x * 1 / 1.646760, phase])
-            # abs_list.append(x * 1 / 1.646760)
-            # phase_list.append(phase)
-        # return abs_list, phase_list
-        return retl
+        # note that angle in -1..1 range
+        return [[abs(x), np.angle(x) / np.pi] for x in cin]
+        # # abs_list = []
+        # # phase_list = []
+        # retl = []
+        # inital_rotation = False
+        # for c in cin:
+        #     # initial rotation
+        #     # shift input to 1 or 4 quadrant (because CORDIC only works in pi range)
+        #     phase = 0
+        #     if c.real < 0 and c.imag > 0:
+        #         c = -c
+        #         phase = np.pi
+        #         # x, y, phase = -x, -y, np.pi
+        #     elif c.real < 0 and c.imag < 0:
+        #         c = -c
+        #         phase = -np.pi
+        #         # x, y, phase = -x, -y, -np.pi
+        #
+        #     x, _, phase = self.core.model_main(c, phase)
+        #
+        #     retl.append([x * 1 / 1.646760, phase])
+        #     # abs_list.append(x * 1 / 1.646760)
+        #     # phase_list.append(phase)
+        # # return abs_list, phase_list
+        # return retl
 
 
 class CordicMode(Enum):
@@ -218,6 +216,8 @@ class Cordic(HW):
         self.mode = mode
         self.iterations = iterations
 
+        # +1 due to pipelining code..will act as output register
+        # todo: this implies that i have input registers...why?
         self.iterations = iterations + 1
         self.phase_lut = [np.arctan(2 ** -i) / np.pi for i in range(self.iterations)]
         self.phase_lut_fix = [Sfix(x, 0, -24) for x in self.phase_lut]
@@ -228,11 +228,8 @@ class Cordic(HW):
         self.phase = [Sfix()] * self.iterations
 
     def main(self, x, y, phase):
-        self.next.y[0] = resize(y, size_res=y)
-        self.next.x[0] = resize(x, size_res=x)
-        self.next.phase[0] = resize(phase, size_res=phase)
-
         if self.mode == CordicMode.ROTATION:
+            self.next.y[0] = resize(y, size_res=y)
             if phase > 0.5:
                 # > np.pi/2
                 self.next.x[0] = resize(-x, size_res=x)
@@ -241,6 +238,28 @@ class Cordic(HW):
                 # < -np.pi/2
                 self.next.x[0] = resize(-x, size_res=x)
                 self.next.phase[0] = resize(phase + 1.0, size_res=phase)
+            else:
+                # phase in [-0.5, 0.5] (-np.pi/2, np.pi/2)-> no action needed
+                self.next.x[0] = resize(x, size_res=x)
+                self.next.phase[0] = resize(phase, size_res=phase)
+
+        elif self.mode == CordicMode.VECTORING:
+            # need to increase x and y size by 2 as there will be CORDIC gain + abs value held by x can be > 1
+            if x < 0.0 and y > 0.0:
+                # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
+                self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
+                self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
+                self.next.phase[0] = Sfix(1.0, 0, -17)
+            elif x < 0.0 and y < 0.0:
+                # vector in III quadrant -> initial shift by -PI to I quadrant (mirror)
+                self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
+                self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
+                self.next.phase[0] = Sfix(-1.0, 0, -17)
+            else:
+                # vector in I or IV quadrant -> no action needed
+                self.next.x[0] = resize(x, left_index(x) + 2, right_index(x))
+                self.next.y[0] = resize(y, left_index(y) + 2, right_index(y))
+                self.next.phase[0] = phase
 
         for i in range(len(self.phase_lut_fix) - 1):
             self.next.x[i + 1], self.next.y[i + 1], self.next.phase[i + 1] = \
@@ -289,7 +308,7 @@ class NCO(HW):
         self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
                                      round_style=fixed_truncate)
 
-        start_x = Sfix(1.0 / 1.646760, 0, -17) # gets rid of cordic gain, could add amplitude modulation here
+        start_x = Sfix(1.0 / 1.646760, 0, -17)  # gets rid of cordic gain, could add amplitude modulation here
         start_y = Sfix(0.0, 0, -17)
         x, y, phase = self.next.cordic.main(start_x, start_y, self.phase_acc)
         retc = ComplexSfix(x, y)
