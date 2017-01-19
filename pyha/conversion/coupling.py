@@ -198,6 +198,7 @@ class VHDLType:
 
         if str(name) == 'self':
             self.var_type = 'self_t'
+            self.port_direction = 'inout'
             return
 
         # hack to make 'self.target.name' duck typing work
@@ -309,5 +310,8 @@ class VHDLType:
 
 class VHDLVariable(VHDLType):
     def __str__(self):
+        if self.name == 'self':
+            # without this result would be 'variable self: inout self_t;'
+            return 'variable self: self_t;'
         sup = super().__str__()
         return 'variable ' + sup + ';'
