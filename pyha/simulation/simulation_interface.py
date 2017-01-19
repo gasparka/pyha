@@ -194,7 +194,7 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
     return outs
 
 
-def assert_model_rtl_match(model, types, *x):
+def assert_hwmodel_rtl_match(model, types, *x):
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
     # import matplotlib.pyplot as plt
@@ -202,7 +202,6 @@ def assert_model_rtl_match(model, types, *x):
     # plt.plot(outs[0])
     # plt.plot(outs[1])
     # plt.show()
-
 
 
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
@@ -230,7 +229,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
                 simulations.remove(SIM_GATE)
                 logging.getLogger(__name__).warning(
                     'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
-
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
