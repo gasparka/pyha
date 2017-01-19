@@ -60,7 +60,7 @@ def test_polar_quadrant_iv():
                      )
 
 
-def test_angle():
+def test_to_polar():
     duration = 1.0
     fs = 400.0
     samples = int(fs * duration)
@@ -91,8 +91,6 @@ def test_angle():
 def test_cordic_model_hw_match():
     np.random.seed(123456)
     inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
-    # inputs = np.transpose(np.transpose(inputs)[0:8])
-    print(inputs)
 
     dut = Cordic(16, CordicMode.VECTORING)
     assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)],
@@ -101,7 +99,7 @@ def test_cordic_model_hw_match():
                                atol=1e-4)
 
     dut = Cordic(16, CordicMode.ROTATION)
-    assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)],
+    assert_model_hwmodel_match(dut, [Sfix(left=1, right=-17), Sfix(left=1, right=-17), Sfix(left=0, right=-32)],
                                *inputs,
                                rtol=1e-4,
                                atol=1e-4)

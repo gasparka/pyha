@@ -15,8 +15,6 @@ class CordicMode(Enum):
 
 
 class Cordic(HW):
-    debug_hw = []
-    debug_md = []
     def __init__(self, iterations, mode):
         self.mode_const = mode
         self.iterations = iterations
@@ -34,18 +32,18 @@ class Cordic(HW):
 
     def main(self, x, y, phase):
         if self.mode_const == CordicMode.ROTATION:
-            self.next.y[0] = resize(y, left_index(y) + 2, right_index(y))
+            self.next.y[0] = y
             if phase > 0.5:
                 # > np.pi/2
-                self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
+                self.next.x[0] = resize(-x, size_res=x)
                 self.next.phase[0] = resize(phase - 1.0, size_res=phase)
             elif phase < -0.5:
                 # < -np.pi/2
-                self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
+                self.next.x[0] = resize(-x, size_res=x)
                 self.next.phase[0] = resize(phase + 1.0, size_res=phase)
             else:
                 # phase in [-0.5, 0.5] (-np.pi/2, np.pi/2)-> no action needed
-                self.next.x[0] = resize(x, left_index(x) + 2, right_index(x))
+                self.next.x[0] = resize(x, size_res=x)
                 self.next.phase[0] = resize(phase, size_res=phase)
 
         elif self.mode_const == CordicMode.VECTORING:
@@ -73,7 +71,6 @@ class Cordic(HW):
         return self.x[-1], self.y[-1], self.phase[-1]
 
     def pipeline_step(self, i, x, y, p, p_adj):
-        self.debug_hw.append(x)
         if self.mode_const == CordicMode.ROTATION:
             direction = p > 0
         elif self.mode_const == CordicMode.VECTORING:
@@ -116,7 +113,6 @@ class Cordic(HW):
                     phase = -1.0
 
             for i, adj in enumerate(self.phase_lut):
-                self.debug_md.append(x)
                 if self.mode_const == CordicMode.ROTATION:
                     sign = 1 if phase > 0 else -1
                 elif self.mode_const == CordicMode.VECTORING:
