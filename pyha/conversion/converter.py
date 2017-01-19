@@ -623,8 +623,8 @@ def convert(red: Node, caller=None, datamodel=None):
     with suppress(AttributeError):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
-
-    red = redbaron_enum_to_vhdl(red)
+    if datamodel is not None:
+        red = redbaron_enum_to_vhdl(red)
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
