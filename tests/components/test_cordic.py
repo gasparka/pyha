@@ -3,7 +3,7 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Exp, Cordic
+from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Cordic, NCO
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     debug_assert_sim_match, assert_model_rtl_match
 
@@ -193,8 +193,8 @@ def test_cordic_model_rtl_match():
 
 
 
-@pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
-# @pytest.mark.parametrize('period', [0.75])
+# @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
+@pytest.mark.parametrize('period', [0.75])
 def test_nco(period):
     fs = 64
     freq = 1
@@ -209,7 +209,7 @@ def test_nco(period):
     inputs = pil
     expect = ref
 
-    dut = Exp()
+    dut = NCO()
     sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
     if period == 4:
         sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]

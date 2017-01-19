@@ -1,3 +1,5 @@
+from enum import Enum
+
 import numpy as np
 
 from pyha.common.hwsim import HW
@@ -207,8 +209,13 @@ class ToPolar(HW):
         return retl
 
 
+class CordicMode(Enum):
+    VECTORING, ROTATION = range(2)
+
+
 class Cordic(HW):
     def __init__(self, iterations, mode):
+        self.mode = mode
         self.iterations = iterations
 
         self.iterations = iterations + 1
@@ -224,14 +231,16 @@ class Cordic(HW):
         self.next.y[0] = resize(y, size_res=y)
         self.next.x[0] = resize(x, size_res=x)
         self.next.phase[0] = resize(phase, size_res=phase)
-        if phase > 0.5:
-            # > np.pi/2
-            self.next.x[0] = resize(-x, size_res=x)
-            self.next.phase[0] = resize(phase - 1.0, size_res=phase)
-        elif phase < -0.5:
-            # < -np.pi/2
-            self.next.x[0] = resize(-x, size_res=x)
-            self.next.phase[0] = resize(phase + 1.0, size_res=phase)
+
+        if self.mode == CordicMode.ROTATION:
+            if phase > 0.5:
+                # > np.pi/2
+                self.next.x[0] = resize(-x, size_res=x)
+                self.next.phase[0] = resize(phase - 1.0, size_res=phase)
+            elif phase < -0.5:
+                # < -np.pi/2
+                self.next.x[0] = resize(-x, size_res=x)
+                self.next.phase[0] = resize(phase + 1.0, size_res=phase)
 
         for i in range(len(self.phase_lut_fix) - 1):
             self.next.x[i + 1], self.next.y[i + 1], self.next.phase[i + 1] = \
@@ -241,7 +250,8 @@ class Cordic(HW):
 
     def pipeline_step(self, i, x, y, p, p_adj):
         # saturation is important for x and y if NCO mode
-        direction = p > 0
+        if self.mode == CordicMode.ROTATION:
+            direction = p > 0
 
         if direction:
             next_x = resize(x - (y >> i), size_res=x)
@@ -267,9 +277,9 @@ class Cordic(HW):
         # return cord_model(c, phase)
 
 
-class Exp(HW):
-    def __init__(self):
-        self.cordic = Cordic(16)
+class NCO(HW):
+    def __init__(self, cordic_iterations=16):
+        self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION)
         self.phase_acc = Sfix()
 
     def main(self, phase_inc):
