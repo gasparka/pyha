@@ -1,4 +1,5 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
+from enum import Enum
 
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -42,6 +43,8 @@ def pytype_to_vhdl(var):
     elif isinstance(var, HW):
         idstr = get_instance_vhdl_name(var)
         return idstr
+    elif isinstance(var, Enum):
+        return type(var).__name__
     else:
         assert 0
 
@@ -62,6 +65,9 @@ def reset_maker(self_data, recursion_depth=0):
         tmp = None
         if isinstance(value, (Sfix, ComplexSfix)):
             tmp = '{} := {};'.format(prefix + key, value.vhdl_reset())
+
+        elif isinstance(value, (Enum)):
+            tmp = '{} := {};'.format(prefix + key, value.name)
 
         # list of submodules
         elif isinstance(value, list) and isinstance(value[0], HW):
@@ -145,17 +151,22 @@ class VHDLType:
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
-        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is find_type]
+        ret = [v for v in cls._datamodel.self_data.values() if isinstance(v, find_type)]
         for func in cls._datamodel.locals.values():
             for var in func.values():
-                if type(var) == find_type:
-                    typedefs.append(var)
-        return typedefs
+                if isinstance(var, find_type):
+                    ret.append(var)
+        return ret
 
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
         typedefs = cls._get_vars_by_type(list)
+        return typedefs
+
+    @classmethod
+    def get_enum_vars(cls):
+        typedefs = cls._get_vars_by_type(Enum)
         return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
@@ -187,6 +198,7 @@ class VHDLType:
 
         if str(name) == 'self':
             self.var_type = 'self_t'
+            self.port_direction = 'inout'
             return
 
         # hack to make 'self.target.name' duck typing work
@@ -298,5 +310,8 @@ class VHDLType:
 
 class VHDLVariable(VHDLType):
     def __str__(self):
+        if self.name == 'self':
+            # without this result would be 'variable self: inout self_t;'
+            return 'variable self: self_t;'
         sup = super().__str__()
         return 'variable ' + sup + ';'

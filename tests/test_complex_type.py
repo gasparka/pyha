@@ -13,16 +13,16 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 def test_py_implementation():
     a = ComplexSfix()
-    assert a.real == Sfix(0.0, 0, 0, overflow_style='SATURATE')
-    assert a.imag == Sfix(0.0, 0, 0, overflow_style='SATURATE')
+    assert a.real == Sfix(0.0, 0, 0)
+    assert a.imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0)
-    assert a.real == Sfix(0.0, 0, 0, overflow_style='SATURATE')
-    assert a.imag == Sfix(0.0, 0, 0, overflow_style='SATURATE')
+    assert a.real == Sfix(0.0, 0, 0)
+    assert a.imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0.5 + 1.2j, 1, -12)
-    assert a.real == Sfix(0.5, 1, -12, overflow_style='SATURATE')
-    assert a.imag == Sfix(1.2, 1, -12, overflow_style='SATURATE')
+    assert a.real == Sfix(0.5, 1, -12)
+    assert a.imag == Sfix(1.2, 1, -12)
 
     a = ComplexSfix(0.699 + 0.012j, 0, -4)
     assert a.real.val == 0.6875
@@ -162,7 +162,18 @@ def test_reg_complex_types_generation(reg):
             real: sfixed(1 downto -12);
             imag: sfixed(1 downto -12);
         end record;
-        end package;""")
+        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+
+        end package;
+
+        package body ComplexTypes is
+        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+        begin
+            return (a, b);
+        end function;
+
+        end package body;
+        """)
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
@@ -249,11 +260,29 @@ def test_more_regs_complex_types_generation(more_regs):
                 real: sfixed(1 downto -12);
                 imag: sfixed(1 downto -12);
             end record;
+            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+
             type complex_sfix1_21 is record
                 real: sfixed(1 downto -21);
                 imag: sfixed(1 downto -21);
             end record;
-            end package;""")
+            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
+
+            end package;
+
+            package body ComplexTypes is
+            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+            begin
+                return (a, b);
+            end function;
+
+            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
+            begin
+                return (a, b);
+            end function;
+
+            end package body;
+            """)
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
@@ -325,4 +354,77 @@ def test_comp_reg_simulate2(comp_reg):
     expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
 
     assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+@pytest.fixture
+def complex_inits_return():
+    class A5(HW):
+        def __init__(self):
+            self.reg0 = ComplexSfix()
+
+        def main(self, x0, x1, x2, x3):
+            self.next.reg0 = ComplexSfix(x0, x1)
+            ret = ComplexSfix(x2, x3)
+            return self.reg0, ret
+
+    dut = A5()
+    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+    return dut
+
+
+def test_complex_inits_return_complex_types_generation(complex_inits_return):
+    conv = Conversion(complex_inits_return)
+    expect = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            type complex_sfix0_18 is record
+                real: sfixed(0 downto -18);
+                imag: sfixed(0 downto -18);
+            end record;
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+
+            type complex_sfix0_32 is record
+                real: sfixed(0 downto -32);
+                imag: sfixed(0 downto -32);
+            end record;
+            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32;
+
+            end package;
+
+            package body ComplexTypes is
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+            begin
+                return (a, b);
+            end function;
+
+            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32 is
+            begin
+                return (a, b);
+            end function;
+
+            end package body;
+            """)
+
+    files = conv.write_vhdl_files(Path('/tmp/'))
+    with files[0].open('r') as f:
+        assert expect == f.read()
+
+
+def test_complex_inits_return_simulate(complex_inits_return):
+    dut = complex_inits_return
+    x = [[-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, 0.1234],
+         [-0.24, -0.24, -0.24, 0.1234]]
+    expected = [
+        [0.000000 + 0.j, -0.240002 - 0.240002j, -0.240002 - 0.240002j, -0.240002 - 0.240002j],
+        [-0.240000 - 0.24j, -0.240000 - 0.24j, -0.240000 - 0.24j, 0.1234 + 0.1234j]
+    ]
+
+    assert_sim_match(dut,
+                     [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
+                      Sfix(left=0, right=-32)],
+                     expected, *x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from enum import Enum
 
 from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix, ComplexSfix
@@ -28,6 +29,8 @@ def is_convertible(obj):
                 return True
             elif isinstance(obj[0], HW):  # list of submodules
                 return True
+    elif isinstance(obj, Enum):
+        return True
     elif isinstance(obj, HW):
         return True
 

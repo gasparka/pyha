@@ -14,9 +14,14 @@ fixed_wrap = 'fixed_wrap'
 
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
-        self.init_val = val
-        self._real = Sfix(val.real, left, right, overflow_style=overflow_style)
-        self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+        if type(val) is Sfix and type(left) is Sfix:
+            self.init_val = val.init_val + left.init_val * 1j
+            self.real = val
+            self.imag = left
+        else:
+            self.init_val = val
+            self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
+            self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
 
     @property
     def left(self):
@@ -27,15 +32,6 @@ class ComplexSfix:
     def right(self):
         assert self.real.right == self.imag.right
         return self.real.right
-
-    @property
-    def real(self):
-        return self._real
-
-    @real.setter
-    def real(self, value):
-        import copy
-        self._real = copy.deepcopy(value)
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -67,26 +63,49 @@ class ComplexSfix:
         return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
 
     def fixed_value(self):
-        assert self.bitwidth() <= 64 # must fit into numpy int, this is cocotb related?
+        assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
         real = self.real.fixed_value()
         imag = self.imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
         return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
+
+    def vhdl_type_name(self):
+        from pyha.conversion.coupling import pytype_to_vhdl
+        return pytype_to_vhdl(self)
 
     def vhdl_type_define(self):
         template = textwrap.dedent("""\
             type {NAME} is record
                 real: {DTYPE};
                 imag: {DTYPE};
-            end record;""")
+            end record;
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME};
+            """)
 
-        from pyha.conversion.coupling import pytype_to_vhdl
-        return template.format(**{'NAME': pytype_to_vhdl(self),
-                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right)})
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
+
+    def vhdl_init_function(self):
+        template = textwrap.dedent("""\
+            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME} is
+            begin
+                return (a, b);
+            end function;
+            """)
+
+        return template.format(**{'NAME': self.vhdl_type_name(),
+                                  'RIGHT': self.right,
+                                  'LEFT': self.left})
 
 
 # TODO: Verify stuff against VHDL library
 class Sfix:
+    # original idea was to use float for internal computations, now it has turned out that\
+    # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
+    # to implement stuff as integer arithmetic
+
     # Disables all quantization and saturating stuff
     _float_mode = False
 
@@ -180,13 +199,13 @@ class Sfix:
         if not self.is_lazy_init():
             logger.warning('Saturation {} -> {}'.format(old, self.val))
 
-        # TODO: tests break
-        # raise Exception('Saturation {} -> {}'.format(old, self.val))
+            # TODO: tests break
+            # raise Exception('Saturation {} -> {}'.format(old, self.val))
 
     # TODO: add tests
     def wrap(self):
         fmin = self.min_representable()
-        fmax = self.max_representable()
+        fmax = 2 ** self.left # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
 
     def quantize(self):
@@ -254,16 +273,20 @@ class Sfix:
         return 1
 
     def __rshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val / n,
+        o = int(self.val / 2 ** self.right)
+        o = (o >> other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    init_only=True)
 
     def __lshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val * n,
+        o = int(self.val / 2 ** self.right)
+        o = (o << other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    overflow_style=fixed_wrap)
 
     def __abs__(self):
         return Sfix(abs(self.val),

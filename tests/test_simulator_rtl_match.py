@@ -1,10 +1,25 @@
+import pytest
+
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, right_index, left_index, resize
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, assert_sim_match
+from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, assert_sim_match, debug_assert_sim_match, \
+    SIM_GATE
+import numpy as np
 
 
 def assert_match(model, types, expected, *x):
-    assert_sim_match(model, types, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+    assert_sim_match(model, types, expected, *x, rtol=1e-7, simulations=[SIM_HW_MODEL, SIM_RTL])
+
+
+def assert_exact_match(model, types, *x):
+    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+
+    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    # import matplotlib.pyplot as plt
+    # outs = np.array(outs).astype(float)
+    # plt.plot(outs[0])
+    # plt.plot(outs[1])
+    # plt.show()
 
 
 def test_shift_right():
@@ -108,3 +123,86 @@ def test_array_indexing():
     x = [0, 1]
     expect = [0.4, 0.4]
     assert_match(t8(), [int], expect, x)
+
+
+@pytest.mark.parametrize('bits', range(-1, -32, -1))
+def test_sfix_constants(bits):
+    class T8(HW):
+        def __init__(self, bits):
+            self.bits_const = bits
+
+        def main(self, i):
+            a0 = Sfix(3.141592653589793, 2, self.bits_const)
+            a1 = Sfix(1.0, 0, self.bits_const)
+            a2 = Sfix(1.0 / 1.646760, 0, self.bits_const)
+
+            return a0, a1, a2
+
+    x = [0, 1, 2]
+    assert_exact_match(T8(bits), [int], x)
+
+
+@pytest.mark.parametrize('right', range(-1, -32, -1))
+@pytest.mark.parametrize('left', range(2))
+def test_sfix_wrapper(left, right):
+    class T9(HW):
+        def __init__(self):
+            self.phase_acc = Sfix()
+
+        def main(self, phase_inc):
+            self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
+                                         round_style=fixed_truncate)
+            return self.phase_acc
+
+        def get_delay(self):
+            return 1
+
+    x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
+    assert_exact_match(T9(), [Sfix(0, left, right)], x)
+
+
+# @pytest.mark.parametrize('right', range(-9, -18, -1))
+@pytest.mark.parametrize('shift_i', range(18))
+def test_sfix_add_shift_right_resize(shift_i):
+    right = -18
+    left = 0
+
+    class T10(HW):
+        def main(self, x, y, i):
+            ret = resize(x - (y >> i), size_res=x)
+            return ret
+
+    x = (np.random.rand(1024) * 2) - 1
+    y = (np.random.rand(1024) * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
+
+
+@pytest.mark.parametrize('shift_i', range(8))
+def test_sfix_shift_right(shift_i):
+    right = -18
+    left = 2
+
+    class T12(HW):
+        def main(self, x, i):
+            ret = x >> i
+            return ret
+
+    x = (np.random.rand(1024) * 2 * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
+
+
+@pytest.mark.parametrize('shift_i', range(8))
+def test_sfix_shift_left(shift_i):
+    right = -18
+    left = 6
+
+    class T13(HW):
+        def main(self, x, i):
+            ret = x << i
+            return ret
+
+    x = (np.random.rand(1024) * 2 * 2) - 1
+    i = [shift_i] * len(x)
+    assert_exact_match(T13(), [Sfix(0, left, right), int], x, i)

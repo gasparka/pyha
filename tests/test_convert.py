@@ -1461,3 +1461,7 @@ def test_binaryoperator_shift_left(converter):
 
     conv = converter(code)
     assert expect == str(conv)
+
+
+def test_print(converter):
+    assert 0

@@ -82,6 +82,7 @@ class Conversion:
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
 
+        # todo: makedirs
         paths = []
         for x in self.childs:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
@@ -114,14 +115,23 @@ class Conversion:
                 use ieee.fixed_pkg.all;
 
             package ComplexTypes is
-            {COMPLEX_TYPES}
-            end package;""")
+            {TYPES}
+            end package;
 
-        costr = []
+            package body ComplexTypes is
+            {FUNCTIONS}
+            end package body;
+            """)
+
+        types = []
+        functions = []
         for x in self.complex_types:
             for xx in get_iterable(x):
-                new = xx.vhdl_type_define()
-                if new not in costr:
-                    costr.append(new)
+                new_type = xx.vhdl_type_define()
+                new_function = xx.vhdl_init_function()
+                if new_type not in types:
+                    types.append(new_type)
+                    functions.append(new_function)
 
-        return template.format(COMPLEX_TYPES='\n'.join(x for x in costr))
+        return template.format(TYPES='\n'.join(x for x in types),
+                               FUNCTIONS='\n'.join(x for x in functions))

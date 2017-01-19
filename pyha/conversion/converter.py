@@ -3,6 +3,7 @@
 import logging
 import textwrap
 from contextlib import suppress
+from enum import Enum
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
@@ -319,6 +320,11 @@ class AssertNodeConv(NodeConv):
     def __str__(self):
         return '--' + super().__str__()
 
+class PrintNodeConv(NodeConv):
+    def __str__(self):
+        # return 'report to_string({});'.format(self.red_node.value[0].value)
+        return "report to_string(to_real({}));".format(self.red_node.value[0].value)
+
 
 class ListNodeConv(NodeConv):
     def __str__(self):
@@ -493,8 +499,11 @@ class ClassNodeConv(NodeConv):
         for var in VHDLType.get_self():
             # inital hack that turns variables ending with _const to 'constants'
             if var.name[-6:] == '_const':
-                assert isinstance(var.variable, int)
-                variables += ['self.{} := {};'.format(var.name, var.variable)]
+                if isinstance(var.variable, int):
+                    variables += ['self.{} := {};'.format(var.name, var.variable)]
+                elif isinstance(var.variable, Enum):
+                    variables += ['self.{} := {};'.format(var.name, var.variable.name)]
+
             else:
                 variables += ['self.{k} := self_reg.{k};'.format(k=var.name)]
         sockets = {'DATA': ''}
@@ -517,17 +526,6 @@ class ClassNodeConv(NodeConv):
 
     def get_typedefs(self):
         template = 'type {} is array (natural range <>) of {};'
-        # template = textwrap.dedent("""\
-        #     'type {} is array (natural range <>) of {};'
-        #
-        #     type register_t is record
-        #     {DATA}
-        #     end record;
-        #
-        #     type self_t is record
-        #     {DATA}
-        #         \\next\\: register_t;
-        #     end record;""")
         typedefs = []
         for val in VHDLType.get_typedef_vars():
             assert type(val) is list
@@ -539,9 +537,22 @@ class ClassNodeConv(NodeConv):
                 type_name += '.register_t'
             new_tp = template.format(name, type_name)
             if new_tp not in typedefs:
-                typedefs.append(template.format(name, type_name))
+                typedefs.append(new_tp)
 
         return typedefs
+
+    def get_enumdefs(self):
+        template = 'type {} is ({});'
+        vals = []
+        for val in VHDLType.get_enum_vars():
+            name = pytype_to_vhdl(val)
+
+            types = ','.join([x.name for x in type(val)])
+            new_tp = template.format(name, types)
+            if new_tp not in vals:
+                vals.append(new_tp)
+
+        return vals
 
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
@@ -551,6 +562,7 @@ class ClassNodeConv(NodeConv):
             {IMPORTS}
 
             package {NAME} is
+            {ENUMDEFS}
             {TYPEDEFS}
 
             {SELF_T}
@@ -569,6 +581,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
         sockets['IMPORTS'] = self.get_imports()
+        sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
@@ -614,7 +627,8 @@ def convert(red: Node, caller=None, datamodel=None):
     with suppress(AttributeError):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
-
+    if datamodel is not None:
+        red = redbaron_enum_to_vhdl(red)
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
@@ -630,6 +644,18 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 #####################################################################
+
+def redbaron_enum_to_vhdl(red_node):
+    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
+    VHDL does not allow  this, only ENUMVALUE must be written"""
+    enums = VHDLType.get_enum_vars()
+    for x in enums:
+        type_name = type(x).__name__
+        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+        for i, node in enumerate(red_names):
+            red_names[i].replace(node[1])
+
+    return red_node
 
 
 def redbaron_pycall_to_vhdl(red_node):
