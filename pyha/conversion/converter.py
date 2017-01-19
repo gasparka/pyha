@@ -3,6 +3,7 @@
 import logging
 import textwrap
 from contextlib import suppress
+from enum import Enum
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
@@ -498,8 +499,11 @@ class ClassNodeConv(NodeConv):
         for var in VHDLType.get_self():
             # inital hack that turns variables ending with _const to 'constants'
             if var.name[-6:] == '_const':
-                assert isinstance(var.variable, int)
-                variables += ['self.{} := {};'.format(var.name, var.variable)]
+                if isinstance(var.variable, int):
+                    variables += ['self.{} := {};'.format(var.name, var.variable)]
+                elif isinstance(var.variable, Enum):
+                    variables += ['self.{} := {};'.format(var.name, var.variable.name)]
+
             else:
                 variables += ['self.{k} := self_reg.{k};'.format(k=var.name)]
         sockets = {'DATA': ''}

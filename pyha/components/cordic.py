@@ -213,7 +213,7 @@ class CordicMode(Enum):
 
 class Cordic(HW):
     def __init__(self, iterations, mode):
-        self.mode = mode
+        self.mode_const = mode
         self.iterations = iterations
 
         # +1 due to pipelining code..will act as output register
@@ -228,7 +228,7 @@ class Cordic(HW):
         self.phase = [Sfix()] * self.iterations
 
     def main(self, x, y, phase):
-        if self.mode == CordicMode.ROTATION:
+        if self.mode_const == CordicMode.ROTATION:
             self.next.y[0] = resize(y, size_res=y)
             if phase > 0.5:
                 # > np.pi/2
@@ -243,7 +243,7 @@ class Cordic(HW):
                 self.next.x[0] = resize(x, size_res=x)
                 self.next.phase[0] = resize(phase, size_res=phase)
 
-        elif self.mode == CordicMode.VECTORING:
+        elif self.mode_const == CordicMode.VECTORING:
             # need to increase x and y size by 2 as there will be CORDIC gain + abs value held by x can be > 1
             if x < 0.0 and y > 0.0:
                 # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
@@ -269,10 +269,9 @@ class Cordic(HW):
 
     def pipeline_step(self, i, x, y, p, p_adj):
         # saturation is important for x and y if NCO mode
-        if self.mode == CordicMode.ROTATION:
+        if self.mode_const == CordicMode.ROTATION:
             direction = p > 0
-        else:
-            # vectoring
+        elif self.mode_const == CordicMode.VECTORING:
             direction = y < 0
 
         if direction:
