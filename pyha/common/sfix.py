@@ -196,7 +196,7 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-        if not self.is_lazy_init():
+        if not self.is_lazy_init() and not old == 1.0:
             logger.warning('Saturation {} -> {}'.format(old, self.val))
 
             # TODO: tests break
