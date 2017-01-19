@@ -66,7 +66,7 @@ def reset_maker(self_data, recursion_depth=0):
         if isinstance(value, (Sfix, ComplexSfix)):
             tmp = '{} := {};'.format(prefix + key, value.vhdl_reset())
 
-        if isinstance(value, (Enum)):
+        elif isinstance(value, (Enum)):
             tmp = '{} := {};'.format(prefix + key, value.name)
 
         # list of submodules
