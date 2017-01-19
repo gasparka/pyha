@@ -10,6 +10,7 @@ from typing import List
 import numpy as np
 
 from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.conftest import SKIP_GATE_TESTS
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -221,10 +222,15 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
     # for travis build, skip all the tests involving quartus
     if SIM_GATE in simulations:
         with suppress(KeyError):
-            if int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
+            if SKIP_GATE_TESTS:
+                simulations.remove(SIM_GATE)
+                logging.getLogger(__name__).warning(
+                    'Not running SIM_GATE tests because "SKIP_GATE_TESTS" in conftest.py is True!!!')
+            elif int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
                 simulations.remove(SIM_GATE)
                 logging.getLogger(__name__).warning(
                     'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
+
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
