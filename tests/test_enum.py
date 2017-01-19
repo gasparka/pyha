@@ -6,6 +6,7 @@ import pytest
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestEnum(Enum):
@@ -18,12 +19,16 @@ def t0():
         def __init__(self, mode):
             self.mode = mode
 
-        def main(self):
-            pass
+        def main(self, x):
+            if self.mode == TestEnum.ENUM1:
+                return x
+            else:
+                return 0
+
 
     dut = T0(TestEnum.ENUM1)
-    dut.main()
-    dut.main()
+    dut.main(1)
+    dut.main(2)
     return dut
 
 
@@ -54,6 +59,7 @@ def test_vhdl_enum_define(t0):
     dm = conv.get_enumdefs()
     assert expect == dm
 
+
 def test_vhdl_reset(t0):
     conv = get_conversion(t0)
 
@@ -64,3 +70,12 @@ def test_vhdl_reset(t0):
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
+
+
+def test_simulate(t0):
+    dut = t0
+    x = list(range(16))
+    expected = list(range(16))
+    assert_sim_match(dut, [int], expected, x,
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
