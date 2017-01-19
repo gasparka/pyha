@@ -154,9 +154,32 @@ class Cordic(HW):
 
     def model_main(self, x, y, phase):
         def cord_model(x, y, phase):
+            if self.mode_const == CordicMode.ROTATION:
+                if phase > 0.5:
+                    x = -x
+                    phase -= 1.0
+                elif phase < -0.5:
+                    x = -x
+                    phase += 1.0
+            elif self.mode_const == CordicMode.VECTORING:
+                if x < 0.0 and y > 0.0:
+                    # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
+                    x = -x
+                    y = -y
+                    phase = 1.0
+                elif x < 0.0 and y < 0.0:
+                    # vector in III quadrant -> initial shift by -PI to I quadrant (mirror)
+                    x = -x
+                    y = -y
+                    phase = -1.0
+
             for i, adj in enumerate(self.phase_lut):
-                sign = 1 if phase > 0 else -1
+                if self.mode_const == CordicMode.ROTATION:
+                    sign = 1 if phase > 0 else -1
+                elif self.mode_const == CordicMode.VECTORING:
+                    sign = 1 if y < 0 else -1
                 x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
+
             return x, y, phase
 
         return [cord_model(xx, yy, pp) for xx, yy, pp in zip(x, y, phase)]

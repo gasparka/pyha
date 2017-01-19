@@ -194,6 +194,12 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
     return outs
 
 
+def assert_model_hwmodel_match(model, types, *x, rtol=1e-9):
+    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+    return outs
+    # np.testing.assert_allclose(outs[0], outs[1], rtol)
+
+
 def assert_hwmodel_rtl_match(model, types, *x):
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)

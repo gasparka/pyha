@@ -3,9 +3,10 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Cordic, NCO, CordicMode
+from pyha.components.cordic import ToPolar, Cordic, NCO, CordicMode
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
-    debug_assert_sim_match, assert_hwmodel_rtl_match
+    debug_assert_sim_match, assert_hwmodel_rtl_match, assert_model_hwmodel_match
+
 
 #TODO: model not tied to hw_model
 # def test_atom():
@@ -149,6 +150,26 @@ def test_angle():
 
 
 def test_cordic_model_hw_match():
+    np.random.seed(123456)
+    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
+    print(inputs)
+
+    dut = Cordic(16, CordicMode.VECTORING)
+    ret = assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)], *inputs,
+                         rtol=1e-4)
+    # amplitude
+    np.testing.assert_allclose(ret[0][0], ret[1][0], 1e-4, 1e-4)
+    # phase
+    np.testing.assert_allclose(ret[0][2], ret[1][2], 1e-4, 1e-4)
+
+    dut = Cordic(16, CordicMode.ROTATION)
+    ret = assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)], *inputs,
+                         rtol=1e-4)
+    # amplitude
+    np.testing.assert_allclose(ret[0][0], ret[1][0], 1e-4, 1e-4)
+    # phase
+    np.testing.assert_allclose(ret[0][1], ret[1][1], 1e-4, 1e-4)
+
 
 
 def test_cordic_hw_model_rtl_match():
