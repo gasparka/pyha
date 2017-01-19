@@ -252,6 +252,9 @@ class Cordic(HW):
         # saturation is important for x and y if NCO mode
         if self.mode == CordicMode.ROTATION:
             direction = p > 0
+        else:
+            # vectoring
+            direction = y < 0
 
         if direction:
             next_x = resize(x - (y >> i), size_res=x)
@@ -286,7 +289,7 @@ class NCO(HW):
         self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
                                      round_style=fixed_truncate)
 
-        start_x = Sfix(1.0 / 1.646760, 0, -17)
+        start_x = Sfix(1.0 / 1.646760, 0, -17) # gets rid of cordic gain, could add amplitude modulation here
         start_y = Sfix(0.0, 0, -17)
         x, y, phase = self.next.cordic.main(start_x, start_y, self.phase_acc)
         retc = ComplexSfix(x, y)

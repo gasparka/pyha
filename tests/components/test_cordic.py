@@ -3,7 +3,7 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Cordic, NCO
+from pyha.components.cordic import CordicCore, CordicAtom, CordicCoreAlt, ToPolar, Cordic, NCO, CordicMode
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     debug_assert_sim_match, assert_model_rtl_match
 
@@ -66,38 +66,6 @@ def test_core_vectoring():
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
-
-# def test_core_vectoring2():
-#     inputs = [0.5 + 0.1j, 1 + 0j, 0 + 1j, 0.234 + 0.9j]
-#     phase = [0.0] * len(inputs)
-#
-#     ang = np.angle(inputs)
-#     abs = np.abs(inputs)
-#     expect = [abs * 1.646760, [0.0] * len(inputs), ang]
-#     dut = CordicCore(iterations=17)
-#
-#     assert_sim_match(dut, [ComplexSfix(left=0, right=-17), Sfix(left=2, right=-17)],
-#                      expect, inputs, phase,
-#                      rtol=1e-4,
-#                      atol=1e-4,  # zeroes make trouble
-#                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-#                      dir_path='/home/gaspar/git/pyha/playground/conv'
-#                      )
-# def test_angle():
-#     inputs = [0.5 + 0.1j, 1 + 0j, 0 + 1j, 0.234 + 0.9j]
-#
-#     ang = np.angle(inputs)
-#     abs = np.abs(inputs)
-#     expect = [abs, ang]
-#     dut = ToPolar()
-#
-#     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-#                      expect, inputs,
-#                      rtol=1e-4,
-#                      atol=1e-4,  # zeroes make trouble
-#                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-#                      dir_path='/home/gaspar/git/pyha/playground/conv'
-#                      )
 
 def test_polar_quadrant_i():
     inputs = [0.234 + 0.92j]
@@ -188,13 +156,16 @@ def test_cordic_model_rtl_match():
     np.random.seed(123456)
     inputs = (np.random.rand(3, 5) * 2 - 1) * 0.5
 
-    dut = Cordic(18)
+    dut = Cordic(18, CordicMode.ROTATION)
+    assert_model_rtl_match(dut, [Sfix(left=0, right=-17)] * 3, *inputs)
+
+    dut = Cordic(18, CordicMode.VECTORING)
     assert_model_rtl_match(dut, [Sfix(left=0, right=-17)] * 3, *inputs)
 
 
 
-# @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
-@pytest.mark.parametrize('period', [0.75])
+@pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
+# @pytest.mark.parametrize('period', [0.75])
 def test_nco(period):
     fs = 64
     freq = 1
@@ -211,8 +182,8 @@ def test_nco(period):
 
     dut = NCO()
     sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
-    if period == 4:
-        sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+    # if period == 4:
+    #     sims = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
     # outs = debug_assert_sim_match(dut, [Sfix(left=0, right=-24)],
     assert_sim_match(dut, [Sfix(left=0, right=-18)],
                      expect, inputs,
