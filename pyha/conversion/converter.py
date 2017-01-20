@@ -98,7 +98,11 @@ class TupleNodeConv(NodeConv):
 
 class AssignmentNodeConv(NodeConv):
     def __str__(self):
-        return '{} := {};'.format(self.target, self.value)
+
+        r = '{} := {};'.format(self.target, self.value)
+        if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
+            raise Exception('{} -> multi assignment not supported!'.format(r))
+        return r
 
 
 class ReturnNodeConv(NodeConv):

@@ -209,8 +209,10 @@ def test_assign_associative_boolean(converter):
 
 
 def test_assign_multi(converter):
-    'self.next.x[0], self.next.y[0], self.next.phase[0] = c.real, c.imag, phase'
-    assert 0
+    code = 'a, b, c = d, e, f'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        print(str(conv))
 
 
 def test_if_single_body(converter):
