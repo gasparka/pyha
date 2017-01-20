@@ -1472,6 +1472,7 @@ def test_print(converter):
     conv = converter(code)
     assert expect == str(conv)
 
+
 def test_print_multiarg(converter):
     code = 'print(a, b)'
     expect = 'report to_string(to_real(a));'

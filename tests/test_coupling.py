@@ -648,7 +648,7 @@ def test_class_name(converter):
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(obj=Tcobj,locals={},  self_data={'a': Sfix(0.0, 0, -27)})
+    datamodel = DataModel(obj=Tcobj, locals={}, self_data={'a': Sfix(0.0, 0, -27)})
     expect = textwrap.dedent("""\
             Tc_0""")
 

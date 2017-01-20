@@ -51,6 +51,7 @@ class Conversion:
     """
     # collect all complex types in the design
     complex_types = []
+
     def __init__(self, obj, is_child=False):
 
         self.is_child = is_child

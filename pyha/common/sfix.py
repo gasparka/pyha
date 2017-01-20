@@ -13,6 +13,7 @@ fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
 fixed_wrap_impossible = 'fixed_wrap_impossible'
 
+
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
@@ -212,7 +213,7 @@ class Sfix:
             Exception('Wrap happened for "fixed_wrap_impossible"')
 
         fmin = self.min_representable()
-        fmax = 2 ** self.left # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
+        fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
 
     def quantize(self):

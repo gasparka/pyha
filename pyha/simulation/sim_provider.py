@@ -78,4 +78,3 @@ class SimProvider:
         assert make_process == 0
 
         return self.base_path / 'simulation/modelsim/quartus_project.vho'
-

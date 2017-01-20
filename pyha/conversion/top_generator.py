@@ -69,8 +69,8 @@ class TopGenerator:
         elif type(var) == ComplexSfix:
             size = int(var.bitwidth())
             mid = size // 2
-            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size-1, mid, var.left, var.right)
-            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid-1, 0, var.left, var.right)
+            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size - 1, mid, var.left, var.right)
+            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid - 1, 0, var.left, var.right)
             return '(real=>{}, imag=>{})'.format(real, imag)
         else:
             assert 0
@@ -213,4 +213,3 @@ class TopGenerator:
         #     f.write(res)
 
         return res
-

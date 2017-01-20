@@ -1,16 +1,15 @@
+import numpy as np
 import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, assert_sim_match, debug_assert_sim_match, \
-    SIM_GATE
-import numpy as np
-
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match
 
 
 def assert_exact_match(model, types, *x):
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+
 
 def test_shift_right():
     class t0(HW):
@@ -108,6 +107,7 @@ def test_array_indexing():
     x = [0, 1]
     assert_exact_match(t8(), [int], x)
 
+
 @pytest.mark.slowtest
 @pytest.mark.parametrize('bits', range(-1, -32, -1))
 def test_sfix_constants(bits):
@@ -162,6 +162,7 @@ def test_sfix_add_shift_right_resize(shift_i):
     i = [shift_i] * len(x)
     assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
 
+
 @pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
 def test_sfix_shift_right(shift_i):
@@ -176,6 +177,7 @@ def test_sfix_shift_right(shift_i):
     x = (np.random.rand(1024) * 2 * 2) - 1
     i = [shift_i] * len(x)
     assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
+
 
 @pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
