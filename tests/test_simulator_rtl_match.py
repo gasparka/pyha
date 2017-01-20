@@ -124,7 +124,7 @@ def test_array_indexing():
     expect = [0.4, 0.4]
     assert_match(t8(), [int], expect, x)
 
-
+@pytest.mark.slowtest
 @pytest.mark.parametrize('bits', range(-1, -32, -1))
 def test_sfix_constants(bits):
     class T8(HW):
@@ -142,6 +142,7 @@ def test_sfix_constants(bits):
     assert_exact_match(T8(bits), [int], x)
 
 
+@pytest.mark.slowtest
 @pytest.mark.parametrize('right', range(-1, -32, -1))
 @pytest.mark.parametrize('left', range(2))
 def test_sfix_wrapper(left, right):
@@ -161,8 +162,8 @@ def test_sfix_wrapper(left, right):
     assert_exact_match(T9(), [Sfix(0, left, right)], x)
 
 
-# @pytest.mark.parametrize('right', range(-9, -18, -1))
-@pytest.mark.parametrize('shift_i', range(18))
+@pytest.mark.slowtest
+@pytest.mark.parametrize('shift_i', range(8))
 def test_sfix_add_shift_right_resize(shift_i):
     right = -18
     left = 0
@@ -177,7 +178,7 @@ def test_sfix_add_shift_right_resize(shift_i):
     i = [shift_i] * len(x)
     assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
 
-
+@pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
 def test_sfix_shift_right(shift_i):
     right = -18
@@ -192,7 +193,7 @@ def test_sfix_shift_right(shift_i):
     i = [shift_i] * len(x)
     assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
 
-
+@pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
 def test_sfix_shift_left(shift_i):
     right = -18
