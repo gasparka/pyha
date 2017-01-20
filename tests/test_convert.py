@@ -1466,4 +1466,16 @@ def test_binaryoperator_shift_left(converter):
 
 
 def test_print(converter):
-    assert 0
+    code = 'print(a)'
+    expect = 'report to_string(to_real(a));'
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+def test_print_multiarg(converter):
+    code = 'print(a, b)'
+    expect = 'report to_string(to_real(a));'
+
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)

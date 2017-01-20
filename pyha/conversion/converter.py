@@ -326,7 +326,8 @@ class AssertNodeConv(NodeConv):
 
 class PrintNodeConv(NodeConv):
     def __str__(self):
-        # return 'report to_string({});'.format(self.red_node.value[0].value)
+        if isinstance(self.red_node.value[0], TupleNode):
+            raise Exception('{} -> print only supported with one Sfix argument!'.format(self.red_node))
         return "report to_string(to_real({}));".format(self.red_node.value[0].value)
 
 
