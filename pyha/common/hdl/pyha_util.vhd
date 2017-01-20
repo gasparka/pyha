@@ -45,12 +45,12 @@ package body PyhaUtil is
 
   function Sfix(a:real; left_index, right_index:integer) return sfixed is
   begin
-    return to_sfixed(a, left_index, right_index);
+    return to_sfixed(a, left_index, right_index, guard_bits=>16);
   end function;
 
   function Sfix(a:real; size_res:sfixed) return sfixed is
   begin
-    return to_sfixed(a, size_res);
+    return to_sfixed(a, size_res, guard_bits=>16);
   end function;
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;
@@ -76,5 +76,5 @@ end package body;
 
 
 package np is
-  constant  pi :  real := 3.14159_26535_89793_23846;
+  constant  pi :  real := 3.141592653589793;
 end package;
