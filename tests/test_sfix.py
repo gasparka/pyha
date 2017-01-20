@@ -149,22 +149,39 @@ def test_sign_bit():
 #
 #     pass
 
-def test_shift_right():
-    a = Sfix(0.223, 0, -8)
-    b = a >> 1
-    assert b.val == a.val / 2
-    assert b.left == a.left - 1
-    assert b.right == a.right + (-1)
+# def test_shift_right():
+#     a = Sfix(0.223, 0, -8)
+#     b = a >> 1
+#     assert b.val == a.val / 2
+#     assert b.left == a.left - 1
+#     assert b.right == a.right + (-1)
+#
+#     b = a >> 2
+#     assert b.val == a.val / 2 / 2
+#     assert b.left == a.left - 2
+#     assert b.right == a.right + (-2)
+#
+#     b = a >> 3
+#     assert b.val == a.val / 2 / 2 / 2
+#     assert b.left == a.left - 3
+#     assert b.right == a.right + (-3)
 
-    b = a >> 2
-    assert b.val == a.val / 2 / 2
-    assert b.left == a.left - 2
-    assert b.right == a.right + (-2)
-
-    b = a >> 3
-    assert b.val == a.val / 2 / 2 / 2
-    assert b.left == a.left - 3
-    assert b.right == a.right + (-3)
+# def test_shift_right():
+#     a = Sfix(0.223, 0, -8)
+#     b = a >> 1
+#     assert b.val == a.val / 2
+#     assert b.left == a.left - 1
+#     assert b.right == a.right + (-1)
+#
+#     b = a >> 2
+#     assert b.val == a.val / 2 / 2
+#     assert b.left == a.left - 2
+#     assert b.right == a.right + (-2)
+#
+#     b = a >> 3
+#     assert b.val == a.val / 2 / 2 / 2
+#     assert b.left == a.left - 3
+#     assert b.right == a.right + (-3)
 
 
 def test_abs():
@@ -361,13 +378,3 @@ def test_to_stdlogic():
 
     a = Sfix(0.1, 3, -4)
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
-
-
-def test_invalid_value_type():
-    with pytest.raises(Exception):
-        Sfix('1.2')
-
-    with pytest.raises(Exception):
-        Sfix(Sfix(0.1, 0, -10))
-
-# TODO: test restricted arguments

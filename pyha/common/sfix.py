@@ -278,6 +278,7 @@ class Sfix:
         return 1
 
     def __rshift__(self, other):
+        # todo: in float mode this should not lose precison
         o = int(self.val / 2 ** self.right)
         o = (o >> other) * 2 ** self.right
         return Sfix(o,
@@ -286,6 +287,7 @@ class Sfix:
                     init_only=True)
 
     def __lshift__(self, other):
+        # todo: in float mode this should not lose precison
         o = int(self.val / 2 ** self.right)
         o = (o << other) * 2 ** self.right
         return Sfix(o,
