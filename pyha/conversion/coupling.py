@@ -143,7 +143,6 @@ class VHDLType:
             ret.append(t)
         return ret
 
-
     @classmethod
     def get_complex_vars(cls):
         typedefs = cls._get_vars_by_type(ComplexSfix)

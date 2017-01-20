@@ -6,10 +6,11 @@
 import textwrap
 
 import pytest
+from redbaron import RedBaron
+
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.converter import convert
-from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def dut():
     o(1)
     o(2)
     return Conversion(o)
+
 
 # commenting this out, makes later test pass!
 def test_lol(dut):

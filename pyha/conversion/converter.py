@@ -98,7 +98,10 @@ class TupleNodeConv(NodeConv):
 
 class AssignmentNodeConv(NodeConv):
     def __str__(self):
-        return '{} := {};'.format(self.target, self.value)
+        r = '{} := {};'.format(self.target, self.value)
+        if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
+            raise Exception('{} -> multi assignment not supported!'.format(r))
+        return r
 
 
 class ReturnNodeConv(NodeConv):
@@ -320,9 +323,11 @@ class AssertNodeConv(NodeConv):
     def __str__(self):
         return '--' + super().__str__()
 
+
 class PrintNodeConv(NodeConv):
     def __str__(self):
-        # return 'report to_string({});'.format(self.red_node.value[0].value)
+        if isinstance(self.red_node.value[0], TupleNode):
+            raise Exception('{} -> print only supported with one Sfix argument!'.format(self.red_node))
         return "report to_string(to_real({}));".format(self.red_node.value[0].value)
 
 
@@ -416,12 +421,12 @@ class ForNodeConv(NodeConv):
             if range_pattern is not None:
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
-                    return '{} to {}'.format(two_args[0].strip(), two_args[1].strip())
+                    return '{} to ({}) - 1'.format(two_args[0].strip(), two_args[1].strip())
                 else:
                     len = parse('len({}){}', range_pattern[0])
                     if len is not None:
-                        return "0 to {}'length{}-1".format(len[0], len[1])
-                    return '0 to {}'.format(range_pattern[0])
+                        return "0 to ({}'length{}) - 1".format(len[0], len[1])
+                    return '0 to ({}) - 1'.format(range_pattern[0])
 
         # at this point range was not:
         # range(len(x))

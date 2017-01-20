@@ -25,7 +25,6 @@ def t0():
             else:
                 return 0
 
-
     dut = T0(TestEnum.ENUM1)
     dut.main(1)
     dut.main(2)
@@ -78,4 +77,3 @@ def test_simulate(t0):
     expected = list(range(16))
     assert_sim_match(dut, [int], expected, x,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
-

@@ -7,11 +7,11 @@ from pyha.common.sfix import resize, Sfix, right_index, left_index, fixed_wrap, 
 
 
 # Decent cordic overview
-# http://www.andraka.com/files/crdcsrvy.pdf
+# readable paper -> http://www.andraka.com/files/crdcsrvy.pdf
+# vhdl implementation -> https://github.com/Nuand/bladeRF/blob/master/hdl/fpga/ip/nuand/synthesis/cordic.vhd
 
 class CordicMode(Enum):
     VECTORING, ROTATION = range(2)
-
 
 
 class Cordic(HW):
@@ -19,8 +19,7 @@ class Cordic(HW):
         self.mode_const = mode
         self.iterations = iterations
 
-        # +1 due to pipelining code..will act as output register
-        # todo: this implies that i have input registers...why?
+        # + 1 is basically for initial step registers it also helps pipeline code
         self.iterations = iterations + 1
         self.phase_lut = [np.arctan(2 ** -i) / np.pi for i in range(self.iterations)]
         self.phase_lut_fix = [Sfix(x, 0, -24) for x in self.phase_lut]
@@ -52,12 +51,12 @@ class Cordic(HW):
                 # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
                 self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
                 self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
-                self.next.phase[0] = Sfix(1.0, 0, -17)
+                self.next.phase[0] = Sfix(1.0, phase)
             elif x < 0.0 and y < 0.0:
                 # vector in III quadrant -> initial shift by -PI to I quadrant (mirror)
                 self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
                 self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
-                self.next.phase[0] = Sfix(-1.0, 0, -17)
+                self.next.phase[0] = Sfix(-1.0, phase)
             else:
                 # vector in I or IV quadrant -> no action needed
                 self.next.x[0] = resize(x, left_index(x) + 2, right_index(x))
@@ -92,6 +91,7 @@ class Cordic(HW):
     def model_main(self, x, y, phase):
         # this model uses (y * (2 ** -i)) for shift right. meaning it loses no precision for this operation
         # for that reason model and hw_model will not be perfectly matched, can expect 1e-4 to 1e-5 rtol/atol
+        # actually not 100% sure that is the reason for strange behaviour
         def cord_model(x, y, phase):
             if self.mode_const == CordicMode.ROTATION:
                 if phase > 0.5:

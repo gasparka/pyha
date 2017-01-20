@@ -1,25 +1,14 @@
+import numpy as np
 import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, assert_sim_match, debug_assert_sim_match, \
-    SIM_GATE
-import numpy as np
-
-
-def assert_match(model, types, expected, *x):
-    assert_sim_match(model, types, expected, *x, rtol=1e-7, simulations=[SIM_HW_MODEL, SIM_RTL])
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match
 
 
 def assert_exact_match(model, types, *x):
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
-
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-    # import matplotlib.pyplot as plt
-    # outs = np.array(outs).astype(float)
-    # plt.plot(outs[0])
-    # plt.plot(outs[1])
-    # plt.show()
 
 
 def test_shift_right():
@@ -30,8 +19,8 @@ def test_shift_right():
 
     x = [2.5, 3.0, -0.54, -2.123]
 
-    assert_match(t0(), [Sfix(left=4, right=-18), int], [1.25, 1.5, -0.27000046, -1.06150055], x, [1] * len(x))
-    assert_match(t0(), [Sfix(left=4, right=-18), int], [0.625, 0.75, -0.13500023, -0.53075027], x, [2] * len(x))
+    assert_exact_match(t0(), [Sfix(left=4, right=-18), int], x, [1] * len(x))
+    assert_exact_match(t0(), [Sfix(left=4, right=-18), int], x, [2] * len(x))
 
 
 def test_right_index():
@@ -40,8 +29,8 @@ def test_right_index():
             ret = right_index(x)
             return ret
 
-    assert_match(t1(), [Sfix(left=4, right=-18)], [-18, -18], [0., 0.])
-    assert_match(t1(), [Sfix(left=4, right=-6)], [-6, -6], [0., 0.])
+    assert_exact_match(t1(), [Sfix(left=4, right=-18)], [0., 0.])
+    assert_exact_match(t1(), [Sfix(left=4, right=-6)], [0., 0.])
 
 
 def test_left_index():
@@ -50,8 +39,8 @@ def test_left_index():
             ret = left_index(x)
             return ret
 
-    assert_match(t2(), [Sfix(left=4, right=-18)], [4, 4], [0., 0.])
-    assert_match(t2(), [Sfix(left=0, right=-18)], [0, 0], [0., 0.])
+    assert_exact_match(t2(), [Sfix(left=4, right=-18)], [0., 0.])
+    assert_exact_match(t2(), [Sfix(left=0, right=-18)], [0., 0.])
 
 
 def test_sfix_add():
@@ -62,8 +51,7 @@ def test_sfix_add():
 
     x = [0.5, -1.2, 1.9, 0.0052]
     x1 = [1.2, -0.2, -2.3, 0.000123]
-    expect = [1.7, -1.4, -0.4, 0.0053215]
-    assert_match(t3(), [Sfix(left=4, right=-18)] * 2, expect, x, x1)
+    assert_exact_match(t3(), [Sfix(left=4, right=-18)] * 2, x, x1)
 
 
 def test_sfix_sub():
@@ -74,8 +62,7 @@ def test_sfix_sub():
 
     x = [0.5, -1.2, 1.9, 0.0052]
     x1 = [1.2, -0.2, -2.3, 0.000123]
-    expect = [-0.70000076, -1., 4.20000076, 0.00507736]
-    assert_match(t4(), [Sfix(left=4, right=-18)] * 2, expect, x, x1)
+    assert_exact_match(t4(), [Sfix(left=4, right=-18)] * 2, x, x1)
 
 
 def test_resize_right():
@@ -85,8 +72,7 @@ def test_resize_right():
             return ret
 
     x = [1.352, 0.5991, -1.123]
-    expect = [1.375, 0.625, -1.125]
-    assert_match(t5(), [Sfix(left=2, right=-18)], expect, x)
+    assert_exact_match(t5(), [Sfix(left=2, right=-18)], x)
 
 
 def test_resize_left():
@@ -96,8 +82,7 @@ def test_resize_left():
             return ret
 
     x = [1.352, 3.0, -1.9]
-    expect = [1.0, 1.0, -1.0]
-    assert_match(t6(), [Sfix(left=2, right=-18)], expect, x)
+    assert_exact_match(t6(), [Sfix(left=2, right=-18)], x)
 
 
 def test_array_indexing():
@@ -109,8 +94,7 @@ def test_array_indexing():
             return self.a[i]
 
     x = [0, 1, 2, 3]
-    expect = [0.1, 0.2, 0.3, 0.4]
-    assert_match(t7(), [int], expect, x)
+    assert_exact_match(t7(), [int], x)
 
     # test indexing by -1
     class t8(HW):
@@ -121,8 +105,8 @@ def test_array_indexing():
             return self.a[-1]
 
     x = [0, 1]
-    expect = [0.4, 0.4]
-    assert_match(t8(), [int], expect, x)
+    assert_exact_match(t8(), [int], x)
+
 
 @pytest.mark.slowtest
 @pytest.mark.parametrize('bits', range(-1, -32, -1))
@@ -178,6 +162,7 @@ def test_sfix_add_shift_right_resize(shift_i):
     i = [shift_i] * len(x)
     assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
 
+
 @pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
 def test_sfix_shift_right(shift_i):
@@ -192,6 +177,7 @@ def test_sfix_shift_right(shift_i):
     x = (np.random.rand(1024) * 2 * 2) - 1
     i = [shift_i] * len(x)
     assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
+
 
 @pytest.mark.slowtest
 @pytest.mark.parametrize('shift_i', range(8))
