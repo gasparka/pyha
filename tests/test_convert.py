@@ -642,7 +642,7 @@ def test_def_infer_variable_atomtrailer_argument(converter):
             self.d = l""")
 
     expect = textwrap.dedent("""\
-        procedure a(self: self_t) is
+        procedure a(self:inout self_t) is
 
         begin
             self.d := l;
@@ -659,7 +659,7 @@ def test_def_complex(converter):
             return a, self.next.b""")
 
     expect = textwrap.dedent("""\
-        procedure a(self: self_t; a: unknown_type; b: unknown_type:=\\next\\; ret_0:out unknown_type; ret_1:out unknown_type) is
+        procedure a(self:inout self_t; a: unknown_type; b: unknown_type:=\\next\\; ret_0:out unknown_type; ret_1:out unknown_type) is
             variable o: unknown_type;
         begin
             o := h;
@@ -1203,7 +1203,7 @@ def test_for_rl_arith(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to self.\\next\\.b'length + 1 loop
+            for i in 0 to (self.\\next\\.b'length + 1) - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1216,7 +1216,7 @@ def test_for_rl_arith2(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to self.\\next\\.b'length - 10 loop
+            for i in 0 to (self.\\next\\.b'length - 10) - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1229,7 +1229,7 @@ def test_for_simple_range(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for i in 0 to 10 - 1 loop
+            for i in 0 to (10) - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1242,7 +1242,7 @@ def test_for_from_to(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in 2 to 5 -1 loop
+            for ite in 2 to (5) - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1255,7 +1255,7 @@ def test_for_from_to_variables(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in var to self.var2 -1 loop
+            for ite in var to (self.var2) - 1 loop
 
             end loop;""")
     conv = converter(code)
@@ -1268,7 +1268,7 @@ def test_for_from_to_variables_whitespaces(converter):
                 pass""")
 
     expect = textwrap.dedent("""\
-            for ite in var to self.var2 loop
+            for ite in var to (self.var2) - 1 loop
 
             end loop;""")
     conv = converter(code)
