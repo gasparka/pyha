@@ -16,8 +16,7 @@ def test_polar_quadrant_i():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                      )
 
 
@@ -29,8 +28,7 @@ def test_polar_quadrant_ii():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                      )
 
 
@@ -42,8 +40,7 @@ def test_polar_quadrant_iii():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                      )
 
 
@@ -55,8 +52,7 @@ def test_polar_quadrant_iv():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                      )
 
 
@@ -83,8 +79,7 @@ def test_to_polar():
                      expect, inputs,
                      rtol=1e-4,
                      atol=1e-4,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                     dir_path='/home/gaspar/git/pyha/playground/conv'
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
                      )
 
 
@@ -145,7 +140,5 @@ def test_nco(period):
     assert_sim_match(dut, [Sfix(left=0, right=-18)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=sims,
-                     dir_path='/home/gaspar/git/pyha/playground/conv',
-                     # fuck_it=True
+                     simulations=sims
                      )
