@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
+import sys
 from pyha.common.sfix import Sfix, ComplexSfix
 
 COCOTB_MAKEFILE_TEMPLATE = """
@@ -75,7 +76,7 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        # self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
