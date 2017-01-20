@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from enum import Enum
 
+from common.const import Const
 from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix, ComplexSfix
 
@@ -19,7 +20,7 @@ class VariableNotConvertible(Exception):
 
 
 def is_convertible(obj):
-    allowed_types = [ComplexSfix, Sfix, int, bool]
+    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
     if type(obj) in allowed_types:
         return True
     elif isinstance(obj, list):
@@ -92,14 +93,18 @@ class DataModel:
         if obj is None:
             self.self_data = None if self_data is None else OrderedDict(sorted(self_data.items(), key=lambda t: t[0]))
             self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
+            self.constants = {}
         else:
             dm = extract_datamodel(obj)
 
-            if len(dm) == 0:
-                dm['much_dummy_very_wow'] = 0  # this simplifies many testing code
+            dm_clean = {k:v for k,v in dm.items() if not isinstance(v, Const)}
+            constants = {k:v for k,v in dm.items() if isinstance(v, Const)}
+            if len(dm_clean) == 0:
+                dm_clean['much_dummy_very_wow'] = 0  # this simplifies many testing code
             loc = extract_locals(obj)
-            self.self_data = OrderedDict(sorted(dm.items()))
+            self.self_data = OrderedDict(sorted(dm_clean.items()))
             self.locals = OrderedDict(sorted(loc.items()))
+            self.constants = OrderedDict(sorted(constants.items()))
 
     def __str__(self):
         return 'self_data: {}\tlocals: {}'.format(self.self_data, self.locals)
