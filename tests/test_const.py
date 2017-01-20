@@ -1,10 +1,6 @@
 import textwrap
 
 import pytest
-from common.const import Const
-from common.hwsim import HW
-from conversion.conversion import get_conversion
-from conversion.extract_datamodel import DataModel
 
 
 @pytest.fixture
@@ -13,8 +9,11 @@ def t0():
         def __init__(self):
             self.mode = Const(1)
 
-        def main(self, dummy):
-            pass
+        def main(self, a):
+            if a:
+                return a
+            else:
+                return 0
 
     dut = T0()
     dut.main(1)
@@ -42,3 +41,5 @@ def test_vhdl_datamodel(t0):
             end record;""")
     dm = conv.get_datamodel()
     assert expect == dm
+
+# todo: for lists of submodules constants must match!
