@@ -29,7 +29,7 @@ def test_polar_quadrant_ii():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
@@ -42,7 +42,7 @@ def test_polar_quadrant_iii():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
@@ -55,7 +55,7 @@ def test_polar_quadrant_iv():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                      expect, inputs,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
@@ -88,7 +88,7 @@ def test_to_polar():
                      )
 
 
-def test_cordic_model_hw_match():
+def test_cordic_vectoring_model_hw_match():
     np.random.seed(123456)
     inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
 
@@ -97,6 +97,11 @@ def test_cordic_model_hw_match():
                                *inputs,
                                rtol=1e-4,
                                atol=1e-4)
+
+
+def test_cordic_rotation_model_hw_match():
+    np.random.seed(123456)
+    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
 
     dut = Cordic(16, CordicMode.ROTATION)
     assert_model_hwmodel_match(dut, [Sfix(left=1, right=-17), Sfix(left=1, right=-17), Sfix(left=0, right=-32)],

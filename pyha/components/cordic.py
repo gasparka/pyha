@@ -52,12 +52,12 @@ class Cordic(HW):
                 # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
                 self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
                 self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
-                self.next.phase[0] = Sfix(1.0, 0, -17)
+                self.next.phase[0] = Sfix(1.0, phase)
             elif x < 0.0 and y < 0.0:
                 # vector in III quadrant -> initial shift by -PI to I quadrant (mirror)
                 self.next.x[0] = resize(-x, left_index(x) + 2, right_index(x))
                 self.next.y[0] = resize(-y, left_index(y) + 2, right_index(y))
-                self.next.phase[0] = Sfix(-1.0, 0, -17)
+                self.next.phase[0] = Sfix(-1.0, phase)
             else:
                 # vector in I or IV quadrant -> no action needed
                 self.next.x[0] = resize(x, left_index(x) + 2, right_index(x))

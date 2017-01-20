@@ -133,17 +133,19 @@ class Sfix:
                  round_style=fixed_round):
         self.round_style = round_style
         self.overflow_style = overflow_style
-        assert left >= right
-        # if left == None:
-        #     raise Exception('Left bound for Sfix is None!')
-        #
-        # if right == None:
-        #     raise Exception('Right bound for Sfix is None!')
+
         val = float(val)
         if type(val) not in [float, int]:
             raise Exception('Value must be float or int!')
-        self.right = right
-        self.left = left
+
+        if isinstance(left, Sfix):
+            self.right = left.right
+            self.left = left.left
+        else:
+            self.right = right
+            self.left = left
+
+        assert self.left >= self.right
         self.val = val
         self.init_val = val
 
