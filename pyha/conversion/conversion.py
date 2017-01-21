@@ -6,7 +6,7 @@ from typing import List
 from redbaron import RedBaron
 
 from pyha.common.const import Const
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import HW, Const
 from pyha.common.util import get_iterable
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import get_instance_vhdl_name, VHDLType

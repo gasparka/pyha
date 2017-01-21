@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 
 from pyha.common.const import Const
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import HW, Const
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -187,7 +187,8 @@ class TestFloat:
 
             def main(self, a):
                 r = Sfix(self.cfloat, 0, -28)
-                return r
+                b = r + self.cfloat
+                return b
 
         self.dut = T2()
         self.dut.main(1)
@@ -234,7 +235,8 @@ class TestFloat:
         assert_sim_match(self.dut, [int], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv')
-        #
+
+
 
         # todo: for lists of submodules constants must match!
         # todo: to_sfixed to Sfix

@@ -3,7 +3,7 @@ import textwrap
 
 import numpy as np
 
-from pyha.common.const import Const
+from pyha.common.hwsim import Const
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -262,7 +262,7 @@ class Sfix:
                     init_only=True)
 
     def __sub__(self, other):
-        # TODO: why only float?
+
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,

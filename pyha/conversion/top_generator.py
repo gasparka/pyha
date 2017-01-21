@@ -1,7 +1,7 @@
 import textwrap
 from enum import Enum
 
-from pyha.common.const import Const
+from pyha.common.hwsim import Const
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
 from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
