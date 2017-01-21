@@ -510,12 +510,13 @@ class ClassNodeConv(NodeConv):
             const_str = []
             for var in const:
                 value = var.variable.value
-                if isinstance(value, int):
-                    const_str += ['self.{} := {};'.format(var.name, value)]
-                elif isinstance(value, Enum):
+                if isinstance(value, Enum):
                     const_str += ['self.{} := {};'.format(var.name, value.name)]
                 elif isinstance(value, (Sfix, ComplexSfix)):
                     const_str += ['self.{} := {};'.format(var.name, value.vhdl_reset())]
+                else:
+                    const_str += ['self.{} := {};'.format(var.name, value)]
+
             sockets['CONSTANTS'] = '    -- constants\n'
             sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
             sockets['CONSTANTS'] += '\n'

@@ -213,32 +213,19 @@ class TestMultiIntSfixEnumBooleanCFix:
                     end record;""")
             dm = self.conversion.get_datamodel()
             assert expect == dm
-            #
-            #     def test_vhdl_reset(self):
-            #         expect = textwrap.dedent("""\
-            #             procedure reset(self_reg: inout register_t) is
-            #             begin
-            #                 self_reg.reg := 0;
-            #             end procedure;""")
-            #
-            #         assert expect == str(self.conversion.get_reset_str())
-            #
-            #     def test_vhdl_makeself(self):
-            #         expect = textwrap.dedent("""\
-            #             procedure make_self(self_reg: register_t; self: out self_t) is
-            #             begin
-            #                 -- constants
-            #                 self.cbool := False;
-            #                 self.ccfix := (real=>to_sfixed(0.5, 0, -18), imag=>to_sfixed(-0.25, 0, -18));
-            #                 self.cenum := SECOND;
-            #                 self.cint := 32;
-            #                 self.csfix := to_sfixed(3.141592653589793, 2, -18);
-            #
-            #                 self.reg := self_reg.reg;
-            #                 self.\\next\\ := self_reg;
-            #             end procedure;""")
-            #
-            #         assert expect == str(self.conversion.get_makeself_str())
+
+        def test_vhdl_makeself(self):
+            expect = textwrap.dedent("""\
+                procedure make_self(self_reg: register_t; self: out self_t) is
+                begin
+                    -- constants
+                    self.cfloat := 0.5219;
+
+                    self.reg := self_reg.reg;
+                    self.\\next\\ := self_reg;
+                end procedure;""")
+
+            assert expect == str(self.conversion.get_makeself_str())
             #
             #     def test_simulate(self):
             #         x = [0] * 8
