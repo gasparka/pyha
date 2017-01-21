@@ -363,7 +363,12 @@ class GetitemNodeConv(NodeConv):
     # turn python [] indexing to () indexing
 
     def get_index_target(self):
-        return '.'.join(str(x) for x in self.parent.value[:-1])
+        ret = ''
+        for x in self.parent.value:
+            if x is self:
+                break
+            ret += '.' + str(x)
+        return ret[1:]
 
     def is_negative_indexing(self, obj):
         return isinstance(obj, UnitaryOperatorNodeConv) and int(str(obj)) < 0

@@ -177,7 +177,8 @@ class VHDLType:
 
         # from constants
 
-        ret += [v.value for v in cls._datamodel.constants.values() if isinstance(v.value, find_type)]
+        ret += [v.value for v in cls._datamodel.constants.values()
+                if isinstance(v.value, find_type)]
 
         # from locals
         for func in cls._datamodel.locals.values():

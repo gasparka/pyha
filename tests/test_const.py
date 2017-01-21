@@ -6,7 +6,7 @@ import numpy as np
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.conversion.conversion import get_conversion
+from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
@@ -296,6 +296,31 @@ class TestLists:
             end procedure;""")
 
         assert expect == str(self.conversion.get_makeself_str())
+
+    def test_complex_types(self):
+        expect = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            type complex_sfix0_18 is record
+                real: sfixed(0 downto -18);
+                imag: sfixed(0 downto -18);
+            end record;
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+
+            end package;
+
+            package body ComplexTypes is
+            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+            begin
+                return (a, b);
+            end function;
+
+            end package body;
+            """)
+
+        assert expect == Conversion(self.dut).make_vhdl_complex_types()
 
     def test_simulate(self):
         x = [0] * 8

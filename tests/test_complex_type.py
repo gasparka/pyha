@@ -428,3 +428,51 @@ def test_complex_inits_return_simulate(complex_inits_return):
                       Sfix(left=0, right=-32)],
                      expected, *x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+class TestList:
+    def setup(self):
+        class A6(HW):
+            def __init__(self):
+                self.reg = [ComplexSfix(0 + 0j, 0, -18)] * 4
+
+            def main(self, x0):
+                self.next.reg[-1].real = x0.real
+                self.next.reg[-1].imag = x0.imag
+                return self.reg[-1]
+
+            def get_delay(self):
+                return 1
+
+        dut = A6()
+        dut.main(ComplexSfix(0.5 + 1.2j, 0, -18))
+        dut.main(ComplexSfix(0.5 + 1.2j, 0, -18))
+
+        self.conversion = Conversion(dut)
+
+    def test_generation(self):
+        expect = textwrap.dedent("""\
+                library ieee;
+                    use ieee.fixed_pkg.all;
+
+                package ComplexTypes is
+                type complex_sfix0_18 is record
+                    real: sfixed(0 downto -18);
+                    imag: sfixed(0 downto -18);
+                end record;
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+
+                end package;
+
+                package body ComplexTypes is
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+                begin
+                    return (a, b);
+                end function;
+
+                end package body;
+                """)
+
+        files = self.conversion.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            assert expect == f.read()
