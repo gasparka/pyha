@@ -113,6 +113,17 @@ class Conversion:
         #     return inspect.getsourcefile(type(obj))
 
     def make_vhdl_complex_types(self):
+        template_none = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            end package;
+            """)
+        import numpy as np
+        if len(np.array(self.complex_types).flatten()) == 0:
+            return template_none
+
         template = textwrap.dedent("""\
             library ieee;
                 use ieee.fixed_pkg.all;
