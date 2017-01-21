@@ -33,6 +33,8 @@ def pytype_to_vhdl(var):
             return 'boolean' + arr_token
         elif type(var[0]) is int:
             return 'integer' + arr_token
+        elif type(var[0]) is float:
+            return 'real' + arr_token
         elif type(var[0]) is Sfix:
             left, right = bounds_to_str(var[0])
             return 'sfixed{}{}{}'.format(left, right, arr_token)
