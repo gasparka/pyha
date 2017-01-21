@@ -2,6 +2,7 @@ from enum import Enum
 
 import numpy as np
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import resize, Sfix, right_index, left_index, fixed_wrap, fixed_truncate, ComplexSfix
 
@@ -16,7 +17,7 @@ class CordicMode(Enum):
 
 class Cordic(HW):
     def __init__(self, iterations, mode):
-        self.mode_const = mode
+        self.mode = Const(mode)
         self.iterations = iterations
 
         # + 1 is basically for initial step registers it also helps pipeline code
@@ -30,7 +31,7 @@ class Cordic(HW):
         self.phase = [Sfix()] * self.iterations
 
     def main(self, x, y, phase):
-        if self.mode_const == CordicMode.ROTATION:
+        if self.mode == CordicMode.ROTATION:
             self.next.y[0] = y
             if phase > 0.5:
                 # > np.pi/2
@@ -45,7 +46,7 @@ class Cordic(HW):
                 self.next.x[0] = resize(x, size_res=x)
                 self.next.phase[0] = resize(phase, size_res=phase)
 
-        elif self.mode_const == CordicMode.VECTORING:
+        elif self.mode == CordicMode.VECTORING:
             # need to increase x and y size by 2 as there will be CORDIC gain + abs value held by x can be > 1
             if x < 0.0 and y > 0.0:
                 # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
@@ -70,9 +71,9 @@ class Cordic(HW):
         return self.x[-1], self.y[-1], self.phase[-1]
 
     def pipeline_step(self, i, x, y, p, p_adj):
-        if self.mode_const == CordicMode.ROTATION:
+        if self.mode == CordicMode.ROTATION:
             direction = p > 0
-        elif self.mode_const == CordicMode.VECTORING:
+        elif self.mode == CordicMode.VECTORING:
             direction = y < 0
 
         if direction:
@@ -93,14 +94,14 @@ class Cordic(HW):
         # for that reason model and hw_model will not be perfectly matched, can expect 1e-4 to 1e-5 rtol/atol
         # actually not 100% sure that is the reason for strange behaviour
         def cord_model(x, y, phase):
-            if self.mode_const == CordicMode.ROTATION:
+            if self.mode == CordicMode.ROTATION:
                 if phase > 0.5:
                     x = -x
                     phase -= 1.0
                 elif phase < -0.5:
                     x = -x
                     phase += 1.0
-            elif self.mode_const == CordicMode.VECTORING:
+            elif self.mode == CordicMode.VECTORING:
                 if x < 0.0 and y > 0.0:
                     # vector in II quadrant -> initial shift by PI to IV quadrant (mirror)
                     x = -x
@@ -113,9 +114,9 @@ class Cordic(HW):
                     phase = -1.0
 
             for i, adj in enumerate(self.phase_lut):
-                if self.mode_const == CordicMode.ROTATION:
+                if self.mode == CordicMode.ROTATION:
                     sign = 1 if phase > 0 else -1
-                elif self.mode_const == CordicMode.VECTORING:
+                elif self.mode == CordicMode.VECTORING:
                     sign = 1 if y < 0 else -1
                 x, y, phase = x - sign * (y * (2 ** -i)), y + sign * (x * (2 ** -i)), phase - sign * adj
             return x, y, phase

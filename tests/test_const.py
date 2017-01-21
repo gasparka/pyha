@@ -11,6 +11,19 @@ from pyha.conversion.extract_datamodel import DataModel
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
+def test_compare():
+    a = Const(1)
+    assert a == 1
+    assert a < 2
+    assert a <= 2
+    assert a > 0
+    assert a >= 0
+
+
+
+
+
+
 class TestSingleInt:
     def setup(self):
         class T0(HW):
