@@ -4,6 +4,7 @@ from enum import Enum
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
@@ -45,6 +46,8 @@ def pytype_to_vhdl(var):
         return idstr
     elif isinstance(var, Enum):
         return type(var).__name__
+    elif isinstance(var, Const):
+        return pytype_to_vhdl(var.x)
     else:
         assert 0
 
@@ -126,6 +129,16 @@ class VHDLType:
         if cls._datamodel.obj is None:
             return 'unknown_name'
         return get_instance_vhdl_name(cls._datamodel.obj)
+
+    @classmethod
+    def get_constants(cls):
+        if cls._datamodel is None:
+            return []
+        ret = []
+        for k, v in cls._datamodel.constants.items():
+            t = VHDLType(tuple_init=(k, v))
+            ret.append(t)
+        return ret
 
     @classmethod
     def get_self(cls):

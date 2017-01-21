@@ -522,11 +522,19 @@ class ClassNodeConv(NodeConv):
             end record;
 
             type self_t is record
+            {CONSTANTS}
             {DATA}
                 \\next\\: register_t;
             end record;""")
         sockets = {'DATA': ''}
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
+        const = VHDLType.get_constants()
+        if len(const) == 0:
+            sockets['CONSTANTS'] = ''
+        else:
+            sockets['CONSTANTS'] = '    -- constants\n'
+            sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
+            sockets['CONSTANTS'] += '\n'
         return template.format(**sockets)
 
     def get_typedefs(self):

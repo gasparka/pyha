@@ -52,6 +52,7 @@
           <option value="object.right" />
           <option value="pyha.conversion.converter.SliceNodeConv.upper" />
           <option value="pyha.conversion.converter.SliceNodeConv.*" />
+          <option value="tests.test_const.TestClass.*" />
         </list>
       </option>
     </inspection_tool>

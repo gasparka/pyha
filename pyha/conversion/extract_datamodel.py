@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from enum import Enum
 
-from common.const import Const
+from pyha.common.const import Const
 from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix, ComplexSfix
 
