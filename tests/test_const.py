@@ -4,6 +4,7 @@ from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestSingleInt:
@@ -13,10 +14,7 @@ class TestSingleInt:
                 self.mode = Const(1)
 
             def main(self, a):
-                if a:
-                    return a
-                else:
-                    return 0
+                return self.mode
 
         self.dut = T0()
         self.dut.main(1)
@@ -67,9 +65,17 @@ class TestSingleInt:
 
         assert expect == str(self.conversion.get_makeself_str())
 
+    def test_simulate(self):
+        x = [0] * 8
+        expected = [self.dut.mode.value] * 8
+        assert_sim_match(self.dut, [int], expected, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         dir_path='/home/gaspar/git/pyha/playground/conv')
+
 
 
 
 
 
         # todo: for lists of submodules constants must match!
+        # todo: to_sfixed to Sfix

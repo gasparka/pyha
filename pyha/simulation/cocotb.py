@@ -2,12 +2,12 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
 
 import pyha
-import sys
 from pyha.common.sfix import Sfix, ComplexSfix
 
 COCOTB_MAKEFILE_TEMPLATE = """
@@ -76,7 +76,8 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        # self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        # ill throw my computer out of the window counter: 4
+        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'

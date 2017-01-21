@@ -272,18 +272,39 @@ class VHDLType:
         """ atom_trailer is something like this: self.a.b.c.d
             This finds type of such nested variable
         """
-        var = self._datamodel.self_data
-        for x in atom_trailer[1:]:
-            if str(x) == 'next': continue
-            if not isinstance(x, GetitemNode):
-                var = var[str(x)]
-            else:
-                # index is some variable -> just take first element
-                if isinstance(x.value, NameNode):
-                    var = var[0]
-                else:
-                    var = var[int(str(x.value))]
 
+        def find_from_self(atom_trailer):
+            var = self._datamodel.self_data
+            for x in atom_trailer[1:]:
+                if str(x) == 'next': continue
+                if not isinstance(x, GetitemNode):
+                    var = var[str(x)]
+                else:
+                    # index is some variable -> just take first element
+                    if isinstance(x.value, NameNode):
+                        var = var[0]
+                    else:
+                        var = var[int(str(x.value))]
+            return var
+
+        def find_from_const(atom_trailer):
+            var = self._datamodel.constants
+            for x in atom_trailer[1:]:
+                if str(x) == 'next': continue
+                if not isinstance(x, GetitemNode):
+                    var = var[str(x)]
+                else:
+                    # index is some variable -> just take first element
+                    if isinstance(x.value, NameNode):
+                        var = var[0]
+                    else:
+                        var = var[int(str(x.value))]
+            return var
+
+        try:
+            var = find_from_self(atom_trailer)
+        except KeyError:
+            var = find_from_const(atom_trailer)
         return var
 
     def _defined_in_function(self):
