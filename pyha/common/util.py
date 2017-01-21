@@ -1,5 +1,7 @@
 import collections
 
+from pyha.common.const import Const
+
 
 def escape_for_vhdl(x: str) -> str:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
@@ -39,3 +41,9 @@ def tabber(str):
     TAB = '    '
     """ Add tab infront of every line """
     return '\n'.join(['{}{}'.format(TAB, x) for x in str.splitlines() if x != ''])
+
+
+def remove_container(x):
+    if isinstance(x, Const):
+        return x.value
+    return x

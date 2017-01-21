@@ -5,7 +5,7 @@ from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, Ca
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.const import Const
-from pyha.common.hwsim import HW, Const
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel

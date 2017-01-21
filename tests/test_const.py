@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 
 from pyha.common.const import Const
-from pyha.common.hwsim import HW, Const
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -231,7 +231,7 @@ class TestFloat:
 
     def test_simulate(self):
         x = [0] * 8
-        expected = [0.5219] * 8
+        expected = [0.5219 * 2] * 8
         assert_sim_match(self.dut, [int], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv')
