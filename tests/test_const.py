@@ -90,7 +90,6 @@ class TestMultiIntSfixEnumBoolean:
                 self.cbool = Const(False)
                 self.cenum = Const(DummyEnum.SECOND)
                 self.csfix = Const(Sfix(np.pi, 0, -18))
-                self.cflaot = Const(np.pi)
 
             def main(self, a):
                 return self.cint, self.cbool, self.cenum, self.csfix
@@ -109,21 +108,24 @@ class TestMultiIntSfixEnumBoolean:
         assert self.datamodel.constants['cenum'] == Const(DummyEnum.SECOND)
         assert self.datamodel.constants['csfix'] == Const(Sfix(np.pi, 0, -18))
 
-        # def test_vhdl_datamodel(self):
-        #     expect = textwrap.dedent("""\
-        #             type register_t is record
-        #                 much_dummy_very_wow: integer;
-        #             end record;
-        #
-        #             type self_t is record
-        #                 -- constants
-        #                 mode: integer;
-        #
-        #                 much_dummy_very_wow: integer;
-        #                 \\next\\: register_t;
-        #             end record;""")
-        #     dm = self.conversion.get_datamodel()
-        #     assert expect == dm
+    def test_vhdl_datamodel(self):
+        expect = textwrap.dedent("""\
+                type register_t is record
+                    reg: integer;
+                end record;
+
+                type self_t is record
+                    -- constants
+                    cbool: boolean;
+                    cenum: DummyEnum;
+                    cint: integer;
+                    csfix: sfixed(0 downto -18);
+
+                    reg: integer;
+                    \\next\\: register_t;
+                end record;""")
+        dm = self.conversion.get_datamodel()
+        assert expect == dm
         #
         # def test_vhdl_reset(self):
         #     expect = textwrap.dedent("""\
