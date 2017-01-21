@@ -278,19 +278,23 @@ class TestLists:
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
-        #
-        # def test_vhdl_makeself(self):
-        #     expect = textwrap.dedent("""\
-        #         procedure make_self(self_reg: register_t; self: out self_t) is
-        #         begin
-        #             -- constants
-        #             self.cfloat := 0.5219;
-        #
-        #             self.reg := self_reg.reg;
-        #             self.\\next\\ := self_reg;
-        #         end procedure;""")
-        #
-        #     assert expect == str(self.conversion.get_makeself_str())
+
+    def test_vhdl_makeself(self):
+        expect = textwrap.dedent("""\
+            procedure make_self(self_reg: register_t; self: out self_t) is
+            begin
+                -- constants
+                cbool := (True, True, True, False);
+                ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
+                cfloat := (0.1, 0.2, 0.3, 0.4);
+                cint := (1, 2, 3, 4);
+                csfix := (Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18));
+
+                self.reg := self_reg.reg;
+                self.\\next\\ := self_reg;
+            end procedure;""")
+
+        assert expect == str(self.conversion.get_makeself_str())
         #
         # def test_simulate(self):
         #     x = [0] * 8
