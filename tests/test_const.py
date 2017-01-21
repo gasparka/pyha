@@ -110,6 +110,10 @@ class TestMultiIntSfixEnumBooleanCFix:
         assert self.datamodel.constants['csfix'] == Const(Sfix(np.pi, 2, -18))
         assert self.datamodel.constants['ccfix'] == Const(ComplexSfix(0.5 - 0.289j, 0, -18))
 
+    def test_vhdl_enum_define(self):
+        expect = ['type DummyEnum is (FIRST,SECOND);']
+        dm = self.conversion.get_enumdefs()
+        assert expect == dm
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\

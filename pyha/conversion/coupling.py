@@ -163,7 +163,14 @@ class VHDLType:
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
+        # from self.data
         ret = [v for v in cls._datamodel.self_data.values() if isinstance(v, find_type)]
+
+        # from constants
+
+        ret += [v.value for v in cls._datamodel.constants.values() if isinstance(v.value, find_type)]
+
+        # from locals
         for func in cls._datamodel.locals.values():
             for var in func.values():
                 if isinstance(var, find_type):
