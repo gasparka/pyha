@@ -14,6 +14,9 @@ package PyhaUtil is
   function Sfix(a:real; left_index, right_index:integer) return sfixed;
   function Sfix(a:real; size_res:sfixed) return sfixed;
 
+  function logic_to_bool(x: std_logic) return boolean;
+  function bool_to_logic(x: boolean) return std_logic;
+
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
   -- type range_t is array (natural range <>) of integer;
@@ -52,6 +55,26 @@ package body PyhaUtil is
   begin
     return to_sfixed(a, size_res, guard_bits=>16);
   end function;
+
+  function logic_to_bool(x: std_logic) return boolean is
+  begin
+    if x = '1' then
+      return True;
+    else
+      return False;
+    end if;
+  end function;
+
+  function bool_to_logic(x: boolean) return std_logic is
+  begin
+    if x = True then
+      return '1';
+    else
+      return '0';
+    end if;
+  end function;
+
+
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;
   -- begin

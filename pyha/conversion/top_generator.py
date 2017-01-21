@@ -69,7 +69,7 @@ class TopGenerator:
         if type(var) == int:
             return 'to_integer(signed({}))'.format(var_name)
         elif type(var) == bool:
-            return "True when {} = '1' else False".format(var_name)
+            return 'logic_to_bool({})'.format(var_name)
         elif type(var) == Sfix:
             return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
         elif type(var) == ComplexSfix:
@@ -85,7 +85,7 @@ class TopGenerator:
         if type(var) == int:
             return 'std_logic_vector(to_signed({}, 32))'.format(var_name)
         elif type(var) == bool:
-            return "'1' when {} else '0'".format(var_name)
+            return 'bool_to_logic({})'.format(var_name)
         elif type(var) == Sfix:
             return 'to_slv({})'.format(var_name)
         elif type(var) == ComplexSfix:
@@ -139,6 +139,7 @@ class TopGenerator:
                 use ieee.math_real.all;
 
             library work;
+                use work.PyhaUtil.all;
                 use work.ComplexTypes.all;
                 use work.all;""")
 

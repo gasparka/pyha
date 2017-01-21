@@ -5,6 +5,7 @@ from typing import List
 
 from redbaron import RedBaron
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.util import get_iterable
 from pyha.conversion.converter import convert
@@ -75,11 +76,12 @@ class Conversion:
 
     @property
     def inputs(self) -> List[object]:
+        # return [x.value if isinstance(x, Const) else x for x in self.top_vhdl.get_object_inputs()]
         return self.top_vhdl.get_object_inputs()
 
     @property
     def outputs(self) -> List[object]:
-        return self.top_vhdl.get_object_return()
+        return [x.value if isinstance(x, Const) else x for x in self.top_vhdl.get_object_return()]
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
 

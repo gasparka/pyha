@@ -3,7 +3,7 @@ import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match, SIM_GATE
 
 
 def assert_exact_match(model, types, *x):
@@ -193,3 +193,13 @@ def test_sfix_shift_left(shift_i):
     x = (np.random.rand(1024) * 2 * 2) - 1
     i = [shift_i] * len(x)
     assert_exact_match(T13(), [Sfix(0, left, right), int], x, i)
+
+
+def test_passtrough_boolean():
+    class T14(HW):
+        def main(self, x):
+            return x
+
+    x = [True, False, True, False]
+    outs = debug_assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    assert (outs[0] == (outs[1]).astype(bool)).all()
