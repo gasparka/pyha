@@ -126,15 +126,15 @@ class TestMultiIntSfixEnumBoolean:
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
-        #
-        # def test_vhdl_reset(self):
-        #     expect = textwrap.dedent("""\
-        #         procedure reset(self_reg: inout register_t) is
-        #         begin
-        #             self_reg.much_dummy_very_wow := 0;
-        #         end procedure;""")
-        #
-        #     assert expect == str(self.conversion.get_reset_str())
+
+    def test_vhdl_reset(self):
+        expect = textwrap.dedent("""\
+            procedure reset(self_reg: inout register_t) is
+            begin
+                self_reg.reg := 0;
+            end procedure;""")
+
+        assert expect == str(self.conversion.get_reset_str())
         #
         # def test_vhdl_makeself(self):
         #     expect = textwrap.dedent("""\
