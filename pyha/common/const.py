@@ -1,6 +1,6 @@
 class Const:
-    def __init__(self, x):
-        self.x = x
+    def __init__(self, value):
+        self.value = value
 
     def __eq__(self, other):
         if type(other) is type(self):

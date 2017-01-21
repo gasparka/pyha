@@ -54,14 +54,18 @@ class TestSingleInt:
 
         assert expect == str(self.conversion.get_reset_str())
 
-    def test_vhdl_reset(self):
+    def test_vhdl_makeself(self):
         expect = textwrap.dedent("""\
-            procedure reset(self_reg: inout register_t) is
+            procedure make_self(self_reg: register_t; self: out self_t) is
             begin
-                self_reg.much_dummy_very_wow := 0;
+                -- constants
+                self.mode := 1;
+
+                self.much_dummy_very_wow := self_reg.much_dummy_very_wow;
+                self.\\next\\ := self_reg;
             end procedure;""")
 
-        assert expect == str(self.conversion.get_reset_str())
+        assert expect == str(self.conversion.get_makeself_str())
 
 
 

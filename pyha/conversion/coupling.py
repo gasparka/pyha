@@ -47,7 +47,7 @@ def pytype_to_vhdl(var):
     elif isinstance(var, Enum):
         return type(var).__name__
     elif isinstance(var, Const):
-        return pytype_to_vhdl(var.x)
+        return pytype_to_vhdl(var.value)
     else:
         assert 0
 

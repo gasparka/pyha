@@ -494,25 +494,29 @@ class ClassNodeConv(NodeConv):
         template = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+        {CONSTANTS}
         {DATA}
             self.\\next\\ := self_reg;
         end procedure;""")
 
-        # variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
-        #              for x in VHDLType.get_self()]
-        variables = []
-        for var in VHDLType.get_self():
-            # inital hack that turns variables ending with _const to 'constants'
-            if var.name[-6:] == '_const':
-                if isinstance(var.variable, int):
-                    variables += ['self.{} := {};'.format(var.name, var.variable)]
-                elif isinstance(var.variable, Enum):
-                    variables += ['self.{} := {};'.format(var.name, var.variable.name)]
-
-            else:
-                variables += ['self.{k} := self_reg.{k};'.format(k=var.name)]
-        sockets = {'DATA': ''}
+        sockets = {'DATA': '', 'CONSTANTS': ''}
+        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
+                     for x in VHDLType.get_self()]
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
+
+        const = VHDLType.get_constants()
+        if len(const):
+            const_str = []
+            for var in const:
+                value = var.variable.value
+                if isinstance(value, int):
+                    const_str += ['self.{} := {};'.format(var.name, value)]
+                elif isinstance(value, Enum):
+                    const_str += ['self.{} := {};'.format(var.name, value.name)]
+            sockets['CONSTANTS'] = '    -- constants\n'
+            sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
+            sockets['CONSTANTS'] += '\n'
+
         return template.format(**sockets)
 
     def get_datamodel(self):
@@ -526,12 +530,10 @@ class ClassNodeConv(NodeConv):
             {DATA}
                 \\next\\: register_t;
             end record;""")
-        sockets = {'DATA': ''}
+        sockets = {'DATA': '', 'CONSTANTS': ''}
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
         const = VHDLType.get_constants()
-        if len(const) == 0:
-            sockets['CONSTANTS'] = ''
-        else:
+        if len(const):
             sockets['CONSTANTS'] = '    -- constants\n'
             sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
             sockets['CONSTANTS'] += '\n'
