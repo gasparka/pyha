@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 
 from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix
@@ -59,6 +60,8 @@ class TopGenerator:
             return var.to_stdlogic()
         elif isinstance(var, Const):
             return self.pyvar_to_stdlogic(var.value)
+        elif isinstance(var, Enum):
+            return self.pyvar_to_stdlogic(var.value)
         else:
             assert 0
 
@@ -88,6 +91,8 @@ class TopGenerator:
         elif type(var) == ComplexSfix:
             return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
         elif isinstance(var, Const):
+            return self.normal_to_slv(var.value, var_name)
+        elif isinstance(var, Enum):
             return self.normal_to_slv(var.value, var_name)
         else:
             assert 0

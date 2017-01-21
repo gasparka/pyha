@@ -2,6 +2,7 @@ import logging
 import os
 from contextlib import suppress
 from copy import deepcopy
+from enum import Enum
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -86,8 +87,9 @@ def type_conversions(func):
                 elif type(x) == ComplexSfix:
                     ret.append(float(x.real) + float(x.imag) * 1j)
                 elif isinstance(x, Const):
+                    ret.extend(output_types([x.value]))
+                elif isinstance(x, Enum):
                     ret.append(x.value)
-
                 else:
                     ret.append(x)
             return ret

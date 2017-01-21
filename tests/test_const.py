@@ -93,7 +93,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                 self.ccfix = Const(ComplexSfix(0.5 - 0.289j, 0, -18))
 
             def main(self, a):
-                return self.cint, self.cbool, self.cenum, self.csfix
+                return self.cint, self.cbool, self.cenum, self.csfix, self.ccfix
 
         self.dut = T1()
         self.dut.main(1)
@@ -109,6 +109,7 @@ class TestMultiIntSfixEnumBooleanCFix:
         assert self.datamodel.constants['cenum'] == Const(DummyEnum.SECOND)
         assert self.datamodel.constants['csfix'] == Const(Sfix(np.pi, 2, -18))
         assert self.datamodel.constants['ccfix'] == Const(ComplexSfix(0.5 - 0.289j, 0, -18))
+
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
@@ -155,12 +156,21 @@ class TestMultiIntSfixEnumBooleanCFix:
             end procedure;""")
 
         assert expect == str(self.conversion.get_makeself_str())
-        #
-        # def test_simulate(self):
-        #     x = [0] * 8
-        #     expected = [self.dut.mode.value] * 8
-        #     assert_sim_match(self.dut, [int], expected, x,
-        #                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+    def test_simulate(self):
+        x = [0] * 8
+        expected = [
+            [32] * 8,
+            [False] * 8,
+            [DummyEnum.SECOND.value] * 8,
+            [np.pi] * 8,
+            [0.5 - 0.289j] * 8
+
+        ]
+        # expected = [32, False, DummyEnum.SECOND, np.pi, 0.5 - 0.289j] * 8
+
+        assert_sim_match(self.dut, [int], expected, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 
