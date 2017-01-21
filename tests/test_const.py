@@ -21,15 +21,15 @@ class TestSingleInt:
         self.dut = T0()
         self.dut.main(1)
         self.dut.main(2)
+        self.datamodel = DataModel(self.dut)
+        self.conversion = get_conversion(self.dut)
 
     def test_datamodel(self):
-        datamodel = DataModel(self.dut)
-        assert datamodel.self_data['much_dummy_very_wow'] == 0  # dummy because constants are not added to VHDL self
-        assert datamodel.constants['mode'] == Const(1)
+        assert self.datamodel.self_data[
+                   'much_dummy_very_wow'] == 0  # dummy because constants are not added to VHDL self
+        assert self.datamodel.constants['mode'] == Const(1)
 
     def test_vhdl_datamodel(self):
-        conv = get_conversion(self.dut)
-
         expect = textwrap.dedent("""\
                 type register_t is record
                     much_dummy_very_wow: integer;
@@ -42,19 +42,28 @@ class TestSingleInt:
                     much_dummy_very_wow: integer;
                     \\next\\: register_t;
                 end record;""")
-        dm = conv.get_datamodel()
+        dm = self.conversion.get_datamodel()
         assert expect == dm
 
     def test_vhdl_reset(self):
-        conv = get_conversion(self.dut)
-
         expect = textwrap.dedent("""\
             procedure reset(self_reg: inout register_t) is
             begin
                 self_reg.much_dummy_very_wow := 0;
             end procedure;""")
 
-        assert expect == str(conv.get_reset_str())
+        assert expect == str(self.conversion.get_reset_str())
+
+    def test_vhdl_reset(self):
+        expect = textwrap.dedent("""\
+            procedure reset(self_reg: inout register_t) is
+            begin
+                self_reg.much_dummy_very_wow := 0;
+            end procedure;""")
+
+        assert expect == str(self.conversion.get_reset_str())
+
+
 
 
 
