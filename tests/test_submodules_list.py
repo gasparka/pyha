@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pytest
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import get_conversion_datamodel, Conversion
 from pyha.conversion.coupling import reset_maker
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 @pytest.fixture
@@ -65,6 +66,7 @@ def test_simple_datamodel(simple):
                 end record;
 
                 type self_t is record
+
                     sublist: A_0_list_t(0 to 1);
                     \\next\\: register_t;
                 end record;""")
@@ -102,7 +104,7 @@ def test_simple_sim(simple):
     dut = simple
 
     assert_sim_match(dut, [int, int], expected, *x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL])
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 @pytest.fixture
@@ -146,7 +148,7 @@ def test_sim_case2(case2):
     dut = case2
 
     assert_sim_match(dut, [int, int], expected, *x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL])
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 def test_reset_maker_case2(case2):
@@ -193,12 +195,12 @@ def test_reset_maker_case3(case3):
     expect = [
         'self_reg.\\ror\\ := 554;',
         'self_reg.sublist(0).reg := 2;',
-        'self_reg.sublist(0).submodule.nested_list(0).\\register\\ := to_sfixed(0.563, 0, -18);',
-        'self_reg.sublist(0).submodule.nested_list(1).\\register\\ := to_sfixed(0.563, 0, -18);',
+        'self_reg.sublist(0).submodule.nested_list(0).\\register\\ := Sfix(0.563, 0, -18);',
+        'self_reg.sublist(0).submodule.nested_list(1).\\register\\ := Sfix(0.563, 0, -18);',
         'self_reg.sublist(0).submodule.regor := False;',
         'self_reg.sublist(1).reg := 128;',
-        'self_reg.sublist(1).submodule.nested_list(0).\\register\\ := to_sfixed(0.563, 0, -18);',
-        'self_reg.sublist(1).submodule.nested_list(1).\\register\\ := to_sfixed(0.563, 0, -18);',
+        'self_reg.sublist(1).submodule.nested_list(0).\\register\\ := Sfix(0.563, 0, -18);',
+        'self_reg.sublist(1).submodule.nested_list(1).\\register\\ := Sfix(0.563, 0, -18);',
         'self_reg.sublist(1).submodule.regor := False;',
     ]
     ret = reset_maker(datamodel.self_data)
@@ -237,4 +239,25 @@ def test_sim_case_for(case_for):
     dut = case_for
 
     assert_sim_match(dut, [int], expected, x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL])
+                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+def test_const_illegal():
+    class A5(HW):
+        def __init__(self, reg_init):
+            self.reg = Const(reg_init)
+
+        def main(self, x):
+            return x
+
+    with pytest.raises(Exception):
+        class B5(HW):
+            def __init__(self):
+                self.sublist = [A5(i) for i in range(4)]
+
+            def main(self, x):
+                return x
+
+        dut = B5()
+        dut.main(0)
+        dut.main(1)
