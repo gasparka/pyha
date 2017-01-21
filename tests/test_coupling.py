@@ -714,40 +714,6 @@ def test_pytype_to_vhdl_l():
     assert ret == 'A_0'
 
 
-def test_datamodel_constant(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'a': 1, 'b_const': 2})
-
-    expect = textwrap.dedent("""\
-            type register_t is record
-                a: integer;
-                b_const: integer;
-            end record;
-
-            type self_t is record
-                a: integer;
-                b_const: integer;
-                \\next\\: register_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
-
-    expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
-        begin
-            self.a := self_reg.a;
-            self.b_const := 2;
-            self.\\next\\ := self_reg;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
-    assert expect == str(conv)
-
-
 def test_class_datamodel_submodule(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -761,6 +727,7 @@ def test_class_datamodel_submodule(converter):
             end record;
 
             type self_t is record
+
                 sub: A_0.register_t;
                 \\next\\: register_t;
             end record;""")
@@ -779,6 +746,7 @@ def test_class_datamodel_submodule(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.sub := self_reg.sub;
             self.\\next\\ := self_reg;
         end procedure;""")
@@ -800,6 +768,7 @@ def test_class_datamodel_submodule_reserved_name(converter):
             end record;
 
             type self_t is record
+
                 sub: Register_0.register_t;
                 \\next\\: register_t;
             end record;""")
@@ -818,6 +787,7 @@ def test_class_datamodel_submodule_reserved_name(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.sub := self_reg.sub;
             self.\\next\\ := self_reg;
         end procedure;""")
@@ -885,6 +855,7 @@ def test_datamodel_list_int(converter):
             end record;
 
             type self_t is record
+
                 a: integer_list_t(0 to 11);
                 \\next\\: register_t;
             end record;""")
@@ -916,6 +887,7 @@ def test_datamodel_list_boolean(converter):
             end record;
 
             type self_t is record
+
                 a: boolean_list_t(0 to 3);
                 \\next\\: register_t;
             end record;""")
@@ -947,6 +919,7 @@ def test_list_sfix(converter):
             end record;
 
             type self_t is record
+
                 a: sfixed2_15_list_t(0 to 1);
                 \\next\\: register_t;
             end record;""")
@@ -987,6 +960,7 @@ def test_class_datamodel(converter):
             end record;
 
             type self_t is record
+
                 a: sfixed(0 downto -27);
                 b: sfixed(2 downto -27);
                 c: integer;
@@ -1016,6 +990,7 @@ def test_class_datamodel_reserved_name(converter):
             end record;
 
             type self_t is record
+
                 \\new\\: boolean;
                 \\out\\: sfixed(0 downto -27);
                 \\next\\: register_t;
@@ -1036,6 +1011,7 @@ def test_class_datamodel_make_self(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.a := self_reg.a;
             self.\\next\\ := self_reg;
         end procedure;""")
@@ -1057,6 +1033,7 @@ def test_class_datamodel_make_self_reserved_name(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.\\new\\ := self_reg.\\new\\;
             self.\\out\\ := self_reg.\\out\\;
             self.\\next\\ := self_reg;
@@ -1076,6 +1053,7 @@ def test_class_datamodel_make_self_ignore_next(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.a := self_reg.a;
             self.\\next\\ := self_reg;
         end procedure;""")
@@ -1099,6 +1077,7 @@ def test_class_datamodel_make_self2(converter):
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
+
             self.a := self_reg.a;
             self.b := self_reg.b;
             self.c := self_reg.c;

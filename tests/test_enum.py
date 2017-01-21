@@ -45,6 +45,7 @@ def test_vhdl_datamodel(t0):
             end record;
 
             type self_t is record
+
                 mode: TestEnum;
                 \\next\\: register_t;
             end record;""")
