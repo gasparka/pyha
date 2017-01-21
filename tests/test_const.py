@@ -6,7 +6,7 @@ from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
 
 
-class TestSingle:
+class TestSingleInt:
     def setup(self):
         class T0(HW):
             def __init__(self):
@@ -45,6 +45,18 @@ class TestSingle:
         dm = conv.get_datamodel()
         assert expect == dm
 
+    def test_vhdl_reset(self):
+        conv = get_conversion(self.dut)
+
+        expect = textwrap.dedent("""\
+            procedure reset(self_reg: inout register_t) is
+            begin
+                self_reg.much_dummy_very_wow := 0;
+            end procedure;""")
+
+        assert expect == str(conv.get_reset_str())
 
 
-# todo: for lists of submodules constants must match!
+
+
+        # todo: for lists of submodules constants must match!
