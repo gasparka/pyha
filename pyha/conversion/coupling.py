@@ -173,18 +173,27 @@ class VHDLType:
     @classmethod
     def _get_vars_by_type(cls, find_type):
         # from self.data
-        ret = [v for v in cls._datamodel.self_data.values() if isinstance(v, find_type)]
+        ret = []
+        for var in cls._datamodel.self_data.values():
+            if isinstance(var, find_type):
+                ret.append(var)
+            elif isinstance(var, list) and isinstance(var[0], find_type):
+                ret.append(var[0])
 
         # from constants
-
-        ret += [v.value for v in cls._datamodel.constants.values()
-                if isinstance(v.value, find_type)]
+        for var in cls._datamodel.constants.values():
+            if isinstance(var, find_type):
+                ret.append(var)
+            elif isinstance(var, list) and isinstance(var[0], find_type):
+                ret.append(var[0])
 
         # from locals
         for func in cls._datamodel.locals.values():
             for var in func.values():
                 if isinstance(var, find_type):
                     ret.append(var)
+                elif isinstance(var, list) and isinstance(var[0], find_type):
+                    ret.append(var[0])
         return ret
 
     @classmethod

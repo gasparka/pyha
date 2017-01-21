@@ -436,17 +436,15 @@ class TestList:
             def __init__(self):
                 self.reg = [ComplexSfix(0 + 0j, 0, -18)] * 4
 
-            def main(self, x0):
-                self.next.reg[-1].real = x0.real
-                self.next.reg[-1].imag = x0.imag
+            def main(self, b):
                 return self.reg[-1]
 
             def get_delay(self):
                 return 1
 
         dut = A6()
-        dut.main(ComplexSfix(0.5 + 1.2j, 0, -18))
-        dut.main(ComplexSfix(0.5 + 1.2j, 0, -18))
+        dut.main(1)
+        dut.main(2)
 
         self.conversion = Conversion(dut)
 
