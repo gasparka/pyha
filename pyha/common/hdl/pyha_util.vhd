@@ -14,6 +14,8 @@ package PyhaUtil is
   function Sfix(a:real; left_index, right_index:integer) return sfixed;
   function Sfix(a:real; size_res:sfixed) return sfixed;
 
+  function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed;
+
   function logic_to_bool(x: std_logic) return boolean;
   function bool_to_logic(x: boolean) return std_logic;
 
@@ -54,6 +56,11 @@ package body PyhaUtil is
   function Sfix(a:real; size_res:sfixed) return sfixed is
   begin
     return to_sfixed(a, size_res, guard_bits=>16);
+  end function;
+
+  function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed is
+  begin
+    return to_sfixed(a, left_index, right_index);
   end function;
 
   function logic_to_bool(x: std_logic) return boolean is

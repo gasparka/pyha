@@ -85,7 +85,7 @@ def reset_maker(self_data, recursion_depth=0):
                 variables.extend(vars)
 
         elif isinstance(value, list):
-            tmp = list_reset(key, prefix, value)
+            tmp = list_reset(prefix, key, value)
         elif isinstance(value, HW):
             if recursion_depth == 0:
                 tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)

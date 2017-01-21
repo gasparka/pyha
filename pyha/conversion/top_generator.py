@@ -71,12 +71,12 @@ class TopGenerator:
         elif type(var) == bool:
             return 'logic_to_bool({})'.format(var_name)
         elif type(var) == Sfix:
-            return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
+            return 'Sfix({}, {}, {})'.format(var_name, var.left, var.right)
         elif type(var) == ComplexSfix:
             size = int(var.bitwidth())
             mid = size // 2
-            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size - 1, mid, var.left, var.right)
-            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid - 1, 0, var.left, var.right)
+            real = 'Sfix({}({} downto {}), {}, {})'.format(var_name, size - 1, mid, var.left, var.right)
+            imag = 'Sfix({}({} downto {}), {}, {})'.format(var_name, mid - 1, 0, var.left, var.right)
             return '(real=>{}, imag=>{})'.format(real, imag)
         else:
             assert 0

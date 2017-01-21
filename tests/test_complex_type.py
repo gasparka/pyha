@@ -115,6 +115,7 @@ def test_reg_conversion_datamodel(reg):
             end record;
 
             type self_t is record
+
                 reg: complex_sfix1_12;
                 \\next\\: register_t;
             end record;""")
@@ -128,7 +129,7 @@ def test_reg_conversion_reset(reg):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.reg := (real=>to_sfixed(0.5, 1, -12), imag=>to_sfixed(1.2, 1, -12));
+            self_reg.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -141,7 +142,7 @@ def test_reg_conversion_top_entity(reg):
     assert 'in0: in std_logic_vector(27 downto 0);' == res.make_entity_inputs()
     assert 'variable var_in0: complex_sfix1_12;' == res.make_input_variables()
     assert 'var_in0 := ' \
-           '(real=>to_sfixed(in0(27 downto 14), 1, -12), imag=>to_sfixed(in0(13 downto 0), 1, -12));' \
+           '(real=>Sfix(in0(27 downto 14), 1, -12), imag=>Sfix(in0(13 downto 0), 1, -12));' \
            == res.make_input_type_conversions()
 
     # output
@@ -212,7 +213,7 @@ def test_shr_conversion_reset(shr):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.reg := ((real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(0.2, 1, -18)), (real=>to_sfixed(0.1, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.2, 1, -18), imag=>to_sfixed(-1.2, 1, -18)));
+            self_reg.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())

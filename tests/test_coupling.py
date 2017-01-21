@@ -957,7 +957,7 @@ def test_list_sfix(converter):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.a := (to_sfixed(0.1, 2, -15), to_sfixed(1.5, 2, -15));
+            self_reg.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -1126,8 +1126,8 @@ def test_class_datamodel_reset(converter):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.a := to_sfixed(1.0, 2, -27);
-            self_reg.b := to_sfixed(4.0, 6, -27);
+            self_reg.a := Sfix(1.0, 2, -27);
+            self_reg.b := Sfix(4.0, 6, -27);
             self_reg.c := 25;
             self_reg.d := False;
         end procedure;""")
@@ -1150,7 +1150,7 @@ def test_class_datamodel_reset_reserved_name(converter):
         procedure reset(self_reg: inout register_t) is
         begin
             self_reg.\\new\\ := False;
-            self_reg.\\out\\ := to_sfixed(1.0, 0, -27);
+            self_reg.\\out\\ := Sfix(1.0, 0, -27);
         end procedure;""")
     conv = converter(code, datamodel)
     conv = conv.get_reset_str()
@@ -1210,8 +1210,8 @@ def test_class_full(converter):
         package body unknown_name is
             procedure reset(self_reg: inout register_t) is
             begin
-                self_reg.a := to_sfixed(1.0, 2, -27);
-                self_reg.b := to_sfixed(4.0, 6, -27);
+                self_reg.a := Sfix(1.0, 2, -27);
+                self_reg.b := Sfix(4.0, 6, -27);
                 self_reg.c := 25;
                 self_reg.d := False;
             end procedure;
@@ -1380,7 +1380,7 @@ def test_class_full_get_delay(converter):
             package body unknown_name is
                 procedure reset(self_reg: inout register_t) is
                 begin
-                    self_reg.a := to_sfixed(0.0, 0, -27);
+                    self_reg.a := Sfix(0.0, 0, -27);
                 end procedure;
 
                 procedure make_self(self_reg: register_t; self: out self_t) is

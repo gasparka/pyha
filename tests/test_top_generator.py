@@ -84,7 +84,7 @@ def test_input_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
                 var_in0 := to_integer(signed(in0));
-                var_in1 := to_sfixed(in1, 2, -17);
+                var_in1 := Sfix(in1, 2, -17);
                 var_in2 := logic_to_bool(in2);""")
 
     res = TopGenerator(dut)
@@ -178,7 +178,7 @@ def test_full(basic_obj, tmpdir):
                         elsif rising_edge(clk) then
                             --convert slv to normal types
                             var_in0 := to_integer(signed(in0));
-                            var_in1 := to_sfixed(in1, 2, -17);
+                            var_in1 := Sfix(in1, 2, -17);
                             var_in2 := logic_to_bool(in2);
 
                             --call the main entry
