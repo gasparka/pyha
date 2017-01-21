@@ -20,6 +20,8 @@ def pytype_to_vhdl(var):
         return 'boolean'
     elif type(var) is int:
         return 'integer'
+    elif type(var) is float:
+        return 'real'
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
     elif type(var) is ComplexSfix:

@@ -197,31 +197,22 @@ class TestMultiIntSfixEnumBooleanCFix:
         def test_datamodel(self):
             assert self.datamodel.self_data['reg'] == 0  # dummy because constants are not added to VHDL self
             assert self.datamodel.constants['cfloat'] == Const(0.5219)
-            #
-            #     def test_vhdl_enum_define(self):
-            #         expect = ['type DummyEnum is (FIRST,SECOND);']
-            #         dm = self.conversion.get_enumdefs()
-            #         assert expect == dm
-            #
-            #     def test_vhdl_datamodel(self):
-            #         expect = textwrap.dedent("""\
-            #                 type register_t is record
-            #                     reg: integer;
-            #                 end record;
-            #
-            #                 type self_t is record
-            #                     -- constants
-            #                     cbool: boolean;
-            #                     ccfix: complex_sfix0_18;
-            #                     cenum: DummyEnum;
-            #                     cint: integer;
-            #                     csfix: sfixed(2 downto -18);
-            #
-            #                     reg: integer;
-            #                     \\next\\: register_t;
-            #                 end record;""")
-            #         dm = self.conversion.get_datamodel()
-            #         assert expect == dm
+
+        def test_vhdl_datamodel(self):
+            expect = textwrap.dedent("""\
+                    type register_t is record
+                        reg: integer;
+                    end record;
+
+                    type self_t is record
+                        -- constants
+                        cfloat: real;
+
+                        reg: integer;
+                        \\next\\: register_t;
+                    end record;""")
+            dm = self.conversion.get_datamodel()
+            assert expect == dm
             #
             #     def test_vhdl_reset(self):
             #         expect = textwrap.dedent("""\
