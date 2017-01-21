@@ -251,7 +251,8 @@ class TestLists:
             def main(self, a):
                 b = self.csfix[0] * self.cfloat[3]
                 c = self.ccfix[0].real * self.cfloat[1]
-                return b, c
+                # print(c)
+                return c
 
         self.dut = T3()
         self.dut.main(1)
@@ -295,14 +296,17 @@ class TestLists:
             end procedure;""")
 
         assert expect == str(self.conversion.get_makeself_str())
-        #
-        # def test_simulate(self):
-        #     x = [0] * 8
-        #     expected = [0.5219 * 2] * 8
-        #     assert_sim_match(self.dut, [int], expected, x,
-        #                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-        #                      dir_path='/home/gaspar/git/pyha/playground/conv')
+
+    def test_simulate(self):
+        x = [0] * 8
+        expected = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+                    [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]]
+
+        expected = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+        assert_sim_match(self.dut, [int], expected, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         rtol=1e-4,
+                         dir_path='/home/gaspar/git/pyha/playground/conv')
 
         # todo: for lists of submodules constants must match!
-        # todo: to_sfixed to Sfix
         # todo: test invalid stuff, like assign to const
