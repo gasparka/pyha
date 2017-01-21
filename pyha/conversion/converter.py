@@ -520,7 +520,7 @@ class ClassNodeConv(NodeConv):
                 elif isinstance(value, (Sfix, ComplexSfix)):
                     const_str += ['self.{} := {};'.format(var.name, value.vhdl_reset())]
                 elif isinstance(value, list):
-                    const_str += [list_reset('', var.name, value)]
+                    const_str += ['self.' + list_reset('', var.name, value)]
                 else:
                     const_str += ['self.{} := {};'.format(var.name, value)]
 

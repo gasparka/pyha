@@ -251,8 +251,7 @@ class TestLists:
             def main(self, a):
                 b = self.csfix[0] * self.cfloat[3]
                 c = self.ccfix[0].real * self.cfloat[1]
-                # print(c)
-                return c
+                return b, c
 
         self.dut = T3()
         self.dut.main(1)
@@ -285,11 +284,11 @@ class TestLists:
             procedure make_self(self_reg: register_t; self: out self_t) is
             begin
                 -- constants
-                cbool := (True, True, True, False);
-                ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
-                cfloat := (0.1, 0.2, 0.3, 0.4);
-                cint := (1, 2, 3, 4);
-                csfix := (Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18));
+                self.cbool := (True, True, True, False);
+                self.ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
+                self.cfloat := (0.1, 0.2, 0.3, 0.4);
+                self.cint := (1, 2, 3, 4);
+                self.csfix := (Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18));
 
                 self.reg := self_reg.reg;
                 self.\\next\\ := self_reg;
@@ -327,7 +326,6 @@ class TestLists:
         expected = [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
                     [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]]
 
-        expected = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
         assert_sim_match(self.dut, [int], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          rtol=1e-4,

@@ -182,6 +182,7 @@ class VHDLType:
 
         # from constants
         for var in cls._datamodel.constants.values():
+            var = var.value
             if isinstance(var, find_type):
                 ret.append(var)
             elif isinstance(var, list) and isinstance(var[0], find_type):
