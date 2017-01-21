@@ -11,6 +11,7 @@ from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
+from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
@@ -513,6 +514,8 @@ class ClassNodeConv(NodeConv):
                     const_str += ['self.{} := {};'.format(var.name, value)]
                 elif isinstance(value, Enum):
                     const_str += ['self.{} := {};'.format(var.name, value.name)]
+                elif isinstance(value, (Sfix, ComplexSfix)):
+                    const_str += ['self.{} := {};'.format(var.name, value.vhdl_reset())]
             sockets['CONSTANTS'] = '    -- constants\n'
             sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
             sockets['CONSTANTS'] += '\n'
