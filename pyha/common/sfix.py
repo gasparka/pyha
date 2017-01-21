@@ -3,6 +3,8 @@ import textwrap
 
 import numpy as np
 
+from pyha.common.const import Const
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -134,6 +136,9 @@ class Sfix:
                  round_style=fixed_round):
         self.round_style = round_style
         self.overflow_style = overflow_style
+
+        if isinstance(val, Const):
+            val = val.value
 
         val = float(val)
         if type(val) not in [float, int]:

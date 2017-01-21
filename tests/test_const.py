@@ -177,10 +177,93 @@ class TestMultiIntSfixEnumBooleanCFix:
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv')
 
+    class TestFloat:
+        def setup(self):
+            class T2(HW):
+                def __init__(self):
+                    self.reg = 0
+                    self.cfloat = Const(0.5219)
 
+                def main(self, a):
+                    r = Sfix(self.cfloat, 0, -28)
+                    return r
 
+            self.dut = T2()
+            self.dut.main(1)
+            self.dut.main(2)
+            self.datamodel = DataModel(self.dut)
+            self.conversion = get_conversion(self.dut)
 
-
+        def test_datamodel(self):
+            assert self.datamodel.self_data['reg'] == 0  # dummy because constants are not added to VHDL self
+            assert self.datamodel.constants['cfloat'] == Const(0.5219)
+            #
+            #     def test_vhdl_enum_define(self):
+            #         expect = ['type DummyEnum is (FIRST,SECOND);']
+            #         dm = self.conversion.get_enumdefs()
+            #         assert expect == dm
+            #
+            #     def test_vhdl_datamodel(self):
+            #         expect = textwrap.dedent("""\
+            #                 type register_t is record
+            #                     reg: integer;
+            #                 end record;
+            #
+            #                 type self_t is record
+            #                     -- constants
+            #                     cbool: boolean;
+            #                     ccfix: complex_sfix0_18;
+            #                     cenum: DummyEnum;
+            #                     cint: integer;
+            #                     csfix: sfixed(2 downto -18);
+            #
+            #                     reg: integer;
+            #                     \\next\\: register_t;
+            #                 end record;""")
+            #         dm = self.conversion.get_datamodel()
+            #         assert expect == dm
+            #
+            #     def test_vhdl_reset(self):
+            #         expect = textwrap.dedent("""\
+            #             procedure reset(self_reg: inout register_t) is
+            #             begin
+            #                 self_reg.reg := 0;
+            #             end procedure;""")
+            #
+            #         assert expect == str(self.conversion.get_reset_str())
+            #
+            #     def test_vhdl_makeself(self):
+            #         expect = textwrap.dedent("""\
+            #             procedure make_self(self_reg: register_t; self: out self_t) is
+            #             begin
+            #                 -- constants
+            #                 self.cbool := False;
+            #                 self.ccfix := (real=>to_sfixed(0.5, 0, -18), imag=>to_sfixed(-0.25, 0, -18));
+            #                 self.cenum := SECOND;
+            #                 self.cint := 32;
+            #                 self.csfix := to_sfixed(3.141592653589793, 2, -18);
+            #
+            #                 self.reg := self_reg.reg;
+            #                 self.\\next\\ := self_reg;
+            #             end procedure;""")
+            #
+            #         assert expect == str(self.conversion.get_makeself_str())
+            #
+            #     def test_simulate(self):
+            #         x = [0] * 8
+            #         expected = [
+            #             [32] * 8,
+            #             [False] * 8,
+            #             [np.pi] * 8,
+            #             [0.5 - 0.25j] * 8
+            #
+            #         ]
+            #         # expected = [32, False, DummyEnum.SECOND, np.pi, 0.5 - 0.289j] * 8
+            #
+            #         assert_sim_match(self.dut, [int], expected, x,
+            #                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+            #                          dir_path='/home/gaspar/git/pyha/playground/conv')
+            #
 
         # todo: for lists of submodules constants must match!
         # todo: to_sfixed to Sfix
