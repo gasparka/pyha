@@ -177,71 +177,64 @@ class TestMultiIntSfixEnumBooleanCFix:
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv')
 
-    class TestFloat:
-        def setup(self):
-            class T2(HW):
-                def __init__(self):
-                    self.reg = 0
-                    self.cfloat = Const(0.5219)
 
-                def main(self, a):
-                    r = Sfix(self.cfloat, 0, -28)
-                    return r
+class TestFloat:
+    def setup(self):
+        class T2(HW):
+            def __init__(self):
+                self.reg = 0
+                self.cfloat = Const(0.5219)
 
-            self.dut = T2()
-            self.dut.main(1)
-            self.dut.main(2)
-            self.datamodel = DataModel(self.dut)
-            self.conversion = get_conversion(self.dut)
+            def main(self, a):
+                r = Sfix(self.cfloat, 0, -28)
+                return r
 
-        def test_datamodel(self):
-            assert self.datamodel.self_data['reg'] == 0  # dummy because constants are not added to VHDL self
-            assert self.datamodel.constants['cfloat'] == Const(0.5219)
+        self.dut = T2()
+        self.dut.main(1)
+        self.dut.main(2)
+        self.datamodel = DataModel(self.dut)
+        self.conversion = get_conversion(self.dut)
 
-        def test_vhdl_datamodel(self):
-            expect = textwrap.dedent("""\
-                    type register_t is record
-                        reg: integer;
-                    end record;
+    def test_datamodel(self):
+        assert self.datamodel.self_data['reg'] == 0  # dummy because constants are not added to VHDL self
+        assert self.datamodel.constants['cfloat'] == Const(0.5219)
 
-                    type self_t is record
-                        -- constants
-                        cfloat: real;
+    def test_vhdl_datamodel(self):
+        expect = textwrap.dedent("""\
+                type register_t is record
+                    reg: integer;
+                end record;
 
-                        reg: integer;
-                        \\next\\: register_t;
-                    end record;""")
-            dm = self.conversion.get_datamodel()
-            assert expect == dm
-
-        def test_vhdl_makeself(self):
-            expect = textwrap.dedent("""\
-                procedure make_self(self_reg: register_t; self: out self_t) is
-                begin
+                type self_t is record
                     -- constants
-                    self.cfloat := 0.5219;
+                    cfloat: real;
 
-                    self.reg := self_reg.reg;
-                    self.\\next\\ := self_reg;
-                end procedure;""")
+                    reg: integer;
+                    \\next\\: register_t;
+                end record;""")
+        dm = self.conversion.get_datamodel()
+        assert expect == dm
 
-            assert expect == str(self.conversion.get_makeself_str())
-            #
-            #     def test_simulate(self):
-            #         x = [0] * 8
-            #         expected = [
-            #             [32] * 8,
-            #             [False] * 8,
-            #             [np.pi] * 8,
-            #             [0.5 - 0.25j] * 8
-            #
-            #         ]
-            #         # expected = [32, False, DummyEnum.SECOND, np.pi, 0.5 - 0.289j] * 8
-            #
-            #         assert_sim_match(self.dut, [int], expected, x,
-            #                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-            #                          dir_path='/home/gaspar/git/pyha/playground/conv')
-            #
+    def test_vhdl_makeself(self):
+        expect = textwrap.dedent("""\
+            procedure make_self(self_reg: register_t; self: out self_t) is
+            begin
+                -- constants
+                self.cfloat := 0.5219;
+
+                self.reg := self_reg.reg;
+                self.\\next\\ := self_reg;
+            end procedure;""")
+
+        assert expect == str(self.conversion.get_makeself_str())
+
+    def test_simulate(self):
+        x = [0] * 8
+        expected = [0.5219] * 8
+        assert_sim_match(self.dut, [int], expected, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         dir_path='/home/gaspar/git/pyha/playground/conv')
+        #
 
         # todo: for lists of submodules constants must match!
         # todo: to_sfixed to Sfix
