@@ -151,10 +151,10 @@ class TestMultiIntSfixEnumBooleanCFix:
             begin
                 -- constants
                 self.cbool := False;
-                self.ccfix := (real=>to_sfixed(0.5, 0, -18), imag=>to_sfixed(-0.25, 0, -18));
+                self.ccfix := (real=>Sfix(0.5, 0, -18), imag=>Sfix(-0.25, 0, -18));
                 self.cenum := SECOND;
                 self.cint := 32;
-                self.csfix := to_sfixed(3.141592653589793, 2, -18);
+                self.csfix := Sfix(3.141592653589793, 2, -18);
 
                 self.reg := self_reg.reg;
                 self.\\next\\ := self_reg;
@@ -331,5 +331,6 @@ class TestLists:
                          rtol=1e-4,
                          dir_path='/home/gaspar/git/pyha/playground/conv')
 
+
+
         # todo: for lists of submodules constants must match!
-        # todo: test invalid stuff, like assign to const
