@@ -11,21 +11,6 @@ from pyha.conversion.extract_datamodel import DataModel
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
-def test_compare():
-    a = Const(1)
-    assert a == 1
-    assert a < 2
-    assert a <= 2
-    assert a > 0
-    assert a >= 0
-
-
-# def test_indexing():
-#
-#     a = [1, 2, 3, 4]
-#     b = Const()
-
-
 class TestBasic:
     def setup(self):
         class B0(HW):
@@ -56,9 +41,6 @@ class TestBasic:
 
         assert self.datamodel.constants['mode'] == 1
         assert len(self.datamodel.constants) == 1
-
-
-
 
 
 class TestSingleInt:
@@ -380,4 +362,3 @@ class TestLists:
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          rtol=1e-4,
                          dir_path='/home/gaspar/git/pyha/playground/conv')
-
