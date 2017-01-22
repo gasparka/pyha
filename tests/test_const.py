@@ -20,6 +20,43 @@ def test_compare():
     assert a >= 0
 
 
+# def test_indexing():
+#
+#     a = [1, 2, 3, 4]
+#     b = Const()
+
+
+class TestBasic:
+    def setup(self):
+        class B0(HW):
+            def __init__(self):
+                self.reg = 32
+                self.mode = Const(1)
+
+            def main(self, a):
+                l = [1, 2, 3]
+                b = l[self.mode]
+                return self.mode
+
+        self.dut = B0()
+        self.dut.main(1)
+        self.dut.main(2)
+        self.datamodel = DataModel(self.dut)
+        # self.conversion = get_conversion(self.dut)
+
+    def test_collect(self):
+        assert len(self.dut.__dict__['__constants__']) == 1
+        assert self.dut.__dict__['__constants__']['mode'] == 1
+        assert self.dut.__dict__['mode'] == 1
+        assert self.dut.__dict__['reg'] == 32
+
+    def test_datamodel(self):
+        assert self.datamodel.self_data['reg'] == 32
+        assert len(self.datamodel.self_data) == 1
+
+        assert self.datamodel.constants['mode'] == 1
+        assert len(self.datamodel.constants) == 1
+
 
 
 
@@ -84,7 +121,7 @@ class TestSingleInt:
 
     def test_simulate(self):
         x = [0] * 8
-        expected = [self.dut.mode.value] * 8
+        expected = [self.dut.mode] * 8
         assert_sim_match(self.dut, [int], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 

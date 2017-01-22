@@ -26,6 +26,9 @@ class Const:
     def __getitem__(self, item):
         return self._value[item]
 
+    def __add__(self, other):
+        return self._value + other
+
     @property
     def value(self):
         return self._value

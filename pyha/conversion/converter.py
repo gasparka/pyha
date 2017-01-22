@@ -514,7 +514,7 @@ class ClassNodeConv(NodeConv):
         if len(const):
             const_str = []
             for var in const:
-                value = var.variable.value
+                value = var.variable
                 if isinstance(value, Enum):
                     const_str += ['self.{} := {};'.format(var.name, value.name)]
                 elif isinstance(value, (Sfix, ComplexSfix)):

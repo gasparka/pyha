@@ -186,7 +186,7 @@ class Meta(type):
     instance_count = 0
 
     def validate_datamodel(cls, dict):
-
+        # todo: rework
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
@@ -198,13 +198,21 @@ class Meta(type):
                             'List of submodules: {}\n but constants are not equal!\n\nTry to remove Const() keyword.'.format(
                                 x))
 
+    def handle_constants(cls, dict):
+        """ Go over dict and find all the constants. Remove the Const() wrapper
+        and insert to __constants__."""
 
-
-
+        dict['__constants__'] = {}
+        for k, v in dict.items():
+            if isinstance(v, Const):
+                dict['__constants__'][k] = v.value
+                dict[k] = v.value
+        return dict
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
+        ret.__dict__ = cls.handle_constants(ret.__dict__)
         cls.validate_datamodel(ret.__dict__)
 
         ret.pyha_instance_id = cls.instance_count
@@ -232,5 +240,3 @@ class Meta(type):
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
     pass
-
-

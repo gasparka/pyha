@@ -4,7 +4,6 @@ from enum import Enum
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
-from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
@@ -50,8 +49,6 @@ def pytype_to_vhdl(var):
         return idstr
     elif isinstance(var, Enum):
         return type(var).__name__
-    elif isinstance(var, Const):
-        return pytype_to_vhdl(var.value)
     else:
         assert 0
 
@@ -172,30 +169,28 @@ class VHDLType:
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
-        # from self.data
-        ret = []
-        for var in cls._datamodel.self_data.values():
-            if isinstance(var, find_type):
-                ret.append(var)
-            elif isinstance(var, list) and isinstance(var[0], find_type):
-                ret.append(var[0])
-
-        # from constants
-        for var in cls._datamodel.constants.values():
-            var = var.value
-            if isinstance(var, find_type):
-                ret.append(var)
-            elif isinstance(var, list) and isinstance(var[0], find_type):
-                ret.append(var[0])
-
-        # from locals
-        for func in cls._datamodel.locals.values():
-            for var in func.values():
+        def scan_arr(arr, find_type):
+            ret = []
+            for var in arr:
                 if isinstance(var, find_type):
                     ret.append(var)
                 elif isinstance(var, list) and isinstance(var[0], find_type):
                     ret.append(var[0])
-        return ret
+            return ret
+
+        vars = []
+
+        # from self.data
+        vars.extend(scan_arr(cls._datamodel.self_data.values(), find_type))
+
+        # from constants
+        vars.extend(scan_arr(cls._datamodel.constants.values(), find_type))
+
+        # from locals
+        for func in cls._datamodel.locals.values():
+            vars.extend(scan_arr(func.values(), find_type))
+
+        return vars
 
     @classmethod
     def get_typedef_vars(cls):

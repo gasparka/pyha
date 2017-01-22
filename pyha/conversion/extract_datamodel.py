@@ -97,8 +97,10 @@ class DataModel:
         else:
             dm = extract_datamodel(obj)
 
-            dm_clean = {k:v for k,v in dm.items() if not isinstance(v, Const)}
-            constants = {k:v for k,v in dm.items() if isinstance(v, Const)}
+            constants = obj.__constants__
+
+            # remove constants from self data
+            dm_clean = {k: v for k, v in dm.items() if k not in constants}
             if len(dm_clean) == 0:
                 dm_clean['much_dummy_very_wow'] = 0  # this simplifies many testing code
             loc = extract_locals(obj)

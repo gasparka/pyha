@@ -10,7 +10,6 @@ from typing import List
 
 import numpy as np
 
-from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_GATE_TESTS
 from pyha.simulation.sim_provider import SimProvider
@@ -86,8 +85,6 @@ def type_conversions(func):
                     ret.append(float(x))
                 elif type(x) == ComplexSfix:
                     ret.append(float(x.real) + float(x.imag) * 1j)
-                elif isinstance(x, Const):
-                    ret.extend(output_types([x.value]))
                 elif isinstance(x, Enum):
                     ret.append(x.value)
                 else:

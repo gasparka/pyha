@@ -3,8 +3,6 @@ import textwrap
 
 import numpy as np
 
-from pyha.common.util import remove_container
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -137,8 +135,6 @@ class Sfix:
         self.round_style = round_style
         self.overflow_style = overflow_style
 
-        val = remove_container(val)
-
         val = float(val)
         if type(val) not in [float, int]:
             raise Exception('Value must be float or int!')
@@ -253,7 +249,6 @@ class Sfix:
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __add__(self, other):
-        other = remove_container(other)
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val + other.val,
@@ -262,7 +257,6 @@ class Sfix:
                     init_only=True)
 
     def __sub__(self, other):
-        other = remove_container(other)
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
@@ -271,7 +265,6 @@ class Sfix:
                     init_only=True)
 
     def __mul__(self, other):
-        other = remove_container(other)
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val * other.val,
