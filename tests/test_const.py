@@ -79,7 +79,7 @@ class TestSingleInt:
     def test_datamodel(self):
         assert self.datamodel.self_data[
                    'much_dummy_very_wow'] == 0  # dummy because constants are not added to VHDL self
-        assert self.datamodel.constants['mode'] == Const(1)
+        assert self.datamodel.constants['mode'] == 1
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
@@ -155,11 +155,11 @@ class TestMultiIntSfixEnumBooleanCFix:
     def test_datamodel(self):
         assert self.datamodel.self_data[
                    'reg'] == 0  # dummy because constants are not added to VHDL self
-        assert self.datamodel.constants['cint'] == Const(32)
-        assert self.datamodel.constants['cbool'] == Const(False)
-        assert self.datamodel.constants['cenum'] == Const(DummyEnum.SECOND)
-        assert self.datamodel.constants['csfix'] == Const(Sfix(np.pi, 2, -18))
-        assert self.datamodel.constants['ccfix'] == Const(ComplexSfix(0.5 - 0.25j, 0, -18))
+        assert self.datamodel.constants['cint'] == 32
+        assert self.datamodel.constants['cbool'] == False
+        assert self.datamodel.constants['cenum'] == DummyEnum.SECOND
+        assert self.datamodel.constants['csfix'] == Sfix(np.pi, 2, -18)
+        assert self.datamodel.constants['ccfix'] == ComplexSfix(0.5 - 0.25j, 0, -18)
 
     def test_vhdl_enum_define(self):
         expect = ['type DummyEnum is (FIRST,SECOND);']
@@ -248,7 +248,7 @@ class TestFloat:
 
     def test_datamodel(self):
         assert self.datamodel.self_data['reg'] == 0  # dummy because constants are not added to VHDL self
-        assert self.datamodel.constants['cfloat'] == Const(0.5219)
+        assert self.datamodel.constants['cfloat'] == 0.5219
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
@@ -381,6 +381,3 @@ class TestLists:
                          rtol=1e-4,
                          dir_path='/home/gaspar/git/pyha/playground/conv')
 
-
-
-        # todo: for lists of submodules constants must match!

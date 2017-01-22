@@ -186,13 +186,12 @@ class Meta(type):
     instance_count = 0
 
     def validate_datamodel(cls, dict):
-        # todo: rework
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
-                ref = [v for v in x[0].__dict__.values() if isinstance(v, Const)]
+                ref = x[0].__constants__
                 for listi in x:
-                    di = [v for v in listi.__dict__.values() if isinstance(v, Const)]
+                    di = listi.__constants__
                     if di != ref:
                         raise Exception(
                             'List of submodules: {}\n but constants are not equal!\n\nTry to remove Const() keyword.'.format(
