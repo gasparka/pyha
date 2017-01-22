@@ -115,6 +115,7 @@ def test_reg_conversion_datamodel(reg):
             end record;
 
             type self_t is record
+
                 reg: complex_sfix1_12;
                 \\next\\: register_t;
             end record;""")
@@ -128,7 +129,7 @@ def test_reg_conversion_reset(reg):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.reg := (real=>to_sfixed(0.5, 1, -12), imag=>to_sfixed(1.2, 1, -12));
+            self_reg.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -141,7 +142,7 @@ def test_reg_conversion_top_entity(reg):
     assert 'in0: in std_logic_vector(27 downto 0);' == res.make_entity_inputs()
     assert 'variable var_in0: complex_sfix1_12;' == res.make_input_variables()
     assert 'var_in0 := ' \
-           '(real=>to_sfixed(in0(27 downto 14), 1, -12), imag=>to_sfixed(in0(13 downto 0), 1, -12));' \
+           '(real=>Sfix(in0(27 downto 14), 1, -12), imag=>Sfix(in0(13 downto 0), 1, -12));' \
            == res.make_input_type_conversions()
 
     # output
@@ -212,7 +213,7 @@ def test_shr_conversion_reset(shr):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.reg := ((real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.5, 1, -18), imag=>to_sfixed(0.2, 1, -18)), (real=>to_sfixed(0.1, 1, -18), imag=>to_sfixed(1.2, 1, -18)), (real=>to_sfixed(0.2, 1, -18), imag=>to_sfixed(-1.2, 1, -18)));
+            self_reg.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
         end procedure;""")
 
     assert expect == str(conv.get_reset_str())
@@ -428,3 +429,49 @@ def test_complex_inits_return_simulate(complex_inits_return):
                       Sfix(left=0, right=-32)],
                      expected, *x, rtol=1e-3,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+class TestList:
+    def setup(self):
+        class A6(HW):
+            def __init__(self):
+                self.reg = [ComplexSfix(0 + 0j, 0, -18)] * 4
+
+            def main(self, b):
+                return self.reg[-1]
+
+            def get_delay(self):
+                return 1
+
+        dut = A6()
+        dut.main(1)
+        dut.main(2)
+
+        self.conversion = Conversion(dut)
+
+    def test_generation(self):
+        expect = textwrap.dedent("""\
+                library ieee;
+                    use ieee.fixed_pkg.all;
+
+                package ComplexTypes is
+                type complex_sfix0_18 is record
+                    real: sfixed(0 downto -18);
+                    imag: sfixed(0 downto -18);
+                end record;
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+
+                end package;
+
+                package body ComplexTypes is
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+                begin
+                    return (a, b);
+                end function;
+
+                end package body;
+                """)
+
+        files = self.conversion.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            assert expect == f.read()

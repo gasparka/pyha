@@ -76,6 +76,7 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
+        # ill throw my computer out of the window counter: 4
         self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
@@ -116,8 +117,11 @@ class CocotbAuto(object):
 
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
+            pass
         except subprocess.CalledProcessError as err:
-            print(err.args[0])
+            print('GHDL failed!')
+            import os
+            os._exit(-1)
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(complex)

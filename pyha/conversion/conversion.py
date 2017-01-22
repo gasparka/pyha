@@ -51,6 +51,7 @@ class Conversion:
     """
     # collect all complex types in the design
     complex_types = []
+
     def __init__(self, obj, is_child=False):
 
         self.is_child = is_child
@@ -74,6 +75,7 @@ class Conversion:
 
     @property
     def inputs(self) -> List[object]:
+        # return [x.value if isinstance(x, Const) else x for x in self.top_vhdl.get_object_inputs()]
         return self.top_vhdl.get_object_inputs()
 
     @property
@@ -82,6 +84,7 @@ class Conversion:
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
 
+        # todo: makedirs
         paths = []
         for x in self.childs:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
@@ -109,6 +112,17 @@ class Conversion:
         #     return inspect.getsourcefile(type(obj))
 
     def make_vhdl_complex_types(self):
+        template_none = textwrap.dedent("""\
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package ComplexTypes is
+            end package;
+            """)
+        import numpy as np
+        if len(np.array(self.complex_types).flatten()) == 0:
+            return template_none
+
         template = textwrap.dedent("""\
             library ieee;
                 use ieee.fixed_pkg.all;

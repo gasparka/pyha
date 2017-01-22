@@ -11,6 +11,8 @@ fixed_round = 'fixed_round'
 
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
+fixed_wrap_impossible = 'fixed_wrap_impossible'
+
 
 
 class ComplexSfix:
@@ -103,6 +105,10 @@ class ComplexSfix:
 
 # TODO: Verify stuff against VHDL library
 class Sfix:
+    # original idea was to use float for internal computations, now it has turned out that\
+    # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
+    # to implement stuff as integer arithmetic
+
     # Disables all quantization and saturating stuff
     _float_mode = False
 
@@ -128,17 +134,20 @@ class Sfix:
     def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
                  round_style=fixed_round):
         self.round_style = round_style
-        assert left >= right
-        # if left == None:
-        #     raise Exception('Left bound for Sfix is None!')
-        #
-        # if right == None:
-        #     raise Exception('Right bound for Sfix is None!')
+        self.overflow_style = overflow_style
+
         val = float(val)
         if type(val) not in [float, int]:
             raise Exception('Value must be float or int!')
-        self.right = right
-        self.left = left
+
+        if isinstance(left, Sfix):
+            self.right = left.right
+            self.left = left.left
+        else:
+            self.right = right
+            self.left = left
+
+        assert self.left >= self.right
         self.val = val
         self.init_val = val
 
@@ -151,7 +160,7 @@ class Sfix:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style is fixed_wrap:  # TODO: add tests
+        elif overflow_style in (fixed_wrap, fixed_wrap_impossible):  # TODO: add tests
             self.quantize()
             self.wrap()
         else:
@@ -193,7 +202,7 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-        if not self.is_lazy_init():
+        if not self.is_lazy_init() and not old == 1.0:
             logger.warning('Saturation {} -> {}'.format(old, self.val))
 
             # TODO: tests break
@@ -201,8 +210,11 @@ class Sfix:
 
     # TODO: add tests
     def wrap(self):
+        if self.overflow_style is fixed_wrap_impossible:
+            Exception('Wrap happened for "fixed_wrap_impossible"')
+
         fmin = self.min_representable()
-        fmax = self.max_representable()
+        fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
 
     def quantize(self):
@@ -246,7 +258,6 @@ class Sfix:
                     init_only=True)
 
     def __sub__(self, other):
-        # TODO: why only float?
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
@@ -255,7 +266,6 @@ class Sfix:
                     init_only=True)
 
     def __mul__(self, other):
-        # TODO: why only float?
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val * other.val,
@@ -270,16 +280,22 @@ class Sfix:
         return 1
 
     def __rshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val / n,
+        # todo: in float mode this should not lose precison
+        o = int(self.val / 2 ** self.right)
+        o = (o >> other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    init_only=True)
 
     def __lshift__(self, other):
-        n = 2 ** other
-        return Sfix(self.val * n,
+        # todo: in float mode this should not lose precison
+        o = int(self.val / 2 ** self.right)
+        o = (o << other) * 2 ** self.right
+        return Sfix(o,
                     self.left,
-                    self.right)
+                    self.right,
+                    overflow_style=fixed_wrap)
 
     def __abs__(self):
         return Sfix(abs(self.val),
@@ -314,7 +330,7 @@ class Sfix:
         return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
 
     def vhdl_reset(self):
-        return 'to_sfixed({}, {}, {})'.format(self.init_val, self.left, self.right)
+        return 'Sfix({}, {}, {})'.format(self.init_val, self.left, self.right)
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):

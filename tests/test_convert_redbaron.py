@@ -1,5 +1,6 @@
 """ Conversion tests that mostly base on redbaron preprocessing """
 import textwrap
+from enum import Enum
 
 import pytest
 from redbaron import RedBaron
@@ -427,6 +428,72 @@ def test_typed_def_for_combined(converter):
                 D_0.main(self.\\next\\.arr(i), x, ret_0=>outs(i));
             end loop;
             ret_0 := outs(0);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_enum_local_var_assign(converter):
+    class EnumType(Enum):
+        ENUMVALUE = 0
+
+    code = textwrap.dedent("""\
+        def f():
+            a = EnumType.ENUMVALUE""")
+
+    datamodel = DataModel(locals={'f': {'a': EnumType.ENUMVALUE}},
+                          self_data={})
+
+    expect = textwrap.dedent("""\
+        procedure f is
+            variable a: EnumType;
+        begin
+            a := ENUMVALUE;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_enum_self_var_assign(converter):
+    class EnumType(Enum):
+        ENUMVALUE = 0
+
+    code = textwrap.dedent("""\
+        def f():
+            self.a = EnumType.ENUMVALUE""")
+
+    datamodel = DataModel(locals={},
+                          self_data={'a': EnumType.ENUMVALUE})
+
+    expect = textwrap.dedent("""\
+        procedure f is
+
+        begin
+            self.a := ENUMVALUE;
+        end procedure;""")
+    conv = converter(code, datamodel)
+    assert expect == str(conv)
+
+
+def test_enum_in_if(converter):
+    class EnumType(Enum):
+        ENUMVALUE = 0
+
+    code = textwrap.dedent("""\
+        def f():
+            if a == EnumType.ENUMVALUE:
+                b""")
+
+    datamodel = DataModel(locals={'f': {'c': EnumType.ENUMVALUE}},
+                          self_data={})
+
+    expect = textwrap.dedent("""\
+        procedure f is
+
+        begin
+            if a = ENUMVALUE then
+                b
+            end if;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)

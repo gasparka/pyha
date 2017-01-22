@@ -1,4 +1,5 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
+from enum import Enum
 
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -18,6 +19,8 @@ def pytype_to_vhdl(var):
         return 'boolean'
     elif type(var) is int:
         return 'integer'
+    elif type(var) is float:
+        return 'real'
     elif type(var) is Sfix:
         return 'sfixed({} downto {})'.format(var.left, var.right)
     elif type(var) is ComplexSfix:
@@ -29,6 +32,8 @@ def pytype_to_vhdl(var):
             return 'boolean' + arr_token
         elif type(var[0]) is int:
             return 'integer' + arr_token
+        elif type(var[0]) is float:
+            return 'real' + arr_token
         elif type(var[0]) is Sfix:
             left, right = bounds_to_str(var[0])
             return 'sfixed{}{}{}'.format(left, right, arr_token)
@@ -42,6 +47,8 @@ def pytype_to_vhdl(var):
     elif isinstance(var, HW):
         idstr = get_instance_vhdl_name(var)
         return idstr
+    elif isinstance(var, Enum):
+        return type(var).__name__
     else:
         assert 0
 
@@ -63,6 +70,9 @@ def reset_maker(self_data, recursion_depth=0):
         if isinstance(value, (Sfix, ComplexSfix)):
             tmp = '{} := {};'.format(prefix + key, value.vhdl_reset())
 
+        elif isinstance(value, (Enum)):
+            tmp = '{} := {};'.format(prefix + key, value.name)
+
         # list of submodules
         elif isinstance(value, list) and isinstance(value[0], HW):
             for i, x in enumerate(value):
@@ -72,11 +82,7 @@ def reset_maker(self_data, recursion_depth=0):
                 variables.extend(vars)
 
         elif isinstance(value, list):
-            if isinstance(value[0], (Sfix, ComplexSfix)):
-                lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
-            else:
-                lstr = '(' + ', '.join(str(x) for x in value) + ')'
-            tmp = '{} := {};'.format(prefix + key, lstr)
+            tmp = list_reset(prefix, key, value)
         elif isinstance(value, HW):
             if recursion_depth == 0:
                 tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
@@ -92,6 +98,15 @@ def reset_maker(self_data, recursion_depth=0):
             variables.append(tmp)
 
     return variables
+
+
+def list_reset(prefix, key, value):
+    if isinstance(value[0], (Sfix, ComplexSfix)):
+        lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
+    else:
+        lstr = '(' + ', '.join(str(x) for x in value) + ')'
+    tmp = '{} := {};'.format(prefix + key, lstr)
+    return tmp
 
 
 def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
@@ -122,6 +137,16 @@ class VHDLType:
         return get_instance_vhdl_name(cls._datamodel.obj)
 
     @classmethod
+    def get_constants(cls):
+        if cls._datamodel is None:
+            return []
+        ret = []
+        for k, v in cls._datamodel.constants.items():
+            t = VHDLType(tuple_init=(k, v))
+            ret.append(t)
+        return ret
+
+    @classmethod
     def get_self(cls):
         if cls._datamodel is None:
             return []
@@ -137,7 +162,6 @@ class VHDLType:
             ret.append(t)
         return ret
 
-
     @classmethod
     def get_complex_vars(cls):
         typedefs = cls._get_vars_by_type(ComplexSfix)
@@ -145,17 +169,38 @@ class VHDLType:
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
-        typedefs = [v for v in cls._datamodel.self_data.values() if type(v) is find_type]
+        def scan_arr(arr, find_type):
+            ret = []
+            for var in arr:
+                if isinstance(var, find_type):
+                    ret.append(var)
+                elif isinstance(var, list) and isinstance(var[0], find_type):
+                    ret.append(var[0])
+            return ret
+
+        vars = []
+
+        # from self.data
+        vars.extend(scan_arr(cls._datamodel.self_data.values(), find_type))
+
+        # from constants
+        vars.extend(scan_arr(cls._datamodel.constants.values(), find_type))
+
+        # from locals
         for func in cls._datamodel.locals.values():
-            for var in func.values():
-                if type(var) == find_type:
-                    typedefs.append(var)
-        return typedefs
+            vars.extend(scan_arr(func.values(), find_type))
+
+        return vars
 
     @classmethod
     def get_typedef_vars(cls):
         """ Return all variables that require new type definition in VHDL, for example arrays"""
         typedefs = cls._get_vars_by_type(list)
+        return typedefs
+
+    @classmethod
+    def get_enum_vars(cls):
+        typedefs = cls._get_vars_by_type(Enum)
         return typedefs
 
     def __init__(self, name=None, red_node=None, var_type: str = None, port_direction: str = None, value=None,
@@ -187,6 +232,7 @@ class VHDLType:
 
         if str(name) == 'self':
             self.var_type = 'self_t'
+            self.port_direction = 'inout'
             return
 
         # hack to make 'self.target.name' duck typing work
@@ -248,18 +294,39 @@ class VHDLType:
         """ atom_trailer is something like this: self.a.b.c.d
             This finds type of such nested variable
         """
-        var = self._datamodel.self_data
-        for x in atom_trailer[1:]:
-            if str(x) == 'next': continue
-            if not isinstance(x, GetitemNode):
-                var = var[str(x)]
-            else:
-                # index is some variable -> just take first element
-                if isinstance(x.value, NameNode):
-                    var = var[0]
-                else:
-                    var = var[int(str(x.value))]
 
+        def find_from_self(atom_trailer):
+            var = self._datamodel.self_data
+            for x in atom_trailer[1:]:
+                if str(x) == 'next': continue
+                if not isinstance(x, GetitemNode):
+                    var = var[str(x)]
+                else:
+                    # index is some variable -> just take first element
+                    if isinstance(x.value, NameNode):
+                        var = var[0]
+                    else:
+                        var = var[int(str(x.value))]
+            return var
+
+        def find_from_const(atom_trailer):
+            var = self._datamodel.constants
+            for x in atom_trailer[1:]:
+                if str(x) == 'next': continue
+                if not isinstance(x, GetitemNode):
+                    var = var[str(x)]
+                else:
+                    # index is some variable -> just take first element
+                    if isinstance(x.value, NameNode):
+                        var = var[0]
+                    else:
+                        var = var[int(str(x.value))]
+            return var
+
+        try:
+            var = find_from_self(atom_trailer)
+        except KeyError:
+            var = find_from_const(atom_trailer)
         return var
 
     def _defined_in_function(self):
@@ -298,5 +365,8 @@ class VHDLType:
 
 class VHDLVariable(VHDLType):
     def __str__(self):
+        if self.name == 'self':
+            # without this result would be 'variable self: inout self_t;'
+            return 'variable self: self_t;'
         sup = super().__str__()
         return 'variable ' + sup + ';'

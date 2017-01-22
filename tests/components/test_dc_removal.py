@@ -20,10 +20,9 @@ def test_basic():
 
     assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     # dir_path='/home/gaspar/git/pyha/playground/conv'
+                     dir_path='/home/gaspar/git/pyha/playground/conv'
 
                      )
-
 
 # def test_basic():
 #     x = [2] * 8 + [-2] * 8
