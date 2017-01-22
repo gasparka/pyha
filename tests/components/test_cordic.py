@@ -10,10 +10,10 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SI
 
 def test_cordic_vectoring_model_hw_match():
     np.random.seed(123456)
-    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
+    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.50
 
     dut = Cordic(16, CordicMode.VECTORING)
-    assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)],
+    assert_model_hwmodel_match(dut, [Sfix(left=1, right=-17), Sfix(left=1, right=-17), Sfix(left=0, right=-32)],
                                *inputs,
                                rtol=1e-4,
                                atol=1e-4)
