@@ -8,87 +8,12 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SI
     assert_hwmodel_rtl_match, assert_model_hwmodel_match
 
 
-def test_polar_quadrant_i():
-    inputs = [0.234 + 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs) / np.pi]
-
-    dut = ToPolar()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                     expect, inputs,
-                     rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                     )
-
-
-def test_polar_quadrant_ii():
-    inputs = [-0.934 + 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs) / np.pi]
-
-    dut = ToPolar()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                     expect, inputs,
-                     rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                     )
-
-
-def test_polar_quadrant_iii():
-    inputs = [-0.934 - 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs) / np.pi]
-
-    dut = ToPolar()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                     expect, inputs,
-                     rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                     )
-
-
-def test_polar_quadrant_iv():
-    inputs = [+0.934 - 0.92j]
-    expect = [np.abs(inputs), np.angle(inputs) / np.pi]
-
-    dut = ToPolar()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                     expect, inputs,
-                     rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                     )
-
-
-def test_to_polar():
-    duration = 1.0
-    fs = 400.0
-    samples = int(fs * duration)
-    t = np.arange(samples) / fs
-
-    signal = chirp(t, 20.0, t[-1], 100.0)
-    signal *= (1.0 + 0.5 * np.sin(2.0 * np.pi * 3.0 * t))
-
-    analytic_signal = hilbert(signal) * 0.5
-
-    ref_abs = np.abs(analytic_signal)
-    ref_instantaneous_phase = np.angle(analytic_signal)
-
-    inputs = analytic_signal
-    expect = [ref_abs, ref_instantaneous_phase / np.pi]
-
-    dut = ToPolar()
-
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                     expect, inputs,
-                     rtol=1e-4,
-                     atol=1e-4,  # zeroes make trouble
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
-                     )
-
-
 def test_cordic_vectoring_model_hw_match():
     np.random.seed(123456)
-    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.5
+    inputs = (np.random.rand(3, 512) * 2 - 1) * 0.50
 
     dut = Cordic(16, CordicMode.VECTORING)
-    assert_model_hwmodel_match(dut, [Sfix(left=0, right=-17), Sfix(left=0, right=-17), Sfix(left=0, right=-32)],
+    assert_model_hwmodel_match(dut, [Sfix(left=1, right=-17), Sfix(left=1, right=-17), Sfix(left=0, right=-32)],
                                *inputs,
                                rtol=1e-4,
                                atol=1e-4)
@@ -115,6 +40,95 @@ def test_cordic_hw_model_rtl_match():
 
     dut = Cordic(18, CordicMode.VECTORING)
     assert_hwmodel_rtl_match(dut, [Sfix(left=0, right=-17)] * 3, *inputs)
+
+
+class TestToPolar:
+    # todo: speedup tests by converting only once
+    def test_polar_quadrant_i(self):
+        inputs = [0.234 + 0.92j]
+        expect = [np.abs(inputs), np.angle(inputs) / np.pi]
+
+        dut = ToPolar()
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_polar_quadrant_ii(self):
+        inputs = [-0.234 + 0.92j]
+        expect = [np.abs(inputs), np.angle(inputs) / np.pi]
+
+        dut = ToPolar()
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_polar_quadrant_iii(self):
+        inputs = [-0.234 - 0.92j]
+        expect = [np.abs(inputs), np.angle(inputs) / np.pi]
+
+        dut = ToPolar()
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_polar_quadrant_iv(self):
+        inputs = [0.234 - 0.92j]
+        expect = [np.abs(inputs), np.angle(inputs) / np.pi]
+
+        dut = ToPolar()
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_overflow_condition(self):
+        pytest.xfail('abs would be > 1 (1.84)')
+        inputs = [0.92j + 0.92j]
+        expect = [np.abs(inputs), np.angle(inputs) / np.pi]
+
+        dut = ToPolar()
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_to_polar(self):
+        duration = 1.0
+        fs = 256
+        samples = int(fs * duration)
+        t = np.arange(samples) / fs
+
+        signal = chirp(t, 20.0, t[-1], 100.0)
+        signal *= (1.0 + 0.5 * np.sin(2.0 * np.pi * 3.0 * t))
+
+        # import matplotlib.pyplot as plt
+        # plt.plot(signal)
+        # plt.show()
+
+        analytic_signal = hilbert(signal) * 0.5
+
+        ref_abs = np.abs(analytic_signal)
+        ref_instantaneous_phase = np.angle(analytic_signal)
+
+        inputs = analytic_signal
+        expect = [ref_abs, ref_instantaneous_phase / np.pi]
+
+        dut = ToPolar()
+
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
 
 
 @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
