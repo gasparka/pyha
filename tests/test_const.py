@@ -206,8 +206,7 @@ class TestMultiIntSfixEnumBooleanCFix:
         # expected = [32, False, DummyEnum.SECOND, np.pi, 0.5 - 0.289j] * 8
 
         assert_sim_match(self.dut, [int], expected, x,
-                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv')
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestFloat:
@@ -265,8 +264,7 @@ class TestFloat:
         x = [0] * 8
         expected = [0.5219 * 2] * 8
         assert_sim_match(self.dut, [int], expected, x,
-                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv')
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestLists:
@@ -360,5 +358,4 @@ class TestLists:
 
         assert_sim_match(self.dut, [int], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         rtol=1e-4,
-                         dir_path='/home/gaspar/git/pyha/playground/conv')
+                         rtol=1e-4)
