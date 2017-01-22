@@ -127,8 +127,7 @@ class TestToPolar:
                          expect, inputs,
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
 
