@@ -197,6 +197,7 @@ class Angle(HW):
         # note that angle in -1..1 range
         return [np.angle(x) / np.pi for x in cin]
 
+
 class Abs(HW):
     def __init__(self):
         self.core = ToPolar()
