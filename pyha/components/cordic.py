@@ -179,3 +179,20 @@ class ToPolar(HW):
     def model_main(self, cin):
         # note that angle in -1..1 range
         return [[abs(x), np.angle(x) / np.pi] for x in cin]
+
+
+class Angle(HW):
+    def __init__(self):
+        self.core = ToPolar()
+        self.delay = Const(self.core.get_delay())
+
+    def main(self, c):
+        _, angle = self.next.core.main(c)
+        return angle
+
+    def get_delay(self):
+        return self.delay
+
+    def model_main(self, cin):
+        # note that angle in -1..1 range
+        return [np.angle(x) / np.pi for x in cin]

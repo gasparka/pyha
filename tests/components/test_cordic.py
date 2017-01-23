@@ -3,7 +3,7 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import ToPolar, Cordic, NCO, CordicMode
+from pyha.components.cordic import ToPolar, Cordic, NCO, CordicMode, Angle
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     assert_hwmodel_rtl_match, assert_model_hwmodel_match
 
@@ -128,6 +128,32 @@ class TestToPolar:
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_angle(self):
+        duration = 1.0
+        fs = 256
+        samples = int(fs * duration)
+        t = np.arange(samples) / fs
+
+        signal = chirp(t, 20.0, t[-1], 100.0)
+        signal *= (1.0 + 0.5 * np.sin(2.0 * np.pi * 3.0 * t))
+
+        analytic_signal = hilbert(signal) * 0.5
+
+        ref_instantaneous_phase = np.angle(analytic_signal)
+
+        inputs = analytic_signal
+        expect = ref_instantaneous_phase / np.pi
+
+        dut = Angle()
+
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         dir_path='/home/gaspar/git/pyha/playground/conv'
                          )
 
 
