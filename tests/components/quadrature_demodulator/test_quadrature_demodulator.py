@@ -47,12 +47,13 @@ class TestFm:
 
         dut = QuadratureDemodulator(gain=self.demod_gain)
         # out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-15)],
                          expect, inputs,
-                         rtol=1e-4,
-                         atol=1e-4,
+                         rtol=1e-3,
+                         atol=1e-3,
                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
+                         dir_path='/home/gaspar/git/pyha/playground/conv',
+                         # fuck_it=True
                          )
         # import matplotlib.pyplot as plt
         # plt.plot(out[0], label='MODEL')
