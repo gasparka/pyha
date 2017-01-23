@@ -1,7 +1,7 @@
 import numpy as np
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
-from pyha.common.sfix import ComplexSfix, resize, Sfix
+from pyha.common.sfix import ComplexSfix, resize, Sfix, fixed_truncate
 from pyha.components.cordic import Angle
 from pyha.components.util_complex import Conjugate, ComplexMultiply
 
@@ -24,7 +24,7 @@ class QuadratureDemodulator(HW):
         cmult = self.next.complex_mult.main(c, c_conj)
         angle = self.next.angle.main(cmult)
 
-        self.next.out = resize(self.gain_sfix * angle, c.real)
+        self.next.out = resize(self.gain_sfix * angle, c.real, round_style=fixed_truncate)
         return self.out
 
     def get_delay(self):

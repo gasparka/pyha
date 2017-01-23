@@ -173,7 +173,7 @@ class ToPolar(HW):
 
         # get rid of CORDIC gain and extra bits
         self.next.out_abs = resize(abs * (1.0 / 1.646760), c.imag, round_style=fixed_truncate)
-        self.next.out_angle = resize(angle, c.imag)
+        self.next.out_angle = resize(angle, c.imag, round_style=fixed_truncate)
         return self.out_abs, self.out_angle
 
     def get_delay(self):

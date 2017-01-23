@@ -49,12 +49,14 @@ class TestFm:
         # out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-3,
+                         rtol=1e-4,
+                         atol=1e-4,
                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv'
                          )
         # import matplotlib.pyplot as plt
-        # plt.plot(out[0])
-        # plt.plot(out[1])
-        # plt.plot(expect)
+        # plt.plot(out[0], label='MODEL')
+        # plt.plot(out[1], label='HW_MODEL')
+        # plt.plot(out[2], label='RTL')
+        # plt.legend()
         # plt.show()

@@ -214,6 +214,9 @@ def assert_hwmodel_rtl_match(model, types, *x):
     # plt.show()
 
 
+def plot_sim(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+    pass
+
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations)
