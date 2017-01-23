@@ -9,7 +9,7 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 class QuadratureDemodulator(HW):
     def __init__(self, gain):
         self.gain = gain * np.pi # pi term puts angle output to pi range
-        self.gain_sfix = Sfix(self.gain, 1, -16)
+        self.gain_sfix = Const(Sfix(self.gain, 1, -16))
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.angle = Angle()

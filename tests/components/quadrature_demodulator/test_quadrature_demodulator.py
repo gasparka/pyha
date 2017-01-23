@@ -1,7 +1,8 @@
 import numpy as np
 from pyha.common.sfix import ComplexSfix
 from pyha.components.quadrature_demodulator import QuadratureDemodulator, QuadratureDemodulatorPartial0, QuadratureDemodulatorPartial1
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, debug_assert_sim_match, SIM_HW_MODEL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, debug_assert_sim_match, SIM_HW_MODEL, \
+    SIM_RTL, SIM_GATE
 
 
 class TestFm:
@@ -49,7 +50,8 @@ class TestFm:
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
                          rtol=1e-3,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL]
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         dir_path='/home/gaspar/git/pyha/playground/conv'
                          )
         # import matplotlib.pyplot as plt
         # plt.plot(out[0])
