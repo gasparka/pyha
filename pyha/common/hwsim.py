@@ -4,6 +4,7 @@ from copy import deepcopy, copy
 import numpy as np
 from six import iteritems, with_metaclass
 
+from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix
 
 """
@@ -100,8 +101,6 @@ class PyhaFunc:
 
     def dict_types_consistent_check(self, new, old):
         """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-        # if self.calls < 3:
-        #     return
         for key, value in new.items():
             if key in old:
                 old_value = old[key]
@@ -109,6 +108,9 @@ class PyhaFunc:
                     if value.left != old_value.left or value.right != old_value.right:
                         if old_value.left == 0 and old_value.right == 0:
                             # sfix lazy init
+                            continue
+                        elif value.right == 0 and value.left == 0:
+                            # sfix lazy init, can happen for pipelines
                             continue
                         raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif type(value) != type(old_value):
@@ -183,9 +185,35 @@ class Meta(type):
     """
     instance_count = 0
 
+    def validate_datamodel(cls, dict):
+        # if list of submodules, make sure all 'constants' are the same
+        for x in dict.values():
+            if isinstance(x, list) and isinstance(x[0], HW):
+                ref = x[0].__constants__
+                for listi in x:
+                    di = listi.__constants__
+                    if di != ref:
+                        raise Exception(
+                            'List of submodules: {}\n but constants are not equal!\n\nTry to remove Const() keyword.'.format(
+                                x))
+
+    def handle_constants(cls, dict):
+        """ Go over dict and find all the constants. Remove the Const() wrapper
+        and insert to __constants__."""
+
+        dict['__constants__'] = {}
+        for k, v in dict.items():
+            if isinstance(v, Const):
+                dict['__constants__'][k] = v.value
+                dict[k] = v.value
+        return dict
+
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
+        ret.__dict__ = cls.handle_constants(ret.__dict__)
+        cls.validate_datamodel(ret.__dict__)
+
         ret.pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 

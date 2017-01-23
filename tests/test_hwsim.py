@@ -37,8 +37,6 @@ def test_objects_not_decorated():
     assert not isinstance(A().a, PyhaFunc)
 
 
-
-
 def test_next_init():
     class A(HW):
         def __init__(self):
@@ -367,7 +365,6 @@ def test_decorator_principe():
 
     dut2 = A()
     dut2.main = DecoClass(dut2.main)
-
 
     dut1.main()
 

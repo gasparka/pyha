@@ -1,5 +1,6 @@
 import numpy as np
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, left_index, right_index
 from pyha.common.sfix import resize
@@ -15,7 +16,7 @@ class MovingAverage(HW):
             raise AttributeError('Window length must be power of 2')
 
         self.window_len = window_len
-        self.window_pow_const = int(np.log2(window_len))
+        self.window_pow = Const(int(np.log2(window_len)))
 
         # registers
         self.shift_register = [Sfix()] * self.window_len
@@ -25,10 +26,10 @@ class MovingAverage(HW):
         self.next.shift_register = [x] + self.shift_register[:-1]
 
         self.next.sum = resize(self.sum + x - self.shift_register[-1],
-                               left_index=self.window_pow_const + left_index(x),
+                               left_index=self.window_pow + left_index(x),
                                right_index=right_index(x))
 
-        ret = resize(self.sum >> self.window_pow_const, size_res=x)
+        ret = resize(self.sum >> self.window_pow, size_res=x)
         return ret
 
     def get_delay(self):

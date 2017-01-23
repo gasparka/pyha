@@ -22,12 +22,12 @@ def test_datamodel_new_instance_resets():
     result = extract_datamodel(dut)
     assert result == expect
 
-
     # new instance shall have empty datamodel
     dut2 = A()
     result = extract_datamodel(dut2)
     expect = {'a': Sfix(0.56)}
     assert result == expect
+
 
 def test_datamodel_sfix():
     class A(HW):
@@ -226,11 +226,11 @@ def test_datamodel_submodule():
         def main(self, *args, **kwargs):
             pass
 
-
     dut = B()
     dut.main()
     result = extract_datamodel(dut)
     assert type(result['submodule']) == A
+
 
 def test_localss():
     class A(HW):

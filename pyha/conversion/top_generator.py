@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
@@ -56,6 +57,8 @@ class TopGenerator:
             return 'std_logic'
         elif type(var) in (Sfix, ComplexSfix):
             return var.to_stdlogic()
+        elif isinstance(var, Enum):
+            return self.pyvar_to_stdlogic(var.value)
         else:
             assert 0
 
@@ -63,14 +66,14 @@ class TopGenerator:
         if type(var) == int:
             return 'to_integer(signed({}))'.format(var_name)
         elif type(var) == bool:
-            return "True when {} = '1' else False".format(var_name)
+            return 'logic_to_bool({})'.format(var_name)
         elif type(var) == Sfix:
-            return 'to_sfixed({}, {}, {})'.format(var_name, var.left, var.right)
+            return 'Sfix({}, {}, {})'.format(var_name, var.left, var.right)
         elif type(var) == ComplexSfix:
             size = int(var.bitwidth())
             mid = size // 2
-            real = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, size-1, mid, var.left, var.right)
-            imag = 'to_sfixed({}({} downto {}), {}, {})'.format(var_name, mid-1, 0, var.left, var.right)
+            real = 'Sfix({}({} downto {}), {}, {})'.format(var_name, size - 1, mid, var.left, var.right)
+            imag = 'Sfix({}({} downto {}), {}, {})'.format(var_name, mid - 1, 0, var.left, var.right)
             return '(real=>{}, imag=>{})'.format(real, imag)
         else:
             assert 0
@@ -79,11 +82,13 @@ class TopGenerator:
         if type(var) == int:
             return 'std_logic_vector(to_signed({}, 32))'.format(var_name)
         elif type(var) == bool:
-            return "'1' when {} else '0'".format(var_name)
+            return 'bool_to_logic({})'.format(var_name)
         elif type(var) == Sfix:
             return 'to_slv({})'.format(var_name)
         elif type(var) == ComplexSfix:
             return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
+        elif isinstance(var, Enum):
+            return self.normal_to_slv(var.value, var_name)
         else:
             assert 0
 
@@ -129,6 +134,7 @@ class TopGenerator:
                 use ieee.math_real.all;
 
             library work;
+                use work.PyhaUtil.all;
                 use work.ComplexTypes.all;
                 use work.all;""")
 
@@ -213,4 +219,3 @@ class TopGenerator:
         #     f.write(res)
 
         return res
-

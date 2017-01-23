@@ -1,9 +1,8 @@
-
 import pytest
+
 from pyha.common.sfix import Sfix
 from pyha.components.moving_average import MovingAverage
 from pyha.simulation.simulation_interface import assert_sim_match
-
 
 
 def test_window1():
