@@ -150,6 +150,11 @@ class NCO(HW):
 
 
 class ToPolar(HW):
+    # """ Internal sizes are referenced to input 'c' size.
+    # Output is abs and angle. Abs is gain corrected and sized to 'c' size.
+    # Angle is sized to 'c' size.
+    # """
+
     def __init__(self):
         self.core = Cordic(13, CordicMode.VECTORING)
         self.out_abs = Sfix()
@@ -166,10 +171,9 @@ class ToPolar(HW):
 
         abs, _, angle = self.next.core.main(x, y, phase)
 
-        # get rid of CORDIC gain
-        self.next.out_abs = resize(abs * (1.0 / 1.646760), size_res=abs, round_style=fixed_truncate,
-                                   overflow_style=fixed_wrap)
-        self.next.out_angle = angle
+        # get rid of CORDIC gain and extra bits
+        self.next.out_abs = resize(abs * (1.0 / 1.646760), c.imag, round_style=fixed_truncate)
+        self.next.out_angle = resize(angle, c.imag, round_style=fixed_truncate)
         return self.out_abs, self.out_angle
 
     def get_delay(self):
@@ -179,3 +183,37 @@ class ToPolar(HW):
     def model_main(self, cin):
         # note that angle in -1..1 range
         return [[abs(x), np.angle(x) / np.pi] for x in cin]
+
+
+class Angle(HW):
+    def __init__(self):
+        self.core = ToPolar()
+        self.delay = Const(self.core.get_delay())
+
+    def main(self, c):
+        _, angle = self.next.core.main(c)
+        return angle
+
+    def get_delay(self):
+        return self.delay
+
+    def model_main(self, cin):
+        # note that angle in -1..1 range
+        return [np.angle(x) / np.pi for x in cin]
+
+
+class Abs(HW):
+    def __init__(self):
+        self.core = ToPolar()
+        self.delay = Const(self.core.get_delay())
+
+    def main(self, c):
+        abs, _ = self.next.core.main(c)
+        return abs
+
+    def get_delay(self):
+        return self.delay
+
+    def model_main(self, cin):
+        # note that angle in -1..1 range
+        return [np.abs(x) for x in cin]

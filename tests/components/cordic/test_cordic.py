@@ -3,9 +3,9 @@ import pytest
 from scipy.signal import chirp, hilbert
 
 from pyha.common.sfix import ComplexSfix, Sfix
-from pyha.components.cordic import ToPolar, Cordic, NCO, CordicMode
+from pyha.components.cordic import ToPolar, Cordic, NCO, CordicMode, Angle, Abs
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
-    assert_hwmodel_rtl_match, assert_model_hwmodel_match
+    assert_hwmodel_rtl_match, assert_model_hwmodel_match, debug_assert_sim_match
 
 
 def test_cordic_vectoring_model_hw_match():
@@ -100,23 +100,23 @@ class TestToPolar:
                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
-    def test_to_polar(self):
+    def _chirp_stimul(self):
         duration = 1.0
         fs = 256
         samples = int(fs * duration)
         t = np.arange(samples) / fs
-
         signal = chirp(t, 20.0, t[-1], 100.0)
         signal *= (1.0 + 0.5 * np.sin(2.0 * np.pi * 3.0 * t))
-
         # import matplotlib.pyplot as plt
         # plt.plot(signal)
         # plt.show()
-
         analytic_signal = hilbert(signal) * 0.5
-
         ref_abs = np.abs(analytic_signal)
         ref_instantaneous_phase = np.angle(analytic_signal)
+        return analytic_signal, ref_abs, ref_instantaneous_phase
+
+    def test_to_polar(self):
+        analytic_signal, ref_abs, ref_instantaneous_phase = self._chirp_stimul()
 
         inputs = analytic_signal
         expect = [ref_abs, ref_instantaneous_phase / np.pi]
@@ -129,6 +129,89 @@ class TestToPolar:
                          atol=1e-4,  # zeroes make trouble
                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
+
+    def test_angle(self):
+        analytic_signal, ref_abs, ref_instantaneous_phase = self._chirp_stimul()
+
+        inputs = analytic_signal
+        expect = ref_instantaneous_phase / np.pi
+
+        dut = Angle()
+
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_abs(self):
+        analytic_signal, ref_abs, ref_instantaneous_phase = self._chirp_stimul()
+
+        inputs = analytic_signal
+        expect = ref_abs
+
+        dut = Abs()
+
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         )
+
+    def test_angle_phantom_cmultconj(self):
+        # phantom 2 -> demod = c[1:] * np.conjugate(c[:-1])
+        sig = np.load('phantom_cmult_conjugate.npy')
+
+        inputs = sig
+        expect = []
+
+        dut = Angle()
+
+        # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL]
+                         )
+        np.testing.assert_allclose(out[0][200:], out[1][200:], 1e-3, 1e-4)
+        np.testing.assert_allclose(out[0][200:], out[1][200:], 1e-3, 1e-4)
+        # np.testing.assert_allclose(out[0], out[2], 1e-3, 1e-4)
+        # import matplotlib.pyplot as plt
+        # plt.plot(out[0], label='MODEL')
+        # plt.plot(out[1], label='HW_MODEL')
+        # plt.plot(out[2], label='RTL')
+        # plt.legend()
+        # plt.show()
+
+    def test_angle_phantom_cmultconj_mismatch(self):
+        # todo: first 100 samples, RTL and HW_SIM not matching!
+        assert 0
+        # phantom 2 -> demod = c[1:] * np.conjugate(c[:-1])
+        sig = np.load('phantom_cmult_conjugate.npy')
+
+        inputs = sig
+        expect = []
+
+        dut = Angle()
+
+        # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         expect, inputs,
+                         rtol=1e-4,
+                         atol=1e-4,  # zeroes make trouble
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+                         )
+        # np.testing.assert_allclose(out[0], out[1], 1e-3, 1e-4)
+        # np.testing.assert_allclose(out[0], out[2], 1e-3, 1e-4)
+        import matplotlib.pyplot as plt
+        plt.plot(out[0], label='MODEL')
+        plt.plot(out[1], label='HW_MODEL')
+        plt.plot(out[2], label='RTL')
+        plt.legend()
+        plt.show()
 
 
 @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])

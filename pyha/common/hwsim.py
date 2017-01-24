@@ -112,7 +112,7 @@ class PyhaFunc:
                         elif value.right == 0 and value.left == 0:
                             # sfix lazy init, can happen for pipelines
                             continue
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
+                        # raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif type(value) != type(old_value):
                     raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif isinstance(value, list):
