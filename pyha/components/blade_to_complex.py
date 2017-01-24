@@ -4,7 +4,6 @@ from pyha.common.sfix import resize, scalb, ComplexSfix
 
 # blade rf format to 18 bit format and complex
 # idea is to turn (4 downto -11) -> (0 downto -17)
-# have a feeling much of this block is major overkill..but who knows
 class BladeToComplex(HW):
     def __init__(self):
         self.out = ComplexSfix()

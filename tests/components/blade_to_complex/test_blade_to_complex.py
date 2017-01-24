@@ -15,9 +15,7 @@ def test_from_signaltap():
                                  None, c.real, c.imag,
                                  rtol=1e-9,
                                  atol=1e-9,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                 dir_path='/home/gaspar/git/pyha/playground/conv',
-                                 )
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]                                 )
 
 
 def test_low_power_bug():
@@ -29,6 +27,5 @@ def test_low_power_bug():
                                  None, c.real, c.imag,
                                  rtol=1e-9,
                                  atol=1e-9,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                 dir_path='/home/gaspar/git/pyha/playground/conv',
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                                  )

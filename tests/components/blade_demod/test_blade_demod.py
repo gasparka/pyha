@@ -13,21 +13,28 @@ def test_from_signaltap():
     c = np.load('blade_signaltap.npy')
 
     dut = BladeDemod()
-    # out = debug_assert_sim_match(dut, [Sfix(left=4, right=-11)] *2,
-    plot_assert_sim_match(dut, [Sfix(left=4, right=-11)] *2,
+    assert_sim_match(dut, [Sfix(left=0, right=-15)] *2,
                                  None, c.real, c.imag,
-                                 rtol=1e-1, # shit quality signal
-                                 atol=1e-1,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                 rtol=1e-3,
+                                 atol=1e-3,
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                  dir_path='/home/gaspar/git/pyha/playground/conv',
                                  )
 
-    # import matplotlib.pyplot as plt
-    # plt.plot(out[0], label='MODEL')
-    # plt.plot(out[1], label='HW_MODEL')
-    # plt.plot(out[2], label='RTL')
-    # plt.legend()
-    # plt.show()
+
+
+def test_low_power():
+    # this is interesting as it has RTL mismatch
+    c = np.load('blade_tap_low_power_rtl_mismatch.npy')
+
+    dut = BladeDemod()
+    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
+                                 [], c.real, c.imag,
+                                 rtol=1e-3,
+                                 atol=1e-3,
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                 dir_path='/home/gaspar/git/pyha/playground/conv',
+                                 )
 
 def test_from_live_signaltap():
     import matplotlib.pyplot as plt
@@ -41,6 +48,8 @@ def test_from_live_signaltap():
     c.real = real
     c.imag = imag
 
+    np.save('blade_tap_low_power_rtl_mismatch.npy', c)
+
     quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
     # quad_out = quad_out[::2]
 
@@ -52,19 +61,11 @@ def test_from_live_signaltap():
     # # plt.plot(quad_out)
     # plt.show()
 
-    dut = BladeToComplex()
-    out = debug_assert_sim_match(dut, [Sfix(left=4, right=-11)]*2,
-                                 # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+    dut = BladeDemod()
+    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
                                  [], c.real, c.imag,
                                  rtol=1e-3,
                                  atol=1e-3,
                                  simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                                  dir_path='/home/gaspar/git/pyha/playground/conv',
                                  )
-
-    import matplotlib.pyplot as plt
-    plt.plot(out[0], label='MODEL')
-    plt.plot(out[1], label='HW_MODEL')
-    plt.plot(out[2], label='RTL')
-    plt.legend()
-    plt.show()
