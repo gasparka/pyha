@@ -1,6 +1,7 @@
 from pyha.common.hwsim import HW
 from pyha.common.sfix import resize, scalb, ComplexSfix
 
+
 # blade rf format to 18 bit format and complex
 
 class BladeToComplex(HW):
@@ -21,4 +22,4 @@ class BladeToComplex(HW):
         return c
 
     def model_main(self, i, q):
-        return i * (2**4) + q * (2**4)*1j
+        return i * (2 ** 4) + q * (2 ** 4) * 1j
