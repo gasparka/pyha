@@ -232,6 +232,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             l.error('FUKC_IT MODE!')
             continue
         try:
+            assert len(expected) > 0
             np.testing.assert_allclose(expected, hw_y[0:len(expected)], rtol, atol=atol)
         except AssertionError as e:
             l.error('##############################################################')

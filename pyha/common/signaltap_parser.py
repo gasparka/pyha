@@ -31,6 +31,8 @@ class SignalTapParser:
                 r.append(new)
         return r
 
+    # NB! these wont work if you export sfixed signal( has negative bounds in name )
+    # need to invert msb or something
     def to_float(self, data, bits):
         """ assume 1 sign others fractional"""
         ints = self.to_int(data, bits)
