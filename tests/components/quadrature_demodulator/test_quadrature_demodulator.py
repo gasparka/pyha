@@ -65,8 +65,9 @@ class TestFm:
         # plt.show()
 
 class TestPhantom2:
+    """ Uses one chunk of Phantom 2 transmission """
     def setup(self):
-        inputs = scipy.fromfile(open('/home/gaspar/tmp/f2404_fs16.896_one_hop.iq'), dtype=scipy.complex64)
+        inputs = scipy.fromfile(open('f2404_fs16.896_one_hop.iq'), dtype=scipy.complex64)
         inputs = inputs[18000:19000]
         self.mod = inputs
         self.demod_gain = 1.5
@@ -86,19 +87,11 @@ class TestPhantom2:
         inputs = self.mod
         expect = []
 
-        dut = QuadratureDemodulator(gain=1.5)
-        out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-        # assert_sim_match(dut, [ComplexSfix(left=0, right=-15)],
+        dut = QuadratureDemodulator(gain=self.demod_gain)
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
                          rtol=1e-3,
                          atol=1e-3,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL],
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv',
-                         # fuck_it=True
                          )
-        import matplotlib.pyplot as plt
-        plt.plot(out[0], label='MODEL')
-        plt.plot(out[1], label='HW_MODEL')
-        # plt.plot(out[2], label='RTL')
-        plt.legend()
-        plt.show()
