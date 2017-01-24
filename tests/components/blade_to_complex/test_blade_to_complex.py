@@ -12,8 +12,8 @@ def test_from_signaltap():
     dut = BladeToComplex()
     assert_sim_match(dut, [Sfix(left=4, right=-11)]*2,
                                  [], c.real, c.imag,
-                                 rtol=1e-3,
-                                 atol=1e-3,
+                                 rtol=1e-5,
+                                 atol=1e-5,
                                  simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                  dir_path='/home/gaspar/git/pyha/playground/conv',
                                  )
