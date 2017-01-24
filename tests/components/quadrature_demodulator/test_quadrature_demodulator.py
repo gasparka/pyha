@@ -75,20 +75,12 @@ class TestPhantom2:
         inputs = self.mod
 
         dut = QuadratureDemodulatorPartial1(gain=self.demod_gain)
-        out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-        # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          None, inputs,
                          rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL]
+                         atol=1e-4,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
                          )
-        import matplotlib.pyplot as plt
-        np.save('phantom_cmult_conjugate.npy', out[0])
-        print(out[0].__repr__())
-        plt.plot(out[0], label='MODEL')
-        plt.plot(out[1], label='HW_MODEL')
-        # plt.plot(out[2], label='RTL')
-        plt.legend()
-        plt.show()
 
     def test_demod(self):
         inputs = self.mod
