@@ -175,7 +175,7 @@ class Sfix:
     def max_representable(self):
         if self.left < 0:
             # FIXME: I am not sure how to handle this when negative index
-            assert 0
+            # assert 0
 
             if self.right == 0:
                 return 2 ** self.left

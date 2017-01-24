@@ -24,7 +24,7 @@ class BladeToComplex(HW):
 
 
 # move back to blade format
-class ToBlade(HW):
+class NormalToBlade(HW):
     def __init__(self):
         self.out = Sfix()
 
@@ -35,5 +35,5 @@ class ToBlade(HW):
     def get_delay(self):
         return 1
 
-    def model_main(self, i, q):
-        return i * (2 ** -4) + q * (2 ** -4) * 1j
+    def model_main(self, x):
+        return x * (2 ** -4)
