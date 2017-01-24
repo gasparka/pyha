@@ -343,3 +343,8 @@ def left_index(x: Sfix):
 
 def right_index(x: Sfix):
     return x.right
+
+
+def scalb(x: Sfix, i: int):
+        n = 2 ** i
+        return Sfix(x.val * n, x.left - i, x.right - i)
