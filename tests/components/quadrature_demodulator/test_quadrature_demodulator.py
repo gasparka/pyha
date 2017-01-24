@@ -94,7 +94,7 @@ class TestPhantom2:
         inputs = self.mod
         expect = []
 
-        dut = QuadratureDemodulator(gain=1.0)
+        dut = QuadratureDemodulator(gain=1.5)
         out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
         # assert_sim_match(dut, [ComplexSfix(left=0, right=-15)],
                          expect, inputs,

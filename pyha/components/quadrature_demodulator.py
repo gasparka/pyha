@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
@@ -8,8 +9,10 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 
 class QuadratureDemodulator(HW):
     def __init__(self, gain):
+        # self.logger = logging.getLogger(__name__)
         self.gain = gain * np.pi # pi term puts angle output to pi range
-        self.gain_sfix = Const(Sfix(self.gain, 1, -16))
+        self.gain_sfix = Const(Sfix(self.gain, 3, -14))
+        # self.logger.info('Gain:{} Sfix:{}'.format(self.gain, self.gain_sfix))
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.angle = Angle()
