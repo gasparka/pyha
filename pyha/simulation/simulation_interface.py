@@ -214,6 +214,9 @@ def assert_hwmodel_rtl_match(model, types, *x):
     # plt.show()
 
 
+def plot_sim(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+    pass
+
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations)
@@ -221,12 +224,15 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
+        if expected is None and sim_type is simulations[0]:
+            expected = hw_y
+
 
         if fuck_it:
             l.error('FUKC_IT MODE!')
             continue
         try:
-            np.testing.assert_allclose(expected, hw_y, rtol, atol=atol)
+            np.testing.assert_allclose(expected, hw_y[0:len(expected)], rtol, atol=atol)
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')
