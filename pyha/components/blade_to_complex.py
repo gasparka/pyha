@@ -10,18 +10,8 @@ class BladeToComplex(HW):
         self.out = ComplexSfix()
 
     def main(self, i, q):
-        # # go to 18 bits
-        inorm = resize(i, 4, -21)
-        qnorm = resize(q, 4, -21)
-
-        # scale away blade rf format
-        iscale = scalb(inorm, 4)
-        qscale = scalb(qnorm, 4)
-
-        # out
-        outi = resize(iscale, 0, -17)
-        outq = resize(qscale, 0, -17)
-
+        outi = resize(scalb(i, 4), 0, -17)
+        outq = resize(scalb(q, 4), 0, -17)
 
         # make complex
         self.next.out = ComplexSfix(outi, outq)

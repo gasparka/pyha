@@ -7,7 +7,7 @@ class BladeDemod(HW):
     def __init__(self):
         self.blade_to_complex = BladeToComplex()
         self.quadrature_demodulator = QuadratureDemodulator(2.0)
-        self._delay = self.quadrature_demodulator.get_delay()
+        self._delay = self.quadrature_demodulator.get_delay() + self.blade_to_complex.get_delay()
 
     def main(self, i, q):
         c = self.next.blade_to_complex.main(i, q)
