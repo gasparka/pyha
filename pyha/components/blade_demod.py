@@ -1,5 +1,5 @@
 from pyha.common.hwsim import HW
-from pyha.components.blade_to_complex import BladeToComplex
+from pyha.components.blade_adaptor import BladeToComplex
 from pyha.components.quadrature_demodulator import QuadratureDemodulator
 import numpy as np
 

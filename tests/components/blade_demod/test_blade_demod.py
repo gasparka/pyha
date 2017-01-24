@@ -2,9 +2,7 @@ from pyha.common.sfix import Sfix, ComplexSfix
 import numpy as np
 
 from pyha.common.signaltap_parser import SignalTapParser
-from pyha.components.BladeDemod import BladeDemod
-from pyha.components.blade_to_complex import BladeToComplex
-from pyha.components.quadrature_demodulator import QuadratureDemodulator
+from pyha.components.blade_demod import BladeDemod
 from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, assert_sim_match, \
     SIM_RTL, SIM_GATE, debug_assert_sim_match, plot_assert_sim_match
 
@@ -28,7 +26,7 @@ def test_low_power():
     c = np.load('blade_tap_low_power_rtl_mismatch.npy')
 
     dut = BladeDemod()
-    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
+    assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
                                  [], c.real, c.imag,
                                  rtol=1e-3,
                                  atol=1e-3,
