@@ -2,7 +2,8 @@ from pyha.common.sfix import Sfix, ComplexSfix
 import numpy as np
 
 from pyha.common.signaltap_parser import SignalTapParser
-from pyha.components.blade_demod import BladeDemod
+from pyha.common.util import load_gnuradio_file
+from pyha.components.blade_demod import BladeDemodPartial0, BladeDemodPartial1, BladeDemodQuad
 from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, assert_sim_match, \
     SIM_RTL, SIM_GATE, debug_assert_sim_match, plot_assert_sim_match
 
@@ -10,31 +11,62 @@ from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, assert
 def test_from_signaltap():
     c = np.load('blade_signaltap.npy')
 
-    dut = BladeDemod()
-    assert_sim_match(dut, [Sfix(left=0, right=-15)] *2,
-                                 None, c.real, c.imag,
-                                 rtol=1e-3,
-                                 atol=1e-3,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                 dir_path='/home/gaspar/git/pyha/playground/conv',
-                                 )
-
+    dut = BladeDemodPartial0()
+    assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
+                     None, c.real, c.imag,
+                     rtol=1e-3,
+                     atol=1e-3,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                     dir_path='/home/gaspar/git/pyha/playground/conv',
+                     )
 
 
 def test_low_power():
     # this is interesting as it has RTL mismatch
     c = np.load('blade_tap_low_power_rtl_mismatch.npy')
 
-    dut = BladeDemod()
-    assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
-                                 [], c.real, c.imag,
-                                 rtol=1e-3,
-                                 atol=1e-3,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                                 dir_path='/home/gaspar/git/pyha/playground/conv',
-                                 )
+    dut = BladeDemodPartial0()
+    assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
+                     None, c.real, c.imag,
+                     rtol=1e-3,
+                     atol=1e-3,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                     dir_path='/home/gaspar/git/pyha/playground/conv',
+                     )
+
+
+class TestUks:
+    def setup(self):
+        self.iq = load_gnuradio_file('/home/gaspar/git/pyha/tests/components/blade_demod/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        self.shord_iq = self.iq[600:2000]
+        self.demod_gain = 0.5
+
+
+    def test_quad_demod(self):
+        dut = BladeDemodQuad(self.demod_gain)
+        assert_sim_match(dut, [Sfix(left=0, right=-17)] * 2,
+                         None, self.shord_iq.real, self.shord_iq.imag,
+                         rtol=1e-2,
+                         atol=1e-2,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL]
+                         )
+
+    def test_quad_demod_mavg(self):
+        dut = BladeDemodPartial1(self.demod_gain, 16)
+        assert_sim_match(dut, [Sfix(left=0, right=-17)] * 2,
+                         None, self.shord_iq.real, self.shord_iq.imag,
+                         rtol=1e-2,
+                         atol=1e-2,
+                         simulations=[SIM_MODEL, SIM_HW_MODEL],
+                         skip_first=16
+                         )
+
+
+
+
 
 def test_from_live_signaltap():
+    # todo: remove, only for debug
     import matplotlib.pyplot as plt
     a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
     real = a.to_float(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'], 16)
@@ -51,7 +83,7 @@ def test_from_live_signaltap():
     quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
     # quad_out = quad_out[::2]
 
-    qd = 2*np.pi * np.angle(c[1:] * np.conjugate(c[:-1]))/np.pi
+    qd = 2 * np.pi * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
     #
     # plt.plot(qd)
     # plt.plot(imag)
@@ -60,10 +92,10 @@ def test_from_live_signaltap():
     # plt.show()
 
     dut = BladeDemod()
-    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)]*2,
-                                 [], c.real, c.imag,
-                                 rtol=1e-3,
-                                 atol=1e-3,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                                 dir_path='/home/gaspar/git/pyha/playground/conv',
-                                 )
+    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
+                          [], c.real, c.imag,
+                          rtol=1e-3,
+                          atol=1e-3,
+                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                          dir_path='/home/gaspar/git/pyha/playground/conv',
+                          )

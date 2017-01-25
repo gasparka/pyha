@@ -214,18 +214,18 @@ def assert_hwmodel_rtl_match(model, types, *x):
     # plt.show()
 
 
-def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False, skip_first=0):
     import matplotlib.pyplot as plt
     simulations = sim_rules(simulations)
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
-        plt.plot(hw_y, label=str(sim_type))
+        plt.plot(hw_y[skip_first:], label=str(sim_type))
 
     plt.legend()
     plt.show()
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False, skip_first=0):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations)
 
@@ -241,7 +241,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             continue
         try:
             assert len(expected) > 0
-            np.testing.assert_allclose(expected, hw_y[0:len(expected)], rtol, atol=atol)
+            np.testing.assert_allclose(expected[skip_first:], hw_y[skip_first:len(expected)], rtol, atol=atol)
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')

@@ -1,5 +1,9 @@
 import collections
 
+import scipy
+from scipy import signal
+import numpy as np
+
 
 def escape_for_vhdl(x: str) -> str:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
@@ -40,3 +44,18 @@ def tabber(str):
     """ Add tab infront of every line """
     return '\n'.join(['{}{}'.format(TAB, x) for x in str.splitlines() if x != ''])
 
+
+def load_gnuradio_file(file: str):
+    return scipy.fromfile(open(file), dtype=scipy.complex64)
+
+
+def resample_gnuradio(file: str, ratio: float):
+    """ ratio is current_fs / desired_fs """
+    f = load_gnuradio_file(file)
+    resampled = signal.resample(f, len(f) * ratio)
+    return resampled
+
+
+def save_gnuradio_file(file: str, arr):
+    conv = np.array(arr).astype(scipy.complex64)
+    conv.tofile(file)
