@@ -99,6 +99,8 @@ class TupleNodeConv(NodeConv):
 
 class AssignmentNodeConv(NodeConv):
     def __str__(self):
+        assert 0
+        DONT CONVERT +=!
         r = '{} := {};'.format(self.target, self.value)
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
             raise Exception('{} -> multi assignment not supported!'.format(r))
@@ -329,6 +331,7 @@ class PrintNodeConv(NodeConv):
     def __str__(self):
         if isinstance(self.red_node.value[0], TupleNode):
             raise Exception('{} -> print only supported with one Sfix argument!'.format(self.red_node))
+        return "report to_string({});".format(self.red_node.value[0].value)
         return "report to_string(to_real({}));".format(self.red_node.value[0].value)
 
 
