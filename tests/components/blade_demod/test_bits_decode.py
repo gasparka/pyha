@@ -14,14 +14,14 @@ def test_uks_one():
     iq = load_gnuradio_file(
         '/home/gaspar/git/pyha/tests/components/blade_demod/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
 
-    iq = iq[700:1100]
-    demod = np.angle(iq[1:] * np.conjugate(iq[:-1]))
+    iq = iq[600:4000]
+    demod = np.angle(iq[1:] * np.conjugate(iq[:-1])) / np.pi
     sps = 16
     taps = [1 / sps] * sps
     iqf = signal.lfilter(taps, [1], demod)
 
 
-    dut = BitsDecode()
+    dut = BitsDecode(0.2)
     r = debug_assert_sim_match(dut, [Sfix(left=0, right=-17)],
                                  None, iqf,
                                  rtol=1e-9,
@@ -31,13 +31,13 @@ def test_uks_one():
                                  )
 
     # remove invalid outputs
-    hm = [x for x,valid in zip(*r[1]) if valid]
+    hm = np.array([bool(x) for x,valid in zip(*r[1]) if bool(valid)]).astype(int)
     assert (hm == r[0]).all()
 
-    hrtl = [bool(x) for x,valid in zip(*r[2]) if bool(valid)]
+    hrtl = np.array([bool(x) for x,valid in zip(*r[2]) if bool(valid)]).astype(int)
     assert (hrtl == r[0]).all()
 
-    hgate = [bool(x) for x,valid in zip(*r[3]) if bool(valid)]
+    hgate = np.array([bool(x) for x,valid in zip(*r[3]) if bool(valid)]).astype(int)
     assert (hgate == r[0]).all()
     # packets = BitsDecode(f)
     # assert len(packets) == 1

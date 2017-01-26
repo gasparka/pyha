@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 # this is NRZ decoder
 
 class BitsDecode(HW):
-    def __init__(self):
-        self.decision_lim = Const(0.4)
+    # todo: it uses 32 bit counter for bit_counter..overkill
+    def __init__(self, decision_lim):
+        self.decision_lim = Const(decision_lim)
         self.bit_counter = 0
         self.state = False
         self.period = Const(16)
@@ -53,7 +54,7 @@ class BitsDecode(HW):
         def push_bit(val, i):
             bits.append(val)
             debugi.append(i)
-            debugb.append(1 if val else -1)
+            debugb.append(self.decision_lim if val else -self.decision_lim)
 
         for i, x in enumerate(sig):
             bit_counter += 1
