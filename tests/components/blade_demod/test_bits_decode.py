@@ -42,3 +42,174 @@ def test_uks_one():
     # packets = BitsDecode(f)
     # assert len(packets) == 1
     # assert expected_data in packets[0]
+
+
+def test_crc():
+    # #    Width         = 16
+    # #    Poly          = 0x1021
+    # #    Xor_In        = 0xfa53
+    # #    ReflectIn     = False
+    # #    Xor_Out       = 0x0000
+    # #    ReflectOut    = False
+    # #    Algorithm     = table-driven
+    # #    check=0xc923
+    # init = 0xfa53
+    # init_bits = [int(x) for x in bin(init)[2:]]
+    # lfsr = init_bits
+    #
+    # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb0000', 16))[2:]]
+    # for din in data:
+    #     feedback = din ^ lfsr[0] ^ lfsr[5] ^ lfsr[12]
+    #     # feedback = din ^ lfsr[3] ^ lfsr[10] ^ lfsr[15]
+    #     lfsr = [feedback] + lfsr[:-1]
+    #     bits = ''.join([str(x) for x in lfsr])
+    #     print(hex(int(bits, 2)))
+
+    #
+    # init = 0x0
+    # init_bits = [int(x) for x in bin(init)[2:]]
+    # lfsr = init_bits
+    # lfsr = [0, 0, 0, 0]
+    # # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb0000', 16))[2:]]
+    #
+    # data = [1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
+    # # data = [1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0]
+    # for din in data:
+    #     out = lfsr[-1]
+    #     lfsr[3] = lfsr[2]
+    #     lfsr[2] = lfsr[1]
+    #     lfsr[1] = lfsr[0] ^ out
+    #     lfsr[0] = din ^ out
+    #     bits = ''.join([str(x) for x in lfsr])
+    #     print(bits)
+    #     # print(hex(int(bits, 2)))
+
+
+
+    init = 0xfa53
+    init_bits = [int(x) for x in bin(init)[2:]]
+    lfsr = init_bits
+    assert len(lfsr) == 16
+
+    data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb', 16))[2:]]
+    assert len(data) == 192
+    for din in data:
+        out = lfsr[-1]
+        lfsr[15] = lfsr[14]
+        lfsr[14] = lfsr[13]
+        lfsr[13] = lfsr[12] ^ out
+        lfsr[12] = lfsr[11]
+        lfsr[11] = lfsr[10]
+        lfsr[10] = lfsr[9]
+        lfsr[9] = lfsr[8]
+        lfsr[8] = lfsr[7]
+        lfsr[7] = lfsr[6]
+        lfsr[6] = lfsr[5] ^ out
+        lfsr[5] = lfsr[4]
+        lfsr[4] = lfsr[3]
+        lfsr[3] = lfsr[2]
+        lfsr[2] = lfsr[1]
+        lfsr[1] = lfsr[0] ^ out
+        lfsr[0] = din ^ out
+        bits = ''.join([str(x) for x in lfsr])
+        print(bits)
+        print(hex(int(bits, 2)))
+
+
+def test_crs3():
+    def hex_to_bits():
+
+    input = hex_to_bits()
+
+
+def hex_to_bits():
+    return [bool(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb', 16))[2:]]
+
+
+def test_crc2():
+    init = 0x48f9 # THIS IS SOME MAGIC VALUE
+    lfsr = init
+
+
+    data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb', 16))[2:]]
+    # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b90000', 16))[2:]]
+    # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b90000', 16))[2:]]
+    # assert len(data) == 192
+
+    for din in data:
+        out = lfsr & 0x8000
+        lfsr = ((lfsr << 1) | din) & 0xFFFF
+        if out:
+            lfsr ^= 0x1021
+        print(hex(lfsr))
+    pass
+#     /**
+# * \file pycrc_stdout
+# * Functions and types for CRC checks.
+# *
+# * Generated on Thu Jan 26 12:37:02 2017,
+# * by pycrc v0.9, https://pycrc.org
+# * using the configuration:
+# *    Width         = 16
+# *    Poly          = 0x1021
+# *    Xor_In        = 0xfa53
+# *    ReflectIn     = False
+# *    Xor_Out       = 0x0000
+# *    ReflectOut    = False
+# *    Algorithm     = bit-by-bit
+# *****************************************************************************/
+# #include "pycrc_stdout.h"     /* include the header file generated with pycrc */
+# #include <stdlib.h>
+# #include <stdint.h>
+# #include <stdbool.h>
+#
+# /**
+# * Update the crc value with new data.
+# *
+# * \param crc      The current crc value.
+# * \param data     Pointer to a buffer of \a data_len bytes.
+# * \param data_len Number of bytes in the \a data buffer.
+# * \return         The updated crc value.
+# *****************************************************************************/
+# crc_t crc_update(crc_t crc, const void *data, size_t data_len)
+# {
+#    const unsigned char *d = (const unsigned char *)data;
+#    unsigned int i;
+#    bool bit;
+#    unsigned char c;
+#
+#    while (data_len--) {
+#        c = *d++;
+#        for (i = 0; i < 8; i++) {
+#            bit = crc & 0x8000;
+#            crc = (crc << 1) | ((c >> (7 - i)) & 0x01);
+#            if (bit) {
+#                crc ^= 0x1021;
+#            }
+#        }
+#        crc &= 0xffff;
+#    }
+#    return crc & 0xffff;
+# }
+#
+#
+# /**
+# * Calculate the final crc value.
+# *
+# * \param crc  The current crc value.
+# * \return     The final crc value.
+# *****************************************************************************/
+# crc_t crc_finalize(crc_t crc)
+# {
+#    unsigned int i;
+#    bool bit;
+#
+#    for (i = 0; i < 16; i++) {
+#        bit = crc & 0x8000;
+#        crc = (crc << 1) | 0x00;
+#        if (bit) {
+#            crc ^= 0x1021;
+#        }
+#    }
+#    return (crc ^ 0x0000) & 0xffff;
+# }

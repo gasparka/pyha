@@ -77,3 +77,23 @@ class BitsDecode(HW):
         # plt.stem(debugi, debugb)
         # plt.show()
         return bits
+
+
+class CRC16:
+    def __init__(self, init_galois, xor):
+        self.xor = xor
+
+        #NB! tools generally raport fibo init value...need to convert it!
+        self.init_galois = init_galois
+
+    def main(self):
+        pass
+
+    def model_main(self, data):
+        lfsr = self.init_galois
+        for din in data:
+            out = lfsr & 0x8000
+            lfsr = ((lfsr << 1) | din) & 0xFFFF
+            if out:
+                lfsr ^= self.xor
+        return lfsr
