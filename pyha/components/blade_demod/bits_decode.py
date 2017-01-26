@@ -19,9 +19,8 @@ class BitsDecode(HW):
 
     def main(self, x):
         self.next.out_valid = False
-        self.next.bit_counter = self.next.bit_counter + 1
+        self.next.bit_counter = self.bit_counter + 1
         if x > self.decision_lim:
-            print(self.out_bit)
             if not self.state:
                 self.push_bit(True)
             self.next.state = True
@@ -31,7 +30,9 @@ class BitsDecode(HW):
                 self.push_bit(False)
             self.next.state = False
             self.next.bit_counter = 0
-        elif self.next.bit_counter >= self.period:
+
+        # self.next gives same result..
+        if self.bit_counter >= self.period:
             if self.state:
                 self.push_bit(False)
             else:

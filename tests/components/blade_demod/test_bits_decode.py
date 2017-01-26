@@ -36,6 +36,9 @@ def test_uks_one():
 
     hrtl = [bool(x) for x,valid in zip(*r[2]) if bool(valid)]
     assert (hrtl == r[0]).all()
+
+    hgate = [bool(x) for x,valid in zip(*r[3]) if bool(valid)]
+    assert (hgate == r[0]).all()
     # packets = BitsDecode(f)
     # assert len(packets) == 1
     # assert expected_data in packets[0]
