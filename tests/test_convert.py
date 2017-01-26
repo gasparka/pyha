@@ -75,6 +75,31 @@ def test_assign(converter):
     assert str(conv) == 'a := b;'
 
 
+def test_assign_add_raises(converter):
+    code = 'a += b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+
+def test_assign_sub_raises(converter):
+    code = 'a -= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+def test_assign_div_raises(converter):
+    code = 'a /= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+def test_assign_mul_raises(converter):
+    code = 'a *= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
 def test_assign_trailers(converter):
     code = 'self.next.reg = self.reg'
     conv = converter(code)

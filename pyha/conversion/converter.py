@@ -99,11 +99,12 @@ class TupleNodeConv(NodeConv):
 
 class AssignmentNodeConv(NodeConv):
     def __str__(self):
-        assert 0
-        DONT CONVERT +=!
         r = '{} := {};'.format(self.target, self.value)
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
             raise Exception('{} -> multi assignment not supported!'.format(r))
+
+        if self.red_node.operator != '':
+            raise Exception('{} -> cannot convert +=, -=, /=, *= :(')
         return r
 
 

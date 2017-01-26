@@ -6,7 +6,7 @@ import numpy as np
 
 from pyha.components.blade_demod.bits_decode import BitsDecode
 from pyha.simulation.simulation_interface import plot_assert_sim_match, SIM_MODEL, assert_sim_match, \
-    debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL
+    debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 def test_uks_one():
@@ -26,7 +26,7 @@ def test_uks_one():
                                  None, iqf,
                                  rtol=1e-9,
                                  atol=1e-9,
-                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                  dir_path='/home/gaspar/git/pyha/playground/conv'
                                  )
 
@@ -34,8 +34,8 @@ def test_uks_one():
     hm = [x for x,valid in zip(*r[1]) if valid]
     assert (hm == r[0]).all()
 
-    htrl = [bool(x) for x,valid in zip(*r[2]) if bool(valid)]
-    pass
+    hrtl = [bool(x) for x,valid in zip(*r[2]) if bool(valid)]
+    assert (hrtl == r[0]).all()
     # packets = BitsDecode(f)
     # assert len(packets) == 1
     # assert expected_data in packets[0]
