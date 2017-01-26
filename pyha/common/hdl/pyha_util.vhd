@@ -19,6 +19,12 @@ package PyhaUtil is
   function logic_to_bool(x: std_logic) return boolean;
   function bool_to_logic(x: boolean) return std_logic;
 
+  function "and"(a, b:integer) return integer;
+  function "sla"(a, b:integer) return integer;
+  function "or"(a:integer; b:boolean) return integer;
+  function "xor"(a, b:integer) return integer;
+  function "??"(a:integer) return boolean;
+
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
   -- type range_t is array (natural range <>) of integer;
@@ -81,6 +87,40 @@ package body PyhaUtil is
     end if;
   end function;
 
+  function "and"(a, b:integer) return integer is
+  begin
+     return to_integer(to_unsigned(a, 32) and to_unsigned(b, 32));
+  end function;
+
+  function "sla"(a, b:integer) return integer is
+  begin
+     return to_integer(to_unsigned(a, 32) sla b);
+  end function;
+
+  function "or"(a, b:integer) return integer is
+  begin
+     return to_integer(to_unsigned(a, 32) or to_unsigned(b, 32));
+  end function;
+
+  function "or"(a:integer; b:boolean) return integer is
+  begin
+     return to_integer(to_unsigned(a, 32) or bool_to_logic(b));
+  end function;
+
+
+  function "xor"(a, b:integer) return integer is
+  begin
+     return to_integer(to_unsigned(a, 32) xor to_unsigned(b, 32));
+  end function;
+
+  function "??"(a:integer) return boolean is
+  begin
+     if a = 0 then
+       return False;
+    else
+      return True;
+    end if;
+  end function;
 
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;

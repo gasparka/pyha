@@ -86,7 +86,7 @@ class CRC16(HW):
         #NB! tools generally raport fibo init value...need to convert it!
         self.init_galois = init_galois
 
-        self.lfsr = init_galois
+        self.lfsr = [False] * 16
 
     def main(self, din):
         out = self.lfsr & 0x8000
