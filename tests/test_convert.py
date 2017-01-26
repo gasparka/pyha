@@ -88,17 +88,20 @@ def test_assign_sub_raises(converter):
         conv = converter(code)
         str(conv)
 
+
 def test_assign_div_raises(converter):
     code = 'a /= b'
     with pytest.raises(Exception):
         conv = converter(code)
         str(conv)
 
+
 def test_assign_mul_raises(converter):
     code = 'a *= b'
     with pytest.raises(Exception):
         conv = converter(code)
         str(conv)
+
 
 def test_assign_trailers(converter):
     code = 'self.next.reg = self.reg'
@@ -1492,7 +1495,7 @@ def test_binaryoperator_shift_left(converter):
 
 def test_print(converter):
     code = 'print(a)'
-    expect = 'report to_string(to_real(a));'
+    expect = 'report to_string(a);'
 
     conv = converter(code)
     assert expect == str(conv)
