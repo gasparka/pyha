@@ -1,7 +1,7 @@
 from scipy import signal
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import load_gnuradio_file
+from pyha.common.util import load_gnuradio_file, hex_to_bool_list
 import numpy as np
 
 from pyha.components.blade_demod.bits_decode import BitsDecode
@@ -117,13 +117,9 @@ def test_crc():
 
 
 def test_crs3():
-    def hex_to_bits():
-
-    input = hex_to_bits()
+    input = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
 
 
-def hex_to_bits():
-    return [bool(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb', 16))[2:]]
 
 
 def test_crc2():

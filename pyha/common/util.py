@@ -64,6 +64,8 @@ def save_gnuradio_file(file: str, arr):
 
 def hex_to_bit_str(hstr):
     """ http://stackoverflow.com/questions/1425493/convert-hex-to-binary """
+    if hstr[0:2] in ('0x', '0X'):
+        hstr = hstr[2:]
     my_hexdata = hstr
     scale = 16  ## equals to hexadecimal
     num_of_bits = int(len(my_hexdata) * np.log2(scale))
@@ -76,6 +78,8 @@ def hex_to_bool_list(hstr):
 
 def test_hex_to_bits():
     assert hex_to_bit_str('FF') == '11111111'
+    assert hex_to_bit_str('0xFF') == '11111111'
+    assert hex_to_bit_str('0XFF') == '11111111'
     assert hex_to_bit_str('0F') == '00001111'
 
     assert hex_to_bool_list('F') == [True, True, True, True]
