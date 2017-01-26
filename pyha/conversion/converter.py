@@ -351,6 +351,9 @@ class EndlNodeConv(NodeConv):
             return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
+class HexaNodeConv(NodeConv):
+    def __str__(self):
+        return '16#{}#'.format(self.value[2:])
 
 class CommentNodeConv(NodeConv):
     def __str__(self):

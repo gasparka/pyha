@@ -4,7 +4,7 @@ from pyha.common.sfix import Sfix
 from pyha.common.util import load_gnuradio_file, hex_to_bool_list
 import numpy as np
 
-from pyha.components.blade_demod.bits_decode import BitsDecode
+from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16
 from pyha.simulation.simulation_interface import plot_assert_sim_match, SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
@@ -44,85 +44,21 @@ def test_uks_one():
     # assert expected_data in packets[0]
 
 
+
 def test_crc():
-    # #    Width         = 16
-    # #    Poly          = 0x1021
-    # #    Xor_In        = 0xfa53
-    # #    ReflectIn     = False
-    # #    Xor_Out       = 0x0000
-    # #    ReflectOut    = False
-    # #    Algorithm     = table-driven
-    # #    check=0xc923
-    # init = 0xfa53
-    # init_bits = [int(x) for x in bin(init)[2:]]
-    # lfsr = init_bits
-    #
-    # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb0000', 16))[2:]]
-    # for din in data:
-    #     feedback = din ^ lfsr[0] ^ lfsr[5] ^ lfsr[12]
-    #     # feedback = din ^ lfsr[3] ^ lfsr[10] ^ lfsr[15]
-    #     lfsr = [feedback] + lfsr[:-1]
-    #     bits = ''.join([str(x) for x in lfsr])
-    #     print(hex(int(bits, 2)))
+    inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
 
-    #
-    # init = 0x0
-    # init_bits = [int(x) for x in bin(init)[2:]]
-    # lfsr = init_bits
-    # lfsr = [0, 0, 0, 0]
-    # # data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb0000', 16))[2:]]
-    #
-    # data = [1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
-    # # data = [1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0]
-    # for din in data:
-    #     out = lfsr[-1]
-    #     lfsr[3] = lfsr[2]
-    #     lfsr[2] = lfsr[1]
-    #     lfsr[1] = lfsr[0] ^ out
-    #     lfsr[0] = din ^ out
-    #     bits = ''.join([str(x) for x in lfsr])
-    #     print(bits)
-    #     # print(hex(int(bits, 2)))
+    dut = CRC16(init_galois=0x48f9, xor=0x1021)
+    assert_sim_match(dut, [bool],
+                                 None, inputs,
+                                 rtol=1e-9,
+                                 atol=1e-9,
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                 dir_path='/home/gaspar/git/pyha/playground/conv'
+                                 )
 
 
-
-    init = 0xfa53
-    init_bits = [int(x) for x in bin(init)[2:]]
-    lfsr = init_bits
-    assert len(lfsr) == 16
-
-    data = [int(x) for x in bin(int('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb', 16))[2:]]
-    assert len(data) == 192
-    for din in data:
-        out = lfsr[-1]
-        lfsr[15] = lfsr[14]
-        lfsr[14] = lfsr[13]
-        lfsr[13] = lfsr[12] ^ out
-        lfsr[12] = lfsr[11]
-        lfsr[11] = lfsr[10]
-        lfsr[10] = lfsr[9]
-        lfsr[9] = lfsr[8]
-        lfsr[8] = lfsr[7]
-        lfsr[7] = lfsr[6]
-        lfsr[6] = lfsr[5] ^ out
-        lfsr[5] = lfsr[4]
-        lfsr[4] = lfsr[3]
-        lfsr[3] = lfsr[2]
-        lfsr[2] = lfsr[1]
-        lfsr[1] = lfsr[0] ^ out
-        lfsr[0] = din ^ out
-        bits = ''.join([str(x) for x in lfsr])
-        print(bits)
-        print(hex(int(bits, 2)))
-
-
-def test_crs3():
-    input = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
-
-
-
-
-def test_crc2():
+def test_2crc2():
     init = 0x48f9 # THIS IS SOME MAGIC VALUE
     lfsr = init
 

@@ -1508,3 +1508,16 @@ def test_print_multiarg(converter):
     with pytest.raises(Exception):
         conv = converter(code)
         str(conv)
+
+def test_hexanode(converter):
+    code = '0xABC'
+    expect = '16#ABC#'
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = '0X0'
+    expect = '16#0#'
+
+    conv = converter(code)
+    assert expect == str(conv)
