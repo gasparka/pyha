@@ -10,6 +10,11 @@ def assert_exact_match(model, types, *x):
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
+def assert_exact_match_gate(model, types, *x):
+    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
+
 
 def test_shift_right():
     class t0(HW):
@@ -203,3 +208,20 @@ def test_passtrough_boolean():
     x = [True, False, True, False]
     outs = debug_assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
     assert (outs[0] == (outs[1]).astype(bool)).all()
+
+
+def test_int_operations():
+    class T15(HW):
+        def main(self, x):
+            rand = x & 0x8000
+            ror = x | 0x8200
+            rxor = x ^ 0xFFFF
+            rorbool1 = x | True
+            rorbool2 = x | False
+            rshift_right = x << 1
+            rshift_left = x >> 1
+
+            return rand, ror, rxor, rorbool1, rorbool2, rshift_right, rshift_left
+
+    x = np.random.randint(-2**30, 2**30, 2**14)
+    assert_exact_match_gate(T15(), [int], x)

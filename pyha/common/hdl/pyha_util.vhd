@@ -20,9 +20,11 @@ package PyhaUtil is
 
   function "and"(a, b:integer) return integer;
   function "sla"(a, b:integer) return integer;
+  function "sra"(a, b:integer) return integer;
   function "or"(a:integer; b:boolean) return integer;
+  function "or"(a, b:integer) return integer;
   function "xor"(a, b:integer) return integer;
-  function "??"(a:integer) return boolean;
+  -- function "??"(a:integer) return boolean; -- not supported for quartus
 
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
@@ -95,6 +97,14 @@ package body PyhaUtil is
     variable tmp: signed(31 downto 0);
   begin
     tmp := shift_left(to_signed(a, 32), b);
+     return to_integer(tmp);
+  end function;
+
+
+  function "sra"(a, b:integer) return integer is
+    variable tmp: signed(31 downto 0);
+  begin
+    tmp := shift_right(to_signed(a, 32), b);
      return to_integer(tmp);
   end function;
 
