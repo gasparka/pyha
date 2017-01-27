@@ -2,6 +2,9 @@ from pyha.common.const import Const
 from pyha.common.hwsim import HW
 import matplotlib.pyplot as plt
 # this is NRZ decoder
+from pyha.common.sfix import Sfix
+from pyha.common.util import hex_to_bool_list
+
 
 class BitsDecode(HW):
     # todo: it uses 32 bit counter for bit_counter..overkill
@@ -86,14 +89,18 @@ class CRC16(HW):
         #NB! tools generally raport fibo init value...need to convert it!
         self.init_galois = init_galois
 
+        self.xor = 0xFFFF
+        self.xor_b = hex_to_bool_list(self.xor)
         self.lfsr = [False] * 16
 
     def main(self, din):
-        out = self.lfsr & 0x8000
-        self.next.lfsr = ((self.lfsr << 1) | din) & 0xFFFF
+        out = self.lfsr[0]
+        self.next.lfsr = self.lfsr[1:] + [din]
         if out:
-            self.next.lfsr = self.next.lfsr ^ self.xor
+            for i in range(len(self.next.lfsr)):
+                self.next.lfsr[i] = self.next.lfsr[i] ^ self.xor_b[i]
         return self.lfsr
+
 
     def get_delay(self):
         return 1
@@ -101,6 +108,7 @@ class CRC16(HW):
     def model_main(self, data):
         ret = []
         lfsr = self.init_galois
+        lfsr = 0
         for din in data:
             out = lfsr & 0x8000
             lfsr = ((lfsr << 1) | din) & 0xFFFF

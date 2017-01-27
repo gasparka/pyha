@@ -49,13 +49,23 @@ def test_crc():
     inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
 
     dut = CRC16(init_galois=0x48f9, xor=0x1021)
-    assert_sim_match(dut, [bool],
+    r = debug_assert_sim_match(dut, [bool],
                                  None, inputs,
                                  rtol=1e-9,
                                  atol=1e-9,
                                  simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                                  dir_path='/home/gaspar/git/pyha/playground/conv'
                                  )
+
+    ints = []
+    for bools in np.array(r[1]).T:
+        hws = ''.join([str(int(x)) for x in bools])
+        ints.append(int(hws, 2))
+
+    for x, y in zip(ints, r[0]):
+        print(x, y)
+    assert (ints == r[0]).all()
+    pass
 
 
 def test_2crc2():
