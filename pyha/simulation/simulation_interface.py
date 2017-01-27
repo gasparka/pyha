@@ -241,6 +241,8 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             continue
         try:
             assert len(expected) > 0
+            if type(expected[0]) != type(hw_y[0]):
+                hw_y = hw_y.astype(type(expected[0]))
             np.testing.assert_allclose(expected[skip_first:], hw_y[skip_first:len(expected)], rtol, atol=atol)
         except AssertionError as e:
             l.error('##############################################################')

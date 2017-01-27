@@ -63,8 +63,10 @@ class TestHeaderCorrelator:
 
     def test_one_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
-        r = debug_assert_sim_match(self.dut, [bool], None, inputs,
-                                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+        assert_sim_match(self.dut, [bool], None, inputs,
+                                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground/conv'
                                      )
+
+
         pass

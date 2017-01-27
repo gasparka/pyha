@@ -119,14 +119,19 @@ class HeaderCorrelator(HW):
         self.packet_len = packet_len
         self.header = Const(hex_to_bool_list(header))
 
+        self.cooldown = 0
         self.shr = [False] * 16
 
     def main(self, din):
         self.next.shr = self.shr[1:] + [din]
-        if self.shr == self.header:
-            return True
+        ret = False
+        if self.cooldown == 0:
+            if self.shr == self.header:
+                self.next.cooldown = self.packet_len
+                ret = True
         else:
-            return False
+            self.next.cooldown = self.next.cooldown - 1
+        return ret
 
     def get_delay(self):
         return 16
