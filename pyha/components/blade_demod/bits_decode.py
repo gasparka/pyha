@@ -85,22 +85,16 @@ class BitsDecode(HW):
 class CRC16(HW):
     def __init__(self, init_galois, xor):
         self.xor = xor
-
-        #NB! tools generally raport fibo init value...need to convert it!
+        # NB! tools generally raport fibo init value...need to convert it!
         self.init_galois = init_galois
-
-        self.xor = 0xFFFF
-        self.xor_b = hex_to_bool_list(self.xor)
-        self.lfsr = [False] * 16
+        self.lfsr = init_galois
 
     def main(self, din):
-        out = self.lfsr[0]
-        self.next.lfsr = self.lfsr[1:] + [din]
-        if out:
-            for i in range(len(self.next.lfsr)):
-                self.next.lfsr[i] = self.next.lfsr[i] ^ self.xor_b[i]
+        out = self.lfsr & 0x8000
+        self.next.lfsr = ((self.lfsr << 1) | din) & 0xFFFF
+        if out != 0:
+            self.next.lfsr = self.next.lfsr ^ self.xor
         return self.lfsr
-
 
     def get_delay(self):
         return 1
@@ -108,7 +102,6 @@ class CRC16(HW):
     def model_main(self, data):
         ret = []
         lfsr = self.init_galois
-        lfsr = 0
         for din in data:
             out = lfsr & 0x8000
             lfsr = ((lfsr << 1) | din) & 0xFFFF
@@ -118,38 +111,33 @@ class CRC16(HW):
         return ret
 
 
-class IntTests(HW):
-    def __init__(self):
-        self.lfsr = 0x1234
-        self.xor = 0x1021
+
+class HeaderCorrelator(HW):
+    def __init__(self, header, packet_len):
+        # once header is found, 'packet_len' bits are skipped before next header can be correlated!
+        # NB/TODO: there is possibility that random noise triggers the cooldown, so correct package may be lost!
+        self.packet_len = packet_len
+        self.header = Const(hex_to_bool_list(header))
+
+        self.shr = [False] * 16
 
     def main(self, din):
-        # out = self.lfsr & 0x8000
-        # out = self.lfsr & 0x8000
-        # self.next.lfsr = ((self.lfsr << 1)) & 0xFFFF
-        # self.next.lfsr = self.lfsr | din
-
-        out = self.lfsr & 0x8000
-        self.next.lfsr = ((self.lfsr << 1) | din) & 0xFFFF
-        if out != 0:
-            self.next.lfsr = self.next.lfsr ^ self.xor
-        return self.lfsr
-
+        self.next.shr = self.shr[1:] + [din]
+        if self.shr == self.header:
+            return True
+        else:
+            return False
 
     def get_delay(self):
-        return 1
+        return 16
 
     def model_main(self, data):
-        ret = []
-        # lfsr = self.init_galois
-        lfsr = self.lfsr
-        for din in data:
-            # lfsr = ((lfsr << 1)) & 0xFFFF
-            # lfsr = lfsr | din
-
-            out = lfsr & 0x8000
-            lfsr = ((lfsr << 1) | din) & 0xFFFF
-            if out:
-                lfsr ^= self.xor
-            ret.append(lfsr)
-        return ret
+        rets = [False] * len(data)
+        i = 0
+        while i < len(data):
+            word = data[i:i + 16]
+            if word == self.header:
+                rets[i] = True
+                i += self.packet_len
+            i += 1
+        return rets

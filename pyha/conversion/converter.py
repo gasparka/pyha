@@ -117,6 +117,7 @@ class ReturnNodeConv(NodeConv):
                 raise ExceptionReturnFunctionCall(self.red_node)
 
         str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
+        str_ret += ['return;']
         return '\n'.join(str_ret)
 
 

@@ -77,6 +77,9 @@ def hex_to_bit_str(hstr):
 def hex_to_bool_list(hstr):
     return [bool(int(x)) for x in hex_to_bit_str(hstr)]
 
+def int_to_bool_list(hstr):
+    return [bool(int(x)) for x in hex_to_bit_str(hstr)]
+
 
 def test_hex_to_bits():
     assert hex_to_bit_str('FF') == '11111111'
