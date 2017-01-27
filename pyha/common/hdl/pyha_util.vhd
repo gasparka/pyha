@@ -1,7 +1,6 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use ieee.numeric_std.all;
   use ieee.fixed_float_types.all;
   use ieee.fixed_pkg.all;
   use ieee.math_real.all;
@@ -89,28 +88,33 @@ package body PyhaUtil is
 
   function "and"(a, b:integer) return integer is
   begin
-     return to_integer(to_unsigned(a, 32) and to_unsigned(b, 32));
+     return to_integer(to_signed(a, 32) and to_signed(b, 32));
   end function;
 
   function "sla"(a, b:integer) return integer is
+    variable tmp: signed(31 downto 0);
   begin
-     return to_integer(to_unsigned(a, 32) sla b);
+    tmp := shift_left(to_signed(a, 32), b);
+     return to_integer(tmp);
   end function;
 
   function "or"(a, b:integer) return integer is
   begin
-     return to_integer(to_unsigned(a, 32) or to_unsigned(b, 32));
+     return to_integer(to_signed(a, 32) or to_signed(b, 32));
   end function;
 
   function "or"(a:integer; b:boolean) return integer is
+    variable tmp: signed(31 downto 0);
   begin
-     return to_integer(to_unsigned(a, 32) or bool_to_logic(b));
+     tmp := to_signed(a, 32);
+     tmp(0) := tmp(0) or bool_to_logic(b);
+     return to_integer(tmp);
   end function;
 
 
   function "xor"(a, b:integer) return integer is
   begin
-     return to_integer(to_unsigned(a, 32) xor to_unsigned(b, 32));
+     return to_integer(to_signed(a, 32) xor to_signed(b, 32));
   end function;
 
   function "??"(a:integer) return boolean is

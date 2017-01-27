@@ -4,7 +4,7 @@ from pyha.common.sfix import Sfix
 from pyha.common.util import load_gnuradio_file, hex_to_bool_list
 import numpy as np
 
-from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16
+from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16, IntTests
 from pyha.simulation.simulation_interface import plot_assert_sim_match, SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
@@ -66,6 +66,21 @@ def test_crc():
         print(x, y)
     assert (ints == r[0]).all()
     pass
+
+
+def test_ints():
+    inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
+
+    dut = IntTests()
+    assert_sim_match(dut, [bool],
+                                 None, inputs,
+                                 rtol=1e-9,
+                                 atol=1e-9,
+                                 simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                                 dir_path='/home/gaspar/git/pyha/playground/conv'
+                                 )
+    pass
+
 
 
 def test_2crc2():

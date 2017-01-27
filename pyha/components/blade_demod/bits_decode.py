@@ -116,3 +116,40 @@ class CRC16(HW):
                 lfsr ^= self.xor
             ret.append(lfsr)
         return ret
+
+
+class IntTests(HW):
+    def __init__(self):
+        self.lfsr = 0x1234
+        self.xor = 0x1021
+
+    def main(self, din):
+        # out = self.lfsr & 0x8000
+        # out = self.lfsr & 0x8000
+        # self.next.lfsr = ((self.lfsr << 1)) & 0xFFFF
+        # self.next.lfsr = self.lfsr | din
+
+        out = self.lfsr & 0x8000
+        self.next.lfsr = ((self.lfsr << 1) | din) & 0xFFFF
+        if out != 0:
+            self.next.lfsr = self.next.lfsr ^ self.xor
+        return self.lfsr
+
+
+    def get_delay(self):
+        return 1
+
+    def model_main(self, data):
+        ret = []
+        # lfsr = self.init_galois
+        lfsr = self.lfsr
+        for din in data:
+            # lfsr = ((lfsr << 1)) & 0xFFFF
+            # lfsr = lfsr | din
+
+            out = lfsr & 0x8000
+            lfsr = ((lfsr << 1) | din) & 0xFFFF
+            if out:
+                lfsr ^= self.xor
+            ret.append(lfsr)
+        return ret
