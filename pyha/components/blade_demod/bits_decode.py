@@ -89,9 +89,13 @@ class CRC16(HW):
         self.init_galois = init_galois
         self.lfsr = init_galois
 
-    def main(self, din):
-        out = self.lfsr & 0x8000
-        self.next.lfsr = ((self.lfsr << 1) | din) & 0xFFFF
+    def main(self, din, reload):
+        if reload:
+            lfsr = self.init_galois
+        else:
+            lfsr = self.lfsr
+        out = lfsr & 0x8000
+        self.next.lfsr = ((lfsr << 1) | din) & 0xFFFF
         if out != 0:
             self.next.lfsr = self.next.lfsr ^ self.xor
         return self.lfsr
@@ -99,10 +103,13 @@ class CRC16(HW):
     def get_delay(self):
         return 1
 
-    def model_main(self, data):
+    def model_main(self, data, reload):
         ret = []
         lfsr = self.init_galois
-        for din in data:
+        for din, rl in zip(data, reload):
+            if rl:
+                lfsr = self.init_galois
+
             out = lfsr & 0x8000
             lfsr = ((lfsr << 1) | din) & 0xFFFF
             if out:
@@ -116,7 +123,7 @@ class HeaderCorrelator(HW):
     def __init__(self, header, packet_len):
         # once header is found, 'packet_len' bits are skipped before next header can be correlated!
         # NB/TODO: there is possibility that random noise triggers the cooldown, so correct package may be lost!
-        self.packet_len = packet_len
+        self.cooldown_reset = Const(packet_len -1)
         self.header = Const(hex_to_bool_list(header))
 
         self.cooldown = 0
@@ -127,7 +134,7 @@ class HeaderCorrelator(HW):
         ret = False
         if self.cooldown == 0:
             if self.shr == self.header:
-                self.next.cooldown = self.packet_len
+                self.next.cooldown = self.cooldown_reset
                 ret = True
         else:
             self.next.cooldown = self.next.cooldown - 1
@@ -143,6 +150,46 @@ class HeaderCorrelator(HW):
             word = data[i:i + 16]
             if word == self.header:
                 rets[i] = True
-                i += self.packet_len
+                i += self.cooldown_reset
             i += 1
         return rets
+
+
+class PacketSync(HW):
+    def __init__(self, header, packet_len):
+        self.packet_len = packet_len
+        self.headercorr = HeaderCorrelator(header, packet_len)
+        self.crc = CRC16(0x48f9, 0x1021)
+        self._delay = self.headercorr.get_delay() + self.crc.get_delay()
+
+        self.delay = [False] * self.headercorr.get_delay()
+        self.packet_counter = 0x0000
+
+    def main(self, data):
+        reload = self.next.headercorr.main(data)
+
+        self.next.packet_counter = self.packet_counter + 1
+        if reload or self.packet_counter >= self.packet_len:
+            self.next.packet_counter = 0x0000
+
+        self.next.delay = self.delay[1:] + [data]
+        crc = self.next.crc.main(self.delay[0], reload)
+
+        if crc == 0 and self.packet_counter == self.packet_len:
+            return True
+        else:
+            return False
+
+    def get_delay(self):
+        return self._delay
+
+
+    def model_main(self, data):
+        head = self.headercorr.model_main(data)
+        crc = self.crc.model_main(data, head)
+
+        ret = [False] * len(crc)
+        for i in range(self.packet_len, len(crc)):
+            if head[i-self.packet_len] and crc[i] == 0:
+                ret[i] = True
+        return ret
