@@ -51,7 +51,7 @@ class TestFm:
 
         dut = QuadratureDemodulator(gain=self.demod_gain)
         # out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-        assert_sim_match(dut, [ComplexSfix(left=0, right=-15)],
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
                          rtol=1e-3,
                          atol=1e-3,
@@ -101,7 +101,6 @@ class TestPhantom2:
                          )
 
     def test_from_signaltap(self):
-        import matplotlib.pyplot as plt
         a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
         real = a.to_bladerf(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'])
         real = real[::2]

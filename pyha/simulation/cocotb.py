@@ -76,8 +76,8 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        # ill throw my computer out of the window counter: 4
-        # self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        # ill throw my computer out of the window counter: 5
+        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'

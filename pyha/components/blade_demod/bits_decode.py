@@ -1,8 +1,6 @@
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
-import matplotlib.pyplot as plt
 # this is NRZ decoder
-from pyha.common.sfix import Sfix
 from pyha.common.util import hex_to_bool_list
 
 
@@ -84,9 +82,9 @@ class BitsDecode(HW):
 
 class CRC16(HW):
     def __init__(self, init_galois, xor):
-        self.xor = xor
+        self.xor = Const(xor)
         # NB! tools generally raport fibo init value...need to convert it!
-        self.init_galois = init_galois
+        self.init_galois = Const(init_galois)
         self.lfsr = init_galois
 
     def main(self, din, reload):
@@ -157,25 +155,25 @@ class HeaderCorrelator(HW):
 
 class PacketSync(HW):
     def __init__(self, header, packet_len):
-        self.packet_len = packet_len
+        self.packet_len_lim = Const(packet_len - 1)
         self.headercorr = HeaderCorrelator(header, packet_len)
         self.crc = CRC16(0x48f9, 0x1021)
         self._delay = self.headercorr.get_delay() + self.crc.get_delay()
 
         self.delay = [False] * self.headercorr.get_delay()
-        self.packet_counter = 0x0000
+        self.packet_counter = 0
 
     def main(self, data):
         reload = self.next.headercorr.main(data)
 
-        self.next.packet_counter = self.packet_counter + 1
-        if reload or self.packet_counter >= self.packet_len:
-            self.next.packet_counter = 0x0000
+        self.next.packet_counter = self.packet_counter - 1
+        if reload or self.packet_counter == 0:
+            self.next.packet_counter = self.packet_len_lim
 
         self.next.delay = self.delay[1:] + [data]
         crc = self.next.crc.main(self.delay[0], reload)
 
-        if crc == 0 and self.packet_counter == self.packet_len:
+        if crc == 0 and self.packet_counter == 0:
             return True
         else:
             return False
@@ -189,7 +187,7 @@ class PacketSync(HW):
         crc = self.crc.model_main(data, head)
 
         ret = [False] * len(crc)
-        for i in range(self.packet_len, len(crc)):
-            if head[i-self.packet_len] and crc[i] == 0:
+        for i in range(self.packet_len_lim, len(crc)):
+            if head[i - self.packet_len_lim] and crc[i] == 0:
                 ret[i] = True
         return ret
