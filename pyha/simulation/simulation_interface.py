@@ -198,7 +198,7 @@ class Simulation:
 # utility functions
 
 def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                           fuck_it=False):
+                           fuck_it=False, **kwards):
     """ Instead of asserting anything return outputs of each simulation """
     simulations = sim_rules(simulations)
     outs = []

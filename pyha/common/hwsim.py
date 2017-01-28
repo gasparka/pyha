@@ -1,7 +1,6 @@
 import sys
 from copy import deepcopy, copy
 
-import numpy as np
 from six import iteritems, with_metaclass
 
 from pyha.common.const import Const
@@ -123,12 +122,12 @@ class PyhaFunc:
         """ User should only assign to self.next.X, any assign to
             'self.X' is a bug and this decorator tests for that """
 
-        for key, value in new.items():
-            if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
-                continue
-
-            if value != old[key]:
-                raise AssignToSelf(self.class_name, key)
+        # for key, value in new.items():
+        #     if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
+        #         continue
+        #
+        #     if value != old[key]:
+        #         raise AssignToSelf(self.class_name, key)
 
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """

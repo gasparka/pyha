@@ -1,11 +1,10 @@
-from pyha.common.sfix import Sfix, ComplexSfix
 import numpy as np
 
-from pyha.common.signaltap_parser import SignalTapParser
-from pyha.common.util import load_gnuradio_file
-from pyha.components.blade_demod import BladeDemodPartial0, BladeDemodPartial1, BladeDemodQuad
+from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.common.util import load_gnuradio_file, save_gnuradio_file
+from pyha.components.blade_demod.blade_demod import BladeDemodPartial0, BladeDemodQuad, BladeDemodQuadMavg
 from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, assert_sim_match, \
-    SIM_RTL, SIM_GATE, debug_assert_sim_match, plot_assert_sim_match
+    SIM_RTL, SIM_GATE, debug_assert_sim_match
 
 
 def test_from_signaltap():
@@ -37,65 +36,63 @@ def test_low_power():
 
 class TestUks:
     def setup(self):
-        self.iq = load_gnuradio_file('/home/gaspar/git/pyha/tests/components/blade_demod/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        self.iq = load_gnuradio_file('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
         self.shord_iq = self.iq[600:2000]
+        self.shord_iq = self.iq
         self.demod_gain = 0.5
-
 
     def test_quad_demod(self):
         dut = BladeDemodQuad(self.demod_gain)
-        assert_sim_match(dut, [Sfix(left=0, right=-17)] * 2,
-                         None, self.shord_iq.real, self.shord_iq.imag,
+        assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                         None, self.shord_iq,
                          rtol=1e-2,
                          atol=1e-2,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL]
+                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
     def test_quad_demod_mavg(self):
-        dut = BladeDemodPartial1(self.demod_gain, 16)
-        assert_sim_match(dut, [Sfix(left=0, right=-17)] * 2,
-                         None, self.shord_iq.real, self.shord_iq.imag,
-                         rtol=1e-2,
-                         atol=1e-2,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL],
-                         skip_first=16
-                         )
+        dut = BladeDemodQuadMavg(self.demod_gain, 16)
+        r = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                                   None, self.shord_iq,
+                                   rtol=1e-2,
+                                   atol=1e-2,
+                                   simulations=[SIM_MODEL, SIM_HW_MODEL],
+                                   # skip_first=16
+                                   )
 
+        save_gnuradio_file('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq', r[1])
 
-
-
-
-def test_from_live_signaltap():
-    # todo: remove, only for debug
-    import matplotlib.pyplot as plt
-    a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
-    real = a.to_float(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'], 16)
-    real = real[::2]
-
-    imag = a.to_float(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'], 16)
-    imag = imag[::2]
-    c = np.array([0 + 0j] * len(imag))
-    c.real = real
-    c.imag = imag
-
-    np.save('blade_tap_low_power_rtl_mismatch.npy', c)
-
-    quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
-    # quad_out = quad_out[::2]
-
-    qd = 2 * np.pi * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
-    #
-    # plt.plot(qd)
-    # plt.plot(imag)
-    # plt.plot(real)
-    # # plt.plot(quad_out)
-    # plt.show()
-
-    dut = BladeDemod()
-    plot_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
-                          [], c.real, c.imag,
-                          rtol=1e-3,
-                          atol=1e-3,
-                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                          dir_path='/home/gaspar/git/pyha/playground/conv',
-                          )
+# def test_from_live_signaltap():
+#     # todo: remove, only for debug
+#     import matplotlib.pyplot as plt
+#     a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
+#     real = a.to_float(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'], 16)
+#     real = real[::2]
+#
+#     imag = a.to_float(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'], 16)
+#     imag = imag[::2]
+#     c = np.array([0 + 0j] * len(imag))
+#     c.real = real
+#     c.imag = imag
+#
+#     np.save('blade_tap_low_power_rtl_mismatch.npy', c)
+#
+#     quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
+#     # quad_out = quad_out[::2]
+#
+#     qd = 2 * np.pi * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
+#     #
+#     # plt.plot(qd)
+#     # plt.plot(imag)
+#     # plt.plot(real)
+#     # # plt.plot(quad_out)
+#     # plt.show()
+#
+#     dut = BladeDemod()
+#     plot_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
+#                           [], c.real, c.imag,
+#                           rtol=1e-3,
+#                           atol=1e-3,
+#                           simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+#                           dir_path='/home/gaspar/git/pyha/playground/conv',
+#                           )

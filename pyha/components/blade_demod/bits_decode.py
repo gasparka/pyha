@@ -5,6 +5,10 @@ from pyha.common.util import hex_to_bool_list
 
 
 class BitsDecode(HW):
+    # debugi = []
+    # debugb = []
+    # debugx = []
+    # di = 0
     def __init__(self, decision_lim):
         self.decision_lim = Const(decision_lim)
         self.bit_counter = 0
@@ -17,6 +21,8 @@ class BitsDecode(HW):
     def push_bit(self, b):
         self.next.out_bit = b
         self.next.out_valid = True
+        # self.debugi.append(self.di)
+        # self.debugb.append(self.decision_lim if b else -self.decision_lim)
 
     def main(self, x):
         self.next.out_valid = False
@@ -33,12 +39,15 @@ class BitsDecode(HW):
             self.next.bit_counter = 0
 
         # self.next gives same result..
-        if self.bit_counter >= self.period:
+        if self.next.bit_counter >= self.period:
             if self.state:
                 self.push_bit(False)
             else:
                 self.push_bit(True)
             self.next.bit_counter = 0
+
+        # self.di += 1
+        # self.debugx.append(x)
         return self.out_bit, self.out_valid
 
     def get_delay(self):
