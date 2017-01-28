@@ -1,1 +1,1 @@
-SKIP_GATE_TESTS = True
+SKIP_GATE_TESTS = False

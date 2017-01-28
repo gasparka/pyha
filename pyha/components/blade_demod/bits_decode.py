@@ -9,10 +9,12 @@ class BitsDecode(HW):
     # debugb = []
     # debugx = []
     # di = 0
-    def __init__(self, decision_lim):
+    def __init__(self, decision_lim=0.2):
+        # todo: this algorithm is the biggest bullshit i have made, it was nice once but it turned out it was lazy on valid output
         self.decision_lim = Const(decision_lim)
         self.bit_counter = 0
         self.state = False
+        self.cstate = False
         self.period = Const(16)
 
         self.out_bit = False
@@ -21,6 +23,7 @@ class BitsDecode(HW):
     def push_bit(self, b):
         self.next.out_bit = b
         self.next.out_valid = True
+        self.next.bit_counter = 0
         # self.debugi.append(self.di)
         # self.debugb.append(self.decision_lim if b else -self.decision_lim)
 
@@ -28,27 +31,39 @@ class BitsDecode(HW):
         self.next.out_valid = False
         self.next.bit_counter = self.bit_counter + 1
         if x > self.decision_lim:
+            self.next.cstate = False
             if not self.state:
                 self.push_bit(True)
             self.next.state = True
-            self.next.bit_counter = 0
+
+            # when output saturates for long time...just output crap to keep clock running
+            if self.next.bit_counter >= self.period:
+                self.push_bit(False)
+
         elif x < -self.decision_lim:
+            self.next.cstate = False
             if self.state:
                 self.push_bit(False)
             self.next.state = False
-            self.next.bit_counter = 0
 
-        # self.next gives same result..
+            # when output saturates for long time...just output crap to keep clock running
+            if self.next.bit_counter >= self.period:
+                self.push_bit(False)
+        else:
+            if not self.cstate:
+                self.next.bit_counter = 0
+            self.next.cstate = True
+
         if self.next.bit_counter >= self.period:
             if self.state:
                 self.push_bit(False)
             else:
                 self.push_bit(True)
-            self.next.bit_counter = 0
 
         # self.di += 1
         # self.debugx.append(x)
         return self.out_bit, self.out_valid
+
 
     def get_delay(self):
         return 1
@@ -71,13 +86,13 @@ class BitsDecode(HW):
             if x > self.decision_lim:
                 if state != 1:
                     push_bit(1, i)
+                    bit_counter = 0
                 state = 1
-                bit_counter = 0
             elif x < -self.decision_lim:
                 if state != 0:
                     push_bit(0, i)
-                state = 0
                 bit_counter = 0
+                state = 0
             elif bit_counter >= self.period:
                 n = 1 if state == 0 else 0
                 push_bit(n, i)
@@ -177,14 +192,13 @@ class PacketSync(HW):
 
     def main(self, data):
         reload = self.next.headercorr.main(data)
-
         self.next.packet_counter = self.packet_counter - 1
         if reload or self.packet_counter == 0:
             self.next.packet_counter = self.packet_len_lim
 
         self.next.delay = self.delay[1:] + [data]
         crc = self.next.crc.main(self.delay[0], reload)
-
+        # TODO: here is bug, crc is first 0 when counter is 1
         if crc == 0 and self.packet_counter == 0:
             return True
         else:

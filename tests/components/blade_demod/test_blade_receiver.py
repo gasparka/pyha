@@ -1,21 +1,17 @@
 import numpy as np
 
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import ComplexSfix
 from pyha.common.util import load_gnuradio_file
 from pyha.components.blade_demod.blade_receiver import BladeReceiver
-from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL
+from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestDemodToPacket:
     def setup(self):
         self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         iq = load_gnuradio_file(
-            'hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-        import matplotlib.pyplot as plt
+            'one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
 
-        plt.plot(iq)
-        plt.ylim((-1, 1))
-        plt.show()
         self.input = iq
         self.dut = BladeReceiver()
 
@@ -35,9 +31,9 @@ class TestDemodToPacket:
         assert len(model) == 1
 
     def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
+        r = debug_assert_sim_match(self.dut, [ComplexSfix(left=0, right=-17)],
                                    None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL],
+                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                    dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
