@@ -5,7 +5,6 @@ from pyha.common.util import hex_to_bool_list
 
 
 class BitsDecode(HW):
-    # todo: it uses 32 bit counter for bit_counter..overkill
     def __init__(self, decision_lim):
         self.decision_lim = Const(decision_lim)
         self.bit_counter = 0
@@ -46,6 +45,7 @@ class BitsDecode(HW):
         return 1
 
     def model_main(self, sig):
+        # model will not match in case of noise signals
         state = 0
         bit_counter = 0
         bits = []
@@ -74,6 +74,7 @@ class BitsDecode(HW):
                 push_bit(n, i)
                 bit_counter = 0
 
+        # import matplotlib.pyplot as plt
         # plt.plot(sig)
         # plt.stem(debugi, debugb)
         # plt.show()
@@ -116,12 +117,11 @@ class CRC16(HW):
         return ret
 
 
-
 class HeaderCorrelator(HW):
     def __init__(self, header, packet_len):
         # once header is found, 'packet_len' bits are skipped before next header can be correlated!
         # NB/TODO: there is possibility that random noise triggers the cooldown, so correct package may be lost!
-        self.cooldown_reset = Const(packet_len -1)
+        self.cooldown_reset = Const(packet_len - 1)
         self.header = Const(hex_to_bool_list(header))
 
         self.cooldown = 0
@@ -163,6 +163,9 @@ class PacketSync(HW):
         self.delay = [False] * self.headercorr.get_delay()
         self.packet_counter = 0
 
+        # read this when valid=1
+        self.bits = [False] * packet_len
+
     def main(self, data):
         reload = self.next.headercorr.main(data)
 
@@ -181,7 +184,6 @@ class PacketSync(HW):
     def get_delay(self):
         return self._delay
 
-
     def model_main(self, data):
         head = self.headercorr.model_main(data)
         crc = self.crc.model_main(data, head)
@@ -191,3 +193,27 @@ class PacketSync(HW):
             if head[i - self.packet_len_lim] and crc[i] == 0:
                 ret[i] = True
         return ret
+
+
+class DemodToPacket(HW):
+    def __init__(self):
+        self.bits = BitsDecode(0.2)
+        self.packsync = PacketSync(header=0x8dfc, packet_len=12 * 16)
+
+        self._delay = self.bits.get_delay() + self.packsync.get_delay()
+
+    def main(self, inp):
+        ret = False
+        bit, valid = self.next.bits.main(inp)
+        if valid:
+            ret = self.next.packsync.main(bit)
+        return ret, valid
+
+    def get_delay(self):
+        # model and hw will not delay match anyways... because of noise
+        return self._delay
+
+    def model_main(self, inp):
+        bits = self.bits.model_main(inp)
+        pack = self.packsync.model_main(bits)
+        return pack
