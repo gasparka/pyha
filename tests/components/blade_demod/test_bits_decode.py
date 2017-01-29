@@ -264,12 +264,19 @@ class TestPacketSync:
         self.dut = PacketSync(header=0x8dfc, packet_len=12 * 16)
 
     def test_one_packet(self):
-        inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
+        inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb111111111')
         expect = [False] * 191 + [True]
-        assert_sim_match(self.dut, [bool], expect, inputs,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
-                         )
+        r = debug_assert_sim_match(self.dut, [bool], expect, inputs,
+                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                   dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   )
+
+        hwr = [x for x, valid in zip(*r[1]) if valid]
+        assert all(hwr == r[0])
+
+        rtlr = [x for x, valid in zip(*r[2]) if valid]
+        assert all(rtlr == r[0])
+        pass
 
     def test_two_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'

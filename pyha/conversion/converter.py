@@ -406,7 +406,8 @@ class SliceNodeConv(GetitemNodeConv):
             upper = "{}'high".format(self.get_index_target())
         else:
             # vhdl includes upper limit, subtract one to get same behaviour as in python
-            upper = int(str(self.upper)) - 1
+            # upper = int(str(self.upper)) - 1
+            upper = '({})-1'.format(self.upper)
 
         if self.is_negative_indexing(self.upper):
             target = self.get_index_target()

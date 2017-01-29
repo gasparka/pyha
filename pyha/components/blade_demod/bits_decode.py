@@ -1,4 +1,5 @@
 from enum import Enum
+from math import ceil
 
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
@@ -185,20 +186,37 @@ class HeaderCorrelator(HW):
         return rets
 
 
+def bits_to_int(bits):
+    assert len(bits) <= 32
+    s = ''.join(str(int(x)) for x in bits)
+    return int(s, 2)
+
+
 class PacketSync(HW):
     def __init__(self, header, packet_len):
         self.packet_len_lim = Const(packet_len - 1)
+        self.n32out = Const(ceil(self.packet_len_lim.value / 32))  # number of 32 bit output packets per correct packet
+
         self.headercorr = HeaderCorrelator(header, packet_len)
         self.crc = CRC16(0x48f9, 0x1021)
-        self._delay = self.headercorr.get_delay() + self.crc.get_delay()
+        self._delay = self.headercorr.get_delay() + self.crc.get_delay() + 1
 
         self.delay = [False] * self.headercorr.get_delay()
         self.packet_counter = 0
 
         # read this when valid=1
-        self.bits = [False] * packet_len
+        self.bits = [False] * (packet_len + self.headercorr.get_delay() + + self.crc.get_delay())
+
+        self.part_out_counter = 0
+
+        # output
+        self.out = [False] * 32
+        self.valid = False
 
     def main(self, data):
+        self.next.valid = False
+        self.next.bits = self.bits[1:] + [data]
+
         reload = self.next.headercorr.main(data)
         self.next.packet_counter = self.packet_counter - 1
         if reload or self.packet_counter == 0:
@@ -208,9 +226,24 @@ class PacketSync(HW):
         crc = self.next.crc.main(self.delay[0], reload)
         # TODO: here is bug, crc is first 0 when counter is 1
         if crc == 0 and self.packet_counter == 0:
-            return True
-        else:
-            return False
+            self.next.part_out_counter = self.n32out
+
+        if self.part_out_counter != 0:
+            self.next.part_out_counter = self.part_out_counter - 1
+            # a1 = hex(bits_to_int(self.bits[0 + (0*32): 32 + (0*32)]))
+            # a2 = hex(bits_to_int(self.bits[0 + (1*32): 32 + (1*32)]))
+            # a3 = hex(bits_to_int(self.bits[0 + (2*32): 32 + (2*32)]))
+            # a4 = hex(bits_to_int(self.bits[0 + (3*32): 32 + (3*32)]))
+            # a5 = hex(bits_to_int(self.bits[0 + (4*32): 32 + (4*32)]))
+            # a6 = hex(bits_to_int(self.bits[0 + (5*32): 32 + (5*32)]))
+            d = (self.n32out - self.part_out_counter)
+            ofs = d * 32
+            low = 0 + ofs - d
+            high = 32 + ofs - d
+            self.next.out = self.bits[low: high]
+            self.next.valid = True
+
+        return self.out, self.valid
 
     def get_delay(self):
         return self._delay
@@ -219,10 +252,14 @@ class PacketSync(HW):
         head = self.headercorr.model_main(data)
         crc = self.crc.model_main(data, head)
 
-        ret = [False] * len(crc)
+        ret = []
         for i in range(self.packet_len_lim, len(crc)):
-            if head[i - self.packet_len_lim] and crc[i] == 0:
-                ret[i] = True
+            b = i - self.packet_len_lim
+            if head[b] and crc[i] == 0:
+                for i in range(0, self.n32out):
+                    ofs = i * 32
+                    r = bits_to_int(data[b + ofs: b + ofs + 32])
+                    ret.append(r)
         return ret
 
 

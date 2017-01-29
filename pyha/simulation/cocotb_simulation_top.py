@@ -43,6 +43,8 @@ def run_dut(dut, in_data, out_count):
         for i in range(out_count):
             var = 'out' + str(i)
             val = getattr(dut, var).value.signed_integer
+            # val = str(getattr(dut, var).value)
+            # print(val)
             tmp.append(val)
         ret.append(tmp)
 
@@ -60,6 +62,6 @@ def test_main(dut):
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
     # hdl_out = np.transpose(hdl_out)
-    # print(hdl_out)
+    print(hdl_out)
 
     np.save(os.getcwd() + '/../output.npy', hdl_out)
