@@ -1,13 +1,18 @@
+from enum import Enum
+
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
-# this is NRZ decoder
 from pyha.common.util import hex_to_bool_list
 
+
+class DecodeState(Enum):
+    HIGH_IN, HIGH_OUT, LOW_IN, LOW_OUT = range(4)
 
 class BitsDecode(HW):
     # debugi = []
     # debugb = []
     # debugx = []
+    # debugs = []
     # di = 0
     def __init__(self, decision_lim=0.2):
         # todo: this algorithm is the biggest bullshit i have made, it was nice once but it turned out it was lazy on valid output
@@ -20,48 +25,51 @@ class BitsDecode(HW):
         self.out_bit = False
         self.out_valid = False
 
-    def push_bit(self, b):
-        self.next.out_bit = b
-        self.next.out_valid = True
-        self.next.bit_counter = 0
-        # self.debugi.append(self.di)
-        # self.debugb.append(self.decision_lim if b else -self.decision_lim)
+        self.state = DecodeState.HIGH_IN
+        self.sample_clock = 1
 
     def main(self, x):
         self.next.out_valid = False
-        self.next.bit_counter = self.bit_counter + 1
-        if x > self.decision_lim:
-            self.next.cstate = False
-            if not self.state:
-                self.push_bit(True)
-            self.next.state = True
+        self.next.sample_clock = self.sample_clock - 1
 
-            # when output saturates for long time...just output crap to keep clock running
-            if self.next.bit_counter >= self.period:
-                self.push_bit(False)
+        # state machine -> ghetto clock recovery
+        if self.state == DecodeState.HIGH_IN:
+            if x < self.decision_lim:
+                self.next.state = DecodeState.HIGH_OUT
+                self.next.sample_clock = self.period
+        elif self.state == DecodeState.HIGH_OUT:
+            if x < -self.decision_lim:
+                self.next.state = DecodeState.LOW_IN
+                self.next.sample_clock = 0
+        elif self.state == DecodeState.LOW_OUT:
+            if x > self.decision_lim:
+                self.next.state = DecodeState.HIGH_IN
+                self.next.sample_clock = 0
+        elif self.state == DecodeState.LOW_IN:
+            if x > -self.decision_lim:
+                self.next.state = DecodeState.LOW_OUT
+                self.next.sample_clock = self.period
 
-        elif x < -self.decision_lim:
-            self.next.cstate = False
-            if self.state:
-                self.push_bit(False)
-            self.next.state = False
+        # bit sampler
+        if self.next.sample_clock == 0:
+            if self.state == DecodeState.HIGH_IN:
+                self.next.out_bit = True
+            elif self.state == DecodeState.HIGH_OUT:
+                self.next.out_bit = False
+            elif self.state == DecodeState.LOW_IN:
+                self.next.out_bit = False
+            elif self.state == DecodeState.LOW_OUT:
+                self.next.out_bit = True
+            self.next.out_valid = True
+            self.next.sample_clock = self.period
 
-            # when output saturates for long time...just output crap to keep clock running
-            if self.next.bit_counter >= self.period:
-                self.push_bit(False)
-        else:
-            if not self.cstate:
-                self.next.bit_counter = 0
-            self.next.cstate = True
-
-        if self.next.bit_counter >= self.period:
-            if self.state:
-                self.push_bit(False)
-            else:
-                self.push_bit(True)
 
         # self.di += 1
         # self.debugx.append(x)
+        # self.debugs.append(self.state.value/3)
+        # if self.next.out_valid:
+        #     self.debugi.append(self.di)
+        #     self.debugb.append(self.decision_lim if self.next.out_bit else -self.decision_lim)
         return self.out_bit, self.out_valid
 
 

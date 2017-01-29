@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from scipy import signal
 
 from pyha.common.sfix import Sfix
@@ -130,6 +131,49 @@ class TestBitsDecodeUksHWSim:
 
         # import matplotlib.pyplot as plt
         # plt.plot(self.dut.debugx)
+        # plt.stem(self.dut.debugi, self.dut.debugb)
+        # plt.show()
+
+        self._sim_match(r)
+
+
+class TestBitsDecodeUksHWSimExperiments:
+    """ this tests different phase offsets..may find when clock recovery fucks up"""
+
+    @pytest.fixture(autouse=True, params=range(32))
+    def setup(self, request):
+        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
+        iq = load_gnuradio_file(
+            'hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+
+        self.input = iq[request.param:]
+        self.dut = BitsDecode(0.2)
+
+    def _sim_match(self, sim_outs):
+        def type_conv(data):
+            # remove invalid outputs and convert to int
+            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
+
+        expect = hex_to_bit_str(self.expected_data)
+        for x in sim_outs[1:]:
+            o = ''.join(str(x) for x in type_conv(x))
+            assert expect in o
+
+    def test_model(self):
+        model = ''.join(str(x) for x in self.dut.model_main(self.input))
+        expect = hex_to_bit_str(self.expected_data)
+        assert expect in model
+
+    def test_uks_one(self):
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
+                                   None, self.input,
+                                   simulations=[SIM_MODEL, SIM_HW_MODEL],
+                                   dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   )
+
+        # import matplotlib.pyplot as plt
+        # plt.plot(self.dut.debugx)
+        # plt.plot(self.dut.debugs)
         # plt.stem(self.dut.debugi, self.dut.debugb)
         # plt.show()
 
@@ -319,9 +363,9 @@ class TestDemodToPacketHWSim:
                                    dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
-        model = ''.join(str(int(x)) for x in self.dut.packsync.dbg)
-        expect = hex_to_bit_str(self.expected_data)
-        print(model)
-        print(expect)
-        assert expect in model
+        # model = ''.join(str(int(x)) for x in self.dut.packsync.dbg)
+        # expect = hex_to_bit_str(self.expected_data)
+        # print(model)
+        # print(expect)
+        # assert expect in model
         self._sim_match(r)
