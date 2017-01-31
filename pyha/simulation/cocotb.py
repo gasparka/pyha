@@ -76,7 +76,7 @@ class CocotbAuto(object):
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
-        # ill throw my computer out of the window counter: 5
+        # ill throw my computer out of the window counter: 6
         self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder
@@ -124,7 +124,8 @@ class CocotbAuto(object):
             os._exit(-1)
 
         outp = np.load(str(self.base_path / 'output.npy'))
-        outp = outp.astype(complex)
+        outp = outp.astype(object)
+        # outp = outp.astype(complex)
 
         # FIXME: fix this retarded solution, combien with Sfix to 'integer'part and implement in decorator, maybe after transpose decorator!
         # convert 'integer' form back to Sfix
@@ -140,6 +141,14 @@ class CocotbAuto(object):
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
+                if isinstance(self.outputs[i], bool):
+                    outp[i][j] = bool(int(val))
+                elif not isinstance(self.outputs[i], list):
+                    outp = outp.astype(complex)
+                    val = getSignedNumber(int(val, 2), len(self.outputs[i]))
+
+
+
                 if isinstance(self.outputs[i], Sfix):
                     outp[i][j] = (val * 2 ** self.outputs[i].right)
                 elif isinstance(self.outputs[i], ComplexSfix):
@@ -152,6 +161,10 @@ class CocotbAuto(object):
                     imag = getSignedNumber(val & mask, self.outputs[i].bitwidth() // 2)
                     imag *= 2 ** self.outputs[i].right
                     outp[i][j] = real + imag * 1j
+                elif isinstance(self.outputs[i], list) and isinstance(self.outputs[i][0], bool):
+                    v = np.array([bool(int(x)) for x in val])
+                    outp[i][j] = v
+                    pass
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = np.transpose(outp)

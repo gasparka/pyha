@@ -258,9 +258,11 @@ class PacketSync(HW):
             if head[b] and crc[i] == 0:
                 for i in range(0, self.n32out):
                     ofs = i * 32
-                    r = bits_to_int(data[b + ofs: b + ofs + 32])
+                    r = data[b + ofs: b + ofs + 32]
                     ret.append(r)
-        return ret
+        # hack to get around transpose at output
+        import numpy as np
+        return np.transpose(ret)
 
 
 class DemodToPacket(HW):

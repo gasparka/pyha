@@ -92,3 +92,5 @@ def test_hex_to_bits():
 
     assert hex_to_bool_list(0xF) == [True, True, True, True]
     assert hex_to_bool_list(0xFFFF) == [True] * 16
+
+

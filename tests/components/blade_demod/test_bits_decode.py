@@ -9,6 +9,7 @@ from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
+
 class TestBitsDecode:
     def setup(self):
         self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
@@ -267,15 +268,15 @@ class TestPacketSync:
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb111111111')
         expect = [False] * 191 + [True]
         r = debug_assert_sim_match(self.dut, [bool], expect, inputs,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                    dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
         hwr = [x for x, valid in zip(*r[1]) if valid]
-        assert all(hwr == r[0])
+        assert (hwr == r[0]).all()
 
         rtlr = [x for x, valid in zip(*r[2]) if valid]
-        assert all(rtlr == r[0])
+        assert (rtlr == r[0]).all()
         pass
 
     def test_two_packet(self):

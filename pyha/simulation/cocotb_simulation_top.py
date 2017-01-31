@@ -42,8 +42,8 @@ def run_dut(dut, in_data, out_count):
         tmp = []
         for i in range(out_count):
             var = 'out' + str(i)
-            val = getattr(dut, var).value.signed_integer
-            # val = str(getattr(dut, var).value)
+            # val = getattr(dut, var).value.signed_integer
+            val = str(getattr(dut, var).value)
             # print(val)
             tmp.append(val)
         ret.append(tmp)

@@ -1,7 +1,7 @@
 from pyha.common.sfix import Sfix
 import numpy as np
 
-from pyha.components.blade_adaptor import BladeToComplex, NormalToBlade
+from pyha.components.blade_demod.blade_adaptor import BladeToComplex, NormalToBlade
 from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     assert_sim_match, debug_assert_sim_match, plot_assert_sim_match
 
