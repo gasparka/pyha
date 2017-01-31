@@ -195,7 +195,7 @@ def bits_to_int(bits):
 class PacketSync(HW):
     def __init__(self, header, packet_len):
         self.packet_len_lim = Const(packet_len - 1)
-        self.n32out = Const(ceil(self.packet_len_lim.value / 32))  # number of 32 bit output packets per correct packet
+        self.n32out = ceil(self.packet_len_lim.value / 32)  # number of 32 bit output packets per correct packet
 
         self.headercorr = HeaderCorrelator(header, packet_len)
         self.crc = CRC16(0x48f9, 0x1021)
@@ -205,13 +205,34 @@ class PacketSync(HW):
         self.packet_counter = 0
 
         # read this when valid=1
-        self.bits = [False] * (packet_len + self.headercorr.get_delay() + + self.crc.get_delay())
+        self.bits = [False] * (packet_len + self.headercorr.get_delay() + self.crc.get_delay() + 32)
 
         self.part_out_counter = 0
 
         # output
         self.out = [False] * 32
         self.valid = False
+
+        def output_lut(self):
+            low_lut = []
+            high_lut = []
+            for x in range(self.n32out):
+                d = (self.n32out - x)
+                ofs = d * 32
+                low = 0 + ofs - d
+                high = 32 + ofs - d
+                low_lut.append(low)
+                high_lut.append(high)
+            return low_lut, high_lut
+
+        self.low_lut, self.high_lut = output_lut(self)
+
+
+        # constants
+        self.n32out = Const(self.n32out)
+        self.low_lut = Const(self.low_lut)
+        self.high_lut = Const(self.high_lut)
+
 
     def main(self, data):
         self.next.valid = False
@@ -230,17 +251,21 @@ class PacketSync(HW):
 
         if self.part_out_counter != 0:
             self.next.part_out_counter = self.part_out_counter - 1
-            # a1 = hex(bits_to_int(self.bits[0 + (0*32): 32 + (0*32)]))
-            # a2 = hex(bits_to_int(self.bits[0 + (1*32): 32 + (1*32)]))
-            # a3 = hex(bits_to_int(self.bits[0 + (2*32): 32 + (2*32)]))
-            # a4 = hex(bits_to_int(self.bits[0 + (3*32): 32 + (3*32)]))
-            # a5 = hex(bits_to_int(self.bits[0 + (4*32): 32 + (4*32)]))
-            # a6 = hex(bits_to_int(self.bits[0 + (5*32): 32 + (5*32)]))
-            d = (self.n32out - self.part_out_counter)
-            ofs = d * 32
-            low = 0 + ofs - d
-            high = 32 + ofs - d
-            self.next.out = self.bits[low: high]
+
+            #
+            # # a1 = hex(bits_to_int(self.bits[0 + (0*32): 32 + (0*32)]))
+            # # a2 = hex(bits_to_int(self.bits[0 + (1*32): 32 + (1*32)]))
+            # # a3 = hex(bits_to_int(self.bits[0 + (2*32): 32 + (2*32)]))
+            # # a4 = hex(bits_to_int(self.bits[0 + (3*32): 32 + (3*32)]))
+            # # a5 = hex(bits_to_int(self.bits[0 + (4*32): 32 + (4*32)]))
+            # # a6 = hex(bits_to_int(self.bits[0 + (5*32): 32 + (5*32)]))
+            # d = (self.n32out - self.part_out_counter)
+            # ofs = d * 32
+            # low = 0 + ofs - d
+            # high = 32 + ofs - d
+            # self.next.out = self.bits[low: high]
+            self.next.out = self.bits[self.low_lut[self.next.part_out_counter]: self.high_lut[self.next.part_out_counter]]
+            # self.next.out = a[self.next.part_out_counter]
             self.next.valid = True
 
         return self.out, self.valid
