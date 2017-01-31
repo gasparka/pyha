@@ -29,7 +29,7 @@ package PyhaUtil is
   function "or"(a, b:integer) return integer;
   function "xor"(a, b:integer) return integer;
 
-  function bits_to_int(x: boolean_list_t) return integer;
+  -- function bits_to_int(x: boolean_list_t) return integer;
   -- function "??"(a:integer) return boolean; -- not supported for quartus
 
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
@@ -152,22 +152,22 @@ package body PyhaUtil is
   end function;
 
 
-  function bits_to_int(x: boolean_list_t) return integer is
-    variable s: signed(31 downto 0);
-    variable r: integer;
-  begin
-    for i in x'range loop
-      report to_string(i);
-      s(i) := bool_to_logic(x(i));
-  	end loop;
-    report "for done";
-    s := "10011111111100100011111110110001";
-    -- s := "0000000000000000000000000000";
-    r := to_integer(s);
-    report to_string(s);
-    report to_string(r);
-    return r;
-  end function;
+  -- function bits_to_int(x: boolean_list_t) return integer is
+  --   variable s: signed(31 downto 0);
+  --   variable r: integer;
+  -- begin
+  --   for i in x'range loop
+  --     report to_string(i);
+  --     s(i) := bool_to_logic(x(i));
+  -- 	end loop;
+  --   report "for done";
+  --   s := "10011111111100100011111110110001";
+  --   -- s := "0000000000000000000000000000";
+  --   r := to_integer(s);
+  --   report to_string(s);
+  --   report to_string(r);
+  --   return r;
+  -- end function;
 
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;
