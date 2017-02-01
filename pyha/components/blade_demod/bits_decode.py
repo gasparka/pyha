@@ -206,7 +206,7 @@ class PacketSync(HW):
         # read this when valid=1
         self.bits = [False] * (packet_len + self.headercorr.get_delay() + self.crc.get_delay())
 
-        self.part_out_counter = 0
+        self.part_out_counter = self.n32out
 
         # output
         self.out = [False] * 32
@@ -265,12 +265,15 @@ class DemodToPacket(HW):
 
         self._delay = self.bits.get_delay() + self.packsync.get_delay()
 
+        self.default_ret = [False] * 32
+
     def main(self, inp):
-        ret = False
-        bit, valid = self.next.bits.main(inp)
-        if valid:
-            ret = self.next.packsync.main(bit)
-        return ret, valid
+        pack_part = self.default_ret
+        part_valid = False
+        bit, bit_valid = self.next.bits.main(inp)
+        if bit_valid:
+            pack_part, part_valid = self.next.packsync.main(bit)
+        return pack_part, part_valid
 
     def get_delay(self):
         # model and hw will not delay match anyways... because of noise

@@ -9,7 +9,6 @@ from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
-
 class TestBitsDecode:
     def setup(self):
         self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
@@ -100,6 +99,7 @@ class TestBitsDecodeDiivan:
 
 class TestBitsDecodeUksHWSim:
     """ this finds bit_counter off by one error """
+
     def setup(self):
         self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         iq = load_gnuradio_file(
@@ -139,7 +139,9 @@ class TestBitsDecodeUksHWSim:
 
 
 class TestBitsDecodeUksHWSimExperiments:
-    """ this tests different phase offsets..may find when clock recovery fucks up"""
+    """ this tests different phase offsets..may find when clock recovery fucks up
+    This data is from hardware quadrature demodulator, it is interesting as it
+    saturates high when no noise -> this can cause problems"""
 
     @pytest.fixture(autouse=True, params=range(32))
     def setup(self, request):
@@ -179,6 +181,7 @@ class TestBitsDecodeUksHWSimExperiments:
         # plt.show()
 
         self._sim_match(r)
+
 
 class TestCRC16:
     def setup(self):
@@ -241,7 +244,6 @@ class TestPacketSync:
     def setup(self):
         self.dut = PacketSync(header=0x8dfc, packet_len=12 * 16)
 
-
     def _assert_sims(self, ref, hw_sims):
         for x in hw_sims:
             hwr = [x for x, valid in zip(*x) if valid]
@@ -250,7 +252,7 @@ class TestPacketSync:
     def test_one_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
         r = debug_assert_sim_match(self.dut, [bool], None, inputs)
-        ref = r[0] # model simulation
+        ref = r[0]  # model simulation
         assert len(ref) == 6
         assert '0x8dfc4ff9' == bools_to_hex(ref[0])
         assert '0x7dffdb11' == bools_to_hex(ref[1])
@@ -267,7 +269,7 @@ class TestPacketSync:
 
         r = debug_assert_sim_match(self.dut, [bool], None, inputs)
 
-        ref = r[0] # model simulation
+        ref = r[0]  # model simulation
         assert len(ref) == 12
         assert '0x8dfc4ff9' == bools_to_hex(ref[0])
         assert '0x7dffdb11' == bools_to_hex(ref[1])
@@ -284,7 +286,6 @@ class TestPacketSync:
         assert '0x70b91cdb' == bools_to_hex(ref[11])
 
         self._assert_sims(ref, r[1:])
-
 
     def test_three_packet_noisy(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'
@@ -334,32 +335,27 @@ class TestDemodToPacket:
         self.input = signal.lfilter(taps, [1], demod)
         self.dut = DemodToPacket()
 
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
-
-        # TODO: only checks the valid output, add test for package data
-        ref = [x for x in sim_outs[0] if x]
-        for x in sim_outs[1:]:
-            o = [c for c in type_conv(x) if c]
-            assert o == ref
-
-    def test_model(self):
-        model = [x for x in self.dut.model_main(self.input) if x]
-        assert len(model) == 1
+    def _assert_sims(self, ref, hw_sims):
+        for x in hw_sims:
+            hwr = [x for x, valid in zip(*x) if valid]
+            assert (hwr == ref).all()
 
     def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, self.input)
 
-        self._sim_match(r)
+        ref = r[0]  # model simulation
+        assert len(ref) == 6
+        assert '0x8dfc4ff9' == bools_to_hex(ref[0])
+        assert '0x7dffdb11' == bools_to_hex(ref[1])
+        assert '0xff438aee' == bools_to_hex(ref[2])
+        assert '0x29243910' == bools_to_hex(ref[3])
+        assert '0x365e9089' == bools_to_hex(ref[4])
+        assert '0x70b9475e' == bools_to_hex(ref[5])
+
+        self._assert_sims(ref, r[1:])
 
 
-class TestDemodToPacketHWSim:
+class TestHWDemodulationToPacket:
     def setup(self):
         self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         iq = load_gnuradio_file(
