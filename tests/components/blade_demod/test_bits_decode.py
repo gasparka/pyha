@@ -272,11 +272,11 @@ class TestPacketSync:
                                    dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
-        # hwr = [x for x, valid in zip(*r[1]) if valid]
-        # assert (hwr == r[0]).all()
-        #
-        # rtlr = [x for x, valid in zip(*r[2]) if valid]
-        # assert (rtlr == r[0]).all()
+        hwr = [x for x, valid in zip(*r[1]) if valid]
+        assert (hwr == r[0]).all()
+
+        rtlr = [x for x, valid in zip(*r[2]) if valid]
+        assert (rtlr == r[0]).all()
         pass
 
     def test_two_packet(self):
