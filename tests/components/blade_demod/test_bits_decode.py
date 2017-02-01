@@ -245,19 +245,13 @@ class TestHeaderCorrelator:
     def test_one_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
         expect = [True] + [False] * 191
-        assert_sim_match(self.dut, [bool], expect, inputs,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
-                         )
+        assert_sim_match(self.dut, [bool], expect, inputs)
 
     def test_two_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'
                                   '8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
         expect = [True] + [False] * 191 + [True] + [False] * 191
-        assert_sim_match(self.dut, [bool], expect, inputs,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
-                         )
+        assert_sim_match(self.dut, [bool], expect, inputs)
 
 
 class TestPacketSync:
