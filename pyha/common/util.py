@@ -94,3 +94,11 @@ def test_hex_to_bits():
     assert hex_to_bool_list(0xFFFF) == [True] * 16
 
 
+def bools_to_hex(bl):
+    bitstr = ''.join(str(int(x)) for x in bl)
+    return hex(int(bitstr, 2))
+
+def test_bools_to_hex():
+    assert bools_to_hex([True, True, True, True]) == '0xf'
+    assert bools_to_hex([True, True]) == '0x3'
+    assert bools_to_hex([False, True, True, True, True, False, True, True]) == '0x7b'
