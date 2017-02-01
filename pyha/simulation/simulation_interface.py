@@ -181,7 +181,11 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
-            return np.transpose(self.model.model_main(*args))
+            # return np.transpose(self.model.model_main(*args))
+            r = self.model.model_main(*args)
+            if isinstance(r, tuple): # sign that there are more then 1 return values
+                return np.transpose(r)
+            return r
         else:
             return self.hw_simulation(*args)
 
@@ -269,7 +273,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
 
 def sim_rules(simulations):
     if simulations is None:
-        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
     assert simulations in [[SIM_MODEL],
                            [SIM_MODEL, SIM_HW_MODEL],
