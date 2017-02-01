@@ -198,7 +198,7 @@ class PacketSync(HW):
 
         self.headercorr = HeaderCorrelator(header, packet_len)
         self.crc = CRC16(0x48f9, 0x1021)
-        self._delay = self.headercorr.get_delay() + self.crc.get_delay() + 1
+        self._delay = self.headercorr.get_delay() + self.crc.get_delay() + 1 + self.n32out # n32out: delay is needed if outputs are to be presented!
 
         self.delay = [False] * self.headercorr.get_delay()
         self.packet_counter = 0
@@ -255,9 +255,7 @@ class PacketSync(HW):
                     ofs = i * 32
                     r = data[b + ofs: b + ofs + 32]
                     ret.append(r)
-        # hack to get around transpose at output
-        import numpy as np
-        return np.transpose(ret)
+        return ret
 
 
 class DemodToPacket(HW):

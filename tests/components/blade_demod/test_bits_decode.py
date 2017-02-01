@@ -3,7 +3,7 @@ import pytest
 from scipy import signal
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import load_gnuradio_file, hex_to_bool_list, hex_to_bit_str
+from pyha.common.util import load_gnuradio_file, hex_to_bool_list, hex_to_bit_str, bools_to_hex
 from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16, HeaderCorrelator, PacketSync, DemodToPacket
 from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
@@ -264,43 +264,84 @@ class TestPacketSync:
     def setup(self):
         self.dut = PacketSync(header=0x8dfc, packet_len=12 * 16)
 
+
+    def _assert_sims(self, ref, hw_sims):
+        for x in hw_sims:
+            hwr = [x for x, valid in zip(*x) if valid]
+            assert (hwr == ref).all()
+
     def test_one_packet(self):
-        inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb111111111')
-        expect = [False] * 191 + [True]
-        r = debug_assert_sim_match(self.dut, [bool], expect, inputs,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
+        inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
+        r = debug_assert_sim_match(self.dut, [bool], None, inputs)
+        ref = r[0] # model simulation
+        assert len(ref) == 6
+        assert '0x8dfc4ff9' == bools_to_hex(ref[0])
+        assert '0x7dffdb11' == bools_to_hex(ref[1])
+        assert '0xff438aee' == bools_to_hex(ref[2])
+        assert '0x25243910' == bools_to_hex(ref[3])
+        assert '0x39a49089' == bools_to_hex(ref[4])
+        assert '0x70b91cdb' == bools_to_hex(ref[5])
 
-        hwr = [x for x, valid in zip(*r[1]) if valid]
-        assert (hwr == r[0]).all()
-
-        rtlr = [x for x, valid in zip(*r[2]) if valid]
-        assert (rtlr == r[0]).all()
-        pass
+        self._assert_sims(ref, r[1:])
 
     def test_two_packet(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'
                                   '8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
-        expect = [False] * len(inputs)
-        expect[191] = True
-        expect[-1] = True
-        assert_sim_match(self.dut, [bool], expect, inputs,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
-                         )
 
-    def test_full(self):
+        r = debug_assert_sim_match(self.dut, [bool], None, inputs)
+
+        ref = r[0] # model simulation
+        assert len(ref) == 12
+        assert '0x8dfc4ff9' == bools_to_hex(ref[0])
+        assert '0x7dffdb11' == bools_to_hex(ref[1])
+        assert '0xff438aee' == bools_to_hex(ref[2])
+        assert '0x25243910' == bools_to_hex(ref[3])
+        assert '0x39a49089' == bools_to_hex(ref[4])
+        assert '0x70b91cdb' == bools_to_hex(ref[5])
+
+        assert '0x8dfc4ff9' == bools_to_hex(ref[6])
+        assert '0x7dffdb11' == bools_to_hex(ref[7])
+        assert '0xff438aee' == bools_to_hex(ref[8])
+        assert '0x25243910' == bools_to_hex(ref[9])
+        assert '0x39a49089' == bools_to_hex(ref[10])
+        assert '0x70b91cdb' == bools_to_hex(ref[11])
+
+        self._assert_sims(ref, r[1:])
+
+
+    def test_three_packet_noisy(self):
         inputs = hex_to_bool_list('8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'
                                   '43534587894321874237888738022073'
                                   '8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb'
                                   '213487897857348758'
                                   '8dfc4ff97dffdb11ff438aee2524391039a4908970b91cdb')
 
-        assert_sim_match(self.dut, [bool], None, inputs,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv'
-                         )
+        r = debug_assert_sim_match(self.dut, [bool], None, inputs)
+
+        ref = r[0]  # model simulation
+        assert len(ref) == 18
+        assert '0x8dfc4ff9' == bools_to_hex(ref[0])
+        assert '0x7dffdb11' == bools_to_hex(ref[1])
+        assert '0xff438aee' == bools_to_hex(ref[2])
+        assert '0x25243910' == bools_to_hex(ref[3])
+        assert '0x39a49089' == bools_to_hex(ref[4])
+        assert '0x70b91cdb' == bools_to_hex(ref[5])
+
+        assert '0x8dfc4ff9' == bools_to_hex(ref[6])
+        assert '0x7dffdb11' == bools_to_hex(ref[7])
+        assert '0xff438aee' == bools_to_hex(ref[8])
+        assert '0x25243910' == bools_to_hex(ref[9])
+        assert '0x39a49089' == bools_to_hex(ref[10])
+        assert '0x70b91cdb' == bools_to_hex(ref[11])
+
+        assert '0x8dfc4ff9' == bools_to_hex(ref[12])
+        assert '0x7dffdb11' == bools_to_hex(ref[13])
+        assert '0xff438aee' == bools_to_hex(ref[14])
+        assert '0x25243910' == bools_to_hex(ref[15])
+        assert '0x39a49089' == bools_to_hex(ref[16])
+        assert '0x70b91cdb' == bools_to_hex(ref[17])
+
+        self._assert_sims(ref, r[1:])
 
 
 class TestDemodToPacket:
