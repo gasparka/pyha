@@ -143,10 +143,11 @@ class CocotbAuto(object):
             for j, val in enumerate(row):
                 if isinstance(self.outputs[i], bool):
                     outp[i][j] = bool(int(val))
-                elif not isinstance(self.outputs[i], list):
-                    outp = outp.astype(complex)
+                elif isinstance(self.outputs[i], int):
+                    val = getSignedNumber(int(val, 2), 32)
+                    outp[i][j] = val
+                elif not isinstance(self.outputs[i], int):
                     val = getSignedNumber(int(val, 2), len(self.outputs[i]))
-
 
 
                 if isinstance(self.outputs[i], Sfix):
