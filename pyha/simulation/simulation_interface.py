@@ -185,7 +185,7 @@ class Simulation:
             r = self.model.model_main(*args)
             if isinstance(r, tuple): # sign that there are more then 1 return values
                 return np.transpose(r)
-            return r
+            return np.array(r)
         else:
             return self.hw_simulation(*args)
 
