@@ -265,7 +265,7 @@ class DemodToPacket(HW):
 
         self._delay = self.bits.get_delay() + self.packsync.get_delay()
 
-        self.default_ret = [False] * 32
+        self.default_ret = Const([False] * 32)
 
     def main(self, inp):
         pack_part = self.default_ret
