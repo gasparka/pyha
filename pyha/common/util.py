@@ -62,7 +62,7 @@ def save_gnuradio_file(file: str, arr):
     conv.tofile(file)
 
 
-def hex_to_bit_str(hstr):
+def hex_to_bitstr(hstr):
     """ http://stackoverflow.com/questions/1425493/convert-hex-to-binary """
     if isinstance(hstr, int):
         hstr = hex(hstr)
@@ -75,17 +75,17 @@ def hex_to_bit_str(hstr):
 
 
 def hex_to_bool_list(hstr):
-    return [bool(int(x)) for x in hex_to_bit_str(hstr)]
+    return [bool(int(x)) for x in hex_to_bitstr(hstr)]
 
 def int_to_bool_list(hstr):
-    return [bool(int(x)) for x in hex_to_bit_str(hstr)]
+    return [bool(int(x)) for x in hex_to_bitstr(hstr)]
 
 
 def test_hex_to_bits():
-    assert hex_to_bit_str('FF') == '11111111'
-    assert hex_to_bit_str('0xFF') == '11111111'
-    assert hex_to_bit_str('0XFF') == '11111111'
-    assert hex_to_bit_str('0F') == '00001111'
+    assert hex_to_bitstr('FF') == '11111111'
+    assert hex_to_bitstr('0xFF') == '11111111'
+    assert hex_to_bitstr('0XFF') == '11111111'
+    assert hex_to_bitstr('0F') == '00001111'
 
     assert hex_to_bool_list('F') == [True, True, True, True]
     assert hex_to_bool_list('0F') == [False, False, False, False, True, True, True, True]
@@ -95,8 +95,11 @@ def test_hex_to_bits():
 
 
 def bools_to_hex(bl):
-    bitstr = ''.join(str(int(x)) for x in bl)
+    bitstr = bools_to_bitstr(bl)
     return hex(int(bitstr, 2))
+
+def bools_to_bitstr(bl):
+    return ''.join(str(int(x)) for x in bl)
 
 def test_bools_to_hex():
     assert bools_to_hex([True, True, True, True]) == '0xf'

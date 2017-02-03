@@ -3,184 +3,78 @@ import pytest
 from scipy import signal
 
 from pyha.common.sfix import Sfix
-from pyha.common.util import load_gnuradio_file, hex_to_bool_list, hex_to_bit_str, bools_to_hex
+from pyha.common.util import load_gnuradio_file, hex_to_bool_list, hex_to_bitstr, bools_to_hex, bools_to_bitstr
 from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16, HeaderCorrelator, PacketSync, DemodToPacket
 from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, \
     debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
-class TestBitsDecode:
-    def setup(self):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-
-        iq = iq[600:4020]
+def load_data(file_name, demodulate=True):
+    iq = load_gnuradio_file(file_name)
+    if demodulate:
         demod = np.angle(iq[1:] * np.conjugate(iq[:-1])) / np.pi
 
         sps = 16
         taps = [1 / sps] * sps
-        self.input = signal.lfilter(taps, [1], demod)
-
+        r = signal.lfilter(taps, [1], demod)
+        return r
+    else:
+        return iq
         # import matplotlib.pyplot as plt
-        # plt.plot(self.input)
+        # plt.plot(r)
         # plt.show()
 
-        self.dut = BitsDecode(0.2)
 
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
-
-        ref = sim_outs[0]
-        for x in sim_outs[1:]:
-            o = type_conv(x)
-            assert (o == ref).all()
-
-    def test_model(self):
-        model = ''.join(str(x) for x in self.dut.model_main(self.input))
-        expect = hex_to_bit_str(self.expected_data)
-        assert expect in model
-
-    def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
-
-        self._sim_match(r)
-
-
-class TestBitsDecodeDiivan:
+class TesttBitsDecode:
     def setup(self):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-
-        iq = iq[1000:4400]
-        demod = np.angle(iq[1:] * np.conjugate(iq[:-1])) / np.pi
-
-        sps = 16
-        taps = [1 / sps] * sps
-        self.input = signal.lfilter(taps, [1], demod)
-
-        # import matplotlib.pyplot as plt
-        # plt.plot(self.input)
-        # plt.show()
-
         self.dut = BitsDecode(0.2)
 
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
-
-        ref = sim_outs[0]
-        for x in sim_outs[1:]:
-            o = type_conv(x)
-            assert (o == ref).all()
-
-    def test_model(self):
-        model = ''.join(str(x) for x in self.dut.model_main(self.input))
-        expect = hex_to_bit_str(self.expected_data)
-        assert expect in model
+    def _assert_sims(self, expect, hw_sims):
+        for x in hw_sims:
+            hwr = [x for x, valid in zip(*x) if valid]
+            assert hex_to_bitstr(expect) in bools_to_bitstr(hwr)
 
     def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
+        data = load_data('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
-        self._sim_match(r)
+        assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
+        self._assert_sims(expect, r[1:])
 
+    def test_diivan_one(self):
+        data = load_data('one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
-class TestBitsDecodeUksHWSim:
-    """ this finds bit_counter off by one error """
+        assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
+        self._assert_sims(expect, r[1:])
 
-    def setup(self):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+    def test_uks_one_hwsim(self):
+        """ this finds bit_counter off by one error
+        This data is from hardware quadrature demodulator, it is interesting as it
+        saturates high when noise -> this can cause problems"""
+        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+                               , demodulate=False)
 
-        self.input = iq
-        self.dut = BitsDecode(0.2)
+        expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
+        assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
+        self._assert_sims(expect, r[1:])
 
-        expect = hex_to_bit_str(self.expected_data)
-        for x in sim_outs[1:]:
-            o = ''.join(str(x) for x in type_conv(x))
-            assert expect in o
+    @pytest.mark.parametrize('skip_start', range(32))
+    def test_uks_one_hwsim_offsets(self, skip_start):
+        """ change the inital sampling point, without time adjustment some of these tests would fail"""
+        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+                               , demodulate=False)
+        data = data[skip_start:]
+        expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data
+                                   , simulations=[SIM_MODEL, SIM_HW_MODEL])
 
-    def test_model(self):
-        model = ''.join(str(x) for x in self.dut.model_main(self.input))
-        expect = hex_to_bit_str(self.expected_data)
-        assert expect in model
-
-    def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
-
-        # import matplotlib.pyplot as plt
-        # plt.plot(self.dut.debugx)
-        # plt.stem(self.dut.debugi, self.dut.debugb)
-        # plt.show()
-
-        self._sim_match(r)
-
-
-class TestBitsDecodeUksHWSimExperiments:
-    """ this tests different phase offsets..may find when clock recovery fucks up
-    This data is from hardware quadrature demodulator, it is interesting as it
-    saturates high when no noise -> this can cause problems"""
-
-    @pytest.fixture(autouse=True, params=range(32))
-    def setup(self, request):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-
-        self.input = iq[request.param:]
-        self.dut = BitsDecode(0.2)
-
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
-
-        expect = hex_to_bit_str(self.expected_data)
-        for x in sim_outs[1:]:
-            o = ''.join(str(x) for x in type_conv(x))
-            assert expect in o
-
-    def test_model(self):
-        model = ''.join(str(x) for x in self.dut.model_main(self.input))
-        expect = hex_to_bit_str(self.expected_data)
-        assert expect in model
-
-    def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
-
-        # import matplotlib.pyplot as plt
-        # plt.plot(self.dut.debugx)
-        # plt.plot(self.dut.debugs)
-        # plt.stem(self.dut.debugi, self.dut.debugb)
-        # plt.show()
-
-        self._sim_match(r)
+        assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
+        self._assert_sims(expect, r[1:])
 
 
 class TestCRC16:
@@ -324,15 +218,6 @@ class TestPacketSync:
 
 class TestDemodToPacket:
     def setup(self):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-
-        demod = np.angle(iq[1:] * np.conjugate(iq[:-1])) / np.pi
-
-        sps = 16
-        taps = [1 / sps] * sps
-        self.input = signal.lfilter(taps, [1], demod)
         self.dut = DemodToPacket()
 
     def _assert_sims(self, ref, hw_sims):
@@ -341,7 +226,8 @@ class TestDemodToPacket:
             assert (hwr == ref).all()
 
     def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, self.input)
+        data = load_data('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
         ref = r[0]  # model simulation
         assert len(ref) == 6
@@ -354,40 +240,18 @@ class TestDemodToPacket:
 
         self._assert_sims(ref, r[1:])
 
+    def test_uks_one_hwsim(self):
+        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+                         , demodulate=False)
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
-class TestHWDemodulationToPacket:
-    def setup(self):
-        self.expected_data = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        iq = load_gnuradio_file(
-            'hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-        self.input = iq
-        self.dut = DemodToPacket()
+        ref = r[0]  # model simulation
+        assert len(ref) == 6
+        assert '0x8dfc4ff9' == bools_to_hex(ref[0])
+        assert '0x7dffdb11' == bools_to_hex(ref[1])
+        assert '0xff438aee' == bools_to_hex(ref[2])
+        assert '0x29243910' == bools_to_hex(ref[3])
+        assert '0x365e9089' == bools_to_hex(ref[4])
+        assert '0x70b9475e' == bools_to_hex(ref[5])
 
-    def _sim_match(self, sim_outs):
-        def type_conv(data):
-            # remove invalid outputs and convert to int
-            return np.array([bool(x) for x, valid in zip(*data) if bool(valid)]).astype(int)
-
-        # TODO: only checks the valid output, add test for package data
-        ref = [x for x in sim_outs[0] if x]
-        for x in sim_outs[1:]:
-            o = [c for c in type_conv(x) if c]
-            assert o == ref
-
-    def test_model(self):
-        model = [x for x in self.dut.model_main(self.input) if x]
-        assert len(model) == 1
-
-    def test_uks_one(self):
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)],
-                                   None, self.input,
-                                   simulations=[SIM_MODEL, SIM_HW_MODEL],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   )
-
-        # model = ''.join(str(int(x)) for x in self.dut.packsync.dbg)
-        # expect = hex_to_bit_str(self.expected_data)
-        # print(model)
-        # print(expect)
-        # assert expect in model
-        self._sim_match(r)
+        self._assert_sims(ref, r[1:])

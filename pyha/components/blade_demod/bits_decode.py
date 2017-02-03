@@ -17,7 +17,6 @@ class BitsDecode(HW):
     # debugs = []
     # di = 0
     def __init__(self, decision_lim=0.2):
-        # todo: this algorithm is the biggest bullshit i have made, it was nice once but it turned out it was lazy on valid output
         self.decision_lim = Const(decision_lim)
         self.bit_counter = 0
         self.state = False
@@ -78,6 +77,7 @@ class BitsDecode(HW):
 
     def model_main(self, sig):
         # model will not match in case of noise signals
+        # NB! likely that the hw algorithm actually works better than this model
         state = 0
         bit_counter = 0
         bits = []
@@ -105,7 +105,7 @@ class BitsDecode(HW):
                 n = 1 if state == 0 else 0
                 push_bit(n, i)
                 bit_counter = 0
-
+        # #
         # import matplotlib.pyplot as plt
         # plt.plot(sig)
         # plt.stem(debugi, debugb)
