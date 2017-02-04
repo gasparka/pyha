@@ -146,8 +146,8 @@ class CocotbAuto(object):
                 elif isinstance(self.outputs[i], int):
                     val = getSignedNumber(int(val, 2), 32)
                     outp[i][j] = val
-                # elif not isinstance(self.outputs[i], list):
-                #     val = getSignedNumber(int(val, 2), len(self.outputs[i]))
+                elif not isinstance(self.outputs[i], list):
+                    val = getSignedNumber(int(val, 2), len(self.outputs[i]))
 
 
                 if isinstance(self.outputs[i], Sfix):

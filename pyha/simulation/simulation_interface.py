@@ -183,7 +183,8 @@ class Simulation:
         if self.simulation_type == SIM_MODEL:
             # return np.transpose(self.model.model_main(*args))
             r = self.model.model_main(*args)
-            if isinstance(r, tuple): # sign that there are more then 1 return values
+            if isinstance(r, tuple) or (
+                isinstance(r, list) and isinstance(r[0], tuple)):  # sign that there are more then 1 return values
                 return np.transpose(r)
             return np.array(r)
         else:
