@@ -113,8 +113,13 @@ class PyhaFunc:
                             # sfix lazy init, can happen for pipelines
                             continue
                         elif value.val == old_value.init_val:
-                            # this is a shady condition, it helps against sfix values propagating trough pipelines, but may also mast valid errors
+                            # this is a shady condition, it helps against sfix values propagating trough pipelines, but may also mask valid errors
+                            # HERE is reason why sometimes consistency check fails!
                             continue
+                        elif old_value.val == old_value.init_val:
+                            # shady shady stuff, helps if initival junk value is resized..
+                            continue
+
                         raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
                 elif type(value) != type(old_value):
                     raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
