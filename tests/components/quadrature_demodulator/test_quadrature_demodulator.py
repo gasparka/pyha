@@ -6,7 +6,7 @@ from pyha.common.sfix import ComplexSfix
 from pyha.components.quadrature_demodulator import QuadratureDemodulator, QuadratureDemodulatorPartial0, \
     QuadratureDemodulatorPartial1
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, \
-    SIM_RTL, SIM_GATE, plot_assert_sim_match
+    SIM_RTL, plot_assert_sim_match
 
 
 class TestFm:
@@ -55,9 +55,6 @@ class TestFm:
                          expect, inputs,
                          rtol=1e-3,
                          atol=1e-3,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground/conv',
-                         # fuck_it=True
                          )
         # import matplotlib.pyplot as plt
         # plt.plot(out[0], label='MODEL')
@@ -96,8 +93,6 @@ class TestPhantom2:
                               None, inputs,
                               rtol=1e-4,
                               atol=1e-4,
-                              simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                              dir_path='/home/gaspar/git/pyha/playground/conv',
                               )
 
         # def test_from_signaltap(self):
