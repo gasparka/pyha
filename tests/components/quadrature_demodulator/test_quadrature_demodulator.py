@@ -2,10 +2,9 @@ import numpy as np
 import scipy
 
 from pyha.common.sfix import ComplexSfix
-from pyha.common.signaltap_parser import SignalTapParser
 from pyha.components.quadrature_demodulator import QuadratureDemodulator, QuadratureDemodulatorPartial0, \
     QuadratureDemodulatorPartial1
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, debug_assert_sim_match, SIM_HW_MODEL, \
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, \
     SIM_RTL, SIM_GATE
 
 
@@ -100,45 +99,41 @@ class TestPhantom2:
                          dir_path='/home/gaspar/git/pyha/playground/conv',
                          )
 
-    def test_from_signaltap(self):
-        a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
-        real = a.to_bladerf(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'])
-        real = real[::2]
-
-        imag = a.to_bladerf(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'])
-        imag = imag[::2]
-        c = np.array([0+0j]*len(imag))
-        c.real = real
-        c.imag = imag
-
-        quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
-        quad_out = quad_out[::2]
-
-        # qd = np.angle(c[1:] * np.conjugate(c[:-1]))
+        # def test_from_signaltap(self):
+        #     a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/tap.csv')
+        #     real = a.to_bladerf(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'])
+        #     real = real[::2]
         #
-        # plt.plot(qd)
-        # # plt.plot(imag)
-        # # plt.plot(real)
-        # plt.plot(quad_out)
-        # plt.show()
-
-        dut = QuadratureDemodulator(gain=self.demod_gain)
-        out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-        # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
-                         [], c,
-                         rtol=1e-3,
-                         atol=1e-3,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL],
-                         dir_path='/home/gaspar/git/pyha/playground/conv',
-                         )
-
-        import matplotlib.pyplot as plt
-        plt.plot(out[0], label='MODEL')
-        plt.plot(out[1], label='HW_MODEL')
-        # plt.plot(out[2], label='RTL')
-        plt.legend()
-        plt.show()
-
-
-
-
+        #     imag = a.to_bladerf(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'])
+        #     imag = imag[::2]
+        #     c = np.array([0+0j]*len(imag))
+        #     c.real = real
+        #     c.imag = imag
+        #
+        #     quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
+        #     quad_out = quad_out[::2]
+        #
+        #     # qd = np.angle(c[1:] * np.conjugate(c[:-1]))
+        #     #
+        #     # plt.plot(qd)
+        #     # # plt.plot(imag)
+        #     # # plt.plot(real)
+        #     # plt.plot(quad_out)
+        #     # plt.show()
+        #
+        #     dut = QuadratureDemodulator(gain=self.demod_gain)
+        #     out = debug_assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        #     # assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+        #                      [], c,
+        #                      rtol=1e-3,
+        #                      atol=1e-3,
+        #                      simulations=[SIM_MODEL, SIM_HW_MODEL],
+        #                      dir_path='/home/gaspar/git/pyha/playground/conv',
+        #                      )
+        #
+        #     import matplotlib.pyplot as plt
+        #     plt.plot(out[0], label='MODEL')
+        #     plt.plot(out[1], label='HW_MODEL')
+        #     # plt.plot(out[2], label='RTL')
+        #     plt.legend()
+        #     plt.show()

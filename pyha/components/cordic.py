@@ -182,7 +182,9 @@ class ToPolar(HW):
 
     def model_main(self, cin):
         # note that angle in -1..1 range
-        return [[abs(x), np.angle(x) / np.pi] for x in cin]
+        rabs = [np.abs(x) for x in cin]
+        angle = [np.angle(x) / np.pi for x in cin]
+        return rabs, angle
 
 
 class Angle(HW):

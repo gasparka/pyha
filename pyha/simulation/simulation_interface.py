@@ -181,10 +181,15 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
-            # return np.transpose(self.model.model_main(*args))
             r = self.model.model_main(*args)
-            if isinstance(r, tuple) or (
-                isinstance(r, list) and isinstance(r[0], tuple)):  # sign that there are more then 1 return values
+
+            if isinstance(r, tuple):
+                if isinstance(r[0], list):
+                    # assume that no transpose needed ( model returns correct way )
+                    return np.array(r)
+                return np.transpose(r)
+
+            if isinstance(r, list) and isinstance(r[0], tuple):
                 return np.transpose(r)
             return np.array(r)
         else:
