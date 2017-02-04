@@ -1,3 +1,5 @@
+import numpy as np
+
 from pyha.common.sfix import ComplexSfix
 from pyha.components.util_complex import Conjugate, ComplexMultiply
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
@@ -45,7 +47,6 @@ def test_multiply():
 
 
 def test_multiply_harmonic():
-    import numpy as np
     # 2hz signal
     t = np.linspace(0, 2, 1024)
     a = np.exp(1j * 2 * np.pi * 2 * t)

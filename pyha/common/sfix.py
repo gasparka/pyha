@@ -59,6 +59,9 @@ class ComplexSfix:
     def bitwidth(self):
         return (self.left + abs(self.right)) * 2 + 2
 
+    def __len__(self):
+        return self.bitwidth()
+
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
 
