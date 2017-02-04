@@ -1069,7 +1069,7 @@ def test_indexing_slice(converter):
             a[0:5]""")
 
     expect = textwrap.dedent("""\
-            a(0 to 4)""")
+            a(0 to (5)-1)""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -1080,7 +1080,7 @@ def test_indexing_slice_no_lower(converter):
             a[:2]""")
 
     expect = textwrap.dedent("""\
-            a(0 to 1)""")
+            a(0 to (2)-1)""")
 
     conv = converter(code)
     assert expect == str(conv)
