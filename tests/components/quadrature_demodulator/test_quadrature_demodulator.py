@@ -1,8 +1,10 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
-import scipy
 
 from pyha.common.sfix import ComplexSfix
+from pyha.common.util import load_gnuradio_file
 from pyha.components.quadrature_demodulator import QuadratureDemodulator, QuadratureDemodulatorPartial0, \
     QuadratureDemodulatorPartial1
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, \
@@ -68,7 +70,8 @@ class TestPhantom2:
     """ Uses one chunk of Phantom 2 transmission """
 
     def setup(self):
-        inputs = scipy.fromfile(open('f2404_fs16.896_one_hop.iq'), dtype=scipy.complex64)
+        path = Path(__file__).parent / 'f2404_fs16.896_one_hop.iq'
+        inputs = load_gnuradio_file(str(path))
         inputs = inputs[18000:19000]
         self.mod = inputs
         self.demod_gain = 1.5

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from scipy.signal import chirp, hilbert
@@ -162,7 +164,8 @@ class TestToPolar:
 
     def test_angle_phantom_cmultconj(self):
         # phantom 2 -> demod = c[1:] * np.conjugate(c[:-1])
-        sig = np.load('phantom_cmult_conjugate.npy')
+        path = Path(__file__).parent / 'phantom_cmult_conjugate.npy'
+        sig = np.load(str(path))
 
         inputs = sig
         expect = []
@@ -191,7 +194,8 @@ class TestToPolar:
         pytest.xfail('Lazyness')
 
         # phantom 2 -> demod = c[1:] * np.conjugate(c[:-1])
-        sig = np.load('phantom_cmult_conjugate.npy')
+        path = Path(__file__).parent / 'phantom_cmult_conjugate.npy'
+        sig = np.load(str(path))
 
         inputs = sig
         expect = []
