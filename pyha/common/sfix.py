@@ -19,10 +19,12 @@ class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
+            self.val = self.init_val
             self.real = val
             self.imag = left
         else:
             self.init_val = val
+            self.val = self.init_val
             self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
             self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
 

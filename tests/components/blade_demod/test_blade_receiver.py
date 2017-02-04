@@ -1,9 +1,9 @@
-import numpy as np
+from pathlib import Path
 
 from pyha.common.sfix import ComplexSfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
 from pyha.components.blade_demod.blade_receiver import Phantom2Receiver
-from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.simulation_interface import debug_assert_sim_match
 
 
 class TestBladeReceiver:
@@ -16,10 +16,10 @@ class TestBladeReceiver:
             assert (hwr == ref).all()
 
     def test_uks_one(self):
-        data = load_gnuradio_file(
-            'one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
-        r = debug_assert_sim_match(self.dut, [ComplexSfix(left=0, right=-17)], None, data,
-                                   dir_path='/home/gaspar/git/pyha/playground/conv')
+        path = Path(__file__).parent / 'data/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+        data = load_gnuradio_file(str(path))
+
+        r = debug_assert_sim_match(self.dut, [ComplexSfix(left=0, right=-17)], None, data)
 
         ref = r[0]
         assert len(ref) == 6
@@ -33,8 +33,9 @@ class TestBladeReceiver:
         self._assert_sims(ref, r[1:])
 
     def test_diivan_one(self):
-        data = load_gnuradio_file(
-            'one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        path = Path(__file__).parent / 'data/one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+        data = load_gnuradio_file(str(path))
+
         r = debug_assert_sim_match(self.dut, [ComplexSfix(left=0, right=-17)], None, data)
 
         ref = r[0]

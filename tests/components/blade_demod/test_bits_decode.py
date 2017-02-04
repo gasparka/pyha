@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from scipy import signal
@@ -6,11 +8,12 @@ from pyha.common.sfix import Sfix
 from pyha.common.util import load_gnuradio_file, hex_to_bool_list, hex_to_bitstr, bools_to_hex, bools_to_bitstr
 from pyha.components.blade_demod.bits_decode import BitsDecode, CRC16, HeaderCorrelator, PacketSync, DemodToPacket
 from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, \
-    debug_assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+    debug_assert_sim_match, SIM_HW_MODEL
 
 
 def load_data(file_name, demodulate=True):
-    iq = load_gnuradio_file(file_name)
+    path = Path(__file__).parent / file_name
+    iq = load_gnuradio_file(str(path))
     if demodulate:
         demod = np.angle(iq[1:] * np.conjugate(iq[:-1])) / np.pi
 
@@ -35,7 +38,7 @@ class TesttBitsDecode:
             assert hex_to_bitstr(expect) in bools_to_bitstr(hwr)
 
     def test_uks_one(self):
-        data = load_data('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        data = load_data('data/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
         expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
@@ -43,7 +46,7 @@ class TesttBitsDecode:
         self._assert_sims(expect, r[1:])
 
     def test_diivan_one(self):
-        data = load_data('one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        data = load_data('data/one_diivan_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
         expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
@@ -54,8 +57,8 @@ class TesttBitsDecode:
         """ this finds bit_counter off by one error
         This data is from hardware quadrature demodulator, it is interesting as it
         saturates high when noise -> this can cause problems"""
-        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
-                               , demodulate=False)
+        data = load_data('data/hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+                         , demodulate=False)
 
         expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
@@ -66,8 +69,8 @@ class TesttBitsDecode:
     @pytest.mark.parametrize('skip_start', range(32))
     def test_uks_one_hwsim_offsets(self, skip_start):
         """ change the inital sampling point, without time adjustment some of these tests would fail"""
-        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
-                               , demodulate=False)
+        data = load_data('data/hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+                         , demodulate=False)
         data = data[skip_start:]
         expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data
@@ -226,7 +229,7 @@ class TestDemodToPacket:
             assert (hwr == ref).all()
 
     def test_uks_one(self):
-        data = load_data('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        data = load_data('data/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 
         ref = r[0]  # model simulation
@@ -241,7 +244,7 @@ class TestDemodToPacket:
         self._assert_sims(ref, r[1:])
 
     def test_uks_one_hwsim(self):
-        data = load_data('hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+        data = load_data('data/hwsim_one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
                          , demodulate=False)
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
 

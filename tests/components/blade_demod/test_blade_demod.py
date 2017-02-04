@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -9,7 +11,8 @@ from pyha.simulation.simulation_interface import SIM_MODEL, SIM_HW_MODEL, assert
 
 
 def test_from_signaltap():
-    c = np.load('blade_signaltap.npy')
+    path = Path(__file__).parent / 'data/blade_signaltap.npy'
+    c = np.load(str(path))
 
     dut = BladeDemodPartial0()
     assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
@@ -22,7 +25,8 @@ def test_from_signaltap():
 
 def test_low_power():
     pytest.xfail('this is interesting as it has RTL/HWSIM mismatch')
-    c = np.load('blade_tap_low_power_rtl_mismatch.npy')
+    path = Path(__file__).parent / 'data/blade_tap_low_power_rtl_mismatch.npy'
+    c = np.load(path)
 
     dut = BladeDemodPartial0()
     plot_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
@@ -35,7 +39,8 @@ def test_low_power():
 
 class TestUks:
     def setup(self):
-        self.iq = load_gnuradio_file('one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
+        path = Path(__file__).parent / 'data/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq'
+        self.iq = load_gnuradio_file(str(path))
         self.shord_iq = self.iq[600:2000]
         self.demod_gain = 0.5
 
@@ -44,8 +49,7 @@ class TestUks:
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          None, self.shord_iq,
                          rtol=1e-2,
-                         atol=1e-2,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
+                         atol=1e-2
                          )
 
     def test_quad_demod_mavg(self):
@@ -54,7 +58,6 @@ class TestUks:
                          None, self.shord_iq,
                          rtol=1e-2,
                          atol=1e-2,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL],
                          skip_first=16
                          )
 
