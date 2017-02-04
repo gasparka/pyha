@@ -272,6 +272,14 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             #     print(e.args[0])
 
 
+def skipping_gate_simulations():
+    if SKIP_GATE_TESTS:
+        return True
+    with suppress(KeyError):
+        if int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
+            return True
+    return False
+
 def sim_rules(simulations):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
@@ -286,13 +294,8 @@ def sim_rules(simulations):
                            [SIM_HW_MODEL, SIM_GATE]]
     # for travis build, skip all the tests involving quartus
     if SIM_GATE in simulations:
-        with suppress(KeyError):
-            if SKIP_GATE_TESTS:
-                simulations.remove(SIM_GATE)
-                logging.getLogger(__name__).warning(
-                    'Not running SIM_GATE tests because "SKIP_GATE_TESTS" in conftest.py is True!!!')
-            elif int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
-                simulations.remove(SIM_GATE)
-                logging.getLogger(__name__).warning(
-                    'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
+        if skipping_gate_simulations():
+            simulations.remove(SIM_GATE)
+            logging.getLogger(__name__).warning('########## SKIPPING GATE SIMULATIONS ##########')
+
     return simulations
