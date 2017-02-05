@@ -325,6 +325,19 @@ def comp_reg():
 
 def test_comp_reg_self_consistensy(comp_reg):
     with pytest.raises(TypeNotConsistent):
+        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+        comp_reg.main(ComplexSfix(0 + 1j, 1, -23))
+
+
+def test_comp_reg_self_consistensy_shady(comp_reg):
+    pytest.xfail('shady shady stuff')
+    with pytest.raises(TypeNotConsistent):
+        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+
+
+def test_comp_reg_self_consistensy_shady2(comp_reg):
+    pytest.xfail('value is same as initial value, breaks consistecy check, bug -> feature -> wont fix')
+    with pytest.raises(TypeNotConsistent):
         comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
 
 

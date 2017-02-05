@@ -1,13 +1,15 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  use ieee.numeric_std.all;
   use ieee.fixed_float_types.all;
   use ieee.fixed_pkg.all;
   use ieee.math_real.all;
 
 
 package PyhaUtil is
+  type boolean_list_t is array (natural range <>) of boolean;
+
+
   function left_index(x: sfixed) return integer;
   function right_index(x: sfixed) return integer;
   function \>>\(x: sfixed; n: integer) return sfixed;
@@ -18,6 +20,17 @@ package PyhaUtil is
 
   function logic_to_bool(x: std_logic) return boolean;
   function bool_to_logic(x: boolean) return std_logic;
+  function bool_list_to_logic(x: boolean_list_t) return std_logic_vector;
+
+  function "and"(a, b:integer) return integer;
+  function "sla"(a, b:integer) return integer;
+  function "sra"(a, b:integer) return integer;
+  function "or"(a:integer; b:boolean) return integer;
+  function "or"(a, b:integer) return integer;
+  function "xor"(a, b:integer) return integer;
+
+  -- function bits_to_int(x: boolean_list_t) return integer;
+  -- function "??"(a:integer) return boolean; -- not supported for quartus
 
   -- function resize(x: sfixed; left:integer; right:integer) return sfixed;
   -- function resize(x: sfixed; \type\: sfixed) return sfixed;
@@ -81,6 +94,80 @@ package body PyhaUtil is
     end if;
   end function;
 
+  function bool_list_to_logic(x: boolean_list_t) return std_logic_vector is
+    variable s: std_logic_vector(x'range);
+  begin
+    for i in x'range loop
+      s(i) := bool_to_logic(x(i));
+    end loop;
+    return s;
+  end function;
+
+  function "and"(a, b:integer) return integer is
+  begin
+     return to_integer(to_signed(a, 32) and to_signed(b, 32));
+  end function;
+
+  function "sla"(a, b:integer) return integer is
+    variable tmp: signed(31 downto 0);
+  begin
+    tmp := shift_left(to_signed(a, 32), b);
+     return to_integer(tmp);
+  end function;
+
+
+  function "sra"(a, b:integer) return integer is
+    variable tmp: signed(31 downto 0);
+  begin
+    tmp := shift_right(to_signed(a, 32), b);
+     return to_integer(tmp);
+  end function;
+
+  function "or"(a, b:integer) return integer is
+  begin
+     return to_integer(to_signed(a, 32) or to_signed(b, 32));
+  end function;
+
+  function "or"(a:integer; b:boolean) return integer is
+    variable tmp: signed(31 downto 0);
+  begin
+     tmp := to_signed(a, 32);
+     tmp(0) := tmp(0) or bool_to_logic(b);
+     return to_integer(tmp);
+  end function;
+
+
+  function "xor"(a, b:integer) return integer is
+  begin
+     return to_integer(to_signed(a, 32) xor to_signed(b, 32));
+  end function;
+
+  function "??"(a:integer) return boolean is
+  begin
+     if a = 0 then
+       return False;
+    else
+      return True;
+    end if;
+  end function;
+
+
+  -- function bits_to_int(x: boolean_list_t) return integer is
+  --   variable s: signed(31 downto 0);
+  --   variable r: integer;
+  -- begin
+  --   for i in x'range loop
+  --     report to_string(i);
+  --     s(i) := bool_to_logic(x(i));
+  -- 	end loop;
+  --   report "for done";
+  --   s := "10011111111100100011111110110001";
+  --   -- s := "0000000000000000000000000000";
+  --   r := to_integer(s);
+  --   report to_string(s);
+  --   report to_string(r);
+  --   return r;
+  -- end function;
 
   -- function \range\(a: integer) return range_t is
   --   subtype range_l is Natural range 0 downto 16;

@@ -59,6 +59,9 @@ class TopGenerator:
             return var.to_stdlogic()
         elif isinstance(var, Enum):
             return self.pyvar_to_stdlogic(var.value)
+        elif isinstance(var, list):
+            if isinstance(var[0], bool):
+                return 'std_logic_vector({} downto 0)'.format(len(var) - 1)
         else:
             assert 0
 
@@ -89,6 +92,9 @@ class TopGenerator:
             return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
         elif isinstance(var, Enum):
             return self.normal_to_slv(var.value, var_name)
+        elif isinstance(var, list):
+            if isinstance(var[0], bool):
+                return 'bool_list_to_logic({})'.format(var_name)
         else:
             assert 0
 

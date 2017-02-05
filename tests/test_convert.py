@@ -75,6 +75,34 @@ def test_assign(converter):
     assert str(conv) == 'a := b;'
 
 
+def test_assign_add_raises(converter):
+    code = 'a += b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+
+def test_assign_sub_raises(converter):
+    code = 'a -= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+
+def test_assign_div_raises(converter):
+    code = 'a /= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+
+def test_assign_mul_raises(converter):
+    code = 'a *= b'
+    with pytest.raises(Exception):
+        conv = converter(code)
+        str(conv)
+
+
 def test_assign_trailers(converter):
     code = 'self.next.reg = self.reg'
     conv = converter(code)
@@ -1041,7 +1069,7 @@ def test_indexing_slice(converter):
             a[0:5]""")
 
     expect = textwrap.dedent("""\
-            a(0 to 4)""")
+            a(0 to (5)-1)""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -1052,7 +1080,7 @@ def test_indexing_slice_no_lower(converter):
             a[:2]""")
 
     expect = textwrap.dedent("""\
-            a(0 to 1)""")
+            a(0 to (2)-1)""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -1467,7 +1495,7 @@ def test_binaryoperator_shift_left(converter):
 
 def test_print(converter):
     code = 'print(a)'
-    expect = 'report to_string(to_real(a));'
+    expect = 'report to_string(a);'
 
     conv = converter(code)
     assert expect == str(conv)
@@ -1480,3 +1508,16 @@ def test_print_multiarg(converter):
     with pytest.raises(Exception):
         conv = converter(code)
         str(conv)
+
+def test_hexanode(converter):
+    code = '0xABC'
+    expect = '16#ABC#'
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = '0X0'
+    expect = '16#0#'
+
+    conv = converter(code)
+    assert expect == str(conv)

@@ -903,7 +903,8 @@ def test_datamodel_list_boolean(converter):
 
     assert expect == str(conv.get_reset_str())
 
-    expect = ['type boolean_list_t is array (natural range <>) of boolean;']
+    # NOTICE: there is global definition for boolean_list_t !
+    expect = []
     assert expect == conv.get_typedefs()
 
 

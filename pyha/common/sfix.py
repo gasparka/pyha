@@ -36,6 +36,10 @@ class ComplexSfix:
         assert self.real.right == self.imag.right
         return self.real.right
 
+    @property
+    def val(self):
+        return self.real.val + self.imag.val * 1j
+
     def __eq__(self, other):
         if type(other) is type(self):
             return self.__dict__ == other.__dict__
@@ -58,6 +62,9 @@ class ComplexSfix:
 
     def bitwidth(self):
         return (self.left + abs(self.right)) * 2 + 2
+
+    def __len__(self):
+        return self.bitwidth()
 
     def to_stdlogic(self):
         return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
@@ -175,7 +182,7 @@ class Sfix:
     def max_representable(self):
         if self.left < 0:
             # FIXME: I am not sure how to handle this when negative index
-            assert 0
+            # assert 0
 
             if self.right == 0:
                 return 2 ** self.left
@@ -347,4 +354,4 @@ def right_index(x: Sfix):
 
 def scalb(x: Sfix, i: int):
         n = 2 ** i
-        return Sfix(x.val * n, x.left - i, x.right - i)
+        return Sfix(x.val * n, x.left + i, x.right + i)

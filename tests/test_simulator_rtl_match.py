@@ -3,12 +3,24 @@ import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match, SIM_GATE
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match, SIM_GATE, \
+    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match
 
 
 def assert_exact_match(model, types, *x):
+    if skipping_rtl_simulations() or skipping_hwmodel_simulations():
+        return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+
+
+def assert_exact_match_gate(model, types, *x):
+    if skipping_rtl_simulations() or skipping_gate_simulations():
+        return
+
+    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
 
 
 def test_shift_right():
@@ -201,5 +213,22 @@ def test_passtrough_boolean():
             return x
 
     x = [True, False, True, False]
-    outs = debug_assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
-    assert (outs[0] == (outs[1]).astype(bool)).all()
+    assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+def test_int_operations():
+    # TODO: 32 bit operations would fail?
+    class T15(HW):
+        def main(self, x):
+            rand = x & 0x8000
+            ror = x | 0x8200
+            rxor = x ^ 0xFFFF
+            rorbool1 = x | True
+            rorbool2 = x | False
+            rshift_right = x << 1
+            rshift_left = x >> 1
+
+            return rand, ror, rxor, rorbool1, rorbool2, rshift_right, rshift_left
+
+    x = np.random.randint(-2 ** 30, 2 ** 30, 2 ** 14)
+    assert_exact_match_gate(T15(), [int], x)

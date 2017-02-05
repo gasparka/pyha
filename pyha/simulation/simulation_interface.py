@@ -11,7 +11,7 @@ from typing import List
 import numpy as np
 
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.conftest import SKIP_GATE_TESTS
+from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -181,13 +181,34 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
-            return np.transpose(self.model.model_main(*args))
+            r = self.model.model_main(*args)
+
+            if isinstance(r, tuple):
+                if isinstance(r[0], list):
+                    # assume that no transpose needed ( model returns correct way )
+                    return np.array(r)
+                return np.transpose(r)
+
+            if isinstance(r, list) and isinstance(r[0], tuple):
+                return np.transpose(r)
+            return np.array(r)
         else:
             return self.hw_simulation(*args)
 
 
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+##############################################################################
+# utility functions
+
 def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                           fuck_it=False):
+                           fuck_it=False, **kwards):
     """ Instead of asserting anything return outputs of each simulation """
     simulations = sim_rules(simulations)
     outs = []
@@ -199,25 +220,35 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
 
 
 def assert_model_hwmodel_match(model, types, *x, rtol=1e-9, atol=1e-9):
+    if skipping_hwmodel_simulations() or skipping_model_simulations():
+        return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
     # return outs
     np.testing.assert_allclose(outs[0], outs[1], rtol, atol)
 
 
 def assert_hwmodel_rtl_match(model, types, *x):
+    if skipping_hwmodel_simulations() or skipping_rtl_simulations():
+        return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-    # import matplotlib.pyplot as plt
-    # outs = np.array(outs).astype(float)
-    # plt.plot(outs[0])
-    # plt.plot(outs[1])
-    # plt.show()
 
 
-def plot_sim(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
-    pass
+def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+                          fuck_it=False, skip_first=0):
+    import matplotlib.pyplot as plt
+    simulations = sim_rules(simulations)
+    for sim_type in simulations:
+        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
+        hw_y = dut.main(*x)
+        plt.plot(hw_y[skip_first:], label=str(sim_type))
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False):
+    plt.legend()
+    plt.show()
+
+
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False,
+                     skip_first=0):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations)
 
@@ -227,12 +258,14 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         if expected is None and sim_type is simulations[0]:
             expected = hw_y
 
-
         if fuck_it:
             l.error('FUKC_IT MODE!')
             continue
         try:
-            np.testing.assert_allclose(expected, hw_y[0:len(expected)], rtol, atol=atol)
+            assert len(expected) > 0
+            # if type(expected[0]) != type(hw_y[0]):
+            #     hw_y = hw_y.astype(type(expected[0]))
+            np.testing.assert_allclose(expected[skip_first:], hw_y[skip_first:len(expected)], rtol, atol=atol)
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')
@@ -245,9 +278,31 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             #     print(e.args[0])
 
 
+def skipping_gate_simulations():
+    if SKIP_SIMULATIONS_MASK & 8:
+        return True
+    with suppress(KeyError):
+        if int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
+            return True
+    return False
+
+
+def skipping_rtl_simulations():
+    return SKIP_SIMULATIONS_MASK & 4
+
+
+def skipping_hwmodel_simulations():
+    return SKIP_SIMULATIONS_MASK & 2
+
+
+def skipping_model_simulations():
+    return SKIP_SIMULATIONS_MASK & 1
+
+
+
 def sim_rules(simulations):
     if simulations is None:
-        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+        simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
     assert simulations in [[SIM_MODEL],
                            [SIM_MODEL, SIM_HW_MODEL],
@@ -257,15 +312,22 @@ def sim_rules(simulations):
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
+
     # for travis build, skip all the tests involving quartus
-    if SIM_GATE in simulations:
-        with suppress(KeyError):
-            if SKIP_GATE_TESTS:
-                simulations.remove(SIM_GATE)
-                logging.getLogger(__name__).warning(
-                    'Not running SIM_GATE tests because "SKIP_GATE_TESTS" in conftest.py is True!!!')
-            elif int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
-                simulations.remove(SIM_GATE)
-                logging.getLogger(__name__).warning(
-                    'Not running SIM_GATE tests because environment variable "PYHA_SKIP_QUARTUS_SIMS" is True!!!')
+    if skipping_model_simulations() and SIM_MODEL in simulations:
+        simulations.remove(SIM_MODEL)
+        logging.getLogger(__name__).warning('########## SKIPPING MODEL SIMULATIONS ##########')
+
+    if skipping_hwmodel_simulations() and SIM_HW_MODEL in simulations:
+        simulations.remove(SIM_HW_MODEL)
+        logging.getLogger(__name__).warning('########## SKIPPING HW_MODEL SIMULATIONS ##########')
+
+    if skipping_rtl_simulations() and SIM_RTL in simulations:
+        simulations.remove(SIM_RTL)
+        logging.getLogger(__name__).warning('########## SKIPPING RTL SIMULATIONS ##########')
+
+    if skipping_gate_simulations() and SIM_GATE in simulations:
+        simulations.remove(SIM_GATE)
+        logging.getLogger(__name__).warning('########## SKIPPING GATE SIMULATIONS ##########')
+
     return simulations

@@ -102,6 +102,9 @@ class AssignmentNodeConv(NodeConv):
         r = '{} := {};'.format(self.target, self.value)
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
             raise Exception('{} -> multi assignment not supported!'.format(r))
+
+        if self.red_node.operator != '':
+            raise Exception('{} -> cannot convert +=, -=, /=, *= :(')
         return r
 
 
@@ -114,6 +117,7 @@ class ReturnNodeConv(NodeConv):
                 raise ExceptionReturnFunctionCall(self.red_node)
 
         str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
+        # str_ret += ['return;']
         return '\n'.join(str_ret)
 
 
@@ -130,10 +134,16 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
             if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
                 self.value = '&'
         elif self.value == '>>':
-            return '{} sra {}'.format(self.first, self.second)
+            self.value = 'sra'
         elif self.value == '<<':
-            return '{} sla {}'.format(self.first, self.second)
-            # return '\>>\({}, {})'.format(self.first, self.second)
+            self.value = 'sla'
+        elif self.value == '&':
+            self.value = 'and'
+        elif self.value == '|':
+            self.value = 'or'
+        elif self.value == '^':
+            self.value = 'xor'
+
         return '{} {} {}'.format(self.first, self.value, self.second)
 
 
@@ -329,6 +339,7 @@ class PrintNodeConv(NodeConv):
     def __str__(self):
         if isinstance(self.red_node.value[0], TupleNode):
             raise Exception('{} -> print only supported with one Sfix argument!'.format(self.red_node))
+        return "report to_string({});".format(self.red_node.value[0].value)
         return "report to_string(to_real({}));".format(self.red_node.value[0].value)
 
 
@@ -347,6 +358,9 @@ class EndlNodeConv(NodeConv):
             return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
+class HexaNodeConv(NodeConv):
+    def __str__(self):
+        return '16#{}#'.format(self.value[2:])
 
 class CommentNodeConv(NodeConv):
     def __str__(self):
@@ -392,7 +406,8 @@ class SliceNodeConv(GetitemNodeConv):
             upper = "{}'high".format(self.get_index_target())
         else:
             # vhdl includes upper limit, subtract one to get same behaviour as in python
-            upper = int(str(self.upper)) - 1
+            # upper = int(str(self.upper)) - 1
+            upper = '({})-1'.format(self.upper)
 
         if self.is_negative_indexing(self.upper):
             target = self.get_index_target()

@@ -18,7 +18,7 @@ test_requirements = [
 setup(
     name='pyha',
     version='0.0.0',
-    description="Pyhton to hardware",
+    description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
     author_email='gkarm@live.com',
