@@ -1,11 +1,14 @@
 from pathlib import Path
 
+import pytest
+
 from pyha.common.sfix import ComplexSfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
 from pyha.components.blade_demod.blade_receiver import Phantom2Receiver
 from pyha.simulation.simulation_interface import debug_assert_sim_match
 
 
+@pytest.mark.slowtest
 class TestBladeReceiver:
     def setup(self):
         self.dut = Phantom2Receiver()

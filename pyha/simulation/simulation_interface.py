@@ -11,7 +11,7 @@ from typing import List
 import numpy as np
 
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.conftest import SKIP_GATE_TESTS
+from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -220,22 +220,22 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
 
 
 def assert_model_hwmodel_match(model, types, *x, rtol=1e-9, atol=1e-9):
+    if skipping_hwmodel_simulations() or skipping_model_simulations():
+        return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
     # return outs
     np.testing.assert_allclose(outs[0], outs[1], rtol, atol)
 
 
 def assert_hwmodel_rtl_match(model, types, *x):
+    if skipping_hwmodel_simulations() or skipping_rtl_simulations():
+        return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-    # import matplotlib.pyplot as plt
-    # outs = np.array(outs).astype(float)
-    # plt.plot(outs[0])
-    # plt.plot(outs[1])
-    # plt.show()
 
 
-def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False, skip_first=0):
+def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+                          fuck_it=False, skip_first=0):
     import matplotlib.pyplot as plt
     simulations = sim_rules(simulations)
     for sim_type in simulations:
@@ -246,7 +246,9 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
     plt.legend()
     plt.show()
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False, skip_first=0):
+
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False,
+                     skip_first=0):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations)
 
@@ -255,7 +257,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         hw_y = dut.main(*x)
         if expected is None and sim_type is simulations[0]:
             expected = hw_y
-
 
         if fuck_it:
             l.error('FUKC_IT MODE!')
@@ -278,12 +279,26 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
 
 
 def skipping_gate_simulations():
-    if SKIP_GATE_TESTS:
+    if SKIP_SIMULATIONS_MASK & 8:
         return True
     with suppress(KeyError):
         if int(os.environ['PYHA_SKIP_QUARTUS_SIMS']):
             return True
     return False
+
+
+def skipping_rtl_simulations():
+    return SKIP_SIMULATIONS_MASK & 4
+
+
+def skipping_hwmodel_simulations():
+    return SKIP_SIMULATIONS_MASK & 2
+
+
+def skipping_model_simulations():
+    return SKIP_SIMULATIONS_MASK & 1
+
+
 
 def sim_rules(simulations):
     if simulations is None:
@@ -297,10 +312,22 @@ def sim_rules(simulations):
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
+
     # for travis build, skip all the tests involving quartus
-    if SIM_GATE in simulations:
-        if skipping_gate_simulations():
-            simulations.remove(SIM_GATE)
-            logging.getLogger(__name__).warning('########## SKIPPING GATE SIMULATIONS ##########')
+    if skipping_model_simulations() and SIM_MODEL in simulations:
+        simulations.remove(SIM_MODEL)
+        logging.getLogger(__name__).warning('########## SKIPPING MODEL SIMULATIONS ##########')
+
+    if skipping_hwmodel_simulations() and SIM_HW_MODEL in simulations:
+        simulations.remove(SIM_HW_MODEL)
+        logging.getLogger(__name__).warning('########## SKIPPING HW_MODEL SIMULATIONS ##########')
+
+    if skipping_rtl_simulations() and SIM_RTL in simulations:
+        simulations.remove(SIM_RTL)
+        logging.getLogger(__name__).warning('########## SKIPPING RTL SIMULATIONS ##########')
+
+    if skipping_gate_simulations() and SIM_GATE in simulations:
+        simulations.remove(SIM_GATE)
+        logging.getLogger(__name__).warning('########## SKIPPING GATE SIMULATIONS ##########')
 
     return simulations
