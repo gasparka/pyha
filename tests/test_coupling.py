@@ -164,6 +164,7 @@ def test_typed_def_argument_return_local(converter):
 
         begin
             ret_0 := b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -180,6 +181,7 @@ def test_typed_def_argument_return_constant_int(converter):
 
         begin
             ret_0 := 1;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -196,6 +198,7 @@ def test_typed_def_argument_return_constant_bool(converter):
 
         begin
             ret_0 := False;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -224,6 +227,7 @@ def test_typed_def_argument_return_local_indexing(converter):
 
         begin
             ret_0 := b(1);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -251,6 +255,7 @@ def test_typed_def_argument_return_self(converter):
 
         begin
             ret_0 := self.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -267,6 +272,7 @@ def test_typed_def_argument_return_self_indexing(converter):
 
         begin
             ret_0 := self.b(4);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -283,6 +289,7 @@ def test_typed_def_argument_return_self_indexing_negative(converter):
 
         begin
             ret_0 := self.b(self.b'length-1);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -302,6 +309,7 @@ def test_typed_def_argument_return_self_subindexing(converter):
 
         begin
             ret_0 := self.l.b(4);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -328,6 +336,7 @@ def test_typed_def_argument_return_self_nested(converter):
 
         begin
             ret_0 := self.obj.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -346,6 +355,7 @@ def test_typed_def_argument_return_multiple(converter):
             ret_0 := self.b;
             ret_1 := c;
             ret_2 := self.d;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -491,6 +501,7 @@ def test_typed_def_infer_variable_return(converter):
 
         begin
             ret_0 := l;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -564,6 +575,7 @@ def test_typed_def_complex(converter):
             self.a := l;
             ret_0 := a;
             ret_1 := self.\\next\\.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -605,6 +617,7 @@ def test_def_for_return(converter):
                 outs(i) := list(i);
             end loop;
             ret_0 := outs(0);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -1185,6 +1198,7 @@ def test_class_full(converter):
 
             procedure reset(self_reg: inout register_t);
             procedure main(self_reg:inout register_t);
+            procedure main_user(self:inout self_t);
         end package;
 
         package body unknown_name is
@@ -1209,8 +1223,13 @@ def test_class_full(converter):
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
-                self.a := 0;
+                main_user(self);
                 self_reg := self.\\next\\;
+            end procedure;
+
+            procedure main_user(self:inout self_t) is
+            begin
+                self.a := 0;
             end procedure;
         end package body;""")
 
@@ -1242,6 +1261,7 @@ def test_class_full_reserved_name(converter):
 
             procedure reset(self_reg: inout register_t);
             procedure main(self_reg:inout register_t);
+            procedure main_user(self:inout self_t);
         end package;
 
         package body unknown_name is
@@ -1260,7 +1280,12 @@ def test_class_full_reserved_name(converter):
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
+                main_user(self);
                 self_reg := self.\\next\\;
+            end procedure;
+
+            procedure main_user(self:inout self_t) is
+            begin
             end procedure;
         end package body;""")
 
@@ -1295,6 +1320,7 @@ def test_class_full_endl_bug(converter):
 
                 procedure reset(self_reg: inout register_t);
                 procedure main(self_reg:inout register_t);
+                procedure main_user(self:inout self_t);
             end package;
 
             package body unknown_name is
@@ -1313,74 +1339,12 @@ def test_class_full_endl_bug(converter):
                     variable self: self_t;
                 begin
                     make_self(self_reg, self);
-                    self_reg := self.\\next\\;
-                end procedure;
-            end package body;""")
-
-    conv = str(converter(code, datamodel))
-    assert expect == conv[conv.index('package'):]
-
-
-def test_class_full_get_delay(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def __init__(self, init_value=0.):
-                    self.a = Sfix(init_value)
-
-                def main(self, new_value):
-                    self.next.a = new_value
-                    return self.a
-
-                def get_delay(self):
-                    return 1
-            """)
-
-    datamodel = DataModel(
-        self_data={'a': Sfix(0.0, 0, -27)},
-        locals={'main': {'new_value': Sfix(0.0, 0, -27)}, 'get_delay': {}})
-
-    expect = textwrap.dedent("""\
-            package unknown_name is
-
-
-
-                type register_t is record
-                    a: sfixed(0 downto -27);
-                end record;
-                type self_t is record
-                    a: sfixed(0 downto -27);
-                    \\next\\: register_t;
-                end record;
-
-                procedure reset(self_reg: inout register_t);
-                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27));
-                procedure get_delay(self:inout self_t; ret_0:out integer);
-            end package;
-
-            package body unknown_name is
-                procedure reset(self_reg: inout register_t) is
-                begin
-                    self_reg.a := Sfix(0.0, 0, -27);
-                end procedure;
-
-                procedure make_self(self_reg: register_t; self: out self_t) is
-                begin
-                    self.a := self_reg.a;
-                    self.\\next\\ := self_reg;
-                end procedure;
-
-                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27)) is
-                    variable self: self_t;
-                begin
-                    make_self(self_reg, self);
-                    self.\\next\\.a := new_value;
-                    ret_0 := self.a;
+                    main_user(self);
                     self_reg := self.\\next\\;
                 end procedure;
 
-                procedure get_delay(self:inout self_t; ret_0:out integer) is
+                procedure main_user(self:inout self_t) is
                 begin
-                    ret_0 := 1;
                 end procedure;
             end package body;""")
 

@@ -112,25 +112,25 @@ def test_assign_trailers(converter):
 def test_return(converter):
     code = 'return a'
     conv = converter(code)
-    assert str(conv) == 'ret_0 := a;'
+    assert str(conv) == 'ret_0 := a;\nreturn;'
 
 
 def test_return_multiple(converter):
     code = 'return a, b'
     conv = converter(code)
-    assert str(conv) == 'ret_0 := a;\nret_1 := b;'
+    assert str(conv) == 'ret_0 := a;\nret_1 := b;\nreturn;'
 
 
 def test_return_self(converter):
     code = 'return self.a, self.next.b'
     conv = converter(code)
-    assert str(conv) == 'ret_0 := self.a;\nret_1 := self.\\next\\.b;'
+    assert str(conv) == 'ret_0 := self.a;\nret_1 := self.\\next\\.b;\nreturn;'
 
 
 def test_return_self_arrayelem(converter):
     code = 'return self.a[2]'
     conv = converter(code)
-    assert str(conv) == 'ret_0 := self.a(2);'
+    assert str(conv) == 'ret_0 := self.a(2);\nreturn;'
 
 
 def test_return_call_raises(converter):
@@ -422,6 +422,28 @@ def test_def_statements(converter):
     assert expect == str(conv)
 
 
+def test_def_if_return(converter):
+    code = textwrap.dedent("""\
+        def a():
+            if a:
+                return a
+            return b""")
+
+    expect = textwrap.dedent("""\
+        procedure a(ret_0:out unknown_type) is
+
+        begin
+            if a then
+                ret_0 := a;
+                return;
+            end if;
+            ret_0 := b;
+            return;
+        end procedure;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_def_argument(converter):
     code = textwrap.dedent("""\
         def a(b):
@@ -477,6 +499,7 @@ def test_def_argument_return(converter):
 
         begin
             ret_0 := b;
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -492,6 +515,7 @@ def test_def_argument_return_local_indexing(converter):
 
         begin
             ret_0 := b(1);
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -507,6 +531,7 @@ def test_def_argument_return_self(converter):
 
         begin
             ret_0 := self.b;
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -524,6 +549,7 @@ def test_def_argument_return_multiple(converter):
             ret_0 := b;
             ret_1 := c;
             ret_2 := d;
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -602,6 +628,7 @@ def test_def_infer_variable_return(converter):
 
         begin
             ret_0 := l;
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -694,6 +721,7 @@ def test_def_complex(converter):
             self.a := l;
             ret_0 := a;
             ret_1 := self.\\next\\.b;
+            return;
         end procedure;""")
     conv = converter(code)
     assert expect == str(conv)
@@ -942,6 +970,7 @@ def test_call_return_to_return(converter):
         begin
             d(self, a, ret_0=>b);
             ret_0 := b;
+            return;
         end procedure;""")
 
     conv = converter(code)
@@ -1357,27 +1386,9 @@ def test_def_for_return(converter):
                 outs(i) := list(i);
             end loop;
             ret_0 := outs(0);
+            return;
         end procedure;""")
     conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_class_call_modifications(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def main(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        procedure main(self_reg:inout register_t) is
-            variable self: self_t;
-        begin
-            make_self(self_reg, self);
-
-            self_reg := self.\\next\\;
-        end procedure;""")
-    conv = converter(code)
-    conv = conv.get_call_str()
     assert expect == str(conv)
 
 
@@ -1508,6 +1519,7 @@ def test_print_multiarg(converter):
     with pytest.raises(Exception):
         conv = converter(code)
         str(conv)
+
 
 def test_hexanode(converter):
     code = '0xABC'

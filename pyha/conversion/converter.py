@@ -117,7 +117,7 @@ class ReturnNodeConv(NodeConv):
                 raise ExceptionReturnFunctionCall(self.red_node)
 
         str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
-        # str_ret += ['return;']
+        str_ret += ['return;']
         return '\n'.join(str_ret)
 
 
@@ -284,6 +284,7 @@ class DefArgumentNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
         self.target = VHDLType(name=self.target, red_node=red_node, value=self.value)
+        self.name = self.target.name
 
     def __str__(self):
         return str(self.target)
@@ -358,9 +359,11 @@ class EndlNodeConv(NodeConv):
             return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
+
 class HexaNodeConv(NodeConv):
     def __str__(self):
         return '16#{}#'.format(self.value[2:])
+
 
 class CommentNodeConv(NodeConv):
     def __str__(self):
@@ -461,25 +464,32 @@ class ClassNodeConv(NodeConv):
     """ This relies heavily on datamodel """
 
     def __init__(self, red_node, parent=None):
-
-        # see def test_class_call_modifications(converter):
-        defn = red_node.find('defnode', name='main')
-        if defn is not None:
-            defn.arguments[0].target = 'self_reg'
-            defn.value.insert(0, 'make_self(self_reg, self)')
-            defn.value.append('self_reg = self.next')
-
         super().__init__(red_node, parent)
 
-        # adds to vhdl main function:
-        #         variable self: self_t;
-        self.callf = [x for x in self.value if str(x.name) == 'main']
-        if len(self.callf):
-            self.callf = self.callf[0]
-            self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
+        # find the 'main' function and rename it to 'main_user'
+        main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
+        if len(main):
+            self.user_main = main[0]
+            self.user_main.name = 'main_user'
 
-    def get_call_str(self):
-        return str(self.callf)
+    def get_main(self):
+        template = textwrap.dedent("""\
+            procedure main({FUNC_ARGS}) is
+                variable self: self_t;
+            begin
+                make_self(self_reg, self);
+                main_user({CALL_ARGS});
+                self_reg := self.\\next\\;
+            end procedure;""")
+
+        call_args = ', '.join(str(x.name) for x in self.user_main.arguments)
+        func_args = '; '.join(str(x) for x in self.user_main.arguments)
+        func_args = func_args.replace('self:inout self_t', 'self_reg:inout register_t')
+
+        return template.format(CALL_ARGS=call_args, FUNC_ARGS=func_args)
+
+    def get_user_main(self):
+        return str(self.user_main)
 
     def get_imports(self):
         return textwrap.dedent("""\
@@ -598,6 +608,18 @@ class ClassNodeConv(NodeConv):
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
+    def get_main_header(self):
+        main_header = self.user_main.get_prototype()
+        main_header = main_header.replace('procedure main_user', 'procedure main')
+        main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
+        return main_header
+
+    def get_headers(self):
+        ret = self.get_reset_prototype() + '\n'
+        ret += self.get_main_header() + '\n'
+        ret += '\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        return ret
+
     def __str__(self):
         template = textwrap.dedent("""\
             {IMPORTS}
@@ -616,6 +638,8 @@ class ClassNodeConv(NodeConv):
 
             {MAKE_SELF_FUNCTION}
 
+            {MAIN_FUNCTION}
+
             {OTHER_FUNCTIONS}
             end package body;""")
 
@@ -626,12 +650,11 @@ class ClassNodeConv(NodeConv):
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
-        sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
-        sockets['FUNC_HEADERS'] += '\n'.join(
-            tabber(x.get_prototype()) for x in self.value if isinstance(x, DefNodeConv))
+        sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
+        sockets['MAIN_FUNCTION'] = tabber(self.get_main())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)

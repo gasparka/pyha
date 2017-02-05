@@ -428,6 +428,7 @@ def test_typed_def_for_combined(converter):
                 D_0.main(self.\\next\\.arr(i), x, ret_0=>outs(i));
             end loop;
             ret_0 := outs(0);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
