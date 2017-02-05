@@ -1392,25 +1392,6 @@ def test_def_for_return(converter):
     assert expect == str(conv)
 
 
-def test_class_call_modifications(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def main(self):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        procedure main(self_reg:inout register_t) is
-            variable self: self_t;
-        begin
-            make_self(self_reg, self);
-
-            self_reg := self.\\next\\;
-        end procedure;""")
-    conv = converter(code)
-    conv = conv.get_call_str()
-    assert expect == str(conv)
-
-
 def test_class_importlibs(converter):
     code = textwrap.dedent("""\
             class Register(HW):

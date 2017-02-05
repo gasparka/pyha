@@ -1261,6 +1261,7 @@ def test_class_full_reserved_name(converter):
 
             procedure reset(self_reg: inout register_t);
             procedure main(self_reg:inout register_t);
+            procedure main_user(self:inout self_t);
         end package;
 
         package body unknown_name is
@@ -1279,7 +1280,12 @@ def test_class_full_reserved_name(converter):
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
+                main_user(self);
                 self_reg := self.\\next\\;
+            end procedure;
+
+            procedure main_user(self:inout self_t) is
+            begin
             end procedure;
         end package body;""")
 
@@ -1314,6 +1320,7 @@ def test_class_full_endl_bug(converter):
 
                 procedure reset(self_reg: inout register_t);
                 procedure main(self_reg:inout register_t);
+                procedure main_user(self:inout self_t);
             end package;
 
             package body unknown_name is
@@ -1332,74 +1339,12 @@ def test_class_full_endl_bug(converter):
                     variable self: self_t;
                 begin
                     make_self(self_reg, self);
-                    self_reg := self.\\next\\;
-                end procedure;
-            end package body;""")
-
-    conv = str(converter(code, datamodel))
-    assert expect == conv[conv.index('package'):]
-
-
-def test_class_full_get_delay(converter):
-    code = textwrap.dedent("""\
-            class Register(HW):
-                def __init__(self, init_value=0.):
-                    self.a = Sfix(init_value)
-
-                def main(self, new_value):
-                    self.next.a = new_value
-                    return self.a
-
-                def get_delay(self):
-                    return 1
-            """)
-
-    datamodel = DataModel(
-        self_data={'a': Sfix(0.0, 0, -27)},
-        locals={'main': {'new_value': Sfix(0.0, 0, -27)}, 'get_delay': {}})
-
-    expect = textwrap.dedent("""\
-            package unknown_name is
-
-
-
-                type register_t is record
-                    a: sfixed(0 downto -27);
-                end record;
-                type self_t is record
-                    a: sfixed(0 downto -27);
-                    \\next\\: register_t;
-                end record;
-
-                procedure reset(self_reg: inout register_t);
-                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27));
-                procedure get_delay(self:inout self_t; ret_0:out integer);
-            end package;
-
-            package body unknown_name is
-                procedure reset(self_reg: inout register_t) is
-                begin
-                    self_reg.a := Sfix(0.0, 0, -27);
-                end procedure;
-
-                procedure make_self(self_reg: register_t; self: out self_t) is
-                begin
-                    self.a := self_reg.a;
-                    self.\\next\\ := self_reg;
-                end procedure;
-
-                procedure main(self_reg:inout register_t; new_value: sfixed(0 downto -27); ret_0:out sfixed(0 downto -27)) is
-                    variable self: self_t;
-                begin
-                    make_self(self_reg, self);
-                    self.\\next\\.a := new_value;
-                    ret_0 := self.a;
+                    main_user(self);
                     self_reg := self.\\next\\;
                 end procedure;
 
-                procedure get_delay(self:inout self_t; ret_0:out integer) is
+                procedure main_user(self:inout self_t) is
                 begin
-                    ret_0 := 1;
                 end procedure;
             end package body;""")
 
