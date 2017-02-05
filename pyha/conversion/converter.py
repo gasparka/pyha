@@ -359,9 +359,11 @@ class EndlNodeConv(NodeConv):
             return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
+
 class HexaNodeConv(NodeConv):
     def __str__(self):
         return '16#{}#'.format(self.value[2:])
+
 
 class CommentNodeConv(NodeConv):
     def __str__(self):
@@ -461,48 +463,30 @@ class ForNodeConv(NodeConv):
 class ClassNodeConv(NodeConv):
     """ This relies heavily on datamodel """
 
-    # def __init__(self, red_node, parent=None):
-    #
-    #     # see def test_class_call_modifications(converter):
-    #     defn = red_node.find('defnode', name='main')
-    #     if defn is not None:
-    #         defn.arguments[0].target = 'self_reg'
-    #         defn.value.insert(0, 'make_self(self_reg, self)')
-    #         defn.value.append('self_reg = self.next')
-    #
-    #     super().__init__(red_node, parent)
-    #
-    #     # adds to vhdl main function:
-    #     #         variable self: self_t;
-    #     self.callf = [x for x in self.value if str(x.name) == 'main']
-    #     if len(self.callf):
-    #         self.callf = self.callf[0]
-    #         self.callf.variables.append(VHDLVariable(name='self', var_type='self_t', red_node=None))
-
-    # def get_call_str(self):
-    #     return str(self.callf)
-
-
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
         # find the 'main' function and rename it to 'main_user'
         main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
-        self.user_main = main[0]
-        self.user_main.name = 'main_user'
+        if len(main):
+            self.user_main = main[0]
+            self.user_main.name = 'main_user'
 
     def get_main(self):
         template = textwrap.dedent("""\
-            procedure main(self_reg:inout register_t; a: boolean; ret_0:out integer) is
+            procedure main({FUNC_ARGS}) is
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
-                main_user({ARGS});
+                main_user({CALL_ARGS});
                 self_reg := self.\\next\\;
             end procedure;""")
 
-        args = ', '.join(str(x.name) for x in self.user_main.arguments)
-        return template.format(ARGS=args)
+        call_args = ', '.join(str(x.name) for x in self.user_main.arguments)
+        func_args = '; '.join(str(x) for x in self.user_main.arguments)
+        func_args = func_args.replace('self:inout self_t', 'self_reg:inout register_t')
+
+        return template.format(CALL_ARGS=call_args, FUNC_ARGS=func_args)
 
     def get_user_main(self):
         return str(self.user_main)

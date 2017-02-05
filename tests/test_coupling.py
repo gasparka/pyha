@@ -1198,6 +1198,7 @@ def test_class_full(converter):
 
             procedure reset(self_reg: inout register_t);
             procedure main(self_reg:inout register_t);
+            procedure main_user(self:inout self_t);
         end package;
 
         package body unknown_name is
@@ -1222,8 +1223,13 @@ def test_class_full(converter):
                 variable self: self_t;
             begin
                 make_self(self_reg, self);
-                self.a := 0;
+                main_user(self);
                 self_reg := self.\\next\\;
+            end procedure;
+
+            procedure main_user(self:inout self_t) is
+            begin
+                self.a := 0;
             end procedure;
         end package body;""")
 
