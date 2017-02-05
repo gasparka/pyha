@@ -2,6 +2,7 @@ import textwrap
 
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import get_conversion
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestBasic:
@@ -106,3 +107,10 @@ class TestBasic:
 
         conv = str(self.conversion)
         assert expect == conv[conv.index('package'):]
+
+    def test_simulate(self):
+        inputs = [True, True, False, False, True]
+        expect = [1, 1, 2, 2, 1]
+
+        assert_sim_match(self.dut, [bool], expect, inputs,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
