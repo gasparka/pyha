@@ -624,6 +624,18 @@ class ClassNodeConv(NodeConv):
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
+    def get_main_header(self):
+        main_header = self.user_main.get_prototype()
+        main_header = main_header.replace('procedure main_user', 'procedure main')
+        main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
+        return main_header
+
+    def get_headers(self):
+        ret = self.get_reset_prototype() + '\n'
+        ret += self.get_main_header() + '\n'
+        ret += '\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        return ret
+
     def __str__(self):
         template = textwrap.dedent("""\
             {IMPORTS}
@@ -642,6 +654,8 @@ class ClassNodeConv(NodeConv):
 
             {MAKE_SELF_FUNCTION}
 
+            {MAIN_FUNCTION}
+
             {OTHER_FUNCTIONS}
             end package body;""")
 
@@ -652,12 +666,11 @@ class ClassNodeConv(NodeConv):
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
-        sockets['FUNC_HEADERS'] = tabber(self.get_reset_prototype()) + '\n'
-        sockets['FUNC_HEADERS'] += '\n'.join(
-            tabber(x.get_prototype()) for x in self.value if isinstance(x, DefNodeConv))
+        sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
+        sockets['MAIN_FUNCTION'] = tabber(self.get_main())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)
