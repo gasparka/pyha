@@ -164,6 +164,7 @@ def test_typed_def_argument_return_local(converter):
 
         begin
             ret_0 := b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -180,6 +181,7 @@ def test_typed_def_argument_return_constant_int(converter):
 
         begin
             ret_0 := 1;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -196,6 +198,7 @@ def test_typed_def_argument_return_constant_bool(converter):
 
         begin
             ret_0 := False;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -224,6 +227,7 @@ def test_typed_def_argument_return_local_indexing(converter):
 
         begin
             ret_0 := b(1);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -251,6 +255,7 @@ def test_typed_def_argument_return_self(converter):
 
         begin
             ret_0 := self.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -267,6 +272,7 @@ def test_typed_def_argument_return_self_indexing(converter):
 
         begin
             ret_0 := self.b(4);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -283,6 +289,7 @@ def test_typed_def_argument_return_self_indexing_negative(converter):
 
         begin
             ret_0 := self.b(self.b'length-1);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -302,6 +309,7 @@ def test_typed_def_argument_return_self_subindexing(converter):
 
         begin
             ret_0 := self.l.b(4);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -328,6 +336,7 @@ def test_typed_def_argument_return_self_nested(converter):
 
         begin
             ret_0 := self.obj.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -346,6 +355,7 @@ def test_typed_def_argument_return_multiple(converter):
             ret_0 := self.b;
             ret_1 := c;
             ret_2 := self.d;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -491,6 +501,7 @@ def test_typed_def_infer_variable_return(converter):
 
         begin
             ret_0 := l;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -564,6 +575,7 @@ def test_typed_def_complex(converter):
             self.a := l;
             ret_0 := a;
             ret_1 := self.\\next\\.b;
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -605,6 +617,7 @@ def test_def_for_return(converter):
                 outs(i) := list(i);
             end loop;
             ret_0 := outs(0);
+            return;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
