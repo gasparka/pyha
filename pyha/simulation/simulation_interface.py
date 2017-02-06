@@ -183,6 +183,9 @@ class Simulation:
         if self.simulation_type == SIM_MODEL:
             r = self.model.model_main(*args)
 
+            if r == []:
+                return np.array(r)
+
             if isinstance(r, tuple):
                 if isinstance(r[0], list):
                     # assume that no transpose needed ( model returns correct way )

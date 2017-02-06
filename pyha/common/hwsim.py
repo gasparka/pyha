@@ -40,7 +40,6 @@ def deepish_copy(org):
     much, much faster than deepcopy, for a dict of the simple python types.
     """
     out = dict().fromkeys(org)
-
     for k, v in iteritems(org):
         try:
             out[k] = v.copy()  # dicts, sets
@@ -246,4 +245,15 @@ class Meta(type):
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
-    pass
+
+    def __deepcopy__(self, memo):
+        """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k == '__initial_self__':  # dont waste time on endless deepcopy
+                setattr(result, k, copy(v))
+            else:
+                setattr(result, k, deepcopy(v, memo))
+        return result

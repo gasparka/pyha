@@ -340,6 +340,40 @@ def test_initial_self():
     assert dut.__dict__['__initial_self__'].b == False
 
 
+def test_meta_deepcopy():
+    """ this test used to run 4s, with exponential growth on each added level
+    problem was in nested deepcopy() calls
+    """
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0.592)
+
+    class B(HW):
+        def __init__(self):
+            self.l = A()
+            self.a = Sfix(0.592)
+
+    class C(HW):
+        def __init__(self):
+            self.l = B()
+            self.a = Sfix(0.592)
+
+    class D(HW):
+        def __init__(self):
+            self.l = C()
+            self.a = Sfix(0.592)
+
+    class E(HW):
+        def __init__(self):
+            self.l = D()
+            self.b = D()
+            self.a = Sfix(0.592)
+
+    dut = E()
+
+    assert id(dut.l.a) != id(dut.l.next.a) != id(dut.l.__dict__['__initial_self__'].a)
+    assert id(dut.l.l.a) != id(dut.l.l.next.a) != id(dut.l.l.__dict__['__initial_self__'].a)
+
 def test_decorator_principe():
     class DecoClass:
         def __init__(self, func):
