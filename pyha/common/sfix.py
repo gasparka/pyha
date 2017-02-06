@@ -228,7 +228,8 @@ class Sfix:
         fix = self.val / 2 ** self.right
 
         if self.round_style is fixed_round:
-            fix = np.round(fix)
+            fix = round(fix)
+            # fix = np.round(fix)
         else:
             fix = int(fix)
 
