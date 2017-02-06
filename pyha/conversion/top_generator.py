@@ -169,7 +169,7 @@ class TopGenerator:
 
                 entity  top is
                     port (
-                        clk, rst_n: in std_logic;
+                        clk, rst_n, enable: in std_logic;
 
                         -- inputs
                 {ENTITY_INPUTS}
@@ -192,14 +192,16 @@ class TopGenerator:
                     if (not rst_n) then
                         {DUT_NAME}.reset(self);
                     elsif rising_edge(clk) then
-                        --convert slv to normal types
+                        if enable then
+                            --convert slv to normal types
                 {INPUT_TYPE_CONVERSIONS}
 
-                        --call the main entry
-                        {DUT_NAME}.main(self, {CALL_ARGUMENTS});
+                            --call the main entry
+                            {DUT_NAME}.main(self, {CALL_ARGUMENTS});
 
-                        --convert normal types to slv
+                            --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}
+                        end if;
                       end if;
 
                     end process;
@@ -216,8 +218,8 @@ class TopGenerator:
             self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
         sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
         sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
-        sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
-        sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.make_output_type_conversions())
+        sockets['INPUT_TYPE_CONVERSIONS'] = tabber(tab(self.make_input_type_conversions()))
+        sockets['OUTPUT_TYPE_CONVERSIONS'] = tabber(tab(self.make_output_type_conversions()))
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
 
         res = template.format(**sockets)

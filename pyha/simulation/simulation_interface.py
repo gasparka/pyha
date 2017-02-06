@@ -310,6 +310,7 @@ def sim_rules(simulations):
     assert simulations in [[SIM_MODEL],
                            [SIM_MODEL, SIM_HW_MODEL],
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                           [SIM_MODEL, SIM_HW_MODEL, SIM_GATE],
                            [SIM_HW_MODEL],
                            [SIM_HW_MODEL, SIM_RTL],
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],

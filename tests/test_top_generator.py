@@ -145,7 +145,7 @@ def test_full(basic_obj, tmpdir):
 
                     entity  top is
                         port (
-                            clk, rst_n: in std_logic;
+                            clk, rst_n, enable: in std_logic;
 
                             -- inputs
                             in0: in std_logic_vector(31 downto 0);
@@ -176,18 +176,20 @@ def test_full(basic_obj, tmpdir):
                         if (not rst_n) then
                             Register_0.reset(self);
                         elsif rising_edge(clk) then
-                            --convert slv to normal types
-                            var_in0 := to_integer(signed(in0));
-                            var_in1 := Sfix(in1, 2, -17);
-                            var_in2 := logic_to_bool(in2);
+                            if enable then
+                                --convert slv to normal types
+                                var_in0 := to_integer(signed(in0));
+                                var_in1 := Sfix(in1, 2, -17);
+                                var_in2 := logic_to_bool(in2);
 
-                            --call the main entry
-                            Register_0.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+                                --call the main entry
+                                Register_0.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
 
-                            --convert normal types to slv
-                            out0 <= std_logic_vector(to_signed(var_out0, 32));
-                            out1 <= bool_to_logic(var_out1);
-                            out2 <= to_slv(var_out2);
+                                --convert normal types to slv
+                                out0 <= std_logic_vector(to_signed(var_out0, 32));
+                                out1 <= bool_to_logic(var_out1);
+                                out2 <= to_slv(var_out2);
+                            end if;
                           end if;
 
                         end process;
@@ -245,7 +247,7 @@ def test_simple_full(simple_obj):
 
                     entity  top is
                         port (
-                            clk, rst_n: in std_logic;
+                            clk, rst_n, enable: in std_logic;
 
                             -- inputs
                             in0: in std_logic_vector(31 downto 0);
@@ -268,14 +270,16 @@ def test_simple_full(simple_obj):
                         if (not rst_n) then
                             Simple_0.reset(self);
                         elsif rising_edge(clk) then
-                            --convert slv to normal types
-                            var_in0 := to_integer(signed(in0));
+                            if enable then
+                                --convert slv to normal types
+                                var_in0 := to_integer(signed(in0));
 
-                            --call the main entry
-                            Simple_0.main(self, var_in0, ret_0=>var_out0);
+                                --call the main entry
+                                Simple_0.main(self, var_in0, ret_0=>var_out0);
 
-                            --convert normal types to slv
-                            out0 <= std_logic_vector(to_signed(var_out0, 32));
+                                --convert normal types to slv
+                                out0 <= std_logic_vector(to_signed(var_out0, 32));
+                            end if;
                           end if;
 
                         end process;

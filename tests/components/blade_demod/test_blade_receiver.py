@@ -6,7 +6,7 @@ from pyha import simulation
 from pyha.common.sfix import ComplexSfix, Sfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
 from pyha.components.blade_demod.blade_receiver import Phantom2Receiver, Phantom2ReceiverBlade
-from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 import numpy as np
 
 
@@ -68,7 +68,7 @@ class TestPhantom2ReceiverBlade:
         path = Path(__file__).parent / 'data/blade_signaltap.npy'
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                                   ,simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+                                   ,simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_GATE])
 
         pass
         # self._assert_sims(ref, r[1:])
