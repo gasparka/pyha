@@ -1,15 +1,17 @@
 from pathlib import Path
 
 import pytest
+from pyha import simulation
 
-from pyha.common.sfix import ComplexSfix
+from pyha.common.sfix import ComplexSfix, Sfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
-from pyha.components.blade_demod.blade_receiver import Phantom2Receiver
-from pyha.simulation.simulation_interface import debug_assert_sim_match
+from pyha.components.blade_demod.blade_receiver import Phantom2Receiver, Phantom2ReceiverBlade
+from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL
+import numpy as np
 
 
 @pytest.mark.slowtest
-class TestBladeReceiver:
+class TestPhantom2Receiver:
     def setup(self):
         self.dut = Phantom2Receiver()
 
@@ -52,3 +54,21 @@ class TestBladeReceiver:
 
         self._assert_sims(ref, r[1:])
 
+
+class TestPhantom2ReceiverBlade:
+    def setup(self):
+        self.dut = Phantom2ReceiverBlade()
+
+    def _assert_sims(self, ref, hw_sims):
+        for x in hw_sims:
+            hwr = [x for x, valid in zip(*x) if valid]
+            assert (hwr == ref).all()
+
+    def test_uks_one(self):
+        path = Path(__file__).parent / 'data/blade_signaltap.npy'
+        data = np.load(str(path))
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
+                                   ,simulations=[SIM_MODEL])
+
+        pass
+        # self._assert_sims(ref, r[1:])
