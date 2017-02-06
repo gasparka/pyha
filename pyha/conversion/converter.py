@@ -1,5 +1,3 @@
-# TODO: some nodes make changes to AST by using redbaron, it would be good to refactor all these modifications into one step that runs before actual conversion.
-# currently some tests must use 'def a(): x' just because DefNodeConv makes some AST conversions.
 import logging
 import textwrap
 from contextlib import suppress
