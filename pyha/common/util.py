@@ -43,7 +43,8 @@ def get_iterable(x):
 def tabber(str):
     TAB = '    '
     """ Add tab infront of every line """
-    return '\n'.join(['{}{}'.format(TAB, x) for x in str.splitlines() if x != ''])
+    # if x is '' then dont add tabs, because much used textwrap.dedent deletes empty tabs...so unit tests will be unhappy
+    return '\n'.join(['{}{}'.format(TAB, x) if x != '' else x for x in str.splitlines()])
 
 
 def load_gnuradio_file(file: str):
