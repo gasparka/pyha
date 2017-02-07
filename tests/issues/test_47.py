@@ -33,6 +33,7 @@ class TestBasic:
 
     def test_main_user(self):
         expect = textwrap.dedent("""\
+
             procedure main_user(self:inout self_t; a: boolean; ret_0:out integer) is
 
             begin
@@ -42,7 +43,6 @@ class TestBasic:
                 end if;
                 ret_0 := 2;
                 return;
-
             end procedure;""")
         dm = self.conversion.get_user_main()
         assert expect == dm
@@ -50,7 +50,10 @@ class TestBasic:
     def test_headers(self):
         expect = textwrap.dedent("""\
             procedure reset(self_reg: inout register_t);
+
             procedure main(self_reg:inout register_t; a: boolean; ret_0:out integer);
+
+
             procedure main_user(self:inout self_t; a: boolean; ret_0:out integer);""")
         dm = self.conversion.get_headers()
         assert expect == dm
@@ -64,13 +67,18 @@ class TestBasic:
                 type register_t is record
                     much_dummy_very_wow: integer;
                 end record;
+
                 type self_t is record
+
                     much_dummy_very_wow: integer;
                     \\next\\: register_t;
                 end record;
 
                 procedure reset(self_reg: inout register_t);
+
                 procedure main(self_reg:inout register_t; a: boolean; ret_0:out integer);
+
+
                 procedure main_user(self:inout self_t; a: boolean; ret_0:out integer);
             end package;
 
@@ -82,6 +90,7 @@ class TestBasic:
 
                 procedure make_self(self_reg: register_t; self: out self_t) is
                 begin
+
                     self.much_dummy_very_wow := self_reg.much_dummy_very_wow;
                     self.\\next\\ := self_reg;
                 end procedure;
@@ -95,6 +104,7 @@ class TestBasic:
                 end procedure;
 
                 procedure main_user(self:inout self_t; a: boolean; ret_0:out integer) is
+
                 begin
                     if a then
                         ret_0 := 1;
@@ -103,7 +113,8 @@ class TestBasic:
                     ret_0 := 2;
                     return;
                 end procedure;
-            end package body;""")
+            end package body;
+            """)
 
         conv = str(self.conversion)
         assert expect == conv[conv.index('package'):]

@@ -27,6 +27,7 @@ def test_typed_def_argument(converter):
 
     datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer) is
 
         begin
@@ -43,6 +44,7 @@ def test_typed_def_argument_self(converter):
 
     datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(self:inout self_t) is
 
         begin
@@ -59,6 +61,7 @@ def test_typed_def_argument_notlocal_raises0(converter):
 
     datamodel = DataModel(locals={'a': {'rand': 123}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer) is
 
         begin
@@ -76,6 +79,7 @@ def test_typed_def_argument_notlocal_raises1(converter):
 
     datamodel = DataModel(locals={'a': {'rand': 123}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer) is
 
         begin
@@ -92,6 +96,7 @@ def test_typed_def_argument_notlocal_raises2(converter):
 
     datamodel = DataModel(locals={}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer) is
 
         begin
@@ -108,6 +113,7 @@ def test_typed_def_argument_sfix(converter):
 
     datamodel = DataModel(locals={'a': {'b': Sfix(0.5, 2, -12)}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: sfixed(2 downto -12)) is
 
         begin
@@ -124,6 +130,7 @@ def test_typed_argument_default_value(converter):
 
     datamodel = DataModel(locals={'a': {'b': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean:=c) is
 
         begin
@@ -144,6 +151,7 @@ def test_typed_def_argument_multiple(converter):
         'c': Sfix(0.5, 2, -12),
         'd': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer; c: sfixed(2 downto -12); d: boolean) is
 
         begin
@@ -160,6 +168,7 @@ def test_typed_def_argument_return_local(converter):
 
     datamodel = DataModel(locals={'a': {'b': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out boolean) is
 
         begin
@@ -177,6 +186,7 @@ def test_typed_def_argument_return_constant_int(converter):
 
     datamodel = DataModel(locals={'a': {}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out integer) is
 
         begin
@@ -194,6 +204,7 @@ def test_typed_def_argument_return_constant_bool(converter):
 
     datamodel = DataModel(locals={'a': {}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out boolean) is
 
         begin
@@ -223,6 +234,7 @@ def test_typed_def_argument_return_local_indexing(converter):
 
     datamodel = DataModel(locals={'a': {'b': [True, False]}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out boolean) is
 
         begin
@@ -251,6 +263,7 @@ def test_typed_def_argument_return_self(converter):
 
     datamodel = DataModel(locals={}, self_data={'b': True})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out boolean) is
 
         begin
@@ -268,6 +281,7 @@ def test_typed_def_argument_return_self_indexing(converter):
 
     datamodel = DataModel(locals={}, self_data={'b': [1, 2, 3, 4, 5]})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out integer) is
 
         begin
@@ -285,6 +299,7 @@ def test_typed_def_argument_return_self_indexing_negative(converter):
 
     datamodel = DataModel(locals={}, self_data={'b': [-1, -2]})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out integer) is
 
         begin
@@ -305,6 +320,7 @@ def test_typed_def_argument_return_self_subindexing(converter):
     }
     })
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out integer) is
 
         begin
@@ -332,6 +348,7 @@ def test_typed_def_argument_return_self_nested(converter):
 
     datamodel = DataModel(locals={}, self_data={'obj': {'b': Sfix(0.0, 1, -1)}})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out sfixed(1 downto -1)) is
 
         begin
@@ -349,6 +366,7 @@ def test_typed_def_argument_return_multiple(converter):
     datamodel = DataModel(self_data={'b': Sfix(0.0, 1, -1), 'd': 12},
                           locals={'a': {'c': True}})
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out sfixed(1 downto -1); ret_1:out boolean; ret_2:out integer) is
 
         begin
@@ -367,6 +385,7 @@ def test_typed_def_infer_variable(converter):
             c = b""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
             variable c: boolean;
         begin
@@ -383,6 +402,7 @@ def test_typed_def_infer_variable_self_reject(converter):
             self.c = b""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -399,6 +419,7 @@ def test_typed_def_infer_variable_self_indexing(converter):
             self.c[0] = b""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -415,6 +436,7 @@ def test_typed_def_infer_variable_selfnext_indexing(converter):
             self.next.c[0] = b""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -431,6 +453,7 @@ def test_typed_def_infer_variable_selfnext_indexing_resize(converter):
             self.next.c[0] = resize(b, size_res=self.x[i])""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -448,6 +471,7 @@ def test_typed_def_infer_variable_argument_reject(converter):
 
     datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer) is
 
         begin
@@ -465,6 +489,7 @@ def test_typed_def_infer_variable_argument_reject_reserved(converter):
 
     datamodel = DataModel(locals={'a': {'next': 12}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(\\next\\: integer) is
 
         begin
@@ -481,6 +506,7 @@ def test_typed_def_infer_variable_sfix(converter):
 
     datamodel = DataModel(locals={'a': {'next': Sfix(0, 5, 0), 'b': Sfix(0, 0, -5)}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: sfixed(0 downto -5)) is
             variable \\next\\: sfixed(5 downto 0);
         begin
@@ -497,6 +523,7 @@ def test_typed_def_infer_variable_return(converter):
 
     datamodel = DataModel(locals={'a': {'b': 1, 'l': 2}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: integer; ret_0:out integer) is
 
         begin
@@ -514,6 +541,7 @@ def test_typed_def_infer_variable_dublicate(converter):
             x = b""")
     datamodel = DataModel(locals={'a': {'x': 1, 'b': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
             variable x: integer;
         begin
@@ -538,6 +566,7 @@ def test_typed_def_infer_variable_multiple(converter):
         'l': True,
     }}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
             variable \\next\\: integer;
             variable a: sfixed(0 downto -2);
@@ -568,6 +597,7 @@ def test_typed_def_complex(converter):
         self_data={'b': 12})
 
     expect = textwrap.dedent("""\
+
         procedure a(self:inout self_t; a: sfixed(0 downto -2); b: boolean:=\\next\\; ret_0:out sfixed(0 downto -2); ret_1:out integer) is
             variable o: sfixed(12 downto -12);
         begin
@@ -589,6 +619,7 @@ def test_typed_def_infer_variable_dublicate2(converter):
 
     datamodel = DataModel(locals={'a': {'x': 1, 'b': True}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
             variable x: integer;
         begin
@@ -609,6 +640,7 @@ def test_def_for_return(converter):
 
     datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}}, self_data={})
     expect = textwrap.dedent("""\
+
         procedure b(ret_0:out integer) is
             variable outs: integer_list_t(0 to 3);
         begin
@@ -818,6 +850,7 @@ def test_class_infer_local_variable_list(converter):
         'l': [1, 2, 3, 4],
     }})
     expect = textwrap.dedent("""\
+
         procedure a is
             variable l: integer_list_t(0 to 3);
         begin
@@ -1161,192 +1194,3 @@ def test_class_datamodel_reset_prototype(converter):
     conv = converter(code)
     conv = conv.get_reset_prototype()
     assert expect == str(conv)
-
-
-def test_class_full(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                def main(self):
-                    self.a = 0""")
-
-    datamodel = DataModel(self_data={
-        'a': Sfix(1.0, 2, -27),
-        'b': Sfix(4.0, 6, -27),
-        'c': 25,
-        'd': False,
-        'next': {'lol': 'loom'}
-    }, locals={})
-
-    expect = textwrap.dedent("""\
-        package unknown_name is
-
-
-
-            type register_t is record
-                a: sfixed(2 downto -27);
-                b: sfixed(6 downto -27);
-                c: integer;
-                d: boolean;
-            end record;
-            type self_t is record
-                a: sfixed(2 downto -27);
-                b: sfixed(6 downto -27);
-                c: integer;
-                d: boolean;
-                \\next\\: register_t;
-            end record;
-
-            procedure reset(self_reg: inout register_t);
-            procedure main(self_reg:inout register_t);
-            procedure main_user(self:inout self_t);
-        end package;
-
-        package body unknown_name is
-            procedure reset(self_reg: inout register_t) is
-            begin
-                self_reg.a := Sfix(1.0, 2, -27);
-                self_reg.b := Sfix(4.0, 6, -27);
-                self_reg.c := 25;
-                self_reg.d := False;
-            end procedure;
-
-            procedure make_self(self_reg: register_t; self: out self_t) is
-            begin
-                self.a := self_reg.a;
-                self.b := self_reg.b;
-                self.c := self_reg.c;
-                self.d := self_reg.d;
-                self.\\next\\ := self_reg;
-            end procedure;
-
-            procedure main(self_reg:inout register_t) is
-                variable self: self_t;
-            begin
-                make_self(self_reg, self);
-                main_user(self);
-                self_reg := self.\\next\\;
-            end procedure;
-
-            procedure main_user(self:inout self_t) is
-            begin
-                self.a := 0;
-            end procedure;
-        end package body;""")
-
-    conv = str(converter(code, datamodel))
-    assert expect == conv[conv.index('package'):]
-
-
-def test_class_full_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Register():
-                def main(self):
-                    pass""")
-
-    datamodel = DataModel(self_data={
-        'd': False,
-    }, locals={})
-    expect = textwrap.dedent("""\
-        package unknown_name is
-
-
-
-            type register_t is record
-                d: boolean;
-            end record;
-            type self_t is record
-                d: boolean;
-                \\next\\: register_t;
-            end record;
-
-            procedure reset(self_reg: inout register_t);
-            procedure main(self_reg:inout register_t);
-            procedure main_user(self:inout self_t);
-        end package;
-
-        package body unknown_name is
-            procedure reset(self_reg: inout register_t) is
-            begin
-                self_reg.d := False;
-            end procedure;
-
-            procedure make_self(self_reg: register_t; self: out self_t) is
-            begin
-                self.d := self_reg.d;
-                self.\\next\\ := self_reg;
-            end procedure;
-
-            procedure main(self_reg:inout register_t) is
-                variable self: self_t;
-            begin
-                make_self(self_reg, self);
-                main_user(self);
-                self_reg := self.\\next\\;
-            end procedure;
-
-            procedure main_user(self:inout self_t) is
-            begin
-            end procedure;
-        end package body;""")
-
-    conv = str(converter(code, datamodel))
-    assert expect == conv[conv.index('package'):]
-
-
-def test_class_full_endl_bug(converter):
-    code = textwrap.dedent("""\
-            class Register():
-                def main(self):
-                    pass
-
-
-            """)
-
-    datamodel = DataModel(self_data={
-        'd': False,
-    }, locals={})
-    expect = textwrap.dedent("""\
-            package unknown_name is
-
-
-
-                type register_t is record
-                    d: boolean;
-                end record;
-                type self_t is record
-                    d: boolean;
-                    \\next\\: register_t;
-                end record;
-
-                procedure reset(self_reg: inout register_t);
-                procedure main(self_reg:inout register_t);
-                procedure main_user(self:inout self_t);
-            end package;
-
-            package body unknown_name is
-                procedure reset(self_reg: inout register_t) is
-                begin
-                    self_reg.d := False;
-                end procedure;
-
-                procedure make_self(self_reg: register_t; self: out self_t) is
-                begin
-                    self.d := self_reg.d;
-                    self.\\next\\ := self_reg;
-                end procedure;
-
-                procedure main(self_reg:inout register_t) is
-                    variable self: self_t;
-                begin
-                    make_self(self_reg, self);
-                    main_user(self);
-                    self_reg := self.\\next\\;
-                end procedure;
-
-                procedure main_user(self:inout self_t) is
-                begin
-                end procedure;
-            end package body;""")
-
-    conv = str(converter(code, datamodel))
-    assert expect == conv[conv.index('package'):]

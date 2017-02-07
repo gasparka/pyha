@@ -31,7 +31,7 @@ class ExceptionReturnFunctionCall(Exception):
 #         Datamodel:
 #             {}
 #         """).format(red_node, datamodel)
-#         super().__init__(message)
+#         super().__init__(message)de
 
 class NodeConv:
     def __init__(self, red_node, parent=None):
@@ -192,6 +192,17 @@ class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
         self.name = escape_for_vhdl(self.name)
+
+        # collect multiline comment
+        self.multiline_comment = ''
+        if isinstance(self.value[0], StringNodeConv):
+            self.multiline_comment = str(self.value[0])
+            del self.value[0]
+
+        # remove last line,i f it is \n
+        if isinstance(self.value[-1], EndlNodeConv):
+            del self.value[-1]
+
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -250,21 +261,30 @@ class DefNodeConv(NodeConv):
         return [x for x in variables if str(x.name) not in args]
 
     def get_prototype(self):
-        sockets = {'NAME': self.name}
+        template = textwrap.dedent("""\
+            {MULTILINE_COMMENT}
+            procedure {NAME}{ARGUMENTS};""")
+        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
+
         sockets['ARGUMENTS'] = ''
         if len(self.arguments):
             sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
 
-        return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
+        return template.format(**sockets)
 
     def __str__(self):
         template = textwrap.dedent("""\
+            {MULTILINE_COMMENT}
             procedure {NAME}{ARGUMENTS} is
             {VARIABLES}
             begin
             {BODY}
             end procedure;""")
-        sockets = {'NAME': self.name}
+
+        if self.name == 'main':
+            self.multiline_comment = ''
+
+        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
 
         sockets['ARGUMENTS'] = ''
         if len(self.arguments):
@@ -369,8 +389,15 @@ class CommentNodeConv(NodeConv):
 
 
 class StringNodeConv(NodeConv):
+    """ Multiline comments come here """
+
     def __str__(self):
-        return '--' + self.value[1:]
+        if self.value[:3] == '"""' and self.value[-3:] == '"""':
+            r = [x.strip() for x in self.value[3:-3].splitlines()]
+            r = '\n-- '.join(x for x in r if x != '')
+            return '-- ' + r
+
+        return self.value[1:]
 
 
 # this is mostly array indexing
@@ -463,6 +490,12 @@ class ClassNodeConv(NodeConv):
 
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
+
+        # collect multiline comment
+        self.multiline_comment = ''
+        if len(self.value) and isinstance(self.value[0], StringNodeConv):
+            self.multiline_comment = str(self.value[0])
+            del self.value[0]
 
         # find the 'main' function and rename it to 'main_user'
         main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
@@ -607,21 +640,26 @@ class ClassNodeConv(NodeConv):
         return VHDLType.get_self_vhdl_name()
 
     def get_main_header(self):
+        restore = self.user_main.multiline_comment
+        self.user_main.multiline_comment = ''
         main_header = self.user_main.get_prototype()
         main_header = main_header.replace('procedure main_user', 'procedure main')
         main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
+
+        assert main_header[0] == '\n'
+        main_header = main_header[1:]
+        self.user_main.multiline_comment = restore
         return main_header
 
     def get_headers(self):
-        ret = self.get_reset_prototype() + '\n'
-        ret += self.get_main_header() + '\n'
-        ret += '\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        ret = self.get_reset_prototype() + '\n\n'
+        ret += self.get_main_header() + '\n\n'
+        ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
-    def __str__(self):
+    def get_package_header(self):
         template = textwrap.dedent("""\
-            {IMPORTS}
-
+            {MULTILINE_COMMENT}
             package {NAME} is
             {ENUMDEFS}
             {TYPEDEFS}
@@ -629,32 +667,55 @@ class ClassNodeConv(NodeConv):
             {SELF_T}
 
             {FUNC_HEADERS}
-            end package;
-
-            package body {NAME} is
-            {RESET_FUNCTION}
-
-            {MAKE_SELF_FUNCTION}
-
-            {MAIN_FUNCTION}
-
-            {OTHER_FUNCTIONS}
-            end package body;""")
+            end package;""")
 
         sockets = {}
+        sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.get_name()
-        sockets['IMPORTS'] = self.get_imports()
         sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 
+        return template.format(**sockets)
+
+    def get_package_body(self):
+        template = textwrap.dedent("""\
+            package body {NAME} is
+            {RESET_FUNCTION}
+
+            {MAKE_SELF_FUNCTION}
+
+            {MAIN_FUNCTION}
+            {OTHER_FUNCTIONS}
+            end package body;""")
+
+        sockets = {}
+        sockets['NAME'] = self.get_name()
+
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
         sockets['MAIN_FUNCTION'] = tabber(self.get_main())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
+        return template.format(**sockets)
+
+    def __str__(self):
+        template = textwrap.dedent("""\
+            {FILE_HEADER}
+            {IMPORTS}
+
+            {PACKAGE_HEADER}
+
+            {PACKAGE_BODY}
+            """)
+
+        sockets = {}
+        sockets['FILE_HEADER'] = '-- HEADER PLACEHOLDER\n-- HEADER PLACEHOLDER'
+        sockets['IMPORTS'] = self.get_imports()
+        sockets['PACKAGE_HEADER'] = self.get_package_header()
+        sockets['PACKAGE_BODY'] = self.get_package_body()
         return template.format(**sockets)
 
 
