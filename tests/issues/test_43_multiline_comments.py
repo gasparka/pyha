@@ -36,7 +36,10 @@ class TestBasic:
 
             -- func
             -- doc
-            procedure main_user(self:inout self_t; a: integer; ret_0:out integer);""")
+            procedure main_user(self:inout self_t; a: integer; ret_0:out integer);
+
+            -- very useless function
+            procedure func2(self:inout self_t);""")
         dm = self.conversion.get_headers()
         assert expect == dm
 
@@ -50,7 +53,6 @@ class TestBasic:
                 -- normal doc
                 ret_0 := a;
                 return;
-
             end procedure;""")
 
         dm = self.conversion.get_user_main()

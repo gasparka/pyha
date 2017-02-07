@@ -106,6 +106,7 @@ def test_convert_call(converter):
                 self.next.moving_average.main(x)
                 """)
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -164,6 +165,7 @@ def test_typed_def_call_submod_self(converter):
         self_data={'submod': D()},
         locals={'a': {'b': True, 'c': True}})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -185,6 +187,7 @@ def test_typed_def_call_submod_self_next(converter):
         self_data={'submod': D()},
         locals={'a': {'b': True, 'c': True}})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -206,6 +209,7 @@ def test_typed_def_call_submod_returns_local(converter):
         self_data={'submod': D()},
         locals={'a': {'b': True, 'c': True}})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
             variable c: boolean;
         begin
@@ -227,6 +231,7 @@ def test_typed_def_call_submod_returns_self(converter):
         self_data={'submod': D()},
         locals={'a': {'b': True, 'c': True}})
     expect = textwrap.dedent("""\
+
         procedure a(b: boolean) is
 
         begin
@@ -260,6 +265,7 @@ def test_for_redbaron_self(converter):
     datamodel = DataModel(locals={'f': {'a': 1}},
                           self_data={'arr': [1, 2, 3]})
     expect = textwrap.dedent("""\
+
         procedure f is
             variable a: integer;
         begin
@@ -282,6 +288,7 @@ def test_typed_def_for_call(converter):
 
     datamodel = DataModel(locals={}, self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure f is
 
         begin
@@ -304,6 +311,7 @@ def test_typed_def_for_call_return(converter):
 
     datamodel = DataModel(locals={'f': {'a': 1}}, self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure f is
             variable a: integer;
         begin
@@ -326,6 +334,7 @@ def test_typed_def_for_call_return_multi(converter):
 
     datamodel = DataModel(locals={'f': {'a': 1, 'b': False}}, self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure f is
             variable a: integer;
             variable b: boolean;
@@ -350,6 +359,7 @@ def test_typed_def_infer_var(converter):
     datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
                           self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure b is
             variable outs: integer_list_t(0 to 3);
         begin
@@ -372,6 +382,7 @@ def test_typed_def_infer_var_call(converter):
     datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
                           self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure b is
             variable outs: integer_list_t(0 to 3);
         begin
@@ -394,6 +405,7 @@ def test_typed_def_infer_var_call_tuple(converter):
     datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0], 'b': False}},
                           self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure b is
             variable outs: integer_list_t(0 to 3);
             variable b: boolean;
@@ -420,12 +432,14 @@ def test_typed_def_for_combined(converter):
     datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}},
                           self_data={'arr': [D(), D()]})
     expect = textwrap.dedent("""\
+
         procedure b(ret_0:out integer) is
             variable outs: integer_list_t(0 to 3);
         begin
             outs := (0, 0, 0, 0);
             for i in self.\\next\\.arr'range loop
                 D_0.main(self.\\next\\.arr(i), x, ret_0=>outs(i));
+
             end loop;
             ret_0 := outs(0);
             return;
@@ -446,6 +460,7 @@ def test_enum_local_var_assign(converter):
                           self_data={})
 
     expect = textwrap.dedent("""\
+
         procedure f is
             variable a: EnumType;
         begin
@@ -467,6 +482,7 @@ def test_enum_self_var_assign(converter):
                           self_data={'a': EnumType.ENUMVALUE})
 
     expect = textwrap.dedent("""\
+
         procedure f is
 
         begin
@@ -489,6 +505,7 @@ def test_enum_in_if(converter):
                           self_data={})
 
     expect = textwrap.dedent("""\
+
         procedure f is
 
         begin

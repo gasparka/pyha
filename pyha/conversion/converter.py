@@ -199,9 +199,9 @@ class DefNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-        # remove last line, it is always \n
-        assert isinstance(self.value[-1], EndlNodeConv)
-        del self.value[-1]
+        # remove last line,i f it is \n
+        if isinstance(self.value[-1], EndlNodeConv):
+            del self.value[-1]
 
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
@@ -712,6 +712,7 @@ class ClassNodeConv(NodeConv):
             """)
 
         sockets = {}
+        sockets['FILE_HEADER'] = '-- HEADER PLACEHOLDER\n-- HEADER PLACEHOLDER'
         sockets['IMPORTS'] = self.get_imports()
         sockets['PACKAGE_HEADER'] = self.get_package_header()
         sockets['PACKAGE_BODY'] = self.get_package_body()

@@ -359,6 +359,7 @@ def test_def(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -376,6 +377,7 @@ def test_def_comment(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -393,6 +395,7 @@ def test_def_reserver_name(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure \\label\\ is
 
         begin
@@ -410,6 +413,7 @@ def test_def_statements(converter):
                 b""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -430,6 +434,7 @@ def test_def_if_return(converter):
             return b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type) is
 
         begin
@@ -450,6 +455,7 @@ def test_def_argument(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
 
         begin
@@ -465,6 +471,7 @@ def test_def_argument_default_value(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type:=c) is
 
         begin
@@ -480,6 +487,7 @@ def test_def_argument_multiple(converter):
             pass""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type; c: unknown_type; d: unknown_type) is
 
         begin
@@ -495,6 +503,7 @@ def test_def_argument_return(converter):
             return b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type) is
 
         begin
@@ -511,6 +520,7 @@ def test_def_argument_return_local_indexing(converter):
             return b[1]""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type) is
 
         begin
@@ -527,6 +537,7 @@ def test_def_argument_return_self(converter):
             return self.b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type) is
 
         begin
@@ -543,6 +554,7 @@ def test_def_argument_return_multiple(converter):
             return b, c, d""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type; ret_1:out unknown_type; ret_2:out unknown_type) is
 
         begin
@@ -561,6 +573,7 @@ def test_def_infer_variable(converter):
             a = b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
             variable a: unknown_type;
         begin
@@ -577,6 +590,7 @@ def test_def_infer_variable_reject_because_argument(converter):
             b = l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
 
         begin
@@ -593,6 +607,7 @@ def test_def_infer_variable_reject_because_argument_reserved(converter):
             next = l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(\\next\\: unknown_type) is
 
         begin
@@ -608,6 +623,7 @@ def test_def_infer_variable_reserved_name(converter):
             next = l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
             variable \\next\\: unknown_type;
         begin
@@ -624,6 +640,7 @@ def test_def_infer_variable_return(converter):
             return l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type; ret_0:out unknown_type) is
 
         begin
@@ -641,6 +658,7 @@ def test_def_infer_variable_dublicate(converter):
             x = b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
             variable x: unknown_type;
         begin
@@ -659,6 +677,7 @@ def test_def_infer_variable_multiple(converter):
             l = h""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
             variable \\next\\: unknown_type;
             variable a: unknown_type;
@@ -680,6 +699,7 @@ def test_def_infer_variable_atomtrailer(converter):
             c.d = l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(b: unknown_type) is
 
         begin
@@ -697,6 +717,7 @@ def test_def_infer_variable_atomtrailer_argument(converter):
             self.d = l""")
 
     expect = textwrap.dedent("""\
+
         procedure a(self:inout self_t) is
 
         begin
@@ -714,6 +735,7 @@ def test_def_complex(converter):
             return a, self.next.b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(self:inout self_t; a: unknown_type; b: unknown_type:=\\next\\; ret_0:out unknown_type; ret_1:out unknown_type) is
             variable o: unknown_type;
         begin
@@ -793,6 +815,7 @@ def test_call_semicolon_assign(converter):
             self.a = a()""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -808,6 +831,7 @@ def test_call_semicolon_def(converter):
             a()""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -825,6 +849,7 @@ def test_call_semicolon_def2(converter):
             c""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -892,6 +917,7 @@ def test_call_semicolon_multi(converter):
 """)
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable o: unknown_type;
         begin
@@ -916,6 +942,7 @@ def test_call_self(converter):
                 self.d()""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -932,6 +959,7 @@ def test_call_self_return(converter):
                 b = self.d(a)""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable b: unknown_type;
         begin
@@ -948,6 +976,7 @@ def test_call_return_to_self(converter):
                 self.b = self.d(a)""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
 
         begin
@@ -965,6 +994,7 @@ def test_call_return_to_return(converter):
                 return b""")
 
     expect = textwrap.dedent("""\
+
         procedure a(ret_0:out unknown_type) is
             variable b: unknown_type;
         begin
@@ -983,6 +1013,7 @@ def test_call_self_return_no_args(converter):
                 b = self.d()""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable b: unknown_type;
         begin
@@ -999,6 +1030,7 @@ def test_call_self_keyword(converter):
                 b = self.d(a=self.b)""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable b: unknown_type;
         begin
@@ -1015,6 +1047,7 @@ def test_call_self_return_two(converter):
                 b, c = self.d()""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable b: unknown_type;
             variable c: unknown_type;
@@ -1032,6 +1065,7 @@ def test_call_self_return_two_arguments(converter):
                 b, c = self.d(loll, loom)""")
 
     expect = textwrap.dedent("""\
+
         procedure a is
             variable b: unknown_type;
             variable c: unknown_type;
@@ -1378,6 +1412,7 @@ def test_def_for_return(converter):
             return outs[0]""")
 
     expect = textwrap.dedent("""\
+
         procedure b(ret_0:out unknown_type) is
             variable outs: unknown_type;
         begin
