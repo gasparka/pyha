@@ -22,8 +22,17 @@ class TestBasic:
         self.dut.main(False)
         self.conversion = get_conversion(self.dut)
 
-    def test_vhdl_main_header(self):
-        pass
+    def test_vhdl_headers(self):
+        expect = textwrap.dedent("""\
+            procedure reset(self_reg: inout register_t);
+
+            procedure main(self_reg:inout register_t; a: boolean; ret_0:out boolean);
+
+            -- func
+            -- doc
+            procedure main_user(self:inout self_t; a: boolean; ret_0:out boolean);""")
+        dm = self.conversion.get_headers()
+        assert expect == dm
 
     def test_vhdl_main(self):
         expect = textwrap.dedent("""\

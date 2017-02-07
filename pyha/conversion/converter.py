@@ -31,7 +31,7 @@ class ExceptionReturnFunctionCall(Exception):
 #         Datamodel:
 #             {}
 #         """).format(red_node, datamodel)
-#         super().__init__(message)
+#         super().__init__(message)de
 
 class NodeConv:
     def __init__(self, red_node, parent=None):
@@ -256,12 +256,16 @@ class DefNodeConv(NodeConv):
         return [x for x in variables if str(x.name) not in args]
 
     def get_prototype(self):
-        sockets = {'NAME': self.name}
+        template = textwrap.dedent("""\
+            {MULTILINE_COMMENT}
+            procedure {NAME}{ARGUMENTS};""")
+        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
+
         sockets['ARGUMENTS'] = ''
         if len(self.arguments):
             sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
 
-        return 'procedure {NAME}{ARGUMENTS};'.format(**sockets)
+        return template.format(**sockets)
 
     def __str__(self):
         template = textwrap.dedent("""\
@@ -271,6 +275,10 @@ class DefNodeConv(NodeConv):
             begin
             {BODY}
             end procedure;""")
+
+        if self.name == 'main':
+            self.multiline_comment = ''
+
         sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
 
         sockets['ARGUMENTS'] = ''
@@ -620,15 +628,21 @@ class ClassNodeConv(NodeConv):
         return VHDLType.get_self_vhdl_name()
 
     def get_main_header(self):
+        restore  = self.user_main.multiline_comment
+        self.user_main.multiline_comment = ''
         main_header = self.user_main.get_prototype()
         main_header = main_header.replace('procedure main_user', 'procedure main')
         main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
+
+        assert main_header[0] == '\n'
+        main_header = main_header[1:]
+        self.user_main.multiline_comment = restore
         return main_header
 
     def get_headers(self):
-        ret = self.get_reset_prototype() + '\n'
-        ret += self.get_main_header() + '\n'
-        ret += '\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        ret = self.get_reset_prototype() + '\n\n'
+        ret += self.get_main_header() + '\n\n'
+        ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
     def __str__(self):
