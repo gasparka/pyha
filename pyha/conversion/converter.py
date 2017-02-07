@@ -198,6 +198,11 @@ class DefNodeConv(NodeConv):
         if isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
+
+        # remove last line, it is always \n
+        assert isinstance(self.value[-1], EndlNodeConv)
+        del self.value[-1]
+
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 

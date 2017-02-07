@@ -136,14 +136,12 @@ class TestBasic:
                     -- normal doc
                     ret_0 := a;
                     return;
-
                 end procedure;
 
                 -- very useless function
                 procedure func2(self:inout self_t) is
 
                 begin
-
 
                 end procedure;
             end package body;
