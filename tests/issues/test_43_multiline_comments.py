@@ -64,20 +64,8 @@ class TestBasic:
         dm = self.conversion.multiline_comment
         assert expect == dm
 
-    def test_class_full(self):
+    def test_class_header(self):
         expect = textwrap.dedent("""\
-            library ieee;
-                use ieee.std_logic_1164.all;
-                use ieee.numeric_std.all;
-                use ieee.fixed_float_types.all;
-                use ieee.fixed_pkg.all;
-                use ieee.math_real.all;
-
-            library work;
-                use work.ComplexTypes.all;
-                use work.PyhaUtil.all;
-                use work.all;
-
             -- class
             -- doc
             package B0_0 is
@@ -104,49 +92,52 @@ class TestBasic:
 
                 -- very useless function
                 procedure func2(self:inout self_t);
-            end package;
+            end package;""")
 
-            package body B0_0 is
-                procedure reset(self_reg: inout register_t) is
-                begin
-                    self_reg.much_dummy_very_wow := 0;
-                end procedure;
-
-                procedure make_self(self_reg: register_t; self: out self_t) is
-                begin
-
-                    self.much_dummy_very_wow := self_reg.much_dummy_very_wow;
-                    self.\\next\\ := self_reg;
-                end procedure;
-
-                procedure main(self_reg:inout register_t; a: integer; ret_0:out integer) is
-                    variable self: self_t;
-                begin
-                    make_self(self_reg, self);
-                    main_user(self, a, ret_0);
-                    self_reg := self.\\next\\;
-                end procedure;
-
-
-                -- func
-                -- doc
-                procedure main_user(self:inout self_t; a: integer; ret_0:out integer) is
-
-                begin
-                    -- normal doc
-                    ret_0 := a;
-                    return;
-                end procedure;
-
-                -- very useless function
-                procedure func2(self:inout self_t) is
-
-                begin
-
-                end procedure;
-            end package body;
-            """)
-
-        conv = str(self.conversion)
+        conv = self.conversion.get_package_header()
         assert expect == conv
 
+    def test_class_body(self):
+        expect = textwrap.dedent("""\
+             package body B0_0 is
+                 procedure reset(self_reg: inout register_t) is
+                 begin
+                     self_reg.much_dummy_very_wow := 0;
+                 end procedure;
+
+                 procedure make_self(self_reg: register_t; self: out self_t) is
+                 begin
+
+                     self.much_dummy_very_wow := self_reg.much_dummy_very_wow;
+                     self.\\next\\ := self_reg;
+                 end procedure;
+
+                 procedure main(self_reg:inout register_t; a: integer; ret_0:out integer) is
+                     variable self: self_t;
+                 begin
+                     make_self(self_reg, self);
+                     main_user(self, a, ret_0);
+                     self_reg := self.\\next\\;
+                 end procedure;
+
+
+                 -- func
+                 -- doc
+                 procedure main_user(self:inout self_t; a: integer; ret_0:out integer) is
+
+                 begin
+                     -- normal doc
+                     ret_0 := a;
+                     return;
+                 end procedure;
+
+                 -- very useless function
+                 procedure func2(self:inout self_t) is
+
+                 begin
+
+                 end procedure;
+             end package body;""")
+
+        conv = self.conversion.get_package_body()
+        assert expect == conv

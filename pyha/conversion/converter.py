@@ -659,6 +659,7 @@ class ClassNodeConv(NodeConv):
 
     def get_package_header(self):
         template = textwrap.dedent("""\
+            {MULTILINE_COMMENT}
             package {NAME} is
             {ENUMDEFS}
             {TYPEDEFS}
@@ -669,6 +670,7 @@ class ClassNodeConv(NodeConv):
             end package;""")
 
         sockets = {}
+        sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.get_name()
         sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
@@ -701,9 +703,9 @@ class ClassNodeConv(NodeConv):
 
     def __str__(self):
         template = textwrap.dedent("""\
+            {FILE_HEADER}
             {IMPORTS}
 
-            {MULTILINE_COMMENT}
             {PACKAGE_HEADER}
 
             {PACKAGE_BODY}
@@ -713,7 +715,6 @@ class ClassNodeConv(NodeConv):
         sockets['IMPORTS'] = self.get_imports()
         sockets['PACKAGE_HEADER'] = self.get_package_header()
         sockets['PACKAGE_BODY'] = self.get_package_body()
-        sockets['MULTILINE_COMMENT'] = self.multiline_comment
         return template.format(**sockets)
 
 
