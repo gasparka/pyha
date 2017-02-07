@@ -385,6 +385,7 @@ class CommentNodeConv(NodeConv):
 
 class StringNodeConv(NodeConv):
     """ Multiline comments come here """
+
     def __str__(self):
         if self.value[:3] == '"""' and self.value[-3:] == '"""':
             r = [x.strip() for x in self.value[3:-3].splitlines()]
@@ -484,6 +485,12 @@ class ClassNodeConv(NodeConv):
 
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
+
+        # collect multiline comment
+        self.multiline_comment = ''
+        if isinstance(self.value[0], StringNodeConv):
+            self.multiline_comment = str(self.value[0])
+            del self.value[0]
 
         # find the 'main' function and rename it to 'main_user'
         main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
@@ -628,7 +635,7 @@ class ClassNodeConv(NodeConv):
         return VHDLType.get_self_vhdl_name()
 
     def get_main_header(self):
-        restore  = self.user_main.multiline_comment
+        restore = self.user_main.multiline_comment
         self.user_main.multiline_comment = ''
         main_header = self.user_main.get_prototype()
         main_header = main_header.replace('procedure main_user', 'procedure main')
@@ -645,10 +652,8 @@ class ClassNodeConv(NodeConv):
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
-    def __str__(self):
+    def get_package_header(self):
         template = textwrap.dedent("""\
-            {IMPORTS}
-
             package {NAME} is
             {ENUMDEFS}
             {TYPEDEFS}
@@ -656,32 +661,54 @@ class ClassNodeConv(NodeConv):
             {SELF_T}
 
             {FUNC_HEADERS}
-            end package;
-
-            package body {NAME} is
-            {RESET_FUNCTION}
-
-            {MAKE_SELF_FUNCTION}
-
-            {MAIN_FUNCTION}
-
-            {OTHER_FUNCTIONS}
-            end package body;""")
+            end package;""")
 
         sockets = {}
         sockets['NAME'] = self.get_name()
-        sockets['IMPORTS'] = self.get_imports()
         sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
         sockets['SELF_T'] = tabber(self.get_datamodel())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 
+        return template.format(**sockets)
+
+    def get_package_body(self):
+        template = textwrap.dedent("""\
+            package body {NAME} is
+            {RESET_FUNCTION}
+
+            {MAKE_SELF_FUNCTION}
+
+            {MAIN_FUNCTION}
+            {OTHER_FUNCTIONS}
+            end package body;""")
+
+        sockets = {}
+        sockets['NAME'] = self.get_name()
+
         sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
         sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
         sockets['MAIN_FUNCTION'] = tabber(self.get_main())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
+        return template.format(**sockets)
+
+    def __str__(self):
+        template = textwrap.dedent("""\
+            {IMPORTS}
+
+            {MULTILINE_COMMENT}
+            {PACKAGE_HEADER}
+
+            {PACKAGE_BODY}
+            """)
+
+        sockets = {}
+        sockets['IMPORTS'] = self.get_imports()
+        sockets['PACKAGE_HEADER'] = self.get_package_header()
+        sockets['PACKAGE_BODY'] = self.get_package_body()
+        sockets['MULTILINE_COMMENT'] = self.multiline_comment
         return template.format(**sockets)
 
 
