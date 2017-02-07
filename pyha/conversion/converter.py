@@ -192,6 +192,12 @@ class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
         self.name = escape_for_vhdl(self.name)
+
+        # collect multiline comment
+        self.multiline_comment = ''
+        if isinstance(self.value[0], StringNodeConv):
+            self.multiline_comment = str(self.value[0])
+            del self.value[0]
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
@@ -259,12 +265,13 @@ class DefNodeConv(NodeConv):
 
     def __str__(self):
         template = textwrap.dedent("""\
+            {MULTILINE_COMMENT}
             procedure {NAME}{ARGUMENTS} is
             {VARIABLES}
             begin
             {BODY}
             end procedure;""")
-        sockets = {'NAME': self.name}
+        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
 
         sockets['ARGUMENTS'] = ''
         if len(self.arguments):
@@ -369,8 +376,14 @@ class CommentNodeConv(NodeConv):
 
 
 class StringNodeConv(NodeConv):
+    """ Multiline comments come here """
     def __str__(self):
-        return '--' + self.value[1:]
+        if self.value[:3] == '"""' and self.value[-3:] == '"""':
+            r = [x.strip() for x in self.value[3:-3].splitlines()]
+            r = '\n-- '.join(x for x in r if x != '')
+            return '-- ' + r
+
+        return self.value[1:]
 
 
 # this is mostly array indexing
