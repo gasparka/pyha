@@ -493,7 +493,7 @@ class ClassNodeConv(NodeConv):
 
         # collect multiline comment
         self.multiline_comment = ''
-        if isinstance(self.value[0], StringNodeConv):
+        if len(self.value) and isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
