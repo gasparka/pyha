@@ -29,6 +29,8 @@ class BitsDecode(HW):
         self.state = DecodeState.HIGH_IN
         self.sample_clock = 1
 
+        self._delay = 1
+
     def main(self, x):
         self.next.out_valid = False
         self.next.sample_clock = self.sample_clock - 1
@@ -71,9 +73,6 @@ class BitsDecode(HW):
         #     self.debugi.append(self.di)
         #     self.debugb.append(self.decision_lim if self.next.out_bit else -self.decision_lim)
         return self.out_bit, self.out_valid
-
-    def get_delay(self):
-        return 1
 
     def model_main(self, sig):
         # model will not match in case of noise signals
@@ -120,6 +119,8 @@ class CRC16(HW):
         self.init_galois = Const(init_galois)
         self.lfsr = init_galois
 
+        self._delay = 1
+
     def main(self, din, reload):
         if reload:
             lfsr = self.init_galois
@@ -131,8 +132,6 @@ class CRC16(HW):
             self.next.lfsr = self.next.lfsr ^ self.xor
         return self.lfsr
 
-    def get_delay(self):
-        return 1
 
     def model_main(self, data, reload):
         ret = []
@@ -160,6 +159,8 @@ class HeaderCorrelator(HW):
         self.cooldown = 0
         self.shr = [False] * 16
 
+        self._delay = 16
+
     def main(self, din):
         self.next.shr = self.shr[1:] + [din]
         ret = False
@@ -170,9 +171,6 @@ class HeaderCorrelator(HW):
         else:
             self.next.cooldown = self.next.cooldown - 1
         return ret
-
-    def get_delay(self):
-        return 16
 
     def model_main(self, data):
         rets = [False] * len(data)
@@ -200,13 +198,12 @@ class PacketSync(HW):
 
         self.headercorr = HeaderCorrelator(header, packet_len)
         self.crc = CRC16(0x48f9, 0x1021)
-        self._delay = self.headercorr.get_delay() + self.crc.get_delay() + 1 + self.n32out # n32out: delay is needed if outputs are to be presented!
+        self.delay = [False] * self.headercorr._delay
 
-        self.delay = [False] * self.headercorr.get_delay()
         self.packet_counter = 0
 
         # read this when valid=1
-        self.bits = [False] * (packet_len + self.headercorr.get_delay() + self.crc.get_delay())
+        self.bits = [False] * (packet_len + self.headercorr._delay + self.crc._delay)
 
         self.part_out_counter = self.n32out
         self.armed = False
@@ -214,8 +211,11 @@ class PacketSync(HW):
         self.out = [False] * 32
         self.valid = False
 
+        self._delay = self.headercorr._delay + self.crc._delay + 1 + self.n32out # n32out: delay is needed if outputs are to be presented!
+
         # constants
         self.n32out = Const(self.n32out)
+
 
     def main(self, data):
         self.next.valid = False
@@ -232,7 +232,8 @@ class PacketSync(HW):
 
         if self.armed and crc == 0 and self.packet_counter == 0:
             self.next.part_out_counter = 0
-            self.next.armed = False # protect of fake packages
+            if not reload:  # this may happen in case of two back to back packets!
+                self.next.armed = False # protect of fake packages
 
         if self.part_out_counter < self.n32out:
             self.next.part_out_counter = self.next.part_out_counter + 1
@@ -243,9 +244,6 @@ class PacketSync(HW):
                 self.next.valid = True
 
         return self.out, self.valid
-
-    def get_delay(self):
-        return self._delay
 
     def model_main(self, data):
         head = self.headercorr.model_main(data)
@@ -267,9 +265,9 @@ class DemodToPacket(HW):
         self.bits = BitsDecode(0.2)
         self.packsync = PacketSync(header=0x8dfc, packet_len=12 * 16)
 
-        self._delay = self.bits.get_delay() + self.packsync.get_delay()
-
         self.default_ret = Const([False] * 32)
+
+        self._delay = self.bits._delay + self.packsync._delay
 
     def main(self, inp):
         pack_part = self.default_ret
@@ -278,10 +276,6 @@ class DemodToPacket(HW):
         if bit_valid:
             pack_part, part_valid = self.next.packsync.main(bit)
         return pack_part, part_valid
-
-    def get_delay(self):
-        # model and hw will not delay match anyways... because of noise
-        return self._delay
 
     def model_main(self, inp):
         bits = self.bits.model_main(inp)

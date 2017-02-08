@@ -8,7 +8,6 @@ from pyha.simulation.simulation_interface import Simulation, SIM_HW_MODEL, SIM_R
 
 class LazySfixRegister(HW):
     def __init__(self):
-        self.get_delay()
         self.a = Sfix()
 
     def main(self, new_value):
@@ -38,7 +37,6 @@ def test_functionality(lazy_reg):
 ##########################################################################################
 class Register(HW):
     def __init__(self):
-        self.get_delay()
         self.a = Sfix(0.123, 0, -18)
         self.b = 123
         self.c = False

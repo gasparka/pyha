@@ -33,6 +33,8 @@ class Cordic(HW):
         self.y = [Sfix()] * self.iterations
         self.phase = [Sfix()] * self.iterations
 
+        self._delay = self.iterations
+
     def main(self, x, y, phase):
         self.initial_step(phase, x, y)
 
@@ -84,8 +86,6 @@ class Cordic(HW):
             next_phase = resize(p + adj, size_res=p, overflow_style=fixed_wrap)
         return next_x, next_y, next_phase
 
-    def get_delay(self):
-        return self.iterations
 
     def model_main(self, x, y, phase):
         # this model uses (y * (2 ** -i)) for shift right. meaning it loses no precision for this operation
@@ -126,6 +126,7 @@ class NCO(HW):
     def __init__(self, cordic_iterations=16):
         self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION)
         self.phase_acc = Sfix()
+        self._delay = self.cordic.iterations + 1
 
     def main(self, phase_inc):
         self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
@@ -139,10 +140,6 @@ class NCO(HW):
         yr = resize(y, 0, -17)
         retc = ComplexSfix(xr, yr)
         return retc
-
-    def get_delay(self):
-        r = self.cordic.iterations + 1
-        return r
 
     def model_main(self, phase_list):
         p = np.cumsum(phase_list * np.pi)
@@ -160,6 +157,8 @@ class ToPolar(HW):
         self.out_abs = Sfix()
         self.out_angle = Sfix()
 
+        self._delay = self.core.iterations + 1
+
     def main(self, c):
         phase = Sfix(0.0, 0, -24)
 
@@ -176,10 +175,6 @@ class ToPolar(HW):
         self.next.out_angle = resize(angle, c.imag, round_style=fixed_truncate)
         return self.out_abs, self.out_angle
 
-    def get_delay(self):
-        r = self.core.iterations + 1
-        return r
-
     def model_main(self, cin):
         # note that angle in -1..1 range
         rabs = [np.abs(x) for x in cin]
@@ -190,14 +185,11 @@ class ToPolar(HW):
 class Angle(HW):
     def __init__(self):
         self.core = ToPolar()
-        self.delay = Const(self.core.get_delay())
+        self._delay = self.core._delay
 
     def main(self, c):
         _, angle = self.next.core.main(c)
         return angle
-
-    def get_delay(self):
-        return self.delay
 
     def model_main(self, cin):
         # note that angle in -1..1 range
@@ -207,14 +199,11 @@ class Angle(HW):
 class Abs(HW):
     def __init__(self):
         self.core = ToPolar()
-        self.delay = Const(self.core.get_delay())
+        self._delay = self.core._delay
 
     def main(self, c):
         abs, _ = self.next.core.main(c)
         return abs
-
-    def get_delay(self):
-        return self.delay
 
     def model_main(self, cin):
         # note that angle in -1..1 range

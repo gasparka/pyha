@@ -312,7 +312,6 @@ def test_comb_multi_single(comb_multi):
 def sequential_single(request):
     class SeqSingle_HW(HW):
         def __init__(self):
-            self.get_delay()
             self.sfix_reg = Sfix(0.0)
 
         def main(self, in_sfix):
@@ -340,7 +339,6 @@ def test_sequential_single(sequential_single):
 def sequential_single_delay2(request):
     class SeqSingle2_HW(HW):
         def __init__(self):
-            self.get_delay()
             self.sfix_reg = Sfix(0.0)
             self.sfix_reg2 = Sfix(0.0)
 
@@ -370,7 +368,6 @@ def test_sequential_single_delay2(sequential_single_delay2):
 def sequential_multi(request):
     class MultiSeq_HW(HW):
         def __init__(self):
-            self.get_delay()
             self.int_reg = 0
             self.bool_reg = False
             self.sfix_reg = Sfix(0.0)
@@ -406,7 +403,6 @@ def test_hw_sim_resets():
 
     class Rst_Hw(HW):
         def __init__(self):
-            self.get_delay()
             self.sfix_reg = Sfix(0.5, 0, -18)
 
         def main(self, in_sfix):

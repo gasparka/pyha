@@ -85,32 +85,32 @@ class TestUks:
 #     #                      skip_first=16
 #     #                      )
 
-def test_from_live_signaltap():
-    # todo: remove, only for debug
-    import matplotlib.pyplot as plt
-    from pyha.common.signaltap_parser import SignalTapParser
-    a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/multi_valid_bug.csv')
-    real = a.to_float(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'], 16)
-    real = real[::2]
-
-    imag = a.to_float(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'], 16)
-    imag = imag[::2]
-    c = np.array([0 + 0j] * len(imag))
-    c.real = real
-    c.imag = imag
-
-    np.save('blade_tap_multiple_valid_bug.npy', c)
-
-    # quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
-    # quad_out = quad_out[::2]
-
-    qd = 2 * np.pi * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
-    #
-    plt.plot(qd)
-    # plt.plot(imag)
-    # plt.plot(real)
-    # plt.plot(quad_out)
-    plt.show()
+# def test_from_live_signaltap():
+#     # todo: remove, only for debug
+#     import matplotlib.pyplot as plt
+#     from pyha.common.signaltap_parser import SignalTapParser
+#     a = SignalTapParser('/home/gaspar/git/bladeRF/hdl/quartus/work/multi_valid_bug.csv')
+#     real = a.to_float(a[' iq_correction:U_rx_iq_correction|out_real[15..0]'], 16)
+#     real = real[::2]
+#
+#     imag = a.to_float(a[' iq_correction:U_rx_iq_correction|out_imag[15..0]'], 16)
+#     imag = imag[::2]
+#     c = np.array([0 + 0j] * len(imag))
+#     c.real = real
+#     c.imag = imag
+#
+#     np.save('blade_tap_multiple_valid_bug.npy', c)
+#
+#     # quad_out = a.to_float(a[' top:quadrature_demod|out0[17..0]'], 18)
+#     # quad_out = quad_out[::2]
+#
+#     qd = 2 * np.pi * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
+#     #
+#     plt.plot(qd)
+#     # plt.plot(imag)
+#     # plt.plot(real)
+#     # plt.plot(quad_out)
+#     plt.show()
 
     # dut = BladeDemod()
     # plot_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2,
