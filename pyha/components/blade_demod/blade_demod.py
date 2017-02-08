@@ -39,7 +39,7 @@ class BladeDemodPartial1(HW):
             # return self.normal_to_blade.model_main(b)
 
 
-class BladeDemodQuadMavg(HW):
+class DemodQuadMavg(HW):
     def __init__(self, quadrature_demodulator_gain, moving_average_length):
         self.quadrature_demodulator = QuadratureDemodulator(quadrature_demodulator_gain)
         self.moving_average = MovingAverage(moving_average_length)
@@ -60,6 +60,22 @@ class BladeDemodQuadMavg(HW):
         b = self.moving_average.model_main(a)
         return b
 
+
+class DemodQuad(HW):
+    def __init__(self, quadrature_demodulator_gain):
+        self.quadrature_demodulator = QuadratureDemodulator(quadrature_demodulator_gain)
+        self._delay = self.quadrature_demodulator.get_delay()
+
+    def main(self, c):
+        demod = self.next.quadrature_demodulator.main(c)
+        return demod
+
+    def get_delay(self):
+        return self._delay
+
+    def model_main(self, c):
+        a = self.quadrature_demodulator.model_main(c)
+        return a
 
 class BladeDemodQuad(HW):
     def __init__(self, quadrature_demodulator_gain):

@@ -153,6 +153,7 @@ class HeaderCorrelator(HW):
     def __init__(self, header, packet_len):
         # once header is found, 'packet_len' bits are skipped before next header can be correlated!
         # NB/TODO: there is possibility that random noise triggers the cooldown, so correct package may be lost!
+        # TODO: why no output register?
         self.cooldown_reset = Const(packet_len - 1)
         self.header = Const(hex_to_bool_list(header))
 
@@ -192,6 +193,7 @@ def bits_to_int(bits):
 
 
 class PacketSync(HW):
+
     def __init__(self, header, packet_len):
         self.packet_len_lim = Const(packet_len - 1)
         self.n32out = ceil(self.packet_len_lim.value / 32)  # number of 32 bit output packets per correct packet
@@ -207,7 +209,7 @@ class PacketSync(HW):
         self.bits = [False] * (packet_len + self.headercorr.get_delay() + self.crc.get_delay())
 
         self.part_out_counter = self.n32out
-
+        self.armed = False
         # output
         self.out = [False] * 32
         self.valid = False
@@ -223,12 +225,14 @@ class PacketSync(HW):
         self.next.packet_counter = self.packet_counter - 1
         if reload or self.packet_counter == 0:
             self.next.packet_counter = self.packet_len_lim
+            self.next.armed = True
 
         self.next.delay = self.delay[1:] + [data]
         crc = self.next.crc.main(self.delay[0], reload)
 
-        if crc == 0 and self.packet_counter == 0:
+        if self.armed and crc == 0 and self.packet_counter == 0:
             self.next.part_out_counter = 0
+            self.next.armed = False # protect of fake packages
 
         if self.part_out_counter < self.n32out:
             self.next.part_out_counter = self.next.part_out_counter + 1
