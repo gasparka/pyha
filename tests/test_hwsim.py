@@ -408,3 +408,16 @@ def test_decorator_principe():
     dut2.main()
     assert dut1.main.calls == 1
     assert dut2.main.calls == 2
+
+
+def test_outputs():
+    class A(HW):
+        def main(self, a):
+            return a
+
+    dut = A()
+    dut.main(1)
+    dut.main(2)
+    dut.main(3)
+    dut.main(4)
+    assert dut._outputs == [1, 2, 3, 4]

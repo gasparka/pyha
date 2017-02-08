@@ -183,6 +183,7 @@ class PyhaFunc:
         """
         self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
 
+        real_self._outputs.append(ret)
         return ret
 
 
@@ -230,6 +231,9 @@ class Meta(type):
 
         # give self.next to the new object
         ret.__dict__['next'] = deepcopy(ret)
+
+        # every call to 'main' will append returned values here
+        ret._outputs = []
 
         # decorate all methods
         for method_str in dir(ret):
