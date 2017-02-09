@@ -2,7 +2,7 @@
 # This file will be regenerated if you run travis_pypi_setup.py
 
 language: python
-python: 3.5
+python: 3.6
 
 before_script:
     # INSTALL GHDL
@@ -27,7 +27,7 @@ install:
 
 
 script:
-    - coverage run --source pyha -m py.test tests
+    - coverage run --source pyha -m py.test -s tests
 
 after_success:
     - coveralls
