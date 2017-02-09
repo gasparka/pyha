@@ -178,7 +178,7 @@ def test_reg_complex_types_generation(reg):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
-        next(f)  # skip header
+        next(f)
         assert expect == f.read()
 
 
@@ -288,7 +288,7 @@ def test_more_regs_complex_types_generation(more_regs):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
-        next(f)  # skip header
+        next(f)
         assert expect == f.read()
 
 
@@ -312,14 +312,12 @@ def comp_reg():
     class A4(HW):
         def __init__(self):
             self.reg = ComplexSfix(0 + 0j, 1, -18)
+            self._delay = 1
 
         def main(self, x0):
             self.next.reg.real = x0.real
             self.next.reg.imag = x0.imag
             return self.reg
-
-        def get_delay(self):
-            return 1
 
     dut = A4()
     return dut
@@ -427,7 +425,7 @@ def test_complex_inits_return_complex_types_generation(complex_inits_return):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
-        next(f)  # skip header
+        next(f)
         assert expect == f.read()
 
 
@@ -452,12 +450,10 @@ class TestList:
         class A6(HW):
             def __init__(self):
                 self.reg = [ComplexSfix(0 + 0j, 0, -18)] * 4
+                self._delay = 1
 
             def main(self, b):
                 return self.reg[-1]
-
-            def get_delay(self):
-                return 1
 
         dut = A6()
         dut.main(1)
@@ -490,5 +486,5 @@ class TestList:
 
         files = self.conversion.write_vhdl_files(Path('/tmp/'))
         with files[0].open('r') as f:
-            next(f)  # skip header
+            next(f)
             assert expect == f.read()

@@ -11,6 +11,8 @@ class DCRemoval(HW):
         self.delay_x2 = Sfix()
         self.out = Sfix()
 
+        self._delay = 3
+
     def main(self, x):
 
         # run sample trough all moving averages
@@ -25,9 +27,6 @@ class DCRemoval(HW):
         self.next.delay_x2 = self.delay_x
         self.next.out = resize(self.delay_x2 - tmp, size_res=x)
         return self.out
-
-    def get_delay(self):
-        return 3
 
     def model_main(self, x):
         tmp = x
@@ -70,6 +69,8 @@ class Tst(HW):
         # self.delay_x = Sfix()
         # self.out = Sfix()
 
+        self._delay = 2
+
     def main(self, x):
         av = self.moving_average.main(x)
         av2 = self.moving_average2.main(av)
@@ -78,9 +79,6 @@ class Tst(HW):
         # self.next.delay_x = x
         # self.next.out = resize(self.delay_x-av, size_res=x)
         # return self.out
-
-    def get_delay(self):
-        return 2
 
     def model_main(self, x):
         av = self.moving_average.model_main(x)

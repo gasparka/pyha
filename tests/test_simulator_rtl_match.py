@@ -145,14 +145,12 @@ def test_sfix_wrapper(left, right):
     class T9(HW):
         def __init__(self):
             self.phase_acc = Sfix()
+            self._delay = 1
 
         def main(self, phase_inc):
             self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
                                          round_style=fixed_truncate)
             return self.phase_acc
-
-        def get_delay(self):
-            return 1
 
     x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
     assert_exact_match(T9(), [Sfix(0, left, right)], x)

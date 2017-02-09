@@ -8,13 +8,12 @@ class Conjugate(HW):
     def __init__(self):
         self.outreg = ComplexSfix()
 
+        self._delay = 1
+
     def main(self, x):
         self.next.outreg.real = x.real
         self.next.outreg.imag = resize(-x.imag, size_res=x.imag)
         return self.outreg
-
-    def get_delay(self):
-        return 1
 
     def model_main(self, x):
         return np.conjugate(x)
@@ -31,6 +30,8 @@ class ComplexMultiply(HW):
         self.imag_yu = Sfix()
 
         self.outreg = ComplexSfix()
+
+        self._delay = 2
 
     def main(self, a, b):
         # assert a.has_same_bounds(b)
@@ -55,9 +56,6 @@ class ComplexMultiply(HW):
                                        size_res=a.real, round_style=fixed_truncate)
 
         return self.outreg
-
-    def get_delay(self):
-        return 2
 
     def model_main(self, a, b):
         return np.array(a) * np.array(b)

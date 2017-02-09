@@ -313,6 +313,7 @@ def sequential_single(request):
     class SeqSingle_HW(HW):
         def __init__(self):
             self.sfix_reg = Sfix(0.0)
+            self._delay = 1
 
         def main(self, in_sfix):
             self.next.sfix_reg = in_sfix - 1.0
@@ -320,9 +321,6 @@ def sequential_single(request):
 
         def model_main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
-
-        def get_delay(self):
-            return 1
 
     return Simulation(request.param, model=SeqSingle_HW(),
                       input_types=[Sfix(left=2, right=-8)])
@@ -341,6 +339,7 @@ def sequential_single_delay2(request):
         def __init__(self):
             self.sfix_reg = Sfix(0.0)
             self.sfix_reg2 = Sfix(0.0)
+            self._delay = 2
 
         def main(self, in_sfix):
             self.next.sfix_reg = in_sfix - 1.0
@@ -349,9 +348,6 @@ def sequential_single_delay2(request):
 
         def model_main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
-
-        def get_delay(self):
-            return 2
 
     return Simulation(request.param, model=SeqSingle2_HW(),
                       input_types=[Sfix(left=2, right=-8)])
@@ -371,6 +367,7 @@ def sequential_multi(request):
             self.int_reg = 0
             self.bool_reg = False
             self.sfix_reg = Sfix(0.0)
+            self._delay = 1
 
         def main(self, in_int, in_bool, in_sfix):
             self.next.int_reg = in_int * 2
@@ -380,9 +377,6 @@ def sequential_multi(request):
 
         def model_main(self, in_int, in_bool, in_sfix):
             return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
-
-        def get_delay(self):
-            return 1
 
     return Simulation(request.param, model=MultiSeq_HW(),
                       input_types=[int, bool, Sfix(left=2, right=-8)])
@@ -404,13 +398,11 @@ def test_hw_sim_resets():
     class Rst_Hw(HW):
         def __init__(self):
             self.sfix_reg = Sfix(0.5, 0, -18)
+            self._delay = 1
 
         def main(self, in_sfix):
             self.next.sfix_reg = in_sfix
             return self.sfix_reg
-
-        def get_delay(self):
-            return 1
 
     dut = Simulation(SIM_HW_MODEL, model=Rst_Hw(), input_types=[Sfix(left=0, right=-18)])
     dut.main([0.1])

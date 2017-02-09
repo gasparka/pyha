@@ -18,9 +18,9 @@ class QuadratureDemodulator(HW):
         self.angle = Angle()
         self.out = Sfix()
 
-        self.delay = self.conjugate.get_delay() + \
-                     self.complex_mult.get_delay() + \
-                     self.angle.get_delay() + 1
+        self._delay = self.conjugate._delay + \
+                     self.complex_mult._delay + \
+                     self.angle._delay + 1
 
     def main(self, c):
         c_conj = self.next.conjugate.main(c)
@@ -29,9 +29,6 @@ class QuadratureDemodulator(HW):
 
         self.next.out = resize(self.gain_sfix * angle, c.real, round_style=fixed_truncate)
         return self.out
-
-    def get_delay(self):
-        return self.delay
 
     def model_main(self, c):
         demod = self.gain * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
@@ -44,14 +41,11 @@ class QuadratureDemodulatorPartial0(HW):
         self.gain = gain
         self.conjugate = Conjugate()
         self.prev = ComplexSfix()
-        self.delay = self.conjugate.get_delay()
+        self._delay = self.conjugate._delay
 
     def main(self, c):
         r = self.next.conjugate.main(c)
         return r
-
-    def get_delay(self):
-        return self.delay
 
     def model_main(self, c):
         demod = np.conjugate(c[:-1])
@@ -65,16 +59,13 @@ class QuadratureDemodulatorPartial1(HW):
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.prev = ComplexSfix()
-        self.delay = self.conjugate.get_delay() + \
-                     self.complex_mult.get_delay()
+        self._delay = self.conjugate._delay + \
+                     self.complex_mult._delay
 
     def main(self, c):
         r = self.next.conjugate.main(c)
         ra = self.next.complex_mult.main(c, r)
         return ra
-
-    def get_delay(self):
-        return self.delay
 
     def model_main(self, c):
         demod = c[1:] * np.conjugate(c[:-1])

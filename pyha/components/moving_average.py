@@ -22,6 +22,8 @@ class MovingAverage(HW):
         self.shift_register = [Sfix()] * self.window_len
         self.sum = Sfix()
 
+        self._delay = 1
+
     def main(self, x):
         self.next.shift_register = [x] + self.shift_register[:-1]
 
@@ -31,9 +33,6 @@ class MovingAverage(HW):
 
         ret = resize(self.sum >> self.window_pow, size_res=x)
         return ret
-
-    def get_delay(self):
-        return 1
 
     def model_main(self, inputs):
         # def ite_avg(i):

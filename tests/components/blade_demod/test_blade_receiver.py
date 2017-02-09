@@ -71,8 +71,9 @@ class TestPhantom2ReceiverBlade:
         path = Path(__file__).parent / 'data/blade_tap_multiple_valid_bug.npy'
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                                   ,simulations=[SIM_MODEL, SIM_HW_MODEL],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv')
+                                   ,simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                                   dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   )
 
         ref = r[0]
         assert len(ref) == 6

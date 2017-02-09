@@ -28,13 +28,13 @@ SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE = ['MODEL', 'HW_MODEL', 'RTL', 'GATE'
 
 def flush_pipeline(func):
     """ For inputs: adds 'x.get_delay()' dummy samples, to flush out pipeline values
-    For outputs: removes the first 'x.get_delay()' samples, as these are initial pipelien values"""
+    For outputs: removes the first 'x.get_delay()' samples, as these are initial pipeline values"""
 
     @wraps(func)
     def flush_pipeline_wrap(self, *args, **kwargs):
         delay = 0
         with suppress(AttributeError):  # no get_delay()
-            delay = self.model.get_delay()
+            delay = self.model._delay
         if delay == 0:
             return func(self, *args, **kwargs)
 

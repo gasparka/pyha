@@ -9,13 +9,11 @@ from pyha.simulation.simulation_interface import Simulation, SIM_HW_MODEL, SIM_R
 class LazySfixRegister(HW):
     def __init__(self):
         self.a = Sfix()
+        self._delay = 1
 
     def main(self, new_value):
         self.next.a = new_value
         return self.a
-
-    def get_delay(self):
-        return 1
 
 
 @pytest.fixture(scope='session', params=[-17, -18, -19])
@@ -40,15 +38,13 @@ class Register(HW):
         self.a = Sfix(0.123, 0, -18)
         self.b = 123
         self.c = False
+        self._delay = 1
 
     def main(self, na, nb, nc):
         self.next.a = na
         self.next.b = nb
         self.next.c = nc
         return self.a, self.b, self.c
-
-    def get_delay(self):
-        return 1
 
 
 @pytest.fixture(scope='module', params=[SIM_HW_MODEL, SIM_RTL])
