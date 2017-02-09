@@ -148,6 +148,7 @@ class CRC16(HW):
         return ret
 
 
+# noinspection PyAugmentAssignment
 class HeaderCorrelator(HW):
     def __init__(self, header, packet_len):
         # once header is found, 'packet_len' bits are skipped before next header can be correlated!
@@ -161,9 +162,11 @@ class HeaderCorrelator(HW):
 
         self._delay = 16
 
+    # noinspection PyAugmentAssignment
     def main(self, din):
         self.next.shr = self.shr[1:] + [din]
         ret = False
+        # noinspection PyAugmentAssignment
         if self.cooldown == 0:
             if self.shr == self.header:
                 self.next.cooldown = self.cooldown_reset
@@ -190,6 +193,7 @@ def bits_to_int(bits):
     return int(s, 2)
 
 
+# noinspection PyAugmentAssignment
 class PacketSync(HW):
 
     def __init__(self, header, packet_len):
@@ -216,7 +220,7 @@ class PacketSync(HW):
         # constants
         self.n32out = Const(self.n32out)
 
-
+    # noinspection PyAugmentAssignment
     def main(self, data):
         self.next.valid = False
         self.next.bits = self.bits[1:] + [data]

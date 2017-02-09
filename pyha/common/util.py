@@ -1,9 +1,8 @@
 import collections
 
-import binascii
+import numpy as np
 import scipy
 from scipy import signal
-import numpy as np
 
 
 def escape_for_vhdl(x: str) -> str:
@@ -23,7 +22,7 @@ def escape_for_vhdl(x: str) -> str:
                            'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
 
     if x.lower() in vhdl_reserved_names or x[0] == '_':
-        return '\\{}\\'.format(x)  # "escape" reserved name
+        return f'\\{x}\\'  # "escape" reserved name
     return x
 
 
@@ -44,7 +43,7 @@ def tabber(str):
     TAB = '    '
     """ Add tab infront of every line """
     # if x is '' then dont add tabs, because much used textwrap.dedent deletes empty tabs...so unit tests will be unhappy
-    return '\n'.join(['{}{}'.format(TAB, x) if x != '' else x for x in str.splitlines()])
+    return '\n'.join([f'{TAB}{x}' if x != '' else x for x in str.splitlines()])
 
 
 def load_gnuradio_file(file: str):

@@ -164,7 +164,7 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
-        self.logger.info('Running {} simulation!'.format(self.simulation_type))
+        self.logger.info(f'Running {self.simulation_type} simulation!')
         # test if user provided legal 'input_types'
         if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
             if self.input_types is None or (len(args) != len(self.input_types)):
@@ -272,7 +272,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')
-            l.error('\t\t"{}" failed'.format(sim_type))
+            l.error(f'\t\t"{sim_type}" failed')
             l.error('##############################################################')
             l.error('##############################################################')
 

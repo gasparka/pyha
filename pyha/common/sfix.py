@@ -14,7 +14,6 @@ fixed_wrap = 'fixed_wrap'
 fixed_wrap_impossible = 'fixed_wrap_impossible'
 
 
-
 class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
@@ -49,8 +48,7 @@ class ComplexSfix:
         return ComplexSfix(x, self.left, self.right)
 
     def __str__(self):
-        return '{:.2f}{}{:.2f}j [{}:{}]'.format(self.real.val, '' if self.imag.val < 0.0 else '+', self.imag.val,
-                                                self.left, self.right)
+        return f'{self.real.val:.2f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.2f}j [{self.left}:{self.right}]'
 
     def __repr__(self):
         return str(self)
@@ -67,10 +65,10 @@ class ComplexSfix:
         return self.bitwidth()
 
     def to_stdlogic(self):
-        return 'std_logic_vector({} downto 0)'.format(self.bitwidth() - 1)
+        return f'std_logic_vector({self.bitwidth() - 1} downto 0)'
 
     def vhdl_reset(self):
-        return '(real=>{}, imag=>{})'.format(self.real.vhdl_reset(), self.imag.vhdl_reset())
+        return f'(real=>{self.real.vhdl_reset()}, imag=>{self.imag.vhdl_reset()})'
 
     def fixed_value(self):
         assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
@@ -84,30 +82,22 @@ class ComplexSfix:
         return pytype_to_vhdl(self)
 
     def vhdl_type_define(self):
-        template = textwrap.dedent("""\
-            type {NAME} is record
-                real: {DTYPE};
-                imag: {DTYPE};
+        dtype = f'sfixed({self.left} downto {self.right})'
+        return textwrap.dedent(f"""\
+            type {self.vhdl_type_name()} is record
+                real: {dtype};
+                imag: {dtype};
             end record;
-            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME};
+            function ComplexSfix(a, b: sfixed({self.left} downto {self.right})) return {self.vhdl_type_name()};
             """)
 
-        return template.format(**{'NAME': self.vhdl_type_name(),
-                                  'DTYPE': 'sfixed({} downto {})'.format(self.left, self.right),
-                                  'RIGHT': self.right,
-                                  'LEFT': self.left})
-
     def vhdl_init_function(self):
-        template = textwrap.dedent("""\
-            function ComplexSfix(a, b: sfixed({LEFT} downto {RIGHT})) return {NAME} is
+        return textwrap.dedent(f"""\
+            function ComplexSfix(a, b: sfixed({self.left} downto {self.right})) return {self.vhdl_type_name()} is
             begin
                 return (a, b);
             end function;
             """)
-
-        return template.format(**{'NAME': self.vhdl_type_name(),
-                                  'RIGHT': self.right,
-                                  'LEFT': self.left})
 
 
 # TODO: Verify stuff against VHDL library
@@ -210,7 +200,7 @@ class Sfix:
         else:
             assert False
         if not self.is_lazy_init() and not old == 1.0:
-            logger.warning('Saturation {} -> {}'.format(old, self.val))
+            logger.warning(f'Saturation {old} -> {self.val}')
 
             # TODO: tests break
             # raise Exception('Saturation {} -> {}'.format(old, self.val))
@@ -243,7 +233,7 @@ class Sfix:
     #     return (val * 2 ** self.outputs[i].right)
 
     def __str__(self):
-        return '{} [{}:{}]'.format(str(self.val), self.left, self.right)
+        return f'{str(self.val)} [{self.left}:{self.right}]'
 
     def __repr__(self):
         return self.__str__()
@@ -335,10 +325,10 @@ class Sfix:
         return Sfix(x, self.left, self.right)
 
     def to_stdlogic(self):
-        return 'std_logic_vector({} downto 0)'.format(self.left + abs(self.right))
+        return f'std_logic_vector({self.left + abs(self.right)} downto 0)'
 
     def vhdl_reset(self):
-        return 'Sfix({}, {}, {})'.format(self.init_val, self.left, self.right)
+        return f'Sfix({self.init_val}, {self.left}, {self.right})'
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
@@ -354,5 +344,5 @@ def right_index(x: Sfix):
 
 
 def scalb(x: Sfix, i: int):
-        n = 2 ** i
-        return Sfix(x.val * n, x.left + i, x.right + i)
+    n = 2 ** i
+    return Sfix(x.val * n, x.left + i, x.right + i)

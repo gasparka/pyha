@@ -91,7 +91,7 @@ class Conversion:
 
         # paths.append(base_dir / '{}.vhd'.format(self.class_name))
         fname = get_instance_vhdl_name(self.obj)
-        paths.append(base_dir / '{}.vhd'.format(fname))
+        paths.append(base_dir / f'{fname}.vhd')
         with paths[-1].open('w') as f:
             f.write(str(self.vhdl_conversion))
 

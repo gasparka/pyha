@@ -17,8 +17,7 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
-        message = 'Assigment to self.{}, did you mean self.next.{}?\nClass: {}'.format(
-            variable_name, variable_name, class_name)
+        message = f'Assigment to self.{variable_name}, did you mean self.next.{variable_name}?\nClass: {class_name}'
         super().__init__(message)
 
 
@@ -29,8 +28,7 @@ class TypeNotConsistent(Exception):
         with suppress(KeyError):  # only available for 'self'
             new.pop('__initial_self__')
             old.pop('__initial_self__')
-        message = 'Self/local not consistent type!\nClass: {}\nFunction: {}\nVariable: {}\nOld: {}:{}\nNew: {}:{}'.format(
-            class_name, function_name, variable_name, type(old), repr(old), type(new), new)
+        message = f'Self/local not consistent type!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nOld: {type(old)}:{repr(old)}\nNew: {type(new)}:{new}'
         super().__init__(message)
 
 
@@ -202,8 +200,7 @@ class Meta(type):
                     di = listi.__constants__
                     if di != ref:
                         raise Exception(
-                            'List of submodules: {}\n but constants are not equal!\n\nTry to remove Const() keyword.'.format(
-                                x))
+                            f'List of submodules: {x}\n but constants are not equal!\n\nTry to remove Const() keyword.')
 
     def handle_constants(cls, dict):
         """ Go over dict and find all the constants. Remove the Const() wrapper

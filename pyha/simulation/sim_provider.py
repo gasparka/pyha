@@ -53,11 +53,11 @@ class SimProvider:
 
         buffer = ""
         for key, value in rules.items():
-            buffer += "set_global_assignment -name {key} {value!s}\n".format(key=key, value=value)
+            buffer += f"set_global_assignment -name {key} {value!s}\n"
 
         buffer += "\n"
         for file in src:
-            buffer += "set_global_assignment -name VHDL_FILE {}\n".format(file)
+            buffer += f"set_global_assignment -name VHDL_FILE {file}\n"
 
         outpath = self.base_path / 'quartus_project.qsf'
         with outpath.open('w') as f:

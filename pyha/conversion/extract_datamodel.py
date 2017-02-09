@@ -8,14 +8,13 @@ from pyha.common.sfix import Sfix, ComplexSfix
 
 class FunctionNotSimulated(Exception):
     def __init__(self, class_name, function_name):
-        message = 'Function not simulated before conversion!\nClass: {}\nFunction: {}'.format(class_name, function_name)
+        message = f'Function not simulated before conversion!\nClass: {class_name}\nFunction: {function_name}'
         super().__init__(message)
 
 
 class VariableNotConvertible(Exception):
     def __init__(self, class_name, function_name, variable_name, variable):
-        message = 'Variable not convertable!\nClass: {}\nFunction: {}\nVariable: {}\nValue: {}:{}'.format(
-            class_name, function_name, variable_name, type(variable), variable)
+        message = f'Variable not convertable!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nValue: {type(variable)}:{variable}'
         super().__init__(message)
 
 
@@ -109,4 +108,4 @@ class DataModel:
             self.constants = OrderedDict(sorted(constants.items()))
 
     def __str__(self):
-        return 'self_data: {}\tlocals: {}'.format(self.self_data, self.locals)
+        return f'self_data: {self.self_data}\tlocals: {self.locals}'

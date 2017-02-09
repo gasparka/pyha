@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class ExceptionReturnFunctionCall(Exception):
     def __init__(self, red_node: Node):
-        message = 'Trying to return something that is not an variable!\nLine: {}'.format(red_node)
+        message = f'Trying to return something that is not an variable!\nLine: {red_node}'
         super().__init__(message)
 
 
@@ -104,9 +104,9 @@ class TupleNodeConv(NodeConv):
 
 class AssignmentNodeConv(NodeConv):
     def __str__(self):
-        r = '{} := {};'.format(self.target, self.value)
+        r = f'{self.target} := {self.value};'
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
-            raise Exception('{} -> multi assignment not supported!'.format(r))
+            raise Exception(f'{r} -> multi assignment not supported!')
 
         if self.red_node.operator != '':
             raise Exception('{} -> cannot convert +=, -=, /=, *= :(')
@@ -121,14 +121,14 @@ class ReturnNodeConv(NodeConv):
             elif not isinstance(x, (NameNodeConv, AtomtrailersNodeConv, IntNodeConv)):
                 raise ExceptionReturnFunctionCall(self.red_node)
 
-        str_ret = ['ret_{} := {};'.format(i, ret) for i, ret in enumerate(get_iterable(self.value))]
+        str_ret = [f'ret_{i} := {ret};' for i, ret in enumerate(get_iterable(self.value))]
         str_ret += ['return;']
         return '\n'.join(str_ret)
 
 
 class ComparisonNodeConv(NodeConv):
     def __str__(self):
-        return '{} {} {}'.format(self.first, self.value, self.second)
+        return f'{self.first} {self.value} {self.second}'
 
 
 class BinaryOperatorNodeConv(ComparisonNodeConv):
@@ -149,7 +149,7 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         elif self.value == '^':
             self.value = 'xor'
 
-        return '{} {} {}'.format(self.first, self.value, self.second)
+        return f'{self.first} {self.value} {self.second}'
 
 
 class BooleanOperatorNodeConv(ComparisonNodeConv):
@@ -158,7 +158,7 @@ class BooleanOperatorNodeConv(ComparisonNodeConv):
 
 class AssociativeParenthesisNodeConv(NodeConv):
     def __str__(self):
-        return '({})'.format(self.value)
+        return f'({self.value})'
 
 
 class ComparisonOperatorNodeConv(NodeConv):
@@ -180,19 +180,19 @@ class IfelseblockNodeConv(NodeConv):
 class IfNodeConv(NodeConv):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
-        return 'if {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
+        return f'if {self.test} then\n{body}'
 
 
 class ElseNodeConv(NodeConv):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
-        return 'else\n{BODY}'.format(BODY=body)
+        return f'else\n{body}'
 
 
 class ElifNodeConv(NodeConv):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
-        return 'elsif {TEST} then\n{BODY}'.format(TEST=self.test, BODY=body)
+        return f'elsif {self.test} then\n{body}'
 
 
 class DefNodeConv(NodeConv):
@@ -337,7 +337,7 @@ class CallArgumentNodeConv(NodeConv):
         # transform keyword arguments
         # change = to =>
         if self.target is not None:
-            return '{}=>{}'.format(self.target, self.value)
+            return f'{self.target}=>{self.value}'
 
         return str(self.value)
 
@@ -364,9 +364,9 @@ class AssertNodeConv(NodeConv):
 class PrintNodeConv(NodeConv):
     def __str__(self):
         if isinstance(self.red_node.value[0], TupleNode):
-            raise Exception('{} -> print only supported with one Sfix argument!'.format(self.red_node))
-        return "report to_string({});".format(self.red_node.value[0].value)
-        return "report to_string(to_real({}));".format(self.red_node.value[0].value)
+            raise Exception(f'{self.red_node} -> print only supported with one Sfix argument!')
+        return f"report to_string({self.red_node.value[0].value});"
+        return f"report to_string(to_real({self.red_node.value[0].value}));"
 
 
 class ListNodeConv(NodeConv):
@@ -374,7 +374,7 @@ class ListNodeConv(NodeConv):
         if len(self.value) == 1:
             return str(self.value[0])  # [a] -> a
         else:
-            ret = '({})'.format(', '.join(str(x) for x in self.value))
+            ret = f'({", ".join(str(x) for x in self.value)})'
             return ret
 
 
@@ -387,7 +387,7 @@ class EndlNodeConv(NodeConv):
 
 class HexaNodeConv(NodeConv):
     def __str__(self):
-        return '16#{}#'.format(self.value[2:])
+        return f'16#{self.value[2:]}#'
 
 
 class CommentNodeConv(NodeConv):
@@ -425,9 +425,9 @@ class GetitemNodeConv(NodeConv):
     def __str__(self):
         if self.is_negative_indexing(self.value):
             target = self.get_index_target()
-            return "({}'length{})".format(target, self.value)
+            return f"({target}'length{self.value})"
 
-        return '({})'.format(self.value)
+        return f'({self.value})'
 
 
 class SliceNodeConv(GetitemNodeConv):
@@ -438,18 +438,18 @@ class SliceNodeConv(GetitemNodeConv):
     # x[0:-1] -> x(0 to x'high-1)
     def __str__(self):
         if self.upper is None:
-            upper = "{}'high".format(self.get_index_target())
+            upper = f"{self.get_index_target()}'high"
         else:
             # vhdl includes upper limit, subtract one to get same behaviour as in python
             # upper = int(str(self.upper)) - 1
-            upper = '({})-1'.format(self.upper)
+            upper = f'({self.upper})-1'
 
         if self.is_negative_indexing(self.upper):
             target = self.get_index_target()
-            upper = "{}'high{}".format(target, self.upper)
+            upper = f"{target}'high{self.upper}"
 
         lower = 0 if self.lower is None else self.lower
-        return '{} to {}'.format(lower, upper)
+        return f'{lower} to {upper}'
 
 
 class ForNodeConv(NodeConv):
@@ -467,7 +467,7 @@ class ForNodeConv(NodeConv):
     def range_to_vhdl(self, pyrange):
         # this for was transforemed by 'redbaron_pyfor_to_vhdl'
         if str(self.iterator) == '\\_i_\\':
-            return "{}'range".format(pyrange)
+            return f"{pyrange}'range"
 
         range_len_pattern = parse('\\range\\(len({}))', pyrange)
         if range_len_pattern is not None:
@@ -477,12 +477,12 @@ class ForNodeConv(NodeConv):
             if range_pattern is not None:
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
-                    return '{} to ({}) - 1'.format(two_args[0].strip(), two_args[1].strip())
+                    return f'{two_args[0].strip()} to ({two_args[1].strip()}) - 1'
                 else:
                     len = parse('len({}){}', range_pattern[0])
                     if len is not None:
-                        return "0 to ({}'length{}) - 1".format(len[0], len[1])
-                    return '0 to ({}) - 1'.format(range_pattern[0])
+                        return f"0 to ({len[0]}'length{len[1]}) - 1"
+                    return f'0 to ({range_pattern[0]}) - 1'
 
         # at this point range was not:
         # range(len(x))
@@ -569,7 +569,7 @@ class ClassNodeConv(NodeConv):
         end procedure;""")
 
         sockets = {'DATA': '', 'CONSTANTS': ''}
-        variables = ['self.{KEY} := self_reg.{KEY};'.format(KEY=x.name)
+        variables = [f'self.{x.name} := self_reg.{x.name};'
                      for x in VHDLType.get_self()]
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
 
@@ -579,13 +579,13 @@ class ClassNodeConv(NodeConv):
             for var in const:
                 value = var.variable
                 if isinstance(value, Enum):
-                    const_str += ['self.{} := {};'.format(var.name, value.name)]
+                    const_str += [f'self.{var.name} := {value.name};']
                 elif isinstance(value, (Sfix, ComplexSfix)):
-                    const_str += ['self.{} := {};'.format(var.name, value.vhdl_reset())]
+                    const_str += [f'self.{var.name} := {value.vhdl_reset()};']
                 elif isinstance(value, list):
                     const_str += ['self.' + list_reset('', var.name, value)]
                 else:
-                    const_str += ['self.{} := {};'.format(var.name, value)]
+                    const_str += [f'self.{var.name} := {value};']
 
             sockets['CONSTANTS'] = '    -- constants\n'
             sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
@@ -614,7 +614,6 @@ class ClassNodeConv(NodeConv):
         return template.format(**sockets)
 
     def get_typedefs(self):
-        template = 'type {} is array (natural range <>) of {};'
         typedefs = []
         for val in VHDLType.get_typedef_vars():
             assert type(val) is list
@@ -624,20 +623,19 @@ class ClassNodeConv(NodeConv):
             type_name = pytype_to_vhdl(val[0])
             if isinstance(val[0], HW):
                 type_name += '.register_t'
-            new_tp = template.format(name, type_name)
+            new_tp = f'type {name} is array (natural range <>) of {type_name};'
             if new_tp not in typedefs:
                 typedefs.append(new_tp)
 
         return typedefs
 
     def get_enumdefs(self):
-        template = 'type {} is ({});'
         vals = []
         for val in VHDLType.get_enum_vars():
             name = pytype_to_vhdl(val)
 
             types = ','.join([x.name for x in type(val)])
-            new_tp = template.format(name, types)
+            new_tp = f'type {name} is ({types});'
             if new_tp not in vals:
                 vals.append(new_tp)
 
@@ -858,7 +856,7 @@ def redbaron_pycall_returns_to_vhdl(red_node):
         else:
             for j, argx in enumerate(x.target):
                 call.append(str(argx))
-                call.value[-1].target = 'ret_{}'.format(j)
+                call.value[-1].target = f'ret_{j}'
         return x.value
 
     assigns = red_node.find_all('assign')
@@ -876,11 +874,11 @@ def redbaron_pyfor_to_vhdl(red_node):
             if red_node.target('call')[0].previous.value == 'range':
                 return red_node
 
-        range = red_node.target
+        frange = red_node.target
         ite = red_node.iterator
 
         red_node(ite.__class__.__name__, value=ite.value) \
-            .map(lambda x: x.replace('{}[_i_]'.format(range)))
+            .map(lambda x: x.replace(f'{frange}[_i_]'))
 
         red_node.iterator = '_i_'
         return red_node

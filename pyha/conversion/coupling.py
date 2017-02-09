@@ -22,12 +22,12 @@ def pytype_to_vhdl(var):
     elif type(var) is float:
         return 'real'
     elif type(var) is Sfix:
-        return 'sfixed({} downto {})'.format(var.left, var.right)
+        return f'sfixed({var.left} downto {var.right})'
     elif type(var) is ComplexSfix:
         left, right = bounds_to_str(var)
-        return 'complex_sfix{}{}'.format(left, right)
+        return f'complex_sfix{left}{right}'
     elif type(var) is list:
-        arr_token = '_list_t(0 to {})'.format(len(var) - 1)
+        arr_token = f'_list_t(0 to {len(var) - 1})'
         if type(var[0]) is bool:
             return 'boolean' + arr_token
         elif type(var[0]) is int:
@@ -36,10 +36,10 @@ def pytype_to_vhdl(var):
             return 'real' + arr_token
         elif type(var[0]) is Sfix:
             left, right = bounds_to_str(var[0])
-            return 'sfixed{}{}{}'.format(left, right, arr_token)
+            return f'sfixed{left}{right}{arr_token}'
         elif type(var[0]) is ComplexSfix:
             left, right = bounds_to_str(var[0])
-            return 'complex_sfix{}{}{}'.format(left, right, arr_token)
+            return f'complex_sfix{left}{right}{arr_token}'
         elif isinstance(var[0], HW):
             return pytype_to_vhdl(var[0]) + arr_token
         else:
@@ -68,31 +68,31 @@ def reset_maker(self_data, recursion_depth=0):
         key = escape_for_vhdl(key)
         tmp = None
         if isinstance(value, (Sfix, ComplexSfix)):
-            tmp = '{} := {};'.format(prefix + key, value.vhdl_reset())
+            tmp = f'{prefix + key} := {value.vhdl_reset()};'
 
         elif isinstance(value, (Enum)):
-            tmp = '{} := {};'.format(prefix + key, value.name)
+            tmp = f'{prefix + key} := {value.name};'
 
         # list of submodules
         elif isinstance(value, list) and isinstance(value[0], HW):
             for i, x in enumerate(value):
                 dm = DataModel(x)
                 vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = ['{}({}).{}'.format(prefix + key, i, var) for var in vars]
+                vars = [f'{prefix + key}({i}).{var}' for var in vars]
                 variables.extend(vars)
 
         elif isinstance(value, list):
             tmp = list_reset(prefix, key, value)
         elif isinstance(value, HW):
             if recursion_depth == 0:
-                tmp = '{}.reset(self_reg.{});'.format(get_instance_vhdl_name(value), key)
+                tmp = f'{get_instance_vhdl_name(value)}.reset(self_reg.{key});'
             else:
                 dm = DataModel(value)
                 vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = ['{}.{}'.format(prefix + key, var) for var in vars]
+                vars = [f'{prefix + key}.{var}' for var in vars]
                 variables.extend(vars)
         else:
-            tmp = '{} := {};'.format(prefix + key, value)
+            tmp = f'{prefix + key} := {value};'
 
         if tmp is not None:
             variables.append(tmp)
@@ -105,7 +105,7 @@ def list_reset(prefix, key, value):
         lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
     else:
         lstr = '(' + ', '.join(str(x) for x in value) + ')'
-    tmp = '{} := {};'.format(prefix + key, lstr)
+    tmp = f'{prefix + key} := {lstr};'
     return tmp
 
 
@@ -113,7 +113,7 @@ def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
         id = variable.pyha_instance_id
-    return escape_for_vhdl('{}_{}'.format(name, id))
+    return escape_for_vhdl(f'{name}_{id}')
 
 
 class VHDLType:
@@ -251,8 +251,8 @@ class VHDLType:
     def __str__(self):
         var_type = self.var_type or 'unknown_type'
         port_direction = self.port_direction or ''
-        default_value = ':={}'.format(self.value) if self.value else ''
-        tmp_str = '{}:{} {}{}'.format(self.name, port_direction, var_type, default_value)
+        default_value = f':={self.value}' if self.value else ''
+        tmp_str = f'{self.name}:{port_direction} {var_type}{default_value}'
         return tmp_str
 
     def __repr__(self):

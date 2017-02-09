@@ -62,65 +62,65 @@ class TopGenerator:
             return self.pyvar_to_stdlogic(var.value)
         elif isinstance(var, list):
             if isinstance(var[0], bool):
-                return 'std_logic_vector({} downto 0)'.format(len(var) - 1)
+                return f'std_logic_vector({len(var) - 1} downto 0)'
         else:
             assert 0
 
     def vhdl_slv_to_normal(self, var, var_name) -> str:
         if type(var) == int:
-            return 'to_integer(signed({}))'.format(var_name)
+            return f'to_integer(signed({var_name}))'
         elif type(var) == bool:
-            return 'logic_to_bool({})'.format(var_name)
+            return f'logic_to_bool({var_name})'
         elif type(var) == Sfix:
-            return 'Sfix({}, {}, {})'.format(var_name, var.left, var.right)
+            return f'Sfix({var_name}, {var.left}, {var.right})'
         elif type(var) == ComplexSfix:
             size = int(var.bitwidth())
             mid = size // 2
-            real = 'Sfix({}({} downto {}), {}, {})'.format(var_name, size - 1, mid, var.left, var.right)
-            imag = 'Sfix({}({} downto {}), {}, {})'.format(var_name, mid - 1, 0, var.left, var.right)
-            return '(real=>{}, imag=>{})'.format(real, imag)
+            real = f'Sfix({var_name}({size - 1} downto {mid}), {var.left}, {var.right})'
+            imag = f'Sfix({var_name}({mid - 1} downto {0}), {var.left}, {var.right})'
+            return f'(real=>{real}, imag=>{imag})'
         else:
             assert 0
 
     def normal_to_slv(self, var, var_name) -> str:
         if type(var) == int:
-            return 'std_logic_vector(to_signed({}, 32))'.format(var_name)
+            return f'std_logic_vector(to_signed({var_name}, 32))'
         elif type(var) == bool:
-            return 'bool_to_logic({})'.format(var_name)
+            return f'bool_to_logic({var_name})'
         elif type(var) == Sfix:
-            return 'to_slv({})'.format(var_name)
+            return f'to_slv({var_name})'
         elif type(var) == ComplexSfix:
-            return 'to_slv({}.real) & to_slv({}.imag)'.format(var_name, var_name)
+            return f'to_slv({var_name}.real) & to_slv({var_name}.imag)'
         elif isinstance(var, Enum):
             return self.normal_to_slv(var.value, var_name)
         elif isinstance(var, list):
             if isinstance(var[0], bool):
-                return 'bool_list_to_logic({})'.format(var_name)
+                return f'bool_list_to_logic({var_name})'
         else:
             assert 0
 
     def make_entity_inputs(self) -> str:
-        return '\n'.join('in{}: in {};'.format(i, self.pyvar_to_stdlogic(x))
+        return '\n'.join(f'in{i}: in {self.pyvar_to_stdlogic(x)};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_entity_outputs(self) -> str:
-        return '\n'.join('out{}: out {};'.format(i, self.pyvar_to_stdlogic(x))
+        return '\n'.join(f'out{i}: out {self.pyvar_to_stdlogic(x)};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_variables(self) -> str:
-        return '\n'.join('variable var_out{}: {};'.format(i, pytype_to_vhdl(x))
+        return '\n'.join(f'variable var_out{i}: {pytype_to_vhdl(x)};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_type_conversions(self) -> str:
-        return '\n'.join('out{} <= {};'.format(i, self.normal_to_slv(x, 'var_out{}'.format(i)))
+        return '\n'.join(f'out{i} <= {self.normal_to_slv(x, "var_out{}".format(i))};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_input_variables(self) -> str:
-        return '\n'.join('variable var_in{}: {};'.format(i, pytype_to_vhdl(x))
+        return '\n'.join(f'variable var_in{i}: {pytype_to_vhdl(x)};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_input_type_conversions(self) -> str:
-        return '\n'.join('var_in{} := {};'.format(i, self.vhdl_slv_to_normal(x, 'in{}'.format(i)))
+        return '\n'.join(f'var_in{i} := {self.vhdl_slv_to_normal(x, "in{}".format(i))};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_complex_types(self):
@@ -151,15 +151,15 @@ class TopGenerator:
 
     def make_call_arguments(self) -> str:
 
-        input_args = ', '.join('var_in{}'.format(i)
+        input_args = ', '.join(f'var_in{i}'
                                for i, _ in enumerate(self.get_object_args()))
         ofs = len(self.get_object_args())
-        input_kwargs = ', '.join('{}=>var_in{}'.format(x[0], i + ofs)
+        input_kwargs = ', '.join(f'{x[0]}=>var_in{i + ofs}'
                                  for i, x in enumerate(self.get_object_kwargs()))
 
         inputs = ', '.join([input_args, input_kwargs]) if len(self.get_object_kwargs()) else input_args
 
-        outputs = ', '.join('ret_{i}=>var_out{i}'.format(i=i)
+        outputs = ', '.join(f'ret_{i}=>var_out{i}'
                             for i, _ in enumerate(self.get_object_return()))
 
         return ', '.join([inputs, outputs])
@@ -226,7 +226,5 @@ class TopGenerator:
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
 
         res = template.format(**sockets)
-        # with (self.path / 'top.vhd').open('w') as f:
-        #     f.write(res)
 
         return res
