@@ -3,6 +3,7 @@ from enum import Enum
 
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
+from pyha.conversion.converter import file_header
 from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
 
 
@@ -165,6 +166,7 @@ class TopGenerator:
 
     def make(self):
         template = textwrap.dedent("""\
+                {FILE_HEADER}
                 {IMPORTS}
 
                 entity  top is
@@ -211,6 +213,7 @@ class TopGenerator:
             return tabber(tabber(x))
 
         sockets = {}
+        sockets['FILE_HEADER'] = file_header()
         sockets['DUT_NAME'] = self.object_class_name()
         sockets['IMPORTS'] = self.make_imports()
         sockets['ENTITY_INPUTS'] = tab(self.make_entity_inputs())

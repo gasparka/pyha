@@ -7,7 +7,7 @@ from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
 from pyha.common.util import get_iterable
-from pyha.conversion.converter import convert
+from pyha.conversion.converter import convert, file_header
 from pyha.conversion.coupling import get_instance_vhdl_name, VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
@@ -124,6 +124,7 @@ class Conversion:
             return template_none
 
         template = textwrap.dedent("""\
+            {FILE_HEADER}
             library ieee;
                 use ieee.fixed_pkg.all;
 
@@ -146,5 +147,6 @@ class Conversion:
                     types.append(new_type)
                     functions.append(new_function)
 
-        return template.format(TYPES='\n'.join(x for x in types),
+        return template.format(FILE_HEADER=file_header(),
+                               TYPES='\n'.join(x for x in types),
                                FUNCTIONS='\n'.join(x for x in functions))

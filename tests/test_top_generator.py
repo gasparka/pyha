@@ -196,7 +196,8 @@ def test_full(basic_obj, tmpdir):
                     end architecture;""")
 
     res = TopGenerator(dut).make()
-    assert expect == res
+
+    assert expect == res[res.index('library'):]
 
 
 ##################################
@@ -286,7 +287,7 @@ def test_simple_full(simple_obj):
                     end architecture;""")
 
     res = TopGenerator(dut).make()
-    assert expect == res
+    assert expect == res[res.index('library'):]
 
 
 ##################################

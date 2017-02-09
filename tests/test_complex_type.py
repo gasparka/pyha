@@ -178,6 +178,7 @@ def test_reg_complex_types_generation(reg):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
+        next(f)  # skip header
         assert expect == f.read()
 
 
@@ -287,6 +288,7 @@ def test_more_regs_complex_types_generation(more_regs):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
+        next(f)  # skip header
         assert expect == f.read()
 
 
@@ -425,6 +427,7 @@ def test_complex_inits_return_complex_types_generation(complex_inits_return):
 
     files = conv.write_vhdl_files(Path('/tmp/'))
     with files[0].open('r') as f:
+        next(f)  # skip header
         assert expect == f.read()
 
 
@@ -487,4 +490,5 @@ class TestList:
 
         files = self.conversion.write_vhdl_files(Path('/tmp/'))
         with files[0].open('r') as f:
+            next(f)  # skip header
             assert expect == f.read()

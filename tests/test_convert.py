@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from redbaron import RedBaron
 
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert, file_header
 
 
 @pytest.fixture
@@ -1568,3 +1568,4 @@ def test_hexanode(converter):
 
     conv = converter(code)
     assert expect == str(conv)
+

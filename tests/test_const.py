@@ -349,7 +349,8 @@ class TestLists:
             end package body;
             """)
 
-        assert expect == Conversion(self.dut).make_vhdl_complex_types()
+        s = Conversion(self.dut).make_vhdl_complex_types()
+        assert expect == s[s.index('library'):]
 
     def test_simulate(self):
         x = [0] * 8
