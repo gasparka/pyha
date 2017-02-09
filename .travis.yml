@@ -14,7 +14,7 @@ before_script:
     - export PATH=$PATH:$PWD/ghdl/bin/
 
     # INSTALL COCOTB
-    - sudo apt-get install git make gcc g++ swig python-dev
+    - sudo apt-get install git make gcc g++ swig
     - sh scripts/install_cocotb.sh #cant sudo this, files will lock, later
     - export PYHA_SKIP_QUARTUS_SIMS=1
 
