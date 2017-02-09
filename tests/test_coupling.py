@@ -1032,14 +1032,14 @@ def test_class_datamodel_reserved_name(converter):
 
     expect = textwrap.dedent("""\
             type register_t is record
-                \\new\\: boolean;
                 \\out\\: sfixed(0 downto -27);
+                \\new\\: boolean;
             end record;
 
             type self_t is record
 
-                \\new\\: boolean;
                 \\out\\: sfixed(0 downto -27);
+                \\new\\: boolean;
                 \\next\\: register_t;
             end record;""")
 
@@ -1081,8 +1081,8 @@ def test_class_datamodel_make_self_reserved_name(converter):
         procedure make_self(self_reg: register_t; self: out self_t) is
         begin
 
-            self.\\new\\ := self_reg.\\new\\;
             self.\\out\\ := self_reg.\\out\\;
+            self.\\new\\ := self_reg.\\new\\;
             self.\\next\\ := self_reg;
         end procedure;""")
     conv = converter(code, datamodel)
@@ -1175,8 +1175,8 @@ def test_class_datamodel_reset_reserved_name(converter):
     expect = textwrap.dedent("""\
         procedure reset(self_reg: inout register_t) is
         begin
-            self_reg.\\new\\ := False;
             self_reg.\\out\\ := Sfix(1.0, 0, -27);
+            self_reg.\\new\\ := False;
         end procedure;""")
     conv = converter(code, datamodel)
     conv = conv.get_reset_str()

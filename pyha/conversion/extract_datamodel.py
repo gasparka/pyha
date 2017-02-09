@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from enum import Enum
 
 from pyha.common.const import Const
@@ -90,8 +89,8 @@ class DataModel:
     def __init__(self, obj=None, self_data=None, locals=None):
         self.obj = obj
         if obj is None:
-            self.self_data = None if self_data is None else OrderedDict(sorted(self_data.items(), key=lambda t: t[0]))
-            self.locals = None if locals is None else OrderedDict(sorted(locals.items(), key=lambda t: t[0]))
+            self.self_data = None if self_data is None else self_data
+            self.locals = None if locals is None else locals
             self.constants = {}
         else:
             dm = extract_datamodel(obj)
@@ -103,9 +102,9 @@ class DataModel:
             if len(dm_clean) == 0:
                 dm_clean['much_dummy_very_wow'] = 0  # this simplifies many testing code
             loc = extract_locals(obj)
-            self.self_data = OrderedDict(sorted(dm_clean.items()))
-            self.locals = OrderedDict(sorted(loc.items()))
-            self.constants = OrderedDict(sorted(constants.items()))
+            self.self_data = dm_clean
+            self.locals = loc
+            self.constants = constants
 
     def __str__(self):
         return f'self_data: {self.self_data}\tlocals: {self.locals}'

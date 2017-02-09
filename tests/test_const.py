@@ -156,11 +156,11 @@ class TestMultiIntSfixEnumBooleanCFix:
 
                 type self_t is record
                     -- constants
-                    cbool: boolean;
-                    ccfix: complex_sfix0_18;
-                    cenum: DummyEnum;
                     cint: integer;
+                    cbool: boolean;
+                    cenum: DummyEnum;
                     csfix: sfixed(2 downto -18);
+                    ccfix: complex_sfix0_18;
 
                     reg: integer;
                     \\next\\: register_t;
@@ -182,11 +182,11 @@ class TestMultiIntSfixEnumBooleanCFix:
             procedure make_self(self_reg: register_t; self: out self_t) is
             begin
                 -- constants
-                self.cbool := False;
-                self.ccfix := (real=>Sfix(0.5, 0, -18), imag=>Sfix(-0.25, 0, -18));
-                self.cenum := SECOND;
                 self.cint := 32;
+                self.cbool := False;
+                self.cenum := SECOND;
                 self.csfix := Sfix(3.141592653589793, 2, -18);
+                self.ccfix := (real=>Sfix(0.5, 0, -18), imag=>Sfix(-0.25, 0, -18));
 
                 self.reg := self_reg.reg;
                 self.\\next\\ := self_reg;
@@ -297,11 +297,11 @@ class TestLists:
 
                 type self_t is record
                     -- constants
-                    cbool: boolean_list_t(0 to 3);
-                    ccfix: complex_sfix0_18_list_t(0 to 3);
                     cfloat: real_list_t(0 to 3);
                     cint: integer_list_t(0 to 3);
+                    cbool: boolean_list_t(0 to 3);
                     csfix: sfixed0_18_list_t(0 to 3);
+                    ccfix: complex_sfix0_18_list_t(0 to 3);
 
                     reg: integer;
                     \\next\\: register_t;
@@ -314,11 +314,11 @@ class TestLists:
             procedure make_self(self_reg: register_t; self: out self_t) is
             begin
                 -- constants
-                self.cbool := (True, True, True, False);
-                self.ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
                 self.cfloat := (0.1, 0.2, 0.3, 0.4);
                 self.cint := (1, 2, 3, 4);
+                self.cbool := (True, True, True, False);
                 self.csfix := (Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18));
+                self.ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
 
                 self.reg := self_reg.reg;
                 self.\\next\\ := self_reg;

@@ -1,6 +1,5 @@
 import logging
 import subprocess
-from collections import OrderedDict
 from pathlib import Path
 
 import pyha
@@ -35,7 +34,7 @@ class SimProvider:
         return CocotbAuto(self.base_path, src, self.conv.outputs)
 
     def make_quartus_project(self):
-        rules = OrderedDict()
+        rules = {}
         rules['DEVICE'] = 'EP4CE40F23C8'
         rules['TOP_LEVEL_ENTITY'] = 'top'
         rules['PROJECT_OUTPUT_DIRECTORY'] = 'output_files'
