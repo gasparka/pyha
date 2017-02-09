@@ -1,13 +1,12 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
-from pyha import simulation
 
 from pyha.common.sfix import ComplexSfix, Sfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
 from pyha.components.blade_demod.blade_receiver import Phantom2Receiver, Phantom2ReceiverBlade
 from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
-import numpy as np
 
 
 @pytest.mark.slowtest
@@ -55,6 +54,7 @@ class TestPhantom2Receiver:
         self._assert_sims(ref, r[1:])
 
 
+@pytest.mark.slowtest
 class TestPhantom2ReceiverBlade:
     def setup(self):
         self.dut = Phantom2ReceiverBlade()
@@ -71,7 +71,7 @@ class TestPhantom2ReceiverBlade:
         path = Path(__file__).parent / 'data/blade_tap_multiple_valid_bug.npy'
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                                   ,simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                                   , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                                    # dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 

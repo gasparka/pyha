@@ -66,6 +66,7 @@ class TesttBitsDecode:
         assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
         self._assert_sims(expect, r[1:])
 
+    @pytest.mark.slowtest
     @pytest.mark.parametrize('skip_start', range(32))
     def test_uks_one_hwsim_offsets(self, skip_start):
         """ change the inital sampling point, without time adjustment some of these tests would fail"""

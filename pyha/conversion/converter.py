@@ -252,16 +252,8 @@ class DefNodeConv(NodeConv):
             else:
                 variables.append(VHDLVariable(escape_for_vhdl(str(x.value)), red_node=x.value))
 
-        # this will work in python 3.6
-        # remove_duplicates = {str(x.name):x for x in variables}
-        # variables = remove_duplicates.values()
-        # retarded code to eliminate duplicate names (using dict sucks cause random order)
-        tmp = []
-        for x in variables:
-            names = [str(x.name) for x in tmp]
-            if str(x.name) not in names:
-                tmp.append(x)
-        variables = tmp
+        remove_duplicates = {str(x.name): x for x in variables}
+        variables = remove_duplicates.values()
 
         # remove variables that are actually arguments
         args = [str(x.target.name) for x in self.arguments]
