@@ -72,7 +72,7 @@ class TestPhantom2ReceiverBlade:
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
                                    ,simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   # dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
         ref = r[0]
