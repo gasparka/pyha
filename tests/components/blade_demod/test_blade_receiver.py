@@ -72,7 +72,7 @@ class TestPhantom2ReceiverBlade:
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
                                    , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   # dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   dir_path='/home/gaspar/git/pyha/playground/conv'
                                    )
 
         ref = r[0]
@@ -92,5 +92,5 @@ if __name__ == '__main__':
     path = Path(__file__).parent / 'data/blade_signaltap.npy'
     data = np.load(str(path))
     r = debug_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                               , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+                               , simulations=[SIM_HW_MODEL])
     # python -m vmprof --web --web-auth b6955f5be6bb3a7a61587895253f6fd1306d1d42 tests/components/blade_demod/test_blade_receiver.py

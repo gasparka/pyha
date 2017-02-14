@@ -2,7 +2,7 @@ import textwrap
 
 import pytest
 
-from pyha.common.hwsim import HW, Meta, AssignToSelf, TypeNotConsistent, PyhaFunc
+from pyha.common.hwsim import HW, Meta, AssignToSelf, TypeNotConsistent, PyhaFunc, ClockSimulator
 from pyha.common.sfix import Sfix
 
 
@@ -63,8 +63,10 @@ def test_float_register():
 
     dut = A()
     assert dut.a == 1.0
+    ClockSimulator.run()
     dut.main(2.0)
     assert dut.a == 1.0
+    ClockSimulator.run()
     dut.main(3.0)
     assert dut.a == 2.0
 
@@ -421,3 +423,7 @@ def test_outputs():
     dut.main(3)
     dut.main(4)
     assert dut._outputs == [1, 2, 3, 4]
+
+
+# def test_two_calls():
+

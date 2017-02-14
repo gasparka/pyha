@@ -157,29 +157,29 @@ class PyhaFunc:
         real_self = self.func.__self__
         self.calls += 1
         # function is not main, dont have to simulate clock
-        if not self.is_main:
-            return self.call_with_locals_discovery(*args, **kwargs)
+        # if not self.is_main:
+        #     return self.call_with_locals_discovery(*args, **kwargs)
 
-        # update registers from next
-        now = real_self.__dict__
-        next = real_self.__dict__['next'].__dict__
-        old_next = deepish_copy(next)
-
-        now.update(old_next)
-        # protect assign to self
-        old_self = deepish_copy(now)
-
-        # CALL IS HERE!
+        # # update registers from next
+        # now = real_self.__dict__
+        # next = real_self.__dict__['next'].__dict__
+        # old_next = deepish_copy(next)
+        #
+        # now.update(old_next)
+        # # protect assign to self
+        # old_self = deepish_copy(now)
+        #
+        # # CALL IS HERE!
         ret = self.call_with_locals_discovery(*args, **kwargs)
-
+        #
         self.last_return = ret
-
-        self.forbid_assign_to_self(real_self.__dict__, old_self)
-
-        """ After each main, check that 'self' has consistent types(only single type over time)
-         This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
-        """
-        self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
+        #
+        # self.forbid_assign_to_self(real_self.__dict__, old_self)
+        #
+        # """ After each main, check that 'self' has consistent types(only single type over time)
+        #  This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
+        # """
+        # self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
 
         real_self._outputs.append(ret)
         return ret
@@ -241,7 +241,27 @@ class Meta(type):
                 new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
+        ClockSimulator(ret)
         return ret
+
+
+class ClockSimulator:
+    register = []
+
+    def __init__(self, obj):
+        self.obj = obj
+        ClockSimulator.register.append(self)
+
+    def __call__(self, *args, **kwargs):
+        now = self.obj.__dict__
+        next = self.obj.__dict__['next'].__dict__
+        now.update(next)
+
+    @classmethod
+    def run(cls):
+        for x in cls.register:
+            x()
+
 
 
 class HW(with_metaclass(Meta)):
@@ -253,6 +273,7 @@ class HW(with_metaclass(Meta)):
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
+            # todo: maybe this also works for 'next'
             if k == '__initial_self__':  # dont waste time on endless deepcopy
                 setattr(result, k, copy(v))
             else:
