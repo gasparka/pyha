@@ -71,8 +71,10 @@ class TestPhantom2ReceiverBlade:
         path = Path(__file__).parent / 'data/blade_tap_multiple_valid_bug.npy'
         data = np.load(str(path))
         r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                                   , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   # , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                                   # dir_path='/home/gaspar/git/pyha/playground/conv'
+                                   , simulations=[SIM_HW_MODEL],
+
                                    )
 
         ref = r[0]
@@ -87,10 +89,17 @@ class TestPhantom2ReceiverBlade:
         self._assert_sims(ref, r[1:])
 
 
+
+
 if __name__ == '__main__':
     dut = Phantom2ReceiverBlade()
     path = Path(__file__).parent / 'data/blade_signaltap.npy'
     data = np.load(str(path))
+
+
     r = debug_assert_sim_match(dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
                                , simulations=[SIM_HW_MODEL])
+
+    # real    0m20.802s -> WORK COMPUTER, no clock overhoul
     # python -m vmprof --web --web-auth b6955f5be6bb3a7a61587895253f6fd1306d1d42 tests/components/blade_demod/test_blade_receiver.py
+    # python -m vmprof -o output.log  tests/components/blade_demod/test_blade_receiver.py

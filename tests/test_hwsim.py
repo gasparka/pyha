@@ -71,6 +71,34 @@ def test_float_register():
     assert dut.a == 2.0
 
 
+def test_submodule_float_register():
+    class B(HW):
+        def __init__(self):
+            self.a = 1.0
+
+        def main(self, next):
+            self.next.a = next
+
+    class A(HW):
+        def __init__(self):
+            self.b = B()
+
+        def main(self, next):
+            self.b.main(next)
+
+
+    dut = A()
+    assert id(dut.b) == id(ClockSimulator.register[0].obj)
+    assert dut.b.a == 1.0
+    ClockSimulator.run()
+    assert id(dut.b) == id(ClockSimulator.register[0].obj)
+    dut.main(2.0)
+    assert dut.b.a == 1.0
+    ClockSimulator.run()
+    dut.main(3.0)
+    assert dut.b.a == 2.0
+
+
 def test_only_main_is_clocked():
     """ Only 'main' shall simulate clock! """
 

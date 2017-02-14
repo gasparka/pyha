@@ -1,4 +1,5 @@
 import sys
+import types
 from copy import deepcopy, copy
 
 import numpy as np
@@ -224,10 +225,12 @@ class Meta(type):
 
         # save the initial self values
         # all registers will be derived from these values!
+        # todo: could this be just copy? and skip 'next'
         ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # give self.next to the new object
-        ret.__dict__['next'] = deepcopy(ret)
+        ret.__dict__['next'] = type('test', (object,), {})()
+        ret.__dict__['next'].__dict__ = {k:v for k,v in ret.__dict__.items() if isinstance(v, (float))}
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -256,6 +259,7 @@ class ClockSimulator:
         now = self.obj.__dict__
         next = self.obj.__dict__['next'].__dict__
         now.update(next)
+        pass
 
     @classmethod
     def run(cls):

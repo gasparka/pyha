@@ -10,6 +10,7 @@ from typing import List
 
 import numpy as np
 
+from pyha.common.hwsim import ClockSimulator
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
@@ -154,7 +155,11 @@ class Simulation:
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
             self.model.next = deepcopy(self.model.__initial_self__)
-            ret = [self.model.main(*x) for x in args]
+            ret = []
+            for x in args:
+                ClockSimulator.run()
+                ret.append(self.model.main(*x))
+            # ret = [self.model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
