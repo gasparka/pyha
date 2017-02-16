@@ -184,7 +184,7 @@ class TopGenerator:
                 architecture arch of top is
                 begin
                     process(clk, rst_n)
-                        variable self: {DUT_NAME}.register_t;
+                        variable self: {DUT_NAME}.self_t;
                         -- input variables
                 {INPUT_VARIABLES}
 
@@ -192,13 +192,14 @@ class TopGenerator:
                 {OUTPUT_VARIABLES}
                     begin
                     if (not rst_n) then
-                        {DUT_NAME}.reset(self);
+                        {DUT_NAME}.reset_self(self);
                     elsif rising_edge(clk) then
                         if enable then
                             --convert slv to normal types
                 {INPUT_TYPE_CONVERSIONS}
 
                             --call the main entry
+                            {DUT_NAME}.update_self(self);
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
 
                             --convert normal types to slv

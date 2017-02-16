@@ -56,6 +56,7 @@ class TestBasic:
             procedure reset_self(self: inout self_t) is
             begin
                 self.a := 0;
+                self.\\next\\.a := 0;
             end procedure;""")
 
         dm = self.conversion.get_reset_self()

@@ -652,7 +652,7 @@ class ClassNodeConv(NodeConv):
 
     def get_headers(self):
         ret = self.get_reset_self_prototype() + '\n\n'
-        ret += self.get_update_self_header() + '\n\n'
+        ret += self.get_update_self_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 

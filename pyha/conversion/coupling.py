@@ -92,7 +92,9 @@ def reset_maker(self_data, recursion_depth=0):
                 vars = [f'{prefix + key}.{var}' for var in vars]
                 variables.extend(vars)
         else:
-            tmp = f'{prefix + key} := {value};'
+            m = f'{prefix + key} := {value};'
+            s = f'{prefix}\\next\\.{key} := {value};'
+            tmp = m + '\n' + s
 
         if tmp is not None:
             variables.append(tmp)
