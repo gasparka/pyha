@@ -13,5 +13,5 @@ mkdir ghdl
 tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
 export PATH=$PATH:$PWD/ghdl/bin/
-echo 'export PATH=/home/gaspar/git/pyha/ghdl/bin:$PATH' >> ~/.bashrc
+#echo 'export PATH=/home/gaspar/git/pyha/ghdl/bin:$PATH' >> ~/.bashrc
 #source $HOME/.bashrc
