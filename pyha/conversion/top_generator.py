@@ -199,8 +199,8 @@ class TopGenerator:
                 {INPUT_TYPE_CONVERSIONS}
 
                             --call the main entry
-                            {DUT_NAME}.update_self(self);
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
+                            {DUT_NAME}.update_self(self);
 
                             --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}

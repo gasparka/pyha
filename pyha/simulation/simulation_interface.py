@@ -157,8 +157,8 @@ class Simulation:
             self.model.next = deepcopy(self.model.__initial_self__)
             ret = []
             for x in args:
-                ClockSimulator.run()
                 ret.append(self.model.main(*x))
+                ClockSimulator.run()
             # ret = [self.model.main(*x) for x in args]
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
