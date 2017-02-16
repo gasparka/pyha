@@ -786,7 +786,7 @@ def test_class_datamodel_submodule(converter):
             A_0.reset(self_reg.sub);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
@@ -827,7 +827,7 @@ def test_class_datamodel_submodule_reserved_name(converter):
             Register_0.reset(self_reg.sub);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = textwrap.dedent("""\
         procedure make_self(self_reg: register_t; self: out self_t) is
@@ -915,7 +915,7 @@ def test_datamodel_list_int(converter):
             self_reg.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.get_typedefs()
@@ -947,7 +947,7 @@ def test_datamodel_list_boolean(converter):
             self_reg.a := (False, True, False, True);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     # NOTICE: there is global definition for boolean_list_t !
     expect = []
@@ -980,7 +980,7 @@ def test_list_sfix(converter):
             self_reg.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
     assert expect == conv.get_typedefs()
@@ -1158,7 +1158,7 @@ def test_class_datamodel_reset(converter):
             self_reg.d := False;
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_reset_str()
+    conv = conv.get_reset_self()
     assert expect == str(conv)
 
 
@@ -1179,7 +1179,7 @@ def test_class_datamodel_reset_reserved_name(converter):
             self_reg.\\new\\ := False;
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_reset_str()
+    conv = conv.get_reset_self()
     assert expect == str(conv)
 
 

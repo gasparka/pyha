@@ -69,7 +69,7 @@ def test_vhdl_reset(t0):
             self_reg.mode := ENUM1;
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
 
 def test_simulate(t0):

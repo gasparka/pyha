@@ -496,30 +496,30 @@ class ClassNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-        # find the 'main' function and rename it to 'main_user'
-        main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
-        if len(main):
-            self.user_main = main[0]
-            self.user_main.name = 'main_user'
+        # # find the 'main' function and rename it to 'main_user'
+        # main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
+        # if len(main):
+        #     self.user_main = main[0]
+        #     self.user_main.name = 'main_user'
 
-    def get_main(self):
-        template = textwrap.dedent("""\
-            procedure main({FUNC_ARGS}) is
-                variable self: self_t;
-            begin
-                make_self(self_reg, self);
-                main_user({CALL_ARGS});
-                self_reg := self.\\next\\;
-            end procedure;""")
+    # def get_main(self):
+    #     template = textwrap.dedent("""\
+    #         procedure main({FUNC_ARGS}) is
+    #             variable self: self_t;
+    #         begin
+    #             make_self(self_reg, self);
+    #             main_user({CALL_ARGS});
+    #             self_reg := self.\\next\\;
+    #         end procedure;""")
+    #
+    #     call_args = ', '.join(str(x.name) for x in self.user_main.arguments)
+    #     func_args = '; '.join(str(x) for x in self.user_main.arguments)
+    #     func_args = func_args.replace('self:inout self_t', 'self_reg:inout register_t')
+    #
+    #     return template.format(CALL_ARGS=call_args, FUNC_ARGS=func_args)
 
-        call_args = ', '.join(str(x.name) for x in self.user_main.arguments)
-        func_args = '; '.join(str(x) for x in self.user_main.arguments)
-        func_args = func_args.replace('self:inout self_t', 'self_reg:inout register_t')
-
-        return template.format(CALL_ARGS=call_args, FUNC_ARGS=func_args)
-
-    def get_user_main(self):
-        return str(self.user_main)
+    # def get_user_main(self):
+    #     return str(self.user_main)
 
     def get_imports(self):
         return textwrap.dedent("""\
@@ -535,12 +535,12 @@ class ClassNodeConv(NodeConv):
                 use work.PyhaUtil.all;
                 use work.all;""")
 
-    def get_reset_prototype(self):
-        return 'procedure reset(self_reg: inout register_t);'
+    def get_reset_self_prototype(self):
+        return 'procedure reset_self(self: inout self_t);'
 
-    def get_reset_str(self):
+    def get_reset_self(self):
         template = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure reset_self(self: inout self_t) is
         begin
         {DATA}
         end procedure;""")
@@ -551,37 +551,39 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
 
-    def get_makeself_str(self):
+    def get_update_self_prototype(self):
+        return 'procedure update_self(self: inout self_t);'
+
+    def get_update_self(self):
         template = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure update_self(self: inout self_t) is
         begin
         {CONSTANTS}
         {DATA}
-            self.\\next\\ := self_reg;
         end procedure;""")
 
         sockets = {'DATA': '', 'CONSTANTS': ''}
-        variables = [f'self.{x.name} := self_reg.{x.name};'
+        variables = [f'self.{x.name} := self.\\next\\.{x.name};'
                      for x in VHDLType.get_self()]
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
 
-        const = VHDLType.get_constants()
-        if len(const):
-            const_str = []
-            for var in const:
-                value = var.variable
-                if isinstance(value, Enum):
-                    const_str += [f'self.{var.name} := {value.name};']
-                elif isinstance(value, (Sfix, ComplexSfix)):
-                    const_str += [f'self.{var.name} := {value.vhdl_reset()};']
-                elif isinstance(value, list):
-                    const_str += ['self.' + list_reset('', var.name, value)]
-                else:
-                    const_str += [f'self.{var.name} := {value};']
-
-            sockets['CONSTANTS'] = '    -- constants\n'
-            sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
-            sockets['CONSTANTS'] += '\n'
+        # const = VHDLType.get_constants()
+        # if len(const):
+        #     const_str = []
+        #     for var in const:
+        #         value = var.variable
+        #         if isinstance(value, Enum):
+        #             const_str += [f'self.{var.name} := {value.name};']
+        #         elif isinstance(value, (Sfix, ComplexSfix)):
+        #             const_str += [f'self.{var.name} := {value.vhdl_reset()};']
+        #         elif isinstance(value, list):
+        #             const_str += ['self.' + list_reset('', var.name, value)]
+        #         else:
+        #             const_str += [f'self.{var.name} := {value};']
+        #
+        #     sockets['CONSTANTS'] = '    -- constants\n'
+        #     sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
+        #     sockets['CONSTANTS'] += '\n'
 
         return template.format(**sockets)
 
@@ -636,21 +638,21 @@ class ClassNodeConv(NodeConv):
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
-    def get_main_header(self):
-        restore = self.user_main.multiline_comment
-        self.user_main.multiline_comment = ''
-        main_header = self.user_main.get_prototype()
-        main_header = main_header.replace('procedure main_user', 'procedure main')
-        main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
-
-        assert main_header[0] == '\n'
-        main_header = main_header[1:]
-        self.user_main.multiline_comment = restore
-        return main_header
+    # def get_main_header(self):
+    #     restore = self.user_main.multiline_comment
+    #     self.user_main.multiline_comment = ''
+    #     main_header = self.user_main.get_prototype()
+    #     main_header = main_header.replace('procedure main_user', 'procedure main')
+    #     main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
+    #
+    #     assert main_header[0] == '\n'
+    #     main_header = main_header[1:]
+    #     self.user_main.multiline_comment = restore
+    #     return main_header
 
     def get_headers(self):
-        ret = self.get_reset_prototype() + '\n\n'
-        ret += self.get_main_header() + '\n\n'
+        ret = self.get_reset_self_prototype() + '\n\n'
+        ret += self.get_update_self_header() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
@@ -682,18 +684,16 @@ class ClassNodeConv(NodeConv):
             package body {NAME} is
             {RESET_FUNCTION}
 
-            {MAKE_SELF_FUNCTION}
+            {UPDATE_SELF_FUNCTION}
 
-            {MAIN_FUNCTION}
             {OTHER_FUNCTIONS}
             end package body;""")
 
         sockets = {}
         sockets['NAME'] = self.get_name()
 
-        sockets['RESET_FUNCTION'] = tabber(self.get_reset_str())
-        sockets['MAKE_SELF_FUNCTION'] = tabber(self.get_makeself_str())
-        sockets['MAIN_FUNCTION'] = tabber(self.get_main())
+        sockets['RESET_FUNCTION'] = tabber(self.get_reset_self())
+        sockets['UPDATE_SELF_FUNCTION'] = tabber(self.get_update_self())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)

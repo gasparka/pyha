@@ -86,7 +86,7 @@ class TestSingleInt:
                 self_reg.much_dummy_very_wow := 0;
             end procedure;""")
 
-        assert expect == str(self.conversion.get_reset_str())
+        assert expect == str(self.conversion.get_reset_self())
 
     def test_vhdl_makeself(self):
         expect = textwrap.dedent("""\
@@ -175,7 +175,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                 self_reg.reg := 0;
             end procedure;""")
 
-        assert expect == str(self.conversion.get_reset_str())
+        assert expect == str(self.conversion.get_reset_self())
 
     def test_vhdl_makeself(self):
         expect = textwrap.dedent("""\

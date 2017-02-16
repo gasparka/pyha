@@ -61,7 +61,7 @@ def bounds_to_str(var):
 
 def reset_maker(self_data, recursion_depth=0):
     variables = []
-    prefix = 'self_reg.' if recursion_depth == 0 else ''
+    prefix = 'self.' if recursion_depth == 0 else ''
     for key, value in self_data.items():
         if key == 'next':
             continue

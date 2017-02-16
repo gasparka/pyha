@@ -132,7 +132,7 @@ def test_reg_conversion_reset(reg):
             self_reg.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
 
 def test_reg_conversion_top_entity(reg):
@@ -217,7 +217,7 @@ def test_shr_conversion_reset(shr):
             self_reg.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
 
 def test_shr_simulate(shr):

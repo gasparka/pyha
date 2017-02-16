@@ -77,7 +77,7 @@ def test_simple_datamodel(simple):
 def test_simple_reset(simple):
     conv, datamodel = get_conversion_datamodel(simple)
 
-    data_conversion = conv.get_reset_str()
+    data_conversion = conv.get_reset_self()
     expect = textwrap.dedent("""\
             procedure reset(self_reg: inout register_t) is
             begin
