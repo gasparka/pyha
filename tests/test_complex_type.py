@@ -280,7 +280,7 @@ class TestMoreRegisters:
                     [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
                     [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
-        assert_sim_match(dut,
+        assert_sim_match(self.dut,
                          [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
                           ComplexSfix(left=1, right=-12)],
                          expected, *x, rtol=1e-3,
