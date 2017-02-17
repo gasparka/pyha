@@ -68,7 +68,10 @@ def reset_maker(self_data, recursion_depth=0):
         key = escape_for_vhdl(key)
         tmp = None
         if isinstance(value, (Sfix, ComplexSfix)):
-            tmp = f'{prefix + key} := {value.vhdl_reset()};'
+            k = prefix + key
+            self_reset = f'{k} := {value.vhdl_reset()};'
+            next_reset = f'{prefix}\\next\\.{key} := {k};'
+            tmp = self_reset + '\n' + next_reset
 
         elif isinstance(value, (Enum)):
             tmp = f'{prefix + key} := {value.name};'
@@ -82,7 +85,11 @@ def reset_maker(self_data, recursion_depth=0):
                 variables.extend(vars)
 
         elif isinstance(value, list):
-            tmp = list_reset(prefix, key, value)
+            k = prefix + key
+            self_reset = list_reset(prefix, key, value)
+            next_reset = f'{prefix}\\next\\.{key} := {k};'
+            tmp = self_reset + '\n' + next_reset
+
         elif isinstance(value, HW):
             if recursion_depth == 0:
                 tmp = f'{get_instance_vhdl_name(value)}.reset(self_reg.{key});'
@@ -92,9 +99,10 @@ def reset_maker(self_data, recursion_depth=0):
                 vars = [f'{prefix + key}.{var}' for var in vars]
                 variables.extend(vars)
         else:
-            m = f'{prefix + key} := {value};'
-            s = f'{prefix}\\next\\.{key} := {value};'
-            tmp = m + '\n' + s
+            k = prefix + key
+            self_reset = f'{k} := {value};'
+            next_reset = f'{prefix}\\next\\.{key} := {k};'
+            tmp = self_reset + '\n' + next_reset
 
         if tmp is not None:
             variables.append(tmp)

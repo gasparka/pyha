@@ -214,81 +214,77 @@ class TestShiftReg:
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
-@pytest.fixture
-def more_regs():
-    class A3(HW):
-        def __init__(self):
-            self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -12)
-            self.reg1 = ComplexSfix(0.5 + 1.2j, 1, -21)
-            self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
+class TestMoreRegisters:
+    def setup(self):
+        class A3(HW):
+            def __init__(self):
+                self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -12)
+                self.reg1 = ComplexSfix(0.5 + 1.2j, 1, -21)
+                self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
 
-        def main(self, x0, x1, x2):
-            self.next.reg0 = x0
-            self.next.reg0 = x0
-            self.next.reg1 = x1
-            self.next.reg2 = x2
-            return self.reg0, self.reg1, self.reg2
+            def main(self, x0, x1, x2):
+                self.next.reg0 = x0
+                self.next.reg0 = x0
+                self.next.reg1 = x1
+                self.next.reg2 = x2
+                return self.reg0, self.reg1, self.reg2
 
-    dut = A3()
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
-    return dut
+        self.dut = A3()
+        self.dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
 
+    def test_complex_types_generation(self):
+        conv = Conversion(self.dut)
+        expect = textwrap.dedent("""\
+                library ieee;
+                    use ieee.fixed_pkg.all;
 
-def test_more_regs_complex_types_generation(more_regs):
-    conv = Conversion(more_regs)
-    expect = textwrap.dedent("""\
-            library ieee;
-                use ieee.fixed_pkg.all;
+                package ComplexTypes is
+                type complex_sfix1_12 is record
+                    real: sfixed(1 downto -12);
+                    imag: sfixed(1 downto -12);
+                end record;
+                function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
 
-            package ComplexTypes is
-            type complex_sfix1_12 is record
-                real: sfixed(1 downto -12);
-                imag: sfixed(1 downto -12);
-            end record;
-            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+                type complex_sfix1_21 is record
+                    real: sfixed(1 downto -21);
+                    imag: sfixed(1 downto -21);
+                end record;
+                function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
 
-            type complex_sfix1_21 is record
-                real: sfixed(1 downto -21);
-                imag: sfixed(1 downto -21);
-            end record;
-            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
+                end package;
 
-            end package;
+                package body ComplexTypes is
+                function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+                begin
+                    return (a, b);
+                end function;
 
-            package body ComplexTypes is
-            function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
-            begin
-                return (a, b);
-            end function;
+                function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
+                begin
+                    return (a, b);
+                end function;
 
-            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
-            begin
-                return (a, b);
-            end function;
+                end package body;
+                """)
 
-            end package body;
-            """)
+        files = conv.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            next(f)
+            assert expect == f.read()
 
-    files = conv.write_vhdl_files(Path('/tmp/'))
-    with files[0].open('r') as f:
-        next(f)
-        assert expect == f.read()
+    def test_more_regs_simulate(self):
+        x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
+             [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
+             [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
+        expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
+                    [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
+                    [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
-
-def test_more_regs_simulate(more_regs):
-    dut = more_regs
-    x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
-         [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
-         [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
-                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
-                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
-
-    assert_sim_match(dut,
-                     [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
-                     expected, *x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut,
+                         [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
+                          ComplexSfix(left=1, right=-12)],
+                         expected, *x, rtol=1e-3,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 @pytest.fixture
