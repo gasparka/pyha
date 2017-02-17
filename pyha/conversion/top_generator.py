@@ -192,15 +192,17 @@ class TopGenerator:
                 {OUTPUT_VARIABLES}
                     begin
                     if (not rst_n) then
-                        {DUT_NAME}.reset_self(self);
+                        {DUT_NAME}.\\_pyha_reset_self\\(self);
                     elsif rising_edge(clk) then
                         if enable then
                             --convert slv to normal types
                 {INPUT_TYPE_CONVERSIONS}
 
                             --call the main entry
+                            -- without this Quartus wont honor constants
+                            {DUT_NAME}.\\_pyha_constants_self\\(self);
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
-                            {DUT_NAME}.update_self(self);
+                            {DUT_NAME}.\\_pyha_update_self\\(self);
 
                             --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}

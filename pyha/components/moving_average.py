@@ -29,7 +29,8 @@ class MovingAverage(HW):
 
         left = self.window_pow + left_index(x)
         right = right_index(x)
-        self.next.sum = resize(self.sum + x - self.shift_register[-1],
+        last = self.shift_register[-1]
+        self.next.sum = resize(self.sum + x - last,
                                left_index=left,
                                right_index=right)
 

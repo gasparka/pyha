@@ -2,6 +2,7 @@ import datetime
 import logging
 import textwrap
 from contextlib import suppress
+from enum import Enum
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
@@ -10,8 +11,10 @@ from redbaron.nodes import AtomtrailersNode
 
 import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
+from pyha.common.sfix import ComplexSfix
+from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
-from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -494,31 +497,6 @@ class ClassNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-        # # find the 'main' function and rename it to 'main_user'
-        # main = [x for x in self.value if isinstance(x, DefNodeConv) and x.name == 'main']
-        # if len(main):
-        #     self.user_main = main[0]
-        #     self.user_main.name = 'main_user'
-
-    # def get_main(self):
-    #     template = textwrap.dedent("""\
-    #         procedure main({FUNC_ARGS}) is
-    #             variable self: self_t;
-    #         begin
-    #             make_self(self_reg, self);
-    #             main_user({CALL_ARGS});
-    #             self_reg := self.\\next\\;
-    #         end procedure;""")
-    #
-    #     call_args = ', '.join(str(x.name) for x in self.user_main.arguments)
-    #     func_args = '; '.join(str(x) for x in self.user_main.arguments)
-    #     func_args = func_args.replace('self:inout self_t', 'self_reg:inout register_t')
-    #
-    #     return template.format(CALL_ARGS=call_args, FUNC_ARGS=func_args)
-
-    # def get_user_main(self):
-    #     return str(self.user_main)
-
     def get_imports(self):
         return textwrap.dedent("""\
             library ieee;
@@ -534,13 +512,14 @@ class ClassNodeConv(NodeConv):
                 use work.all;""")
 
     def get_reset_self_prototype(self):
-        return 'procedure reset_self(self: inout self_t);'
+        return 'procedure \\_pyha_reset_self\\(self: inout self_t);'
 
     def get_reset_self(self):
         template = textwrap.dedent("""\
-        procedure reset_self(self: inout self_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
         {DATA}
+            \\_pyha_constants_self\\(self);
         end procedure;""")
 
         variables = VHDLType.get_reset()
@@ -550,38 +529,49 @@ class ClassNodeConv(NodeConv):
         return template.format(**sockets)
 
     def get_update_self_prototype(self):
-        return 'procedure update_self(self: inout self_t);'
+        return 'procedure \\_pyha_update_self\\(self: inout self_t);'
 
     def get_update_self(self):
         template = textwrap.dedent("""\
-        procedure update_self(self: inout self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-        {CONSTANTS}
         {DATA}
         end procedure;""")
 
-        sockets = {'DATA': '', 'CONSTANTS': ''}
+        sockets = {'DATA': ''}
         variables = [f'self.{x.name} := self.\\next\\.{x.name};'
                      for x in VHDLType.get_self()]
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
 
-        # const = VHDLType.get_constants()
-        # if len(const):
-        #     const_str = []
-        #     for var in const:
-        #         value = var.variable
-        #         if isinstance(value, Enum):
-        #             const_str += [f'self.{var.name} := {value.name};']
-        #         elif isinstance(value, (Sfix, ComplexSfix)):
-        #             const_str += [f'self.{var.name} := {value.vhdl_reset()};']
-        #         elif isinstance(value, list):
-        #             const_str += ['self.' + list_reset('', var.name, value)]
-        #         else:
-        #             const_str += [f'self.{var.name} := {value};']
-        #
-        #     sockets['CONSTANTS'] = '    -- constants\n'
-        #     sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
-        #     sockets['CONSTANTS'] += '\n'
+        return template.format(**sockets)
+
+    def get_constants_self_prototype(self):
+        return 'procedure \\_pyha_constants_self\\(self: inout self_t);'
+
+    def get_constants_self(self):
+        template = textwrap.dedent("""\
+        procedure \\_pyha_constants_self\\(self: inout self_t) is
+        begin
+        {CONSTANTS}
+        end procedure;""")
+
+        sockets = {'CONSTANTS': ''}
+
+        const = VHDLType.get_constants()
+        if len(const):
+            const_str = []
+            for var in const:
+                value = var.variable
+                if isinstance(value, Enum):
+                    const_str += [f'self.{var.name} := {value.name};']
+                elif isinstance(value, (Sfix, ComplexSfix)):
+                    const_str += [f'self.{var.name} := {value.vhdl_reset()};']
+                elif isinstance(value, list):
+                    const_str += ['self.' + list_reset('', var.name, value)]
+                else:
+                    const_str += [f'self.{var.name} := {value};']
+
+            sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
 
         return template.format(**sockets)
 
@@ -649,7 +639,8 @@ class ClassNodeConv(NodeConv):
     #     return main_header
 
     def get_headers(self):
-        ret = self.get_reset_self_prototype() + '\n\n'
+        ret = self.get_constants_self_prototype() + '\n\n'
+        ret += self.get_reset_self_prototype() + '\n\n'
         ret += self.get_update_self_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
@@ -680,9 +671,11 @@ class ClassNodeConv(NodeConv):
     def get_package_body(self):
         template = textwrap.dedent("""\
             package body {NAME} is
-            {RESET_FUNCTION}
+            {CONSTANT_SELF}
 
-            {UPDATE_SELF_FUNCTION}
+            {RESET_SELF}
+
+            {UPDATE_SELF}
 
             {OTHER_FUNCTIONS}
             end package body;""")
@@ -690,8 +683,9 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
 
-        sockets['RESET_FUNCTION'] = tabber(self.get_reset_self())
-        sockets['UPDATE_SELF_FUNCTION'] = tabber(self.get_update_self())
+        sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
+        sockets['RESET_SELF'] = tabber(self.get_reset_self())
+        sockets['UPDATE_SELF'] = tabber(self.get_update_self())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)
