@@ -1,6 +1,6 @@
 import sys
-import types
 from copy import deepcopy, copy
+from enum import Enum
 
 import numpy as np
 from six import iteritems, with_metaclass
@@ -32,6 +32,24 @@ class TypeNotConsistent(Exception):
         message = f'Self/local not consistent type!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nOld: {type(old)}:{repr(old)}\nNew: {type(new)}:{new}'
         super().__init__(message)
 
+
+def is_convertible(obj):
+    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
+    if type(obj) in allowed_types:
+        return True
+    elif isinstance(obj, list):
+        # To check whether all elements are of the same type
+        if len(set(map(type, obj))) == 1:
+            if all(type(x) in allowed_types for x in obj):
+                return True
+            elif isinstance(obj[0], HW):  # list of submodules
+                return True
+    elif isinstance(obj, Enum):
+        return True
+    elif isinstance(obj, HW):
+        return True
+
+    return False
 
 def deepish_copy(org):
     """
@@ -143,7 +161,7 @@ class PyhaFunc:
         self.TraceManager.remove_profile()
 
         self.TraceManager.last_call_locals.pop('self')
-        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -157,30 +175,11 @@ class PyhaFunc:
         self.last_kwargs = kwargs
         real_self = self.func.__self__
         self.calls += 1
-        # function is not main, dont have to simulate clock
-        # if not self.is_main:
-        #     return self.call_with_locals_discovery(*args, **kwargs)
 
-        # # update registers from next
-        # now = real_self.__dict__
-        # next = real_self.__dict__['next'].__dict__
-        # old_next = deepish_copy(next)
-        #
-        # now.update(old_next)
-        # # protect assign to self
-        # old_self = deepish_copy(now)
-        #
         # # CALL IS HERE!
         ret = self.call_with_locals_discovery(*args, **kwargs)
-        #
+
         self.last_return = ret
-        #
-        # self.forbid_assign_to_self(real_self.__dict__, old_self)
-        #
-        # """ After each main, check that 'self' has consistent types(only single type over time)
-        #  This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
-        # """
-        # self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
 
         real_self._outputs.append(ret)
         return ret
@@ -223,14 +222,26 @@ class Meta(type):
         ret.pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
+
         # save the initial self values
         # all registers will be derived from these values!
         # todo: could this be just copy? and skip 'next'
         ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # give self.next to the new object
-        ret.__dict__['next'] = type('test', (object,), {})()
-        ret.__dict__['next'].__dict__ = {k:v for k,v in ret.__dict__.items() if isinstance(v, (float))}
+        ret.__dict__['next'] = type('next', (object,), {})()
+
+        for k, v in ret.__dict__.items():
+            if isinstance(v, HW):
+                continue
+            if is_convertible(v):
+                setattr(ret.next, k, deepcopy(v))
+        # ret.__dict__['next'].__dict__ = {k:copy(v) for k,v in ret.__dict__.items()}
+        # ret.__dict__['next'].__dict__ = {k:v for k,v in ret.__dict__.items()}
+        # ret.__dict__['next'] = deepcopy(ret)
+
+        ret.__submodules__ = [v for k, v in ret.__dict__.items()
+                              if isinstance(v, HW) and k not in ('__initial_self__', 'next')]
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -240,31 +251,32 @@ class Meta(type):
             if method_str in SKIP_FUNCTIONS:
                 continue
             method = getattr(ret, method_str)
-            if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
+            if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                    method) and method.__class__.__name__ == 'method':
                 new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
-        ClockSimulator(ret)
+        # ClockSimulator(ret)
         return ret
 
 
-class ClockSimulator:
-    register = []
-
-    def __init__(self, obj):
-        self.obj = obj
-        ClockSimulator.register.append(self)
-
-    def __call__(self, *args, **kwargs):
-        now = self.obj.__dict__
-        next = self.obj.__dict__['next'].__dict__
-        now.update(next)
-        pass
-
-    @classmethod
-    def run(cls):
-        for x in cls.register:
-            x()
+# class ClockSimulator:
+#     register = []
+#
+#     def __init__(self, obj):
+#         self.obj = obj
+#         ClockSimulator.register.append(self)
+#
+#     def __call__(self, *args, **kwargs):
+#         now = self.obj.__dict__
+#         next = self.obj.__dict__['next'].__dict__
+#         now.update(next)
+#         pass
+#
+#     @classmethod
+#     def run(cls):
+#         for x in cls.register:
+#             x()
 
 
 
@@ -283,3 +295,10 @@ class HW(with_metaclass(Meta)):
             else:
                 setattr(result, k, deepcopy(v, memo))
         return result
+
+    def _pyha_update_self(self):
+        self.__dict__.update(self.next.__dict__)
+
+        # update submodules
+        for x in self.__submodules__:
+            x._pyha_update_self()

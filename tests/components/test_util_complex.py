@@ -42,7 +42,7 @@ def test_multiply():
     assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, y, a, b,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      rtol=1e-4,
-                     # dir_path='/home/gaspar/git/pyha/playground/conv'
+                     dir_path='/home/gaspar/git/pyha/playground/conv'
                      )
 
 

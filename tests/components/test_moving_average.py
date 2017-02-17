@@ -14,7 +14,8 @@ def test_window2():
     mov = MovingAverage(window_len=2)
     x = [0., 1., 2., 3., 4.]
     expected = [0.0, 0.5, 1.5, 2.5, 3.5]
-    assert_sim_match(mov, [Sfix(left=4, right=-18)], expected, x)
+    assert_sim_match(mov, [Sfix(left=4, right=-18)], expected, x,
+                     dir_path='/home/gaspar/git/pyha/playground/conv')
 
 
 def test_window3():

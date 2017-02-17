@@ -1,7 +1,4 @@
-from enum import Enum
-
-from pyha.common.const import Const
-from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible
 from pyha.common.sfix import Sfix, ComplexSfix
 
 
@@ -15,25 +12,6 @@ class VariableNotConvertible(Exception):
     def __init__(self, class_name, function_name, variable_name, variable):
         message = f'Variable not convertable!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nValue: {type(variable)}:{variable}'
         super().__init__(message)
-
-
-def is_convertible(obj):
-    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
-    if type(obj) in allowed_types:
-        return True
-    elif isinstance(obj, list):
-        # To check whether all elements are of the same type
-        if len(set(map(type, obj))) == 1:
-            if all(type(x) in allowed_types for x in obj):
-                return True
-            elif isinstance(obj[0], HW):  # list of submodules
-                return True
-    elif isinstance(obj, Enum):
-        return True
-    elif isinstance(obj, HW):
-        return True
-
-    return False
 
 
 def extract_datamodel(obj):

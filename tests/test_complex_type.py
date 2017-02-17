@@ -127,9 +127,9 @@ def test_reg_conversion_reset(reg):
     conv = get_conversion(reg)
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure reset_self(self: inout self_t) is
         begin
-            self_reg.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
+            self.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
         end procedure;""")
 
     assert expect == str(conv.get_reset_self())
