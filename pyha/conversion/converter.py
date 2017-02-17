@@ -2,7 +2,6 @@ import datetime
 import logging
 import textwrap
 from contextlib import suppress
-from enum import Enum
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
@@ -11,9 +10,8 @@ from redbaron.nodes import AtomtrailersNode
 
 import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
-from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
-from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
+from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -834,12 +832,12 @@ def redbaron_pycall_returns_to_vhdl(red_node):
     """
 
     def modify_call(x: AssignmentNode):
-        if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
-            try:
+        try:
+            if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
                 if str(x.value[0][0]) != 'self':  # this is some shit that happnes after 'for' transforms
                     return x
-            except:
-                return x
+        except:
+            return x
 
         call = x.call
         if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
