@@ -10,7 +10,6 @@ from typing import List
 
 import numpy as np
 
-from pyha.common.hwsim import ClockSimulator
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
@@ -158,8 +157,7 @@ class Simulation:
             ret = []
             for x in args:
                 ret.append(self.model.main(*x))
-                ClockSimulator.run()
-            # ret = [self.model.main(*x) for x in args]
+                self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:

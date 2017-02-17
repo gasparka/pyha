@@ -24,7 +24,7 @@ class TopGenerator:
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        if self.simulated_object.main.calls <= 1:
+        if self.simulated_object.main.calls == 0:
             raise NotTrainedError('Object must be trained > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
