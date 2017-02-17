@@ -3,7 +3,7 @@ import textwrap
 import numpy as np
 import pytest
 
-from pyha.common.hwsim import HW, TypeNotConsistent
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
     VariableNotConvertible
@@ -241,380 +241,398 @@ class TestDatamodel:
         assert type(result['submodule']) == A
 
 
-def test_localss():
-    class A(HW):
-        def tst(self):
-            b = 20
+class TestLocals:
+    def test_(self):
+        class A(HW):
+            def tst(self):
+                b = 20
 
-    expect = {
-        'tst':
-            {
-                'b': 20,
-            }
-    }
-    dut = A()
-    dut.tst()
-    result = extract_locals(dut)
-    assert result == expect
+        expect = {
+            'tst':
+                {
+                    'b': 20,
+                }
+        }
+        dut = A()
+        dut.tst()
+        dut._pyha_update_self()
 
-
-def test_locals_new_instance_resets():
-    class A(HW):
-        def main(self, v):
-            b = v
-
-    expect = {
-        'main':
-            {
-                'b': 20,
-                'v': 20
-            }
-    }
-    dut = A()
-    dut.main(20)
-    result = extract_locals(dut)
-    assert result == expect
-
-    dut2 = A()
-    with pytest.raises(FunctionNotSimulated):
-        extract_locals(dut2)
-
-
-def test_locals_special():
-    class A(HW):
-        def main(self):
-            b = 20
-
-    expect = {
-        'main':
-            {
-                'b': 20
-            }
-    }
-    dut = A()
-    dut.main()
-    result = extract_locals(dut)
-    assert result == expect
-
-
-def test_locals_skips_init():
-    class A(HW):
-        def __init__(self):
-            self.a = 15
-
-        def main(self):
-            b = 1
-
-    expect = {
-        'main':
-            {
-                'b': 1
-            }
-    }
-    dut = A()
-    dut.main()
-
-    result = extract_locals(dut)
-    assert result == expect
-
-
-def test_locals_special_clock_tick():
-    class A(HW):
-        def __init__(self):
-            self.a = 15
-
-        def main(self, b):
-            self.next.a = b
-
-    expect = {
-        'main':
-            {
-                'b': 2
-            }
-    }
-    dut = A()
-    dut.main(1)
-    assert dut.a == 15
-    assert dut.next.a == 1
-
-    dut.main(2)
-    assert dut.a == 1
-    assert dut.next.a == 2
-
-    result = extract_locals(dut)
-    assert result == expect
-
-
-def test_locals_call_nosim_raises():
-    class A(HW):
-        def main(self):
-            b = 20
-
-    dut = A()
-    with pytest.raises(FunctionNotSimulated):
-        extract_locals(dut)
-
-
-def test_locals_call_bad_type_raises():
-    class A(HW):
-        def main(self):
-            b = 20.5
-
-    expect = textwrap.dedent("""\
-            Variable not convertable!
-            Class: A
-            Function: main
-            Variable: b
-            Value: <class 'float'>:20.5""")
-    dut = A()
-    dut.main()
-    with pytest.raises(VariableNotConvertible) as e:
         result = extract_locals(dut)
+        assert result == expect
 
-    assert str(e.value) == expect
+    def test_new_instance_resets(self):
+        class A(HW):
+            def main(self, v):
+                b = v
 
+        expect = {
+            'main':
+                {
+                    'b': 20,
+                    'v': 20
+                }
+        }
+        dut = A()
+        dut.main(20)
+        dut._pyha_update_self()
 
-def test_locals_calls():
-    class A(HW):
-        def main(self):
-            b = Sfix(0.1, 2, -3)
-            return 123, 0.4
+        result = extract_locals(dut)
+        assert result == expect
 
-    dut = A()
-    dut.main()
-    assert dut.main.calls == 1
-    dut.main()
-    assert dut.main.calls == 2
+        dut2 = A()
+        with pytest.raises(FunctionNotSimulated):
+            extract_locals(dut2)
 
+    def test_special(self):
+        class A(HW):
+            def main(self):
+                b = 20
 
-def test_locals_sfix():
-    class A(HW):
-        def main(self):
-            b = Sfix(0.1, 2, -3)
+        expect = {
+            'main':
+                {
+                    'b': 20
+                }
+        }
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-    expect = {
-        'main':
-            {
-                'b': Sfix(0.1, 2, -3)
-            }
-    }
-    dut = A()
-    dut.main()
-    result = extract_locals(dut)
-    assert result == expect
+        result = extract_locals(dut)
+        assert result == expect
 
+    def test_skips_init(self):
+        class A(HW):
+            def __init__(self):
+                self.a = 15
 
-def test_locals_boolean():
-    class A(HW):
-        def main(self):
-            b = True
+            def main(self):
+                b = 1
 
-    expect = {
-        'main':
-            {
-                'b': True
-            }
-    }
-    dut = A()
-    dut.main()
-    result = extract_locals(dut)
-    assert result == expect
+        expect = {
+            'main':
+                {
+                    'b': 1
+                }
+        }
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
+        result = extract_locals(dut)
+        assert result == expect
 
-def test_locals_arguments():
-    class A(HW):
-        def main(self, a, c):
-            b = Sfix(0.1, 2, -3)
+    def test_special_clock_tick(self):
+        class A(HW):
+            def __init__(self):
+                self.a = 15
 
-    expect = {
-        'main':
-            {
-                'a': 15,
-                'b': Sfix(0.1, 2, -3),
-                'c': Sfix(0.1, 2, -3),
-            }
-    }
-    dut = A()
-    dut.main(15, Sfix(0.1, 2, -3))
-    result = extract_locals(dut)
-    assert result == expect
+            def main(self, b):
+                self.next.a = b
 
+        expect = {
+            'main':
+                {
+                    'b': 2
+                }
+        }
+        dut = A()
+        dut.main(1)
+        assert dut.a == 15
+        assert dut.next.a == 1
+        dut._pyha_update_self()
 
-def test_locals_conditional():
-    class A(HW):
-        def main(self, condition):
-            if condition:
-                iflocal = 128
+        dut.main(2)
+        assert dut.a == 1
+        assert dut.next.a == 2
+        dut._pyha_update_self()
 
-    expect = {
-        'main':
-            {
-                'condition': False,
-                'iflocal': 128
-            }
-    }
-    dut = A()
-    dut.main(True)
-    dut.main(False)
-    result = extract_locals(dut)
-    assert result == expect
+        result = extract_locals(dut)
+        assert result == expect
 
+    def test_call_nosim_raises(self):
+        class A(HW):
+            def main(self):
+                b = 20
 
-def test_locals_call_multitype_raises():
-    # var should always be same type
-    class A(HW):
-        def main(self, condition):
-            if condition:
-                iflocal = 128
-            else:
-                iflocal = True
+        dut = A()
+        with pytest.raises(FunctionNotSimulated):
+            extract_locals(dut)
 
-    dut = A()
-    dut.main(True)
-    with pytest.raises(TypeNotConsistent) as e:
+    def test_call_bad_type_raises(self):
+        class A(HW):
+            def main(self):
+                b = 20.5
+
+        expect = textwrap.dedent("""\
+                Variable not convertable!
+                Class: A
+                Function: main
+                Variable: b
+                Value: <class 'float'>:20.5""")
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
+
+        with pytest.raises(VariableNotConvertible) as e:
+            result = extract_locals(dut)
+
+        assert str(e.value) == expect
+
+    def test_calls(self):
+        class A(HW):
+            def main(self):
+                b = Sfix(0.1, 2, -3)
+                return 123, 0.4
+
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
+
+        assert dut.main.calls == 1
+        dut.main()
+        dut._pyha_update_self()
+
+        assert dut.main.calls == 2
+
+    def test_sfix(self):
+        class A(HW):
+            def main(self):
+                b = Sfix(0.1, 2, -3)
+
+        expect = {
+            'main':
+                {
+                    'b': Sfix(0.1, 2, -3)
+                }
+        }
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
+
+        result = extract_locals(dut)
+        assert result == expect
+
+    def test_boolean(self):
+        class A(HW):
+            def main(self):
+                b = True
+
+        expect = {
+            'main':
+                {
+                    'b': True
+                }
+        }
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
+
+        result = extract_locals(dut)
+        assert result == expect
+
+    def test_arguments(self):
+        class A(HW):
+            def main(self, a, c):
+                b = Sfix(0.1, 2, -3)
+
+        expect = {
+            'main':
+                {
+                    'a': 15,
+                    'b': Sfix(0.1, 2, -3),
+                    'c': Sfix(0.1, 2, -3),
+                }
+        }
+        dut = A()
+        dut.main(15, Sfix(0.1, 2, -3))
+        dut._pyha_update_self()
+
+        result = extract_locals(dut)
+        assert result == expect
+
+    def test_conditional(self):
+        class A(HW):
+            def main(self, condition):
+                if condition:
+                    iflocal = 128
+
+        expect = {
+            'main':
+                {
+                    'condition': False,
+                    'iflocal': 128
+                }
+        }
+        dut = A()
+        dut.main(True)
         dut.main(False)
+        dut._pyha_update_self()
 
-        # cant test text cause locals discovery order can vary
+        result = extract_locals(dut)
+        assert result == expect
 
+    # def test_consistent_call_multitype_raises(self):
+    #     # var should always be same type
+    #     class A(HW):
+    #         def main(self, condition):
+    #             if condition:
+    #                 iflocal = 128
+    #             else:
+    #                 iflocal = True
+    #
+    #     dut = A()
+    #     dut.main(True)
+    #     dut._pyha_update_self()
+    #
+    #     with pytest.raises(TypeNotConsistent) as e:
+    #         dut.main(False)
+    #
+    #         # cant test text cause locals discovery order can vary
 
-def test_locals_multitype_sfix():
-    # valid if bounds are the same
-    class A(HW):
-        def main(self, condition):
-            if condition:
-                iflocal = Sfix(1.2, 12, -15)
-            else:
-                iflocal = Sfix(0.0, 12, -15)
+    def test_multitype_sfix(self):
+        # valid if bounds are the same
+        class A(HW):
+            def main(self, condition):
+                if condition:
+                    iflocal = Sfix(1.2, 12, -15)
+                else:
+                    iflocal = Sfix(0.0, 12, -15)
 
-    expect = {
-        'main':
-            {
-                'condition': False,
-                'iflocal': Sfix(0.0, 12, -15)
-            }
-    }
-    dut = A()
-    dut.main(True)
-    dut.main(False)
-    result = extract_locals(dut)
-    assert result == expect
-
-
-def test_locals_multitype_sfix_raises():
-    class A(HW):
-        def main(self, condition):
-            if condition:
-                iflocal = Sfix(1.2, 1, -15)
-            else:
-                iflocal = Sfix(0.0, 12, -1)
-
-    dut = A()
-    dut.main(True)
-
-    with pytest.raises(TypeNotConsistent):
+        expect = {
+            'main':
+                {
+                    'condition': False,
+                    'iflocal': Sfix(0.0, 12, -15)
+                }
+        }
+        dut = A()
+        dut.main(True)
         dut.main(False)
+        dut._pyha_update_self()
 
+        result = extract_locals(dut)
+        assert result == expect
 
-def test_locals_multifunc():
-    class A(HW):
-        def func2(self, o):
-            loom = Sfix(o, 10, -10)
-            return 12
+    # def test_consistent_multitype_sfix_raises(self):
+    #     class A(HW):
+    #         def main(self, condition):
+    #             if condition:
+    #                 iflocal = Sfix(1.2, 1, -15)
+    #             else:
+    #                 iflocal = Sfix(0.0, 12, -1)
+    #
+    #     dut = A()
+    #     dut.main(True)
+    #     dut._pyha_update_self()
+    #
+    #     with pytest.raises(TypeNotConsistent):
+    #         dut.main(False)
 
-        def main(self, a, c):
-            b = Sfix(0.1, 2, -3)
+    def test_multifunc(self):
+        class A(HW):
+            def func2(self, o):
+                loom = Sfix(o, 10, -10)
+                return 12
 
-    expect = {
-        'main':
-            {
-                'a': 15,
-                'b': Sfix(0.1, 2, -3),
-                'c': Sfix(0.1, 2, -3),
-            },
-        'func2':
-            {
-                'o': 1,
-                'loom': Sfix(1, 10, -10),
-            }
-    }
-    dut = A()
-    dut.main(15, Sfix(0.1, 2, -3))
-    dut.func2(1)
-    result = extract_locals(dut)
-    assert result == expect
+            def main(self, a, c):
+                b = Sfix(0.1, 2, -3)
 
+        expect = {
+            'main':
+                {
+                    'a': 15,
+                    'b': Sfix(0.1, 2, -3),
+                    'c': Sfix(0.1, 2, -3),
+                },
+            'func2':
+                {
+                    'o': 1,
+                    'loom': Sfix(1, 10, -10),
+                }
+        }
+        dut = A()
+        dut.main(15, Sfix(0.1, 2, -3))
+        dut.func2(1)
+        dut._pyha_update_self()
 
-def test_locals_multifunc_nested():
-    class A(HW):
-        def func2(self, o):
-            loom = Sfix(o, 10, -10)
-            return 12
+        result = extract_locals(dut)
+        assert result == expect
 
-        def main(self, a, c):
-            ret = self.func2(a)
-            b = Sfix(0.1, 2, -3)
+    def test_multifunc_nested(self):
+        class A(HW):
+            def func2(self, o):
+                loom = Sfix(o, 10, -10)
+                return 12
 
-    expect = {
-        'main':
-            {
-                'a': 15,
-                'b': Sfix(0.1, 2, -3),
-                'c': Sfix(0.1, 2, -3),
-                'ret': 12
-            },
-        'func2':
-            {
-                'o': 15,
-                'loom': Sfix(15, 10, -10),
-            }
-    }
-    dut = A()
-    dut.main(15, Sfix(0.1, 2, -3))
-    result = extract_locals(dut)
-    assert result == expect
+            def main(self, a, c):
+                ret = self.func2(a)
+                b = Sfix(0.1, 2, -3)
 
+        expect = {
+            'main':
+                {
+                    'a': 15,
+                    'b': Sfix(0.1, 2, -3),
+                    'c': Sfix(0.1, 2, -3),
+                    'ret': 12
+                },
+            'func2':
+                {
+                    'o': 15,
+                    'loom': Sfix(15, 10, -10),
+                }
+        }
+        dut = A()
+        dut.main(15, Sfix(0.1, 2, -3))
+        dut._pyha_update_self()
 
-def test_locals_multifunc_nested_complex():
-    class A(HW):
-        def func4(self, o):
-            return o
+        result = extract_locals(dut)
+        assert result == expect
 
-        def func3(self):
-            return True
+    def test_multifunc_nested_complex(self):
+        class A(HW):
+            def func4(self, o):
+                return o
 
-        def func2(self, o):
-            return self.func4(Sfix(o, 10, -10))
+            def func3(self):
+                return True
 
-        def main(self, a, c):
-            ret = self.func2(a)
-            ret2 = self.func3()
-            b = Sfix(0.1, 2, -3)
+            def func2(self, o):
+                return self.func4(Sfix(o, 10, -10))
 
-    expect = {
-        'main':
-            {
-                'a': 15,
-                'b': Sfix(0.1, 2, -3),
-                'c': Sfix(0.1, 2, -3),
-                'ret': Sfix(15, 10, -10),
-                'ret2': True
-            },
-        'func2':
-            {
-                'o': 15,
-            },
-        'func3':
-            {
+            def main(self, a, c):
+                ret = self.func2(a)
+                ret2 = self.func3()
+                b = Sfix(0.1, 2, -3)
 
-            },
-        'func4':
-            {
-                'o': Sfix(15, 10, -10),
-            }
-    }
-    dut = A()
-    dut.main(1, Sfix(0.1, 2, -3))
-    dut.main(2, Sfix(1.1, 2, -3))
-    dut.main(15, Sfix(0.1, 2, -3))
-    result = extract_locals(dut)
-    assert result == expect
+        expect = {
+            'main':
+                {
+                    'a': 15,
+                    'b': Sfix(0.1, 2, -3),
+                    'c': Sfix(0.1, 2, -3),
+                    'ret': Sfix(15, 10, -10),
+                    'ret2': True
+                },
+            'func2':
+                {
+                    'o': 15,
+                },
+            'func3':
+                {
+
+                },
+            'func4':
+                {
+                    'o': Sfix(15, 10, -10),
+                }
+        }
+        dut = A()
+        dut.main(1, Sfix(0.1, 2, -3))
+        dut.main(2, Sfix(1.1, 2, -3))
+        dut.main(15, Sfix(0.1, 2, -3))
+        dut._pyha_update_self()
+
+        result = extract_locals(dut)
+        assert result == expect
