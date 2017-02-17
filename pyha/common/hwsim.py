@@ -233,7 +233,7 @@ class Meta(type):
         ret.__dict__['next'] = type('next', (object,), {})()
 
         for k, v in ret.__dict__.items():
-            if isinstance(v, HW) or k in ['_delay', 'pyha_instance_id']:
+            if isinstance(v, HW) or k in ['pyha_instance_id']:
                 continue
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
