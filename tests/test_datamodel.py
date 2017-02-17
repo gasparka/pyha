@@ -1,5 +1,6 @@
 import textwrap
 
+import numpy as np
 import pytest
 
 from pyha.common.hwsim import HW, TypeNotConsistent
@@ -8,228 +9,236 @@ from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals,
     VariableNotConvertible
 
 
-def test_datamodel_new_instance_resets():
-    class A(HW):
-        def __init__(self):
-            self.a = Sfix(0.56)
+class TestDatamodel:
+    def test_new_instance_resets(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56)
 
-        def main(self):
-            self.next.a = Sfix(0.0, 0, -10)
+            def main(self):
+                self.next.a = Sfix(0.0, 0, -10)
 
-    expect = {'a': Sfix(0.56, 0, -10)}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+        expect = {'a': Sfix(0.56, 0, -10)}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
+        result = extract_datamodel(dut)
+        assert result == expect
 
-    # new instance shall have empty datamodel
-    dut2 = A()
-    result = extract_datamodel(dut2)
-    expect = {'a': Sfix(0.56)}
-    assert result == expect
+        # new instance shall have empty datamodel
+        dut2 = A()
+        result = extract_datamodel(dut2)
+        expect = {'a': Sfix(0.56)}
+        assert result == expect
 
+    def test_sfix(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56, 0, -10)
 
-def test_datamodel_sfix():
-    class A(HW):
-        def __init__(self):
-            self.a = Sfix(0.56, 0, -10)
+        expect = {'a': Sfix(0.56, 0, -10)}
+        result = extract_datamodel(A())
+        assert result == expect
 
-    expect = {'a': Sfix(0.56, 0, -10)}
-    result = extract_datamodel(A())
-    assert result == expect
+    def test_sfix_lazy(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56)
 
+            def main(self):
+                self.next.a = Sfix(0.0, 0, -10)
 
-def test_datamodel_sfix_lazy():
-    class A(HW):
-        def __init__(self):
-            self.a = Sfix(0.56)
+        expect = {'a': Sfix(0.56, 0, -10)}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-        def main(self):
-            self.next.a = Sfix(0.0, 0, -10)
+        result = extract_datamodel(dut)
+        assert result == expect
 
-    expect = {'a': Sfix(0.56, 0, -10)}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+    def test_sfix2(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56, 0, -10)
+                self.b = Sfix(-10, 8, -10)
 
+            def main(self):
+                pass
 
-def test_datamodel_sfix2():
-    class A(HW):
-        def __init__(self):
-            self.a = Sfix(0.56, 0, -10)
-            self.b = Sfix(-10, 8, -10)
+        expect = {'a': Sfix(0.56, 0, -10),
+                  'b': Sfix(-10, 8, -10)}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-        def main(self):
-            pass
+        result = extract_datamodel(dut)
+        assert result == expect
 
-    expect = {'a': Sfix(0.56, 0, -10),
-              'b': Sfix(-10, 8, -10)}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+    def test_sfix_list(self):
+        class A(HW):
+            def __init__(self):
+                self.b = [Sfix(-10, 8, -10)] * 10
 
+        expect = {'b': [Sfix(-10, 8, -10)] * 10}
+        result = extract_datamodel(A())
+        assert result == expect
 
-def test_datamodel_sfix_list():
-    class A(HW):
-        def __init__(self):
-            self.b = [Sfix(-10, 8, -10)] * 10
+    def test_sfix_list_lazy(self):
+        class A(HW):
+            def __init__(self):
+                self.b = [Sfix(-1.4), Sfix(2.5), Sfix(-0.52)]
 
-    expect = {'b': [Sfix(-10, 8, -10)] * 10}
-    result = extract_datamodel(A())
-    assert result == expect
+            def main(self):
+                self.next.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
 
+        expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
 
-def test_datamodel_sfix_list_lazy():
-    class A(HW):
-        def __init__(self):
-            self.b = [Sfix(-1.4), Sfix(2.5), Sfix(-0.52)]
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-        def main(self):
-            self.next.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
+        result = extract_datamodel(dut)
+        assert result == expect
 
-    expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
+    def test_int(self):
+        class A(HW):
+            def __init__(self):
+                self.a = 20
 
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                self.next.a = 162
 
+        expect = {'a': 20}
 
-def test_datamodel_int():
-    class A(HW):
-        def __init__(self):
-            self.a = 20
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-        def main(self):
-            self.next.a = 162
+        result = extract_datamodel(dut)
+        assert result == expect
 
-    expect = {'a': 20}
+    def test_int_list(self):
+        class A(HW):
+            def __init__(self):
+                self.b = [0] * 10
 
-    dut = A()
-    dut.main()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                self.next.b = [25] * 10
 
+        expect = {'b': [0] * 10}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_int_list():
-    class A(HW):
-        def __init__(self):
-            self.b = [0] * 10
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self):
-            self.next.b = [25] * 10
+    def test_bool(self):
+        class A(HW):
+            def __init__(self):
+                self.b = True
 
-    expect = {'b': [0] * 10}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                self.next.b = False
 
+        expect = {'b': True}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_bool():
-    class A(HW):
-        def __init__(self):
-            self.b = True
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self):
-            self.next.b = False
+    def test_bool_list(self):
+        class A(HW):
+            def __init__(self):
+                self.b = [True, False]
 
-    expect = {'b': True}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                self.next.b = [False, False]
 
+        expect = {'b': [True, False]}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_bool_list():
-    class A(HW):
-        def __init__(self):
-            self.b = [True, False]
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self):
-            self.next.b = [False, False]
+    def test_reject_float(self):
+        class A(HW):
+            def __init__(self):
+                self.b = 0.5
 
-    expect = {'b': [True, False]}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                pass
 
+        expect = {}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_reject_flaot():
-    class A(HW):
-        def __init__(self):
-            self.b = 0.5
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self):
-            pass
+    def test_reject_numpy(self):
+        class A(HW):
+            def __init__(self):
+                self.b = np.array([1, 2, 3])
 
-    expect = {}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self):
+                pass
 
+        expect = {}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_reject_numpy():
-    import numpy as np
-    class A(HW):
-        def __init__(self):
-            self.b = np.array([1, 2, 3])
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self):
-            pass
+    def test_mixed(self):
+        class A(HW):
+            def __init__(self):
+                self.inte = 20
+                self.fix = [Sfix(-10, 8, -10)] * 10
+                self.a = {'a': 'tere', 25: 'tore'}
+                self.lol = 0.5
+                self.b = np.array([1, 2, 3])
+                self.c = self.b.tolist()
 
-    expect = {}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self, *args, **kwargs):
+                self.next.c = [3, 3, 3]
 
+        expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
+        dut = A()
+        dut.main()
+        dut._pyha_update_self()
 
-def test_datamodel_mixed():
-    import numpy as np
-    class A(HW):
-        def __init__(self):
-            self.inte = 20
-            self.fix = [Sfix(-10, 8, -10)] * 10
-            self.a = {'a': 'tere', 25: 'tore'}
-            self.lol = 0.5
-            self.b = np.array([1, 2, 3])
-            self.c = self.b.tolist()
+        result = extract_datamodel(dut)
+        assert result == expect
 
-        def main(self, *args, **kwargs):
-            self.next.c = [3, 3, 3]
+    def test_submodule(self):
+        class A(HW):
+            def __init__(self):
+                self.reg = 0
 
-    expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
-    dut = A()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert result == expect
+            def main(self, *args, **kwargs):
+                pass
 
+        class B(HW):
+            def __init__(self):
+                self.submodule = A()
 
-def test_datamodel_submodule():
-    class A(HW):
-        def __init__(self):
-            self.reg = 0
+            def main(self, *args, **kwargs):
+                pass
 
-        def main(self, *args, **kwargs):
-            pass
+        dut = B()
+        dut.main()
+        dut._pyha_update_self()
 
-    class B(HW):
-        def __init__(self):
-            self.submodule = A()
-
-        def main(self, *args, **kwargs):
-            pass
-
-    dut = B()
-    dut.main()
-    result = extract_datamodel(dut)
-    assert type(result['submodule']) == A
+        result = extract_datamodel(dut)
+        assert type(result['submodule']) == A
 
 
 def test_localss():

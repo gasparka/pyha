@@ -20,7 +20,7 @@ def extract_datamodel(obj):
         if key == 'pyha_instance_id':
             continue
         if is_convertible(val):
-            last = obj.next.__dict__[key]
+            last = obj.__dict__[key]
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
                 val = Sfix(val.init_val, last.left, last.right)
