@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pyha.common.hwsim import HW, TypeNotConsistent
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -287,68 +287,76 @@ class TestMoreRegisters:
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
-@pytest.fixture
-def comp_reg():
-    class A4(HW):
-        def __init__(self):
-            self.reg = ComplexSfix(0 + 0j, 1, -18)
-            self._delay = 1
+class TestRegisterIQ:
+    """ This assigns to I and Q separately -> there were pointer problems here.. """
 
-        def main(self, x0):
-            self.next.reg.real = x0.real
-            self.next.reg.imag = x0.imag
-            return self.reg
+    def setup(self):
+        class A4(HW):
+            def __init__(self):
+                self.reg = ComplexSfix(0 + 0j, 1, -18)
+                self._delay = 1
 
-    dut = A4()
-    return dut
+            def main(self, x0):
+                self.next.reg.real = x0.real
+                self.next.reg.imag = x0.imag
+                return self.reg
 
+        self.dut = A4()
 
-def test_comp_reg_self_consistensy(comp_reg):
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -23))
-
-
-def test_comp_reg_self_consistensy_shady(comp_reg):
-    pytest.xfail('shady shady stuff')
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
-
-
-def test_comp_reg_self_consistensy_shady2(comp_reg):
-    pytest.xfail('value is same as initial value, breaks consistecy check, bug -> feature -> wont fix')
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
-
-
-def test_comp_reg_delay(comp_reg):
-    dut = comp_reg
-    next = ComplexSfix(1 + 1j, 1, -18)
-    dut.main(next)
-    assert dut.next.reg.real == next.real
-    assert dut.next.reg.imag == next.imag
-
-    assert dut.reg.real != next.real
-    assert dut.reg.imag != next.imag
+    # def test_comp_reg_self_consistensy(comp_reg):
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -23))
+    #
+    #
+    # def test_comp_reg_self_consistensy_shady(comp_reg):
+    #     pytest.xfail('shady shady stuff')
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+    #
+    #
+    # def test_comp_reg_self_consistensy_shady2(comp_reg):
+    #     pytest.xfail('value is same as initial value, breaks consistecy check, bug -> feature -> wont fix')
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
 
 
-def test_comp_reg_simulate(comp_reg):
-    dut = comp_reg
-    inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+    def test_comp_reg_delay(self):
+        next = ComplexSfix(1 + 1j, 1, -18)
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
 
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        self.dut.main(next)
 
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
 
-def test_comp_reg_simulate2(comp_reg):
-    # -real made cocotb code fail
-    dut = comp_reg
-    inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
-    expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+        self.dut._pyha_update_self()
 
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+
+        next = ComplexSfix(2 + 2j, 1, -18)
+        self.dut.main(next)
+
+        assert self.dut.next.reg.real == next.real
+        assert self.dut.next.reg.imag == next.imag
+
+        assert self.dut.reg.real != next.real
+        assert self.dut.reg.imag != next.imag
+
+    def test_comp_reg_simulate(self):
+        inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+        expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
+
+    def test_comp_reg_simulate2(self):
+        # -real made cocotb code fail
+        inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+        expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
 
 
 @pytest.fixture

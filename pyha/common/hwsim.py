@@ -65,10 +65,11 @@ def deepish_copy(org):
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
                 # Without this assign to imag or real will fuck up everything
-                if isinstance(v, ComplexSfix):
-                    out[k] = copy(v)
-                else:
-                    out[k] = v  # ints
+                out[k] = deepcopy(v)
+                # if isinstance(v, ComplexSfix):
+                #     out[k] = copy(v)
+                # else:
+                #     out[k] = v  # ints
 
     return out
 
@@ -232,14 +233,13 @@ class Meta(type):
         ret.__dict__['next'] = type('next', (object,), {})()
 
         for k, v in ret.__dict__.items():
-            if isinstance(v, HW):
+            if isinstance(v, HW) or k in ['_delay', 'pyha_instance_id']:
                 continue
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
         # ret.__dict__['next'].__dict__ = {k:copy(v) for k,v in ret.__dict__.items()}
         # ret.__dict__['next'].__dict__ = {k:v for k,v in ret.__dict__.items()}
         # ret.__dict__['next'] = deepcopy(ret)
-
         ret.__submodules__ = [v for k, v in ret.__dict__.items()
                               if isinstance(v, HW) and k not in ('__initial_self__', 'next')]
 
@@ -297,7 +297,13 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        self.__dict__.update(self.next.__dict__)
+        # for k,v in self.next.__dict__.items():
+        #     if isinstance(v, ComplexSfix):
+        #         setattr(self, k, deepcopy(v))
+        #     else:
+        #         setattr(self, k, v)
+        # self.__dict__ = deepish_copy(self.next.__dict__)
+        self.__dict__.update(deepish_copy(self.next.__dict__))
 
         # update submodules
         for x in self.__submodules__:
