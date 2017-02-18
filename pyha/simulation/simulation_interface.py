@@ -153,7 +153,7 @@ class Simulation:
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.model = deepcopy(self.model._pyha_initial_self)
+            self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
             for x in args:
                 ret.append(self.model.main(*x))
@@ -253,8 +253,7 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
     plt.show()
 
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False,
-                     skip_first=0):
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations, model)
 
@@ -264,9 +263,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         if expected is None and sim_type is simulations[0]:
             expected = hw_y
 
-        if fuck_it:
-            l.error('FUKC_IT MODE!')
-            continue
         try:
             assert len(expected) > 0
             # if type(expected[0]) != type(hw_y[0]):
@@ -280,8 +276,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             l.error('##############################################################')
 
             raise
-            #     print('\n\nSim "{}" failed:'.format(sim_type))
-            #     print(e.args[0])
 
 
 def skipping_gate_simulations():
