@@ -16,7 +16,7 @@ Purpose: Make python class simulatable as hardware, mainly provide 'register' be
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
-PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id')
+PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
 
 
 class AssignToSelf(Exception):

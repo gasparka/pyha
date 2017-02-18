@@ -6,7 +6,7 @@ import pytest
 from pyha.common.sfix import ComplexSfix, Sfix
 from pyha.common.util import load_gnuradio_file, bools_to_hex
 from pyha.components.blade_demod.blade_receiver import Phantom2Receiver, Phantom2ReceiverBlade
-from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_HW_MODEL
 
 
 @pytest.mark.slowtest
@@ -70,12 +70,7 @@ class TestPhantom2ReceiverBlade:
         problem was in PacketSync, fixed by adding 'armed' variable """
         path = Path(__file__).parent / 'data/blade_tap_multiple_valid_bug.npy'
         data = np.load(str(path))
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag
-                                   # , simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                                   # dir_path='/home/gaspar/git/pyha/playground/conv'
-                                   , simulations=[SIM_HW_MODEL],
-
-                                   )
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-15)] * 2, None, data.real, data.imag)
 
         ref = r[0]
         assert len(ref) == 6
