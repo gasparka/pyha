@@ -64,7 +64,7 @@ class TestBasic:
 
 
 
-                type register_t is record
+                type next_t is record
                     much_dummy_very_wow: integer;
                 end record;
 

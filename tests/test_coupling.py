@@ -709,13 +709,13 @@ def test_class_datamodel(converter):
 
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed(0 downto -27);
             end record;
 
             type self_t is record
                 a: sfixed(0 downto -27);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -855,14 +855,14 @@ def test_datamodel_list_int(converter):
     datamodel = DataModel(self_data={'a': [0] * 12}, locals={})
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: integer_list_t(0 to 11);
             end record;
 
             type self_t is record
 
                 a: integer_list_t(0 to 11);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -887,14 +887,14 @@ def test_datamodel_list_boolean(converter):
 
     datamodel = DataModel(self_data={'a': [False, True, False, True]}, locals={})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: boolean_list_t(0 to 3);
             end record;
 
             type self_t is record
 
                 a: boolean_list_t(0 to 3);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -920,14 +920,14 @@ def test_list_sfix(converter):
 
     datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]}, locals={})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed2_15_list_t(0 to 1);
             end record;
 
             type self_t is record
 
                 a: sfixed2_15_list_t(0 to 1);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -958,7 +958,7 @@ def test_class_datamodel(converter):
     })
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed(0 downto -27);
                 b: sfixed(2 downto -27);
                 c: integer;
@@ -971,7 +971,7 @@ def test_class_datamodel(converter):
                 b: sfixed(2 downto -27);
                 c: integer;
                 d: boolean;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -990,7 +990,7 @@ def test_class_datamodel_reserved_name(converter):
     })
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 \\out\\: sfixed(0 downto -27);
                 \\new\\: boolean;
             end record;
@@ -999,7 +999,7 @@ def test_class_datamodel_reserved_name(converter):
 
                 \\out\\: sfixed(0 downto -27);
                 \\new\\: boolean;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -1015,7 +1015,7 @@ def test_class_datamodel_make_self(converter):
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: next_t; self: out self_t) is
         begin
 
             self.a := self_reg.a;
@@ -1037,7 +1037,7 @@ def test_class_datamodel_make_self_reserved_name(converter):
     })
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: next_t; self: out self_t) is
         begin
 
             self.\\out\\ := self_reg.\\out\\;
@@ -1057,7 +1057,7 @@ def test_class_datamodel_make_self_ignore_next(converter):
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27), 'next': {'a': None}})
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: next_t; self: out self_t) is
         begin
 
             self.a := self_reg.a;
@@ -1081,7 +1081,7 @@ def test_class_datamodel_make_self2(converter):
     })
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure make_self(self_reg: next_t; self: out self_t) is
         begin
 
             self.a := self_reg.a;

@@ -20,7 +20,7 @@
     <option name="USE_PATTERN" value="false" />
     <option name="testToRun" value="$PROJECT_DIR$/tests" />
     <option name="keywords" value="" />
-    <option name="params" value="-m &quot;not slowtest&quot;" />
+    <option name="params" value="-m &quot;not slowtest and not components&quot;" />
     <option name="USE_PARAM" value="true" />
     <option name="USE_KEYWORD" value="false" />
     <method />

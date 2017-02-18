@@ -40,14 +40,14 @@ def test_vhdl_datamodel(t0):
     conv = get_conversion(t0)
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 mode: TestEnum;
             end record;
 
             type self_t is record
 
                 mode: TestEnum;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
     dm = conv.get_datamodel()
     assert expect == dm

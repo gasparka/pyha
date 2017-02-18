@@ -66,7 +66,7 @@ class TestSingleInt:
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
-                type register_t is record
+                type next_t is record
                     much_dummy_very_wow: integer;
                 end record;
 
@@ -75,7 +75,7 @@ class TestSingleInt:
                     mode: integer;
 
                     much_dummy_very_wow: integer;
-                    \\next\\: register_t;
+                    \\next\\: next_t;
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
@@ -85,6 +85,7 @@ class TestSingleInt:
             procedure \\_pyha_constants_self\\(self: inout self_t) is
             begin
                 self.mode := 1;
+
             end procedure;""")
 
         assert expect == str(self.conversion.get_constants_self())
@@ -93,9 +94,8 @@ class TestSingleInt:
         expect = textwrap.dedent("""\
             procedure \\_pyha_reset_self\\(self: inout self_t) is
             begin
-                self.much_dummy_very_wow := 0;
-                self.\\next\\.much_dummy_very_wow := self.much_dummy_very_wow;
-                \\_pyha_constants_self\\(self);
+                self.\\next\\.much_dummy_very_wow := 0;
+                \\_pyha_update_self\\(self);
             end procedure;""")
 
         assert expect == str(self.conversion.get_reset_self())
@@ -105,6 +105,7 @@ class TestSingleInt:
             procedure \\_pyha_update_self\\(self: inout self_t) is
             begin
                 self.much_dummy_very_wow := self.\\next\\.much_dummy_very_wow;
+                \\_pyha_constants_self\\(self);
             end procedure;""")
 
         assert expect == str(self.conversion.get_update_self())
@@ -157,7 +158,7 @@ class TestMultiIntSfixEnumBooleanCFix:
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
-                type register_t is record
+                type next_t is record
                     reg: integer;
                 end record;
 
@@ -170,7 +171,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                     ccfix: complex_sfix0_18;
 
                     reg: integer;
-                    \\next\\: register_t;
+                    \\next\\: next_t;
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
@@ -184,6 +185,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                 self.cenum := SECOND;
                 self.csfix := Sfix(3.141592653589793, 2, -18);
                 self.ccfix := (real=>Sfix(0.5, 0, -18), imag=>Sfix(-0.25, 0, -18));
+
             end procedure;""")
 
         assert expect == str(self.conversion.get_constants_self())
@@ -224,7 +226,7 @@ class TestFloat:
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
-                type register_t is record
+                type next_t is record
                     reg: integer;
                 end record;
 
@@ -233,7 +235,7 @@ class TestFloat:
                     cfloat: real;
 
                     reg: integer;
-                    \\next\\: register_t;
+                    \\next\\: next_t;
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
@@ -243,6 +245,7 @@ class TestFloat:
             procedure \\_pyha_constants_self\\(self: inout self_t) is
             begin
                 self.cfloat := 0.5219;
+
             end procedure;""")
 
         assert expect == str(self.conversion.get_constants_self())
@@ -280,7 +283,7 @@ class TestLists:
 
     def test_vhdl_datamodel(self):
         expect = textwrap.dedent("""\
-                type register_t is record
+                type next_t is record
                     reg: integer;
                 end record;
 
@@ -293,7 +296,7 @@ class TestLists:
                     ccfix: complex_sfix0_18_list_t(0 to 3);
 
                     reg: integer;
-                    \\next\\: register_t;
+                    \\next\\: next_t;
                 end record;""")
         dm = self.conversion.get_datamodel()
         assert expect == dm
@@ -307,6 +310,7 @@ class TestLists:
                 self.cbool := (True, True, True, False);
                 self.csfix := (Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18), Sfix(0.25, 0, -18));
                 self.ccfix := ((real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)), (real=>Sfix(0.25, 0, -18), imag=>Sfix(0.5, 0, -18)));
+
             end procedure;""")
 
         assert expect == str(self.conversion.get_constants_self())

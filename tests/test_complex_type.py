@@ -104,14 +104,14 @@ class TestRegister:
         conv = get_conversion(self.dut)
 
         expect = textwrap.dedent("""\
-                type register_t is record
+                type next_t is record
                     reg: complex_sfix1_12;
                 end record;
 
                 type self_t is record
 
                     reg: complex_sfix1_12;
-                    \\next\\: register_t;
+                    \\next\\: next_t;
                 end record;""")
         dm = conv.get_datamodel()
         assert expect == dm
@@ -120,11 +120,11 @@ class TestRegister:
         conv = get_conversion(self.dut)
 
         expect = textwrap.dedent("""\
-            procedure reset_self(self: inout self_t) is
-            begin
-                self.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
-                self.\\next\\.reg := self.reg;
-            end procedure;""")
+                procedure \\_pyha_reset_self\\(self: inout self_t) is
+                begin
+                    self.\\next\\.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
+                    \\_pyha_update_self\\(self);
+                end procedure;""")
 
         assert expect == str(conv.get_reset_self())
 
@@ -198,11 +198,11 @@ class TestShiftReg:
         conv = get_conversion(self.dut)
 
         expect = textwrap.dedent("""\
-            procedure reset_self(self: inout self_t) is
-            begin
-                self.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
-                self.\\next\\.reg := self.reg;
-            end procedure;""")
+                procedure \\_pyha_reset_self\\(self: inout self_t) is
+                begin
+                    self.\\next\\.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
+                    \\_pyha_update_self\\(self);
+                end procedure;""")
 
         assert expect == str(conv.get_reset_self())
 
@@ -373,6 +373,7 @@ class TestComplexReturn:
 
         self.dut = A5()
         self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+        self.dut._pyha_update_self()
 
     def test_complex_types_generation(self):
         conv = Conversion(self.dut)
