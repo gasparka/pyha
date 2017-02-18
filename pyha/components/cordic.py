@@ -135,7 +135,7 @@ class NCO(HW):
         start_x = Sfix(1.0 / 1.646760, 1, -17)  # gets rid of cordic gain, could add amplitude modulation here
         start_y = Sfix(0.0, 1, -17)  # 1 bit for gains, remove later
 
-        x, y, phase = self.next.cordic.main(start_x, start_y, self.phase_acc)
+        x, y, phase = self.cordic.main(start_x, start_y, self.phase_acc)
         xr = resize(x, 0, -17)
         yr = resize(y, 0, -17)
         retc = ComplexSfix(xr, yr)
@@ -168,7 +168,7 @@ class ToPolar(HW):
         x = resize(c.real, left_index(c.real) + 1, right_index(c.real) + 1, round_style=fixed_truncate)
         y = resize(c.imag, left_index(c.imag) + 1, right_index(c.imag) + 1, round_style=fixed_truncate)
 
-        abs, _, angle = self.next.core.main(x, y, phase)
+        abs, _, angle = self.core.main(x, y, phase)
 
         # get rid of CORDIC gain and extra bits
         self.next.out_abs = resize(abs * (1.0 / 1.646760), c.imag, round_style=fixed_truncate)
@@ -188,7 +188,7 @@ class Angle(HW):
         self._delay = self.core._delay
 
     def main(self, c):
-        _, angle = self.next.core.main(c)
+        _, angle = self.core.main(c)
         return angle
 
     def model_main(self, cin):
@@ -202,7 +202,7 @@ class Abs(HW):
         self._delay = self.core._delay
 
     def main(self, c):
-        abs, _ = self.next.core.main(c)
+        abs, _ = self.core.main(c)
         return abs
 
     def model_main(self, cin):

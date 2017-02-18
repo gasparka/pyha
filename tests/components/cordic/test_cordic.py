@@ -53,9 +53,7 @@ class TestToPolar:
         dut = ToPolar()
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                         )
+                         rtol=1e-4)
 
     def test_polar_quadrant_ii(self):
         inputs = [-0.234 + 0.92j]
@@ -64,9 +62,7 @@ class TestToPolar:
         dut = ToPolar()
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                         )
+                         rtol=1e-4)
 
     def test_polar_quadrant_iii(self):
         inputs = [-0.234 - 0.92j]
@@ -75,9 +71,7 @@ class TestToPolar:
         dut = ToPolar()
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                         )
+                         rtol=1e-4)
 
     def test_polar_quadrant_iv(self):
         inputs = [0.234 - 0.92j]
@@ -86,9 +80,7 @@ class TestToPolar:
         dut = ToPolar()
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                         )
+                         rtol=1e-4)
 
     def test_overflow_condition(self):
         pytest.xfail('abs would be > 1 (1.84)')
@@ -98,9 +90,7 @@ class TestToPolar:
         dut = ToPolar()
         assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
                          expect, inputs,
-                         rtol=1e-4,
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                         )
+                         rtol=1e-4)
 
     def _chirp_stimul(self):
         duration = 1.0
@@ -129,7 +119,6 @@ class TestToPolar:
                          expect, inputs,
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
     def test_angle(self):
@@ -144,7 +133,6 @@ class TestToPolar:
                          expect, inputs,
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
     def test_abs(self):
@@ -159,7 +147,6 @@ class TestToPolar:
                          expect, inputs,
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
                          )
 
     def test_angle_phantom_cmultconj(self):
@@ -207,7 +194,6 @@ class TestToPolar:
                          expect, inputs,
                          rtol=1e-4,
                          atol=1e-4,  # zeroes make trouble
-                         simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
                          )
         # np.testing.assert_allclose(out[0], out[1], 1e-3, 1e-4)
         # np.testing.assert_allclose(out[0], out[2], 1e-3, 1e-4)
