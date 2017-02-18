@@ -566,9 +566,24 @@ class ClassNodeConv(NodeConv):
         procedure \\_pyha_constants_self\\(self: inout self_t) is
         begin
         {CONSTANTS}
+        {SUBMODULES}
         end procedure;""")
 
-        sockets = {'CONSTANTS': ''}
+        sockets = {'CONSTANTS': '', 'SUBMODULES': ''}
+
+        # call constants self for each submodules, quartus wants this
+        lines = []
+        for x in VHDLType.get_self():
+            var_name = x.name
+            var_value = x.variable
+            if isinstance(var_value, HW):
+                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_constants_self\\(self.{var_name});')
+            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
+                for i in range(len(var_value)):
+                    lines.append(
+                        f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_constants_self\\(self.{var_name}({i}));')
+
+        sockets['SUBMODULES'] += ('\n'.join(tabber(x) for x in lines))
 
         const = VHDLType.get_constants()
         if len(const):

@@ -215,6 +215,11 @@ class Meta(type):
             if isinstance(v, Const):
                 dict['_pyha_constants'][k] = v.value
                 dict[k] = v.value
+
+        # turn '_delay' into constant
+        if '_delay' in dict:
+            dict['_pyha_constants']['_delay'] = dict['_delay']
+
         return dict
 
     # ran when instance is made
