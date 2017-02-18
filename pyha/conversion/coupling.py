@@ -83,7 +83,7 @@ def reset_maker(self_data, recursion_depth=0):
 
         # some other list
         elif isinstance(var_value, list):
-            lines.append(list_reset('', var_name, var_value))
+            lines.append(f'{prefix}.\\next\\.' + list_reset('', var_name, var_value))
 
         # submodule
         elif isinstance(var_value, HW):

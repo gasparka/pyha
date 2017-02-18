@@ -522,7 +522,6 @@ class ClassNodeConv(NodeConv):
         begin
         {DATA}
             \\_pyha_update_self\\(self);
-            \\_pyha_constants_self\\(self);
         end procedure;""")
 
         variables = VHDLType.get_reset()
@@ -539,6 +538,7 @@ class ClassNodeConv(NodeConv):
         procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
         {DATA}
+            \\_pyha_constants_self\\(self);
         end procedure;""")
 
         sockets = {'DATA': ''}
