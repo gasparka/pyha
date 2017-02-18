@@ -3,6 +3,7 @@ from math import ceil
 
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
 from pyha.common.util import hex_to_bool_list
 
 
@@ -17,7 +18,7 @@ class BitsDecode(HW):
     # debugs = []
     # di = 0
     def __init__(self, decision_lim=0.2):
-        self.decision_lim = Const(decision_lim)
+        self.decision_lim = Const(Sfix(decision_lim, 0, -17))
         self.bit_counter = 0
         self.state = False
         self.cstate = False
