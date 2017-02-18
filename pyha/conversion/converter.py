@@ -204,7 +204,7 @@ class DefNodeConv(NodeConv):
         self.name = escape_for_vhdl(self.name)
 
         # collect multiline comment
-        self.multiline_comment = None
+        self.multiline_comment = ''
         if isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
