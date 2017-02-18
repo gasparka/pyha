@@ -64,9 +64,10 @@ def test_vhdl_reset(t0):
     conv = get_conversion(t0)
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.mode := ENUM1;
+            self.\\next\\.mode := ENUM1;
+            \\_pyha_update_self\\(self);
         end procedure;""")
 
     assert expect == str(conv.get_reset_self())

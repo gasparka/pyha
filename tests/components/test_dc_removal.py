@@ -14,7 +14,7 @@ def test_basic():
 
     dut = DCRemoval(8)
 
-    assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x, dir_path='/home/gaspar/git/pyha/playground/conv')
+    assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x)
 
 # def test_basic():
 #     x = [2] * 8 + [-2] * 8

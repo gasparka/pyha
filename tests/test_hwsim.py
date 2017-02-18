@@ -108,10 +108,9 @@ def test_submodules_discovery():
             self.f = [B(), B()]
 
     dut = A()
-    assert len(dut._pyha_submodules) == 3
+    assert len(dut._pyha_submodules) == 2
     assert dut._pyha_submodules[0] == dut.c
-    assert dut._pyha_submodules[1] == dut.f[0]
-    assert dut._pyha_submodules[2] == dut.f[1]
+    assert dut._pyha_submodules[1] == dut.f
 
 
 def test_float_register():

@@ -74,7 +74,6 @@ class TestBasic:
                     self.sublist(0).\\next\\.reg := 0;
                     self.sublist(1).\\next\\.reg := 0;
                     \\_pyha_update_self\\(self);
-                    \\_pyha_constants_self\\(self);
                 end procedure;""")
 
         assert expect == data_conversion
@@ -91,7 +90,7 @@ class TestBasic:
         expected = [[0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(self.dut, [int, int], expected, *x, dir_path='/home/gaspar/git/pyha/playground/conv')
+        assert_sim_match(self.dut, [int, int], expected, *x)
 
 
 class TestDeepSubmodules:

@@ -204,7 +204,7 @@ class DefNodeConv(NodeConv):
         self.name = escape_for_vhdl(self.name)
 
         # collect multiline comment
-        self.multiline_comment = ''
+        self.multiline_comment = None
         if isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
@@ -282,9 +282,6 @@ class DefNodeConv(NodeConv):
             begin
             {BODY}
             end procedure;""")
-
-        if self.name == 'main':
-            self.multiline_comment = ''
 
         sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
 
@@ -660,6 +657,10 @@ class ClassNodeConv(NodeConv):
         ret += self.get_update_self_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
+
+    def get_function(self, name):
+        f = [x for x in self.value if str(x.name) == name]
+        return str(f[0])
 
     def get_package_header(self):
         template = textwrap.dedent("""\

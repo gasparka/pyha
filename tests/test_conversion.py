@@ -85,8 +85,8 @@ def test_convert_submodule_name_conflict():
             self.sub2 = A2()
 
         def main(self, a):
-            ret = self.next.sub.main(a)
-            ret2 = self.next.sub2.main(ret)
+            ret = self.sub.main(a)
+            ret2 = self.sub2.main(ret)
             return ret2
 
     dut = B2()
