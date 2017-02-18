@@ -1,5 +1,5 @@
-import logging
 import numpy as np
+
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import ComplexSfix, resize, Sfix, fixed_truncate
@@ -23,9 +23,9 @@ class QuadratureDemodulator(HW):
                      self.angle._delay + 1
 
     def main(self, c):
-        c_conj = self.next.conjugate.main(c)
-        cmult = self.next.complex_mult.main(c, c_conj)
-        angle = self.next.angle.main(cmult)
+        c_conj = self.conjugate.main(c)
+        cmult = self.complex_mult.main(c, c_conj)
+        angle = self.angle.main(cmult)
 
         self.next.out = resize(self.gain_sfix * angle, c.real, round_style=fixed_truncate)
         return self.out
@@ -44,7 +44,7 @@ class QuadratureDemodulatorPartial0(HW):
         self._delay = self.conjugate._delay
 
     def main(self, c):
-        r = self.next.conjugate.main(c)
+        r = self.conjugate.main(c)
         return r
 
     def model_main(self, c):
@@ -63,8 +63,8 @@ class QuadratureDemodulatorPartial1(HW):
                      self.complex_mult._delay
 
     def main(self, c):
-        r = self.next.conjugate.main(c)
-        ra = self.next.complex_mult.main(c, r)
+        r = self.conjugate.main(c)
+        ra = self.complex_mult.main(c, r)
         return ra
 
     def model_main(self, c):
