@@ -245,15 +245,15 @@ def test_initial_self():
             self.next.b = True
 
     dut = A()
-    assert dut.a == dut.__dict__['__initial_self__'].a
-    assert dut.b == dut.__dict__['__initial_self__'].b
-    assert dut.i == dut.__dict__['__initial_self__'].i
+    assert dut.a == dut.__dict__['_pyha_initial_self'].a
+    assert dut.b == dut.__dict__['_pyha_initial_self'].b
+    assert dut.i == dut.__dict__['_pyha_initial_self'].i
     dut.main()
     dut.main()
     dut.main()
-    assert dut.__dict__['__initial_self__'].a.init_val == 0.0123
-    assert dut.__dict__['__initial_self__'].i == 25
-    assert dut.__dict__['__initial_self__'].b == False
+    assert dut.__dict__['_pyha_initial_self'].a.init_val == 0.0123
+    assert dut.__dict__['_pyha_initial_self'].i == 25
+    assert dut.__dict__['_pyha_initial_self'].b == False
 
 
 def test_meta_deepcopy():
@@ -287,8 +287,8 @@ def test_meta_deepcopy():
 
     dut = E()
 
-    assert id(dut.l.a) != id(dut.l.next.a) != id(dut.l.__dict__['__initial_self__'].a)
-    assert id(dut.l.l.a) != id(dut.l.l.next.a) != id(dut.l.l.__dict__['__initial_self__'].a)
+    assert id(dut.l.a) != id(dut.l.next.a) != id(dut.l.__dict__['_pyha_initial_self'].a)
+    assert id(dut.l.l.a) != id(dut.l.l.next.a) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
 
 def test_outputs():
     class A(HW):

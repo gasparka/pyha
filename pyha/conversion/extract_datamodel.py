@@ -16,7 +16,7 @@ class VariableNotConvertible(Exception):
 
 def extract_datamodel(obj):
     ret = {}
-    for key, val in obj.__dict__['__initial_self__'].__dict__.items():
+    for key, val in obj.__dict__['_pyha_initial_self'].__dict__.items():
         if key == '_pyha_instance_id':
             continue
         if is_convertible(val):

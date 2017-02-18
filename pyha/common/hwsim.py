@@ -27,8 +27,8 @@ class TypeNotConsistent(Exception):
         # these clutter printing
         from contextlib import suppress
         with suppress(KeyError):  # only available for 'self'
-            new.pop('__initial_self__')
-            old.pop('__initial_self__')
+            new.pop('_pyha_initial_self')
+            old.pop('_pyha_initial_self')
         message = f'Self/local not consistent type!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nOld: {type(old)}:{repr(old)}\nNew: {type(new)}:{new}'
         super().__init__(message)
 
@@ -238,7 +238,7 @@ class Meta(type):
         # registery of submodules that need 'self update'
         ret.__submodules__ = []
         for k, v in ret.__dict__.items():
-            if k in ('__initial_self__', 'next', '__submodules__'):
+            if k in ('_pyha_initial_self', 'next', '__submodules__'):
                 continue
             if isinstance(v, HW):
                 ret.__submodules__.append(v)
@@ -247,7 +247,7 @@ class Meta(type):
 
         # save the initial self values
         # all registers will be derived from these values!
-        ret.__dict__['__initial_self__'] = deepcopy(ret)
+        ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -274,7 +274,7 @@ class HW(with_metaclass(Meta)):
         memo[id(self)] = result
         for k, v in self.__dict__.items():
             # todo: maybe this also works for 'next'
-            if k == '__initial_self__':  # dont waste time on endless deepcopy
+            if k == '_pyha_initial_self':  # dont waste time on endless deepcopy
                 setattr(result, k, copy(v))
             else:
                 setattr(result, k, deepcopy(v, memo))
