@@ -639,18 +639,6 @@ class ClassNodeConv(NodeConv):
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
-    # def get_main_header(self):
-    #     restore = self.user_main.multiline_comment
-    #     self.user_main.multiline_comment = ''
-    #     main_header = self.user_main.get_prototype()
-    #     main_header = main_header.replace('procedure main_user', 'procedure main')
-    #     main_header = main_header.replace('self:inout self_t', 'self_reg:inout register_t')
-    #
-    #     assert main_header[0] == '\n'
-    #     main_header = main_header[1:]
-    #     self.user_main.multiline_comment = restore
-    #     return main_header
-
     def get_headers(self):
         ret = self.get_constants_self_prototype() + '\n\n'
         ret += self.get_reset_self_prototype() + '\n\n'

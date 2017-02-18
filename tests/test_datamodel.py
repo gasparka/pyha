@@ -238,6 +238,7 @@ class TestDatamodel:
         dut._pyha_update_self()
 
         result = extract_datamodel(dut)
+        assert len(result) == 1
         assert type(result['submodule']) == A
 
 

@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES
 from pyha.common.sfix import Sfix, ComplexSfix
 
 
@@ -17,7 +17,7 @@ class VariableNotConvertible(Exception):
 def extract_datamodel(obj):
     ret = {}
     for key, val in obj.__dict__['_pyha_initial_self'].__dict__.items():
-        if key == '_pyha_instance_id':
+        if key in PYHA_VARIABLES:
             continue
         if is_convertible(val):
             last = obj.__dict__[key]

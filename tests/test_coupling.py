@@ -767,77 +767,36 @@ def test_class_datamodel_submodule(converter):
     datamodel = DataModel(locals={}, self_data={'sub': Aobj})
 
     expect = textwrap.dedent("""\
-            type register_t is record
-                sub: A_0.register_t;
+            type next_t is record
+                sub: A_0.self_t;
             end record;
 
             type self_t is record
 
-                sub: A_0.register_t;
-                \\next\\: register_t;
+                sub: A_0.self_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
     assert expect == str(conv.get_datamodel())
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            A_0.reset(self_reg.sub);
+            A_0.\\_pyha_reset_self\\(self.sub);
+            \\_pyha_update_self\\(self);
+            \\_pyha_constants_self\\(self);
         end procedure;""")
 
     assert expect == str(conv.get_reset_self())
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.sub := self_reg.sub;
-            self.\\next\\ := self_reg;
+            A_0.\\_pyha_update_self\\(self.sub);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_submodule_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'sub': Register()})
-
-    expect = textwrap.dedent("""\
-            type register_t is record
-                sub: Register_0.register_t;
-            end record;
-
-            type self_t is record
-
-                sub: Register_0.register_t;
-                \\next\\: register_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
-
-    expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
-        begin
-            Register_0.reset(self_reg.sub);
-        end procedure;""")
-
-    assert expect == str(conv.get_reset_self())
-
-    expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
-        begin
-
-            self.sub := self_reg.sub;
-            self.\\next\\ := self_reg;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 

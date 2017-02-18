@@ -61,23 +61,24 @@ def bounds_to_str(var):
 
 def reset_maker(self_data, recursion_depth=0):
     lines = []
+    prefix = 'self' if recursion_depth == 0 else ''
     for var_name, var_value in self_data.items():
         if var_name == 'next':
             continue
         var_name = escape_for_vhdl(var_name)
 
         if isinstance(var_value, (Sfix, ComplexSfix)):
-            lines.append(f'\\next\\.{var_name} := {var_value.vhdl_reset()};')
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.vhdl_reset()};')
 
         elif isinstance(var_value, (Enum)):
-            lines.append(f'\\next\\.{var_name} := {var_value.name};')
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.name};')
 
         # list of submodules
         elif isinstance(var_value, list) and isinstance(var_value[0], HW):
             for i, x in enumerate(var_value):
                 dm = DataModel(x)
                 resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = [f'{var_name}({i}).{x}' for x in resets]
+                vars = [f'{prefix}.{var_name}({i}){x}' for x in resets]
                 lines.extend(vars)
 
         # some other list
@@ -87,18 +88,16 @@ def reset_maker(self_data, recursion_depth=0):
         # submodule
         elif isinstance(var_value, HW):
             if recursion_depth == 0:
-                lines.append(f'{get_instance_vhdl_name(var_value)}.reset(self.{var_name});')
+                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_reset_self\\(self.{var_name});')
             else:
                 # submodule of lists of submodules
                 dm = DataModel(var_value)
                 resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = [f'{var_name}.{x}' for x in resets]
+                vars = [f'{prefix}.{var_name}{x}' for x in resets]
                 lines.extend(vars)
         else:
-            lines.append(f'\\next\\.{var_name} := {var_value};')
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value};')
 
-    if recursion_depth == 0:
-        lines = ['self.' + x for x in lines]
     return lines
 
 
@@ -160,7 +159,7 @@ class VHDLType:
 
             # todo remove this hack
             if isinstance(v, HW):
-                t.var_type += '.next_t'
+                t.var_type += '.self_t'
             ret.append(t)
         return ret
 

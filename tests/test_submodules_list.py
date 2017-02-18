@@ -94,61 +94,65 @@ class TestBasic:
         assert_sim_match(self.dut, [int, int], expected, *x, dir_path='/home/gaspar/git/pyha/playground/conv')
 
 
-@pytest.fixture
-def case2():
-    class C2(HW):
-        def __init__(self):
-            self.regor = False
+class TestDeepSubmodules:
+    def setup_class(self):
+        class C2(HW):
+            def __init__(self):
+                self.regor = False
 
-        def main(self, x):
-            return x
+            def main(self, x):
+                return x
 
-    class A2(HW):
-        def __init__(self, reg_init):
-            self.reg = reg_init
-            self.submodule = C2()
+        class A2(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C2()
 
-        def main(self, x):
-            r = self.next.submodule.main(1)
-            self.next.reg = x
-            return self.reg
+            def main(self, x):
+                r = self.submodule.main(1)
+                self.next.reg = x
+                return self.reg
 
-    class B2(HW):
-        def __init__(self):
-            self.sublist = [A2(2), A2(128)]
+        class B2(HW):
+            def __init__(self):
+                self.sublist = [A2(2), A2(128)]
 
-        def main(self, a, b):
-            r0 = self.next.sublist[0].main(a)
-            r1 = self.next.sublist[1].main(b)
-            return r0, r1
+            def main(self, a, b):
+                r0 = self.sublist[0].main(a)
+                r1 = self.sublist[1].main(b)
+                return r0, r1
 
-    dut = B2()
-    dut.main(1, 1)
-    dut.main(1, 1)
-    return dut
+        self.dut = B2()
+        self.dut.main(1, 1)
 
+    def test_sim_case2(self):
+        x = [range(16), range(16)]
+        expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+                    [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-def test_sim_case2(case2):
-    x = [range(16), range(16)]
-    expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-                [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
-    dut = case2
+        assert_sim_match(self.dut, [int, int], expected, *x)
 
-    assert_sim_match(dut, [int, int], expected, *x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    def test_datamodel(self):
+        conv, datamodel = get_conversion_datamodel(self.dut)
+        assert len(datamodel.self_data) == 1
+        assert datamodel.self_data['sublist'] == self.dut.sublist
 
+        conv, datamodel = get_conversion_datamodel(self.dut.sublist[0])
+        assert len(datamodel.self_data) == 2
+        assert 'reg' in datamodel.self_data
+        assert 'submodule' in datamodel.self_data
 
-def test_reset_maker_case2(case2):
-    conv, datamodel = get_conversion_datamodel(case2)
+    def test_reset(self):
+        conv, datamodel = get_conversion_datamodel(self.dut)
 
-    expect = [
-        'self_reg.sublist(0).reg := 2;',
-        'self_reg.sublist(0).submodule.regor := False;',
-        'self_reg.sublist(1).reg := 128;',
-        'self_reg.sublist(1).submodule.regor := False;']
-    ret = reset_maker(datamodel.self_data)
+        expect = [
+            'self.sublist(0).\\next\\.reg := 2;',
+            'self.sublist(0).submodule.\\next\\.regor := False;',
+            'self.sublist(1).\\next\\.reg := 128;',
+            'self.sublist(1).submodule.\\next\\.regor := False;']
+        ret = reset_maker(datamodel.self_data)
 
-    assert expect == ret
+        assert expect == ret
 
 
 @pytest.fixture

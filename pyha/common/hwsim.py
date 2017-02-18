@@ -15,6 +15,9 @@ Purpose: Make python class simulatable as hardware, mainly provide 'register' be
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
+# Pyha related variables in the object __dict__
+PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id')
+
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
@@ -229,7 +232,7 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, HW) \
-                    or k in ['_pyha_instance_id'] \
+                    or k in PYHA_VARIABLES \
                     or (isinstance(v, list) and isinstance(v[0], HW)):
                 continue
             if is_convertible(v):
@@ -238,7 +241,7 @@ class Meta(type):
         # registery of submodules that need 'self update'
         ret._pyha_submodules = []
         for k, v in ret.__dict__.items():
-            if k in ('_pyha_initial_self', 'next', '_pyha_submodules'):
+            if k in PYHA_VARIABLES:
                 continue
             if isinstance(v, HW):
                 ret._pyha_submodules.append(v)
