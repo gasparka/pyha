@@ -17,7 +17,7 @@ class VariableNotConvertible(Exception):
 def extract_datamodel(obj):
     ret = {}
     for key, val in obj.__dict__['__initial_self__'].__dict__.items():
-        if key == 'pyha_instance_id':
+        if key == '_pyha_instance_id':
             continue
         if is_convertible(val):
             last = obj.__dict__[key]
@@ -34,9 +34,9 @@ def extract_datamodel(obj):
                 # list of submodules
                 # set all to single id
                 val = last
-                first_id = val[0].pyha_instance_id
+                first_id = val[0]._pyha_instance_id
                 for x in val:
-                    x.pyha_instance_id = first_id
+                    x._pyha_instance_id = first_id
             ret.update({key: val})
     return ret
 

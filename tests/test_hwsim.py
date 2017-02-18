@@ -402,8 +402,8 @@ def test_outputs():
     #             Class: A
     #             Function: main
     #             Variable: a
-    #             Old: <class 'dict'>:{'pyha_instance_id': 0, 'a': 128}
-    #             New: <class 'dict'>:{'pyha_instance_id': 0, 'a': True}""")
+#             Old: <class 'dict'>:{'_pyha_instance_id': 0, 'a': 128}
+#             New: <class 'dict'>:{'_pyha_instance_id': 0, 'a': True}""")
     #     dut = A()
     #     dut.main(True)
     #     with pytest.raises(TypeNotConsistent) as e:

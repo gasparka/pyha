@@ -122,7 +122,7 @@ def list_reset(prefix, key, value):
 def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
-        id = variable.pyha_instance_id
+        id = variable._pyha_instance_id
     return escape_for_vhdl(f'{name}_{id}')
 
 

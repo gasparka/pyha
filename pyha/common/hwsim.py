@@ -220,7 +220,7 @@ class Meta(type):
         ret.__dict__ = cls.handle_constants(ret.__dict__)
         cls.validate_datamodel(ret.__dict__)
 
-        ret.pyha_instance_id = cls.instance_count
+        ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
 
@@ -229,7 +229,7 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, HW) \
-                    or k in ['pyha_instance_id'] \
+                    or k in ['_pyha_instance_id'] \
                     or (isinstance(v, list) and isinstance(v[0], HW)):
                 continue
             if is_convertible(v):
