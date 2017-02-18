@@ -196,21 +196,21 @@ class Meta(type):
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
-                ref = x[0].__constants__
+                ref = x[0]._pyha_constants
                 for listi in x:
-                    di = listi.__constants__
+                    di = listi._pyha_constants
                     if di != ref:
                         raise Exception(
                             f'List of submodules: {x}\n but constants are not equal!\n\nTry to remove Const() keyword.')
 
     def handle_constants(cls, dict):
         """ Go over dict and find all the constants. Remove the Const() wrapper
-        and insert to __constants__."""
+        and insert to _pyha_constants."""
 
-        dict['__constants__'] = {}
+        dict['_pyha_constants'] = {}
         for k, v in dict.items():
             if isinstance(v, Const):
-                dict['__constants__'][k] = v.value
+                dict['_pyha_constants'][k] = v.value
                 dict[k] = v.value
         return dict
 
@@ -223,11 +223,6 @@ class Meta(type):
         ret.pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
-
-        # save the initial self values
-        # all registers will be derived from these values!
-        # todo: could this be just copy? and skip 'next'
-        ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # give self.next to the new object
         ret.__dict__['next'] = type('next', (object,), {})()
@@ -249,6 +244,10 @@ class Meta(type):
                 ret.__submodules__.append(v)
             elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
                 ret.__submodules__.extend(v)
+
+        # save the initial self values
+        # all registers will be derived from these values!
+        ret.__dict__['__initial_self__'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
         ret._outputs = []

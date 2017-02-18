@@ -31,8 +31,8 @@ class TestBasic:
         # self.conversion = get_conversion(self.dut)
 
     def test_collect(self):
-        assert len(self.dut.__dict__['__constants__']) == 1
-        assert self.dut.__dict__['__constants__']['mode'] == 1
+        assert len(self.dut.__dict__['_pyha_constants']) == 1
+        assert self.dut.__dict__['_pyha_constants']['mode'] == 1
         assert self.dut.__dict__['mode'] == 1
         assert self.dut.__dict__['reg'] == 32
 

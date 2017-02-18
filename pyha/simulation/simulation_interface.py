@@ -153,7 +153,7 @@ class Simulation:
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.model.next = deepcopy(self.model.__initial_self__)
+            self.model = deepcopy(self.model.__initial_self__)
             ret = []
             for x in args:
                 ret.append(self.model.main(*x))
