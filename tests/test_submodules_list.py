@@ -8,7 +8,7 @@ from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import get_conversion_datamodel, Conversion
 from pyha.conversion.coupling import reset_maker
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 class TestBasic:
@@ -155,52 +155,49 @@ class TestDeepSubmodules:
         assert expect == ret
 
 
-@pytest.fixture
-def case3():
-    class Label(HW):
-        def __init__(self):
-            self.register = Sfix(0.563, 0, -18)
+class TestDeepDeepSubmodules:
+    def setup_class(self):
+        class Label(HW):
+            def __init__(self):
+                self.register = Sfix(0.563, 0, -18)
 
-    class C3(HW):
-        def __init__(self):
-            self.nested_list = [Label(), Label()]
-            self.regor = False
+        class C3(HW):
+            def __init__(self):
+                self.nested_list = [Label(), Label()]
+                self.regor = False
 
-    class A3(HW):
-        def __init__(self, reg_init):
-            self.reg = reg_init
-            self.submodule = C3()
+        class A3(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C3()
 
-    class B3(HW):
-        def __init__(self):
-            self.ror = 554
-            self.sublist = [A3(2), A3(128)]
+        class B3(HW):
+            def __init__(self):
+                self.ror = 554
+                self.sublist = [A3(2), A3(128)]
 
-    dut = B3()
-    return dut
+        self.dut = B3()
 
+    def test_reset(self):
+        conv, datamodel = get_conversion_datamodel(self.dut)
 
-def test_reset_maker_case3(case3):
-    conv, datamodel = get_conversion_datamodel(case3)
+        expect = [
+            'self.\\next\\.\\ror\\ := 554;',
+            'self.sublist(0).\\next\\.reg := 2;',
+            'self.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
+            'self.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
+            'self.sublist(0).submodule.\\next\\.regor := False;',
+            'self.sublist(1).\\next\\.reg := 128;',
+            'self.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
+            'self.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
+            'self.sublist(1).submodule.\\next\\.regor := False;',
+        ]
+        ret = reset_maker(datamodel.self_data)
 
-    expect = [
-        'self_reg.\\ror\\ := 554;',
-        'self_reg.sublist(0).reg := 2;',
-        'self_reg.sublist(0).submodule.nested_list(0).\\register\\ := Sfix(0.563, 0, -18);',
-        'self_reg.sublist(0).submodule.nested_list(1).\\register\\ := Sfix(0.563, 0, -18);',
-        'self_reg.sublist(0).submodule.regor := False;',
-        'self_reg.sublist(1).reg := 128;',
-        'self_reg.sublist(1).submodule.nested_list(0).\\register\\ := Sfix(0.563, 0, -18);',
-        'self_reg.sublist(1).submodule.nested_list(1).\\register\\ := Sfix(0.563, 0, -18);',
-        'self_reg.sublist(1).submodule.regor := False;',
-    ]
-    ret = reset_maker(datamodel.self_data)
-
-    assert expect == ret
+        assert expect == ret
 
 
-@pytest.fixture
-def case_for():
+def test_for():
     class A4(HW):
         def __init__(self, reg_init):
             self.reg = reg_init
@@ -215,22 +212,17 @@ def case_for():
 
         def main(self, x):
             outs = [0, 0, 0, 0]
-            for i in range(len(self.next.sublist)):
-                outs[i] = self.next.sublist[i].main(x)
+            for i in range(len(self.sublist)):
+                outs[i] = self.sublist[i].main(x)
 
             return outs[0]
 
     dut = B4()
-    return dut
 
-
-def test_sim_case_for(case_for):
     x = list(range(16))
     expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    dut = case_for
 
-    assert_sim_match(dut, [int], expected, x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    assert_sim_match(dut, [int], expected, x)
 
 
 def test_const_illegal():
