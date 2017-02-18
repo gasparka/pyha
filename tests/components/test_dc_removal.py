@@ -1,6 +1,6 @@
 from pyha.common.sfix import Sfix
 from pyha.components.dc_removal import DCRemoval
-from pyha.simulation.simulation_interface import assert_sim_match
+from pyha.simulation.simulation_interface import debug_assert_sim_match, SIM_HW_MODEL
 
 
 def test_basic():
@@ -14,7 +14,9 @@ def test_basic():
 
     dut = DCRemoval(8)
 
-    assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x, )
+    r = debug_assert_sim_match(dut, [Sfix(left=1, right=-18)], expected, x,
+                               simulations=[SIM_HW_MODEL])
+    pass
 
 # def test_basic():
 #     x = [2] * 8 + [-2] * 8

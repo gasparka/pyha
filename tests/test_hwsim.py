@@ -83,6 +83,7 @@ def test_next_filter():
             self.c = B()
             self.d = Ob()
             self.e = np.array([1, 2, 3])
+            self.f = [B(), B()]
 
     dut = A()
 
@@ -94,8 +95,23 @@ def test_next_filter():
     assert not hasattr(dut.next, 'c')
     assert not hasattr(dut.next, 'd')
     assert not hasattr(dut.next, 'e')
+    assert not hasattr(dut.next, 'f')
 
 
+def test_submodules_discovery():
+    class B(HW):
+        pass
+
+    class A(HW):
+        def __init__(self):
+            self.c = B()
+            self.f = [B(), B()]
+
+    dut = A()
+    assert len(dut.__submodules__) == 3
+    assert dut.__submodules__[0] == dut.c
+    assert dut.__submodules__[1] == dut.f[0]
+    assert dut.__submodules__[2] == dut.f[1]
 
 
 def test_float_register():

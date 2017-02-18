@@ -216,7 +216,7 @@ class Simulation:
 def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
                            fuck_it=False, **kwards):
     """ Instead of asserting anything return outputs of each simulation """
-    simulations = sim_rules(simulations)
+    simulations = sim_rules(simulations, model)
     outs = []
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
@@ -243,7 +243,7 @@ def assert_hwmodel_rtl_match(model, types, *x):
 def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
                           fuck_it=False, skip_first=0):
     import matplotlib.pyplot as plt
-    simulations = sim_rules(simulations)
+    simulations = sim_rules(simulations, model)
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)

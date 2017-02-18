@@ -40,7 +40,8 @@ class TesttBitsDecode:
     def test_uks_one(self):
         data = load_data('data/one_uksetaga_f2405350000.00_fs2181818.18_rx6_30_0_band2000000.00.iq')
         expect = '8dfc4ff97dffdb11ff438aee29243910365e908970b9475e'
-        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data)
+        r = debug_assert_sim_match(self.dut, [Sfix(left=0, right=-17)], None, data
+                                   , dir_path='/home/gaspar/git/pyha/playground/conv')
 
         assert hex_to_bitstr(expect) in bools_to_bitstr(r[0])
         self._assert_sims(expect, r[1:])

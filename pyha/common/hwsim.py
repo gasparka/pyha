@@ -233,15 +233,22 @@ class Meta(type):
         ret.__dict__['next'] = type('next', (object,), {})()
 
         for k, v in ret.__dict__.items():
-            if isinstance(v, HW) or k in ['pyha_instance_id']:
+            if isinstance(v, HW) \
+                    or k in ['pyha_instance_id'] \
+                    or (isinstance(v, list) and isinstance(v[0], HW)):
                 continue
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
-        # ret.__dict__['next'].__dict__ = {k:copy(v) for k,v in ret.__dict__.items()}
-        # ret.__dict__['next'].__dict__ = {k:v for k,v in ret.__dict__.items()}
-        # ret.__dict__['next'] = deepcopy(ret)
-        ret.__submodules__ = [v for k, v in ret.__dict__.items()
-                              if isinstance(v, HW) and k not in ('__initial_self__', 'next')]
+
+        # registery of submodules that need 'self update'
+        ret.__submodules__ = []
+        for k, v in ret.__dict__.items():
+            if k in ('__initial_self__', 'next', '__submodules__'):
+                continue
+            if isinstance(v, HW):
+                ret.__submodules__.append(v)
+            elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
+                ret.__submodules__.extend(v)
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -256,29 +263,7 @@ class Meta(type):
                 new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
-        # ClockSimulator(ret)
         return ret
-
-
-# class ClockSimulator:
-#     register = []
-#
-#     def __init__(self, obj):
-#         self.obj = obj
-#         ClockSimulator.register.append(self)
-#
-#     def __call__(self, *args, **kwargs):
-#         now = self.obj.__dict__
-#         next = self.obj.__dict__['next'].__dict__
-#         now.update(next)
-#         pass
-#
-#     @classmethod
-#     def run(cls):
-#         for x in cls.register:
-#             x()
-
-
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
