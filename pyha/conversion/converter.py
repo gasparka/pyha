@@ -519,6 +519,7 @@ class ClassNodeConv(NodeConv):
         procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
         {DATA}
+            \\_pyha_update_self\\(self);
             \\_pyha_constants_self\\(self);
         end procedure;""")
 
@@ -577,14 +578,14 @@ class ClassNodeConv(NodeConv):
 
     def get_datamodel(self):
         template = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
             {DATA}
             end record;
 
             type self_t is record
             {CONSTANTS}
             {DATA}
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
         sockets = {'DATA': '', 'CONSTANTS': ''}
         sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
@@ -604,7 +605,7 @@ class ClassNodeConv(NodeConv):
 
             type_name = pytype_to_vhdl(val[0])
             if isinstance(val[0], HW):
-                type_name += '.register_t'
+                type_name += '.self_t'
             new_tp = f'type {name} is array (natural range <>) of {type_name};'
             if new_tp not in typedefs:
                 typedefs.append(new_tp)

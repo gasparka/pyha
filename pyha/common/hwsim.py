@@ -243,7 +243,7 @@ class Meta(type):
             if isinstance(v, HW):
                 ret._pyha_submodules.append(v)
             elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
-                ret._pyha_submodules.extend(v)
+                ret._pyha_submodules.append(v)
 
         # save the initial self values
         # all registers will be derived from these values!
@@ -291,4 +291,8 @@ class HW(with_metaclass(Meta)):
 
         # update submodules
         for x in self._pyha_submodules:
-            x._pyha_update_self()
+            if isinstance(x, list):
+                for item in x:
+                    item._pyha_update_self()
+            else:
+                x._pyha_update_self()
