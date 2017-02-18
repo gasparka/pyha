@@ -236,14 +236,14 @@ class Meta(type):
                 setattr(ret.next, k, deepcopy(v))
 
         # registery of submodules that need 'self update'
-        ret.__submodules__ = []
+        ret._pyha_submodules = []
         for k, v in ret.__dict__.items():
-            if k in ('_pyha_initial_self', 'next', '__submodules__'):
+            if k in ('_pyha_initial_self', 'next', '_pyha_submodules'):
                 continue
             if isinstance(v, HW):
-                ret.__submodules__.append(v)
+                ret._pyha_submodules.append(v)
             elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
-                ret.__submodules__.extend(v)
+                ret._pyha_submodules.extend(v)
 
         # save the initial self values
         # all registers will be derived from these values!
@@ -290,5 +290,5 @@ class HW(with_metaclass(Meta)):
         self.__dict__.update(deepish_copy(self.next.__dict__))
 
         # update submodules
-        for x in self.__submodules__:
+        for x in self._pyha_submodules:
             x._pyha_update_self()
