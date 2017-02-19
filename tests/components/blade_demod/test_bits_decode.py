@@ -22,13 +22,13 @@ def load_data(file_name, demodulate=True):
         r = signal.lfilter(taps, [1], demod)
         return r
     else:
-        return iq
+        return iq.real
         # import matplotlib.pyplot as plt
         # plt.plot(r)
         # plt.show()
 
 
-class TesttBitsDecode:
+class TestBitsDecode:
     def setup(self):
         self.dut = BitsDecode(0.2)
 

@@ -40,14 +40,14 @@ def test_vhdl_datamodel(t0):
     conv = get_conversion(t0)
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 mode: TestEnum;
             end record;
 
             type self_t is record
 
                 mode: TestEnum;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
     dm = conv.get_datamodel()
     assert expect == dm
@@ -64,12 +64,13 @@ def test_vhdl_reset(t0):
     conv = get_conversion(t0)
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.mode := ENUM1;
+            self.\\next\\.mode := ENUM1;
+            \\_pyha_update_self\\(self);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
 
 def test_simulate(t0):

@@ -1,5 +1,6 @@
 import sys
 from copy import deepcopy, copy
+from enum import Enum
 
 import numpy as np
 from six import iteritems, with_metaclass
@@ -14,6 +15,9 @@ Purpose: Make python class simulatable as hardware, mainly provide 'register' be
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
+# Pyha related variables in the object __dict__
+PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
+
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
@@ -26,11 +30,29 @@ class TypeNotConsistent(Exception):
         # these clutter printing
         from contextlib import suppress
         with suppress(KeyError):  # only available for 'self'
-            new.pop('__initial_self__')
-            old.pop('__initial_self__')
+            new.pop('_pyha_initial_self')
+            old.pop('_pyha_initial_self')
         message = f'Self/local not consistent type!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nOld: {type(old)}:{repr(old)}\nNew: {type(new)}:{new}'
         super().__init__(message)
 
+
+def is_convertible(obj):
+    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
+    if type(obj) in allowed_types:
+        return True
+    elif isinstance(obj, list):
+        # To check whether all elements are of the same type
+        if len(set(map(type, obj))) == 1:
+            if all(type(x) in allowed_types for x in obj):
+                return True
+            elif isinstance(obj[0], HW):  # list of submodules
+                return True
+    elif isinstance(obj, Enum):
+        return True
+    elif isinstance(obj, HW):
+        return True
+
+    return False
 
 def deepish_copy(org):
     """
@@ -46,10 +68,11 @@ def deepish_copy(org):
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
                 # Without this assign to imag or real will fuck up everything
-                if isinstance(v, ComplexSfix):
-                    out[k] = copy(v)
-                else:
-                    out[k] = v  # ints
+                out[k] = deepcopy(v)
+                # if isinstance(v, ComplexSfix):
+                #     out[k] = copy(v)
+                # else:
+                #     out[k] = v  # ints
 
     return out
 
@@ -142,7 +165,7 @@ class PyhaFunc:
         self.TraceManager.remove_profile()
 
         self.TraceManager.last_call_locals.pop('self')
-        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -156,30 +179,11 @@ class PyhaFunc:
         self.last_kwargs = kwargs
         real_self = self.func.__self__
         self.calls += 1
-        # function is not main, dont have to simulate clock
-        if not self.is_main:
-            return self.call_with_locals_discovery(*args, **kwargs)
 
-        # update registers from next
-        now = real_self.__dict__
-        next = real_self.__dict__['next'].__dict__
-        old_next = deepish_copy(next)
-
-        now.update(old_next)
-        # protect assign to self
-        old_self = deepish_copy(now)
-
-        # CALL IS HERE!
+        # # CALL IS HERE!
         ret = self.call_with_locals_discovery(*args, **kwargs)
 
         self.last_return = ret
-
-        self.forbid_assign_to_self(real_self.__dict__, old_self)
-
-        """ After each main, check that 'self' has consistent types(only single type over time)
-         This only checks the 'next' dict, since assign to 'normal' dict **should** be impossible
-        """
-        self.dict_types_consistent_check(real_self.__dict__['next'].__dict__, old_next)
 
         real_self._outputs.append(ret)
         return ret
@@ -195,22 +199,27 @@ class Meta(type):
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
-                ref = x[0].__constants__
+                ref = x[0]._pyha_constants
                 for listi in x:
-                    di = listi.__constants__
+                    di = listi._pyha_constants
                     if di != ref:
                         raise Exception(
                             f'List of submodules: {x}\n but constants are not equal!\n\nTry to remove Const() keyword.')
 
     def handle_constants(cls, dict):
         """ Go over dict and find all the constants. Remove the Const() wrapper
-        and insert to __constants__."""
+        and insert to _pyha_constants."""
 
-        dict['__constants__'] = {}
+        dict['_pyha_constants'] = {}
         for k, v in dict.items():
             if isinstance(v, Const):
-                dict['__constants__'][k] = v.value
+                dict['_pyha_constants'][k] = v.value
                 dict[k] = v.value
+
+        # turn '_delay' into constant
+        if '_delay' in dict:
+            dict['_pyha_constants']['_delay'] = dict['_delay']
+
         return dict
 
     # ran when instance is made
@@ -219,15 +228,34 @@ class Meta(type):
         ret.__dict__ = cls.handle_constants(ret.__dict__)
         cls.validate_datamodel(ret.__dict__)
 
-        ret.pyha_instance_id = cls.instance_count
+        ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
+
+
+        # give self.next to the new object
+        ret.__dict__['next'] = type('next', (object,), {})()
+
+        for k, v in ret.__dict__.items():
+            if isinstance(v, HW) \
+                    or k in PYHA_VARIABLES \
+                    or (isinstance(v, list) and isinstance(v[0], HW)):
+                continue
+            if is_convertible(v):
+                setattr(ret.next, k, deepcopy(v))
+
+        # registery of submodules that need 'self update'
+        ret._pyha_submodules = []
+        for k, v in ret.__dict__.items():
+            if k in PYHA_VARIABLES:
+                continue
+            if isinstance(v, HW):
+                ret._pyha_submodules.append(v)
+            elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
+                ret._pyha_submodules.append(v)
 
         # save the initial self values
         # all registers will be derived from these values!
-        ret.__dict__['__initial_self__'] = deepcopy(ret)
-
-        # give self.next to the new object
-        ret.__dict__['next'] = deepcopy(ret)
+        ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -237,12 +265,12 @@ class Meta(type):
             if method_str in SKIP_FUNCTIONS:
                 continue
             method = getattr(ret, method_str)
-            if method_str[:2] != '__' and callable(method) and method.__class__.__name__ == 'method':
+            if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                    method) and method.__class__.__name__ == 'method':
                 new = PyhaFunc(method)
                 setattr(ret, method_str, new)
 
         return ret
-
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
@@ -253,8 +281,26 @@ class HW(with_metaclass(Meta)):
         result = cls.__new__(cls)
         memo[id(self)] = result
         for k, v in self.__dict__.items():
-            if k == '__initial_self__':  # dont waste time on endless deepcopy
+            # todo: maybe this also works for 'next'
+            if k == '_pyha_initial_self':  # dont waste time on endless deepcopy
                 setattr(result, k, copy(v))
             else:
                 setattr(result, k, deepcopy(v, memo))
         return result
+
+    def _pyha_update_self(self):
+        # for k,v in self.next.__dict__.items():
+        #     if isinstance(v, ComplexSfix):
+        #         setattr(self, k, deepcopy(v))
+        #     else:
+        #         setattr(self, k, v)
+        # self.__dict__ = deepish_copy(self.next.__dict__)
+        self.__dict__.update(deepish_copy(self.next.__dict__))
+
+        # update submodules
+        for x in self._pyha_submodules:
+            if isinstance(x, list):
+                for item in x:
+                    item._pyha_update_self()
+            else:
+                x._pyha_update_self()

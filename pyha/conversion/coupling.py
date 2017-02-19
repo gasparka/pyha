@@ -60,44 +60,45 @@ def bounds_to_str(var):
 
 
 def reset_maker(self_data, recursion_depth=0):
-    variables = []
-    prefix = 'self_reg.' if recursion_depth == 0 else ''
-    for key, value in self_data.items():
-        if key == 'next':
+    lines = []
+    prefix = 'self' if recursion_depth == 0 else ''
+    for var_name, var_value in self_data.items():
+        if var_name == 'next':
             continue
-        key = escape_for_vhdl(key)
-        tmp = None
-        if isinstance(value, (Sfix, ComplexSfix)):
-            tmp = f'{prefix + key} := {value.vhdl_reset()};'
+        var_name = escape_for_vhdl(var_name)
 
-        elif isinstance(value, (Enum)):
-            tmp = f'{prefix + key} := {value.name};'
+        if isinstance(var_value, (Sfix, ComplexSfix)):
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.vhdl_reset()};')
+
+        elif isinstance(var_value, (Enum)):
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.name};')
 
         # list of submodules
-        elif isinstance(value, list) and isinstance(value[0], HW):
-            for i, x in enumerate(value):
+        elif isinstance(var_value, list) and isinstance(var_value[0], HW):
+            for i, x in enumerate(var_value):
                 dm = DataModel(x)
-                vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = [f'{prefix + key}({i}).{var}' for var in vars]
-                variables.extend(vars)
+                resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
+                vars = [f'{prefix}.{var_name}({i}){x}' for x in resets]
+                lines.extend(vars)
 
-        elif isinstance(value, list):
-            tmp = list_reset(prefix, key, value)
-        elif isinstance(value, HW):
+        # some other list
+        elif isinstance(var_value, list):
+            lines.append(f'{prefix}.\\next\\.' + list_reset('', var_name, var_value))
+
+        # submodule
+        elif isinstance(var_value, HW):
             if recursion_depth == 0:
-                tmp = f'{get_instance_vhdl_name(value)}.reset(self_reg.{key});'
+                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_reset_self\\(self.{var_name});')
             else:
-                dm = DataModel(value)
-                vars = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-                vars = [f'{prefix + key}.{var}' for var in vars]
-                variables.extend(vars)
+                # submodule of lists of submodules
+                dm = DataModel(var_value)
+                resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
+                vars = [f'{prefix}.{var_name}{x}' for x in resets]
+                lines.extend(vars)
         else:
-            tmp = f'{prefix + key} := {value};'
+            lines.append(f'{prefix}.\\next\\.{var_name} := {var_value};')
 
-        if tmp is not None:
-            variables.append(tmp)
-
-    return variables
+    return lines
 
 
 def list_reset(prefix, key, value):
@@ -112,7 +113,7 @@ def list_reset(prefix, key, value):
 def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
-        id = variable.pyha_instance_id
+        id = variable._pyha_instance_id
     return escape_for_vhdl(f'{name}_{id}')
 
 
@@ -158,7 +159,7 @@ class VHDLType:
 
             # todo remove this hack
             if isinstance(v, HW):
-                t.var_type += '.register_t'
+                t.var_type += '.self_t'
             ret.append(t)
         return ret
 
@@ -227,11 +228,6 @@ class VHDLType:
         else:
             assert isinstance(name, str)
             self.name = escape_for_vhdl(name)
-
-        if str(name) == 'self_reg':
-            self.var_type = 'register_t'
-            self.port_direction = 'inout'
-            return
 
         if str(name) == 'self':
             self.var_type = 'self_t'

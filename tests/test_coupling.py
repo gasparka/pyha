@@ -709,13 +709,13 @@ def test_class_datamodel(converter):
 
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed(0 downto -27);
             end record;
 
             type self_t is record
                 a: sfixed(0 downto -27);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -767,77 +767,36 @@ def test_class_datamodel_submodule(converter):
     datamodel = DataModel(locals={}, self_data={'sub': Aobj})
 
     expect = textwrap.dedent("""\
-            type register_t is record
-                sub: A_0.register_t;
+            type next_t is record
+                sub: A_0.self_t;
             end record;
 
             type self_t is record
 
-                sub: A_0.register_t;
-                \\next\\: register_t;
+                sub: A_0.self_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
     assert expect == str(conv.get_datamodel())
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            A_0.reset(self_reg.sub);
+            A_0.\\_pyha_reset_self\\(self.sub);
+            \\_pyha_update_self\\(self);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.sub := self_reg.sub;
-            self.\\next\\ := self_reg;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_submodule_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'sub': Register()})
-
-    expect = textwrap.dedent("""\
-            type register_t is record
-                sub: Register_0.register_t;
-            end record;
-
-            type self_t is record
-
-                sub: Register_0.register_t;
-                \\next\\: register_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
-
-    expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
-        begin
-            Register_0.reset(self_reg.sub);
-        end procedure;""")
-
-    assert expect == str(conv.get_reset_str())
-
-    expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
-        begin
-
-            self.sub := self_reg.sub;
-            self.\\next\\ := self_reg;
+            A_0.\\_pyha_update_self\\(self.sub);
+            \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 
@@ -887,7 +846,6 @@ def test_typedefs_duplicate(converter):
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.get_typedefs()
 
-
 def test_datamodel_list_int(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -896,26 +854,27 @@ def test_datamodel_list_int(converter):
     datamodel = DataModel(self_data={'a': [0] * 12}, locals={})
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: integer_list_t(0 to 11);
             end record;
 
             type self_t is record
 
                 a: integer_list_t(0 to 11);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
     assert expect == str(conv.get_datamodel())
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            self.\\next\\.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            \\_pyha_update_self\\(self);
         end procedure;""")
 
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.get_typedefs()
@@ -928,26 +887,26 @@ def test_datamodel_list_boolean(converter):
 
     datamodel = DataModel(self_data={'a': [False, True, False, True]}, locals={})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: boolean_list_t(0 to 3);
             end record;
 
             type self_t is record
 
                 a: boolean_list_t(0 to 3);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
     assert expect == str(conv.get_datamodel())
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.a := (False, True, False, True);
+            self.\\next\\.a := (False, True, False, True);
+            \\_pyha_update_self\\(self);
         end procedure;""")
-
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     # NOTICE: there is global definition for boolean_list_t !
     expect = []
@@ -961,26 +920,26 @@ def test_list_sfix(converter):
 
     datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]}, locals={})
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed2_15_list_t(0 to 1);
             end record;
 
             type self_t is record
 
                 a: sfixed2_15_list_t(0 to 1);
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
     assert expect == str(conv.get_datamodel())
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
+            self.\\next\\.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
+            \\_pyha_update_self\\(self);
         end procedure;""")
-
-    assert expect == str(conv.get_reset_str())
+    assert expect == str(conv.get_reset_self())
 
     expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
     assert expect == conv.get_typedefs()
@@ -999,7 +958,7 @@ def test_class_datamodel(converter):
     })
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 a: sfixed(0 downto -27);
                 b: sfixed(2 downto -27);
                 c: integer;
@@ -1012,7 +971,7 @@ def test_class_datamodel(converter):
                 b: sfixed(2 downto -27);
                 c: integer;
                 d: boolean;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -1031,7 +990,7 @@ def test_class_datamodel_reserved_name(converter):
     })
 
     expect = textwrap.dedent("""\
-            type register_t is record
+            type next_t is record
                 \\out\\: sfixed(0 downto -27);
                 \\new\\: boolean;
             end record;
@@ -1040,7 +999,7 @@ def test_class_datamodel_reserved_name(converter):
 
                 \\out\\: sfixed(0 downto -27);
                 \\new\\: boolean;
-                \\next\\: register_t;
+                \\next\\: next_t;
             end record;""")
 
     conv = converter(code, datamodel)
@@ -1048,7 +1007,7 @@ def test_class_datamodel_reserved_name(converter):
     assert expect == str(conv)
 
 
-def test_class_datamodel_make_self(converter):
+def test_class_datamodel_update_self(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -1056,18 +1015,18 @@ def test_class_datamodel_make_self(converter):
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.a := self_reg.a;
-            self.\\next\\ := self_reg;
+            self.a := self.\\next\\.a;
+            \\_pyha_constants_self\\(self);
         end procedure;""")
+
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 
-def test_class_datamodel_make_self_reserved_name(converter):
+def test_class_datamodel_update_self_reserved_name(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -1078,19 +1037,18 @@ def test_class_datamodel_make_self_reserved_name(converter):
     })
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.\\out\\ := self_reg.\\out\\;
-            self.\\new\\ := self_reg.\\new\\;
-            self.\\next\\ := self_reg;
+            self.\\out\\ := self.\\next\\.\\out\\;
+            self.\\new\\ := self.\\next\\.\\new\\;
+            \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 
-def test_class_datamodel_make_self_ignore_next(converter):
+def test_class_datamodel_update_self_ignore_next(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
@@ -1098,18 +1056,17 @@ def test_class_datamodel_make_self_ignore_next(converter):
     datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27), 'next': {'a': None}})
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.a := self_reg.a;
-            self.\\next\\ := self_reg;
+            self.a := self.\\next\\.a;
+            \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 
-def test_class_datamodel_make_self2(converter):
+def test_class_datamodel_update_self2(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
                     pass""")
@@ -1122,17 +1079,16 @@ def test_class_datamodel_make_self2(converter):
     })
 
     expect = textwrap.dedent("""\
-        procedure make_self(self_reg: register_t; self: out self_t) is
+        procedure \\_pyha_update_self\\(self: inout self_t) is
         begin
-
-            self.a := self_reg.a;
-            self.b := self_reg.b;
-            self.c := self_reg.c;
-            self.d := self_reg.d;
-            self.\\next\\ := self_reg;
+            self.a := self.\\next\\.a;
+            self.b := self.\\next\\.b;
+            self.c := self.\\next\\.c;
+            self.d := self.\\next\\.d;
+            \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_makeself_str()
+    conv = conv.get_update_self()
     assert expect == str(conv)
 
 
@@ -1148,17 +1104,18 @@ def test_class_datamodel_reset(converter):
         'd': False,
         'next': {'lol': 'loom'}
     })
-
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.a := Sfix(1.0, 2, -27);
-            self_reg.b := Sfix(4.0, 6, -27);
-            self_reg.c := 25;
-            self_reg.d := False;
+            self.\\next\\.a := Sfix(1.0, 2, -27);
+            self.\\next\\.b := Sfix(4.0, 6, -27);
+            self.\\next\\.c := 25;
+            self.\\next\\.d := False;
+            \\_pyha_update_self\\(self);
         end procedure;""")
+
     conv = converter(code, datamodel)
-    conv = conv.get_reset_str()
+    conv = conv.get_reset_self()
     assert expect == str(conv)
 
 
@@ -1173,13 +1130,14 @@ def test_class_datamodel_reset_reserved_name(converter):
     })
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
+        procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
-            self_reg.\\out\\ := Sfix(1.0, 0, -27);
-            self_reg.\\new\\ := False;
+            self.\\next\\.\\out\\ := Sfix(1.0, 0, -27);
+            self.\\next\\.\\new\\ := False;
+            \\_pyha_update_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_reset_str()
+    conv = conv.get_reset_self()
     assert expect == str(conv)
 
 
@@ -1189,8 +1147,8 @@ def test_class_datamodel_reset_prototype(converter):
                     pass""")
 
     expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t);""")
+        procedure \\_pyha_reset_self\\(self: inout self_t);""")
 
     conv = converter(code)
-    conv = conv.get_reset_prototype()
+    conv = conv.get_reset_self_prototype()
     assert expect == str(conv)

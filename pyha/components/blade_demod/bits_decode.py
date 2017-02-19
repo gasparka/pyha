@@ -3,6 +3,7 @@ from math import ceil
 
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
 from pyha.common.util import hex_to_bool_list
 
 
@@ -17,7 +18,7 @@ class BitsDecode(HW):
     # debugs = []
     # di = 0
     def __init__(self, decision_lim=0.2):
-        self.decision_lim = Const(decision_lim)
+        self.decision_lim = Const(Sfix(decision_lim, 0, -17))
         self.bit_counter = 0
         self.state = False
         self.cstate = False
@@ -225,14 +226,14 @@ class PacketSync(HW):
         self.next.valid = False
         self.next.bits = self.bits[1:] + [data]
 
-        reload = self.next.headercorr.main(data)
+        reload = self.headercorr.main(data)
         self.next.packet_counter = self.packet_counter - 1
         if reload or self.packet_counter == 0:
             self.next.packet_counter = self.packet_len_lim
             self.next.armed = True
 
         self.next.delay = self.delay[1:] + [data]
-        crc = self.next.crc.main(self.delay[0], reload)
+        crc = self.crc.main(self.delay[0], reload)
 
         if self.armed and crc == 0 and self.packet_counter == 0:
             self.next.part_out_counter = 0
@@ -276,9 +277,9 @@ class DemodToPacket(HW):
     def main(self, inp):
         pack_part = self.default_ret
         part_valid = False
-        bit, bit_valid = self.next.bits.main(inp)
+        bit, bit_valid = self.bits.main(inp)
         if bit_valid:
-            pack_part, part_valid = self.next.packsync.main(bit)
+            pack_part, part_valid = self.packsync.main(bit)
         return pack_part, part_valid
 
     def model_main(self, inp):

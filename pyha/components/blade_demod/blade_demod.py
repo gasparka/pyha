@@ -22,8 +22,8 @@ class BladeDemodPartial1(HW):
     def main(self, i, q):
         # c = self.next.blade_to_complex.main(i, q)
         c = ComplexSfix(i, q)
-        demod = self.next.quadrature_demodulator.main(c)
-        mavg = self.next.moving_average.main(demod)
+        demod = self.quadrature_demodulator.main(c)
+        mavg = self.moving_average.main(demod)
         # blade = self.next.normal_to_blade.main(demod)
         return mavg
 
@@ -45,8 +45,8 @@ class DemodQuadMavg(HW):
                       + self.moving_average._delay
 
     def main(self, c):
-        demod = self.next.quadrature_demodulator.main(c)
-        mavg = self.next.moving_average.main(demod)
+        demod = self.quadrature_demodulator.main(c)
+        mavg = self.moving_average.main(demod)
         return mavg
 
     def model_main(self, c):
@@ -61,7 +61,7 @@ class DemodQuad(HW):
         self._delay = self.quadrature_demodulator._delay
 
     def main(self, c):
-        demod = self.next.quadrature_demodulator.main(c)
+        demod = self.quadrature_demodulator.main(c)
         return demod
 
     def model_main(self, c):
@@ -74,7 +74,7 @@ class BladeDemodQuad(HW):
         self._delay = self.quadrature_demodulator._delay
 
     def main(self, c):
-        demod = self.next.quadrature_demodulator.main(c)
+        demod = self.quadrature_demodulator.main(c)
         return demod
 
     def model_main(self, c):
@@ -92,9 +92,9 @@ class BladeDemodPartial0(HW):
                       + self.normal_to_blade._delay
 
     def main(self, i, q):
-        c = self.next.blade_to_complex.main(i, q)
-        demod = self.next.quadrature_demodulator.main(c)
-        blade = self.next.normal_to_blade.main(demod)
+        c = self.blade_to_complex.main(i, q)
+        demod = self.quadrature_demodulator.main(c)
+        blade = self.normal_to_blade.main(demod)
         return blade
 
     def model_main(self, i, q):

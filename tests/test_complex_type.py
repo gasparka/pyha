@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pyha.common.hwsim import HW, TypeNotConsistent
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -71,189 +71,81 @@ def test_fixed_value_too_large_bitwidth():
         a.fixed_value()
 
 
-@pytest.fixture
-def reg():
-    class A(HW):
-        def __init__(self):
-            self.reg = ComplexSfix(0.5 + 1.2j, 1, -12)
+class TestRegister:
+    def setup(self):
+        class A(HW):
+            def __init__(self):
+                self.reg = ComplexSfix(0.5 + 1.2j, 1, -12)
 
-        def main(self, x):
-            self.next.reg = x
-            return self.reg
+            def main(self, x):
+                self.next.reg = x
+                return self.reg
 
-    dut = A()
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12))
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12))
-    return dut
+        self.dut = A()
+        self.dut.main(ComplexSfix(0.5 + 1.2j, 1, -12))
 
+    def test_delay(self):
+        next = ComplexSfix(1 + 1j, 1, -12)
+        self.dut.main(ComplexSfix(1 + 1j, 1, -12))
+        assert self.dut.next.reg == next
+        assert self.dut.reg != next
 
-def test_reg_delay(reg):
-    dut = reg
-    next = ComplexSfix(1 + 1j, 1, -12)
-    dut.main(ComplexSfix(1 + 1j, 1, -12))
-    assert dut.next.reg == next
-    assert dut.reg != next
-
-
-def test_reg_self_consistensy(reg):
-    with pytest.raises(TypeNotConsistent):
-        reg.main(ComplexSfix(0 + 0j, 1, -22))
+    # def test_reg_self_consistensy(self):
+    #     with pytest.raises(TypeNotConsistent):
+    #         reg.main(ComplexSfix(0 + 0j, 1, -22))
 
 
-def test_reg_datamodel(reg):
-    datamodel = DataModel(reg)
-    assert datamodel.locals['main']['x'] == ComplexSfix(0.5 + 1.2j, 1, -12)
-    assert datamodel.self_data['reg'] == ComplexSfix(0.5 + 1.2j, 1, -12)
+    def test_datamodel(self):
+        datamodel = DataModel(self.dut)
+        assert datamodel.locals['main']['x'] == ComplexSfix(0.5 + 1.2j, 1, -12)
+        assert datamodel.self_data['reg'] == ComplexSfix(0.5 + 1.2j, 1, -12)
 
+    def test_conversion_datamodel(self):
+        conv = get_conversion(self.dut)
 
-def test_reg_conversion_datamodel(reg):
-    conv = get_conversion(reg)
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    reg: complex_sfix1_12;
+                end record;
 
-    expect = textwrap.dedent("""\
-            type register_t is record
-                reg: complex_sfix1_12;
-            end record;
+                type self_t is record
 
-            type self_t is record
+                    reg: complex_sfix1_12;
+                    \\next\\: next_t;
+                end record;""")
+        dm = conv.get_datamodel()
+        assert expect == dm
 
-                reg: complex_sfix1_12;
-                \\next\\: register_t;
-            end record;""")
-    dm = conv.get_datamodel()
-    assert expect == dm
+    def test_conversion_reset(self):
+        conv = get_conversion(self.dut)
 
+        expect = textwrap.dedent("""\
+                procedure \\_pyha_reset_self\\(self: inout self_t) is
+                begin
+                    self.\\next\\.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
+                    \\_pyha_update_self\\(self);
+                end procedure;""")
 
-def test_reg_conversion_reset(reg):
-    conv = get_conversion(reg)
+        assert expect == str(conv.get_reset_self())
 
-    expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
-        begin
-            self_reg.reg := (real=>Sfix(0.5, 1, -12), imag=>Sfix(1.2, 1, -12));
-        end procedure;""")
+    def test_conversion_top_entity(self):
+        res = TopGenerator(self.dut)
+        # input
+        assert 'in0: in std_logic_vector(27 downto 0);' == res.make_entity_inputs()
+        assert 'variable var_in0: complex_sfix1_12;' == res.make_input_variables()
+        assert 'var_in0 := ' \
+               '(real=>Sfix(in0(27 downto 14), 1, -12), imag=>Sfix(in0(13 downto 0), 1, -12));' \
+               == res.make_input_type_conversions()
 
-    assert expect == str(conv.get_reset_str())
+        # output
+        assert 'out0: out std_logic_vector(27 downto 0);' == res.make_entity_outputs()
+        assert 'variable var_out0: complex_sfix1_12;' == res.make_output_variables()
+        assert 'out0 <= to_slv(var_out0.real) & to_slv(var_out0.imag);' == res.make_output_type_conversions()
 
+    def test_complex_types_generation(self):
+        conv = Conversion(self.dut)
 
-def test_reg_conversion_top_entity(reg):
-    dut = reg
-    res = TopGenerator(dut)
-    # input
-    assert 'in0: in std_logic_vector(27 downto 0);' == res.make_entity_inputs()
-    assert 'variable var_in0: complex_sfix1_12;' == res.make_input_variables()
-    assert 'var_in0 := ' \
-           '(real=>Sfix(in0(27 downto 14), 1, -12), imag=>Sfix(in0(13 downto 0), 1, -12));' \
-           == res.make_input_type_conversions()
-
-    # output
-    assert 'out0: out std_logic_vector(27 downto 0);' == res.make_entity_outputs()
-    assert 'variable var_out0: complex_sfix1_12;' == res.make_output_variables()
-    assert 'out0 <= to_slv(var_out0.real) & to_slv(var_out0.imag);' == res.make_output_type_conversions()
-
-
-def test_reg_complex_types_generation(reg):
-    conv = Conversion(reg)
-
-    expect = textwrap.dedent("""\
-        library ieee;
-            use ieee.fixed_pkg.all;
-
-        package ComplexTypes is
-        type complex_sfix1_12 is record
-            real: sfixed(1 downto -12);
-            imag: sfixed(1 downto -12);
-        end record;
-        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
-
-        end package;
-
-        package body ComplexTypes is
-        function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
-        begin
-            return (a, b);
-        end function;
-
-        end package body;
-        """)
-
-    files = conv.write_vhdl_files(Path('/tmp/'))
-    with files[0].open('r') as f:
-        next(f)
-        assert expect == f.read()
-
-
-def test_reg_simulate(reg):
-    dut = reg
-    x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
-
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL])
-
-
-@pytest.fixture
-def shr():
-    class A1(HW):
-        def __init__(self):
-            self.reg = [ComplexSfix(0.5 + 1.2j, 1, -18), ComplexSfix(0.5 + 0.2j, 1, -18),
-                        ComplexSfix(0.1 + 1.2j, 1, -18), ComplexSfix(0.2 - 1.2j, 1, -18)]
-
-        def main(self, x):
-            self.next.reg = [x] + self.reg[:-1]
-            return self.reg[-1]
-
-    dut = A1()
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
-    return dut
-
-
-def test_shr_conversion_reset(shr):
-    conv = get_conversion(shr)
-
-    expect = textwrap.dedent("""\
-        procedure reset(self_reg: inout register_t) is
-        begin
-            self_reg.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
-        end procedure;""")
-
-    assert expect == str(conv.get_reset_str())
-
-
-def test_shr_simulate(shr):
-    dut = shr
-    x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expected = [0.200001 - 1.200001j, 0.099998 + 1.200001j, 0.500000 + 0.200001j,
-                0.500000 + 1.200001j, 0.500000 + 0.099998j]
-
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL])
-
-
-@pytest.fixture
-def more_regs():
-    class A3(HW):
-        def __init__(self):
-            self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -12)
-            self.reg1 = ComplexSfix(0.5 + 1.2j, 1, -21)
-            self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
-
-        def main(self, x0, x1, x2):
-            self.next.reg0 = x0
-            self.next.reg0 = x0
-            self.next.reg1 = x1
-            self.next.reg2 = x2
-            return self.reg0, self.reg1, self.reg2
-
-    dut = A3()
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
-    dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
-    return dut
-
-
-def test_more_regs_complex_types_generation(more_regs):
-    conv = Conversion(more_regs)
-    expect = textwrap.dedent("""\
+        expect = textwrap.dedent("""\
             library ieee;
                 use ieee.fixed_pkg.all;
 
@@ -264,12 +156,6 @@ def test_more_regs_complex_types_generation(more_regs):
             end record;
             function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
 
-            type complex_sfix1_21 is record
-                real: sfixed(1 downto -21);
-                imag: sfixed(1 downto -21);
-            end record;
-            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
-
             end package;
 
             package body ComplexTypes is
@@ -278,171 +164,269 @@ def test_more_regs_complex_types_generation(more_regs):
                 return (a, b);
             end function;
 
-            function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
-            begin
-                return (a, b);
-            end function;
-
             end package body;
             """)
 
-    files = conv.write_vhdl_files(Path('/tmp/'))
-    with files[0].open('r') as f:
-        next(f)
-        assert expect == f.read()
+        files = conv.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            next(f)
+            assert expect == f.read()
+
+    def test_simulate(self):
+        x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+        expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
+
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
-def test_more_regs_simulate(more_regs):
-    dut = more_regs
-    x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
-         [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
-         [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
-    expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
-                [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
-                [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
+class TestShiftReg:
+    def setup(self):
+        class A1(HW):
+            def __init__(self):
+                self.reg = [ComplexSfix(0.5 + 1.2j, 1, -18), ComplexSfix(0.5 + 0.2j, 1, -18),
+                            ComplexSfix(0.1 + 1.2j, 1, -18), ComplexSfix(0.2 - 1.2j, 1, -18)]
 
-    assert_sim_match(dut,
-                     [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21), ComplexSfix(left=1, right=-12)],
-                     expected, *x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+            def main(self, x):
+                self.next.reg = [x] + self.reg[:-1]
+                return self.reg[-1]
 
+        self.dut = A1()
+        self.dut.main(ComplexSfix(0.5 + 1.2j, 1, -18))
 
-@pytest.fixture
-def comp_reg():
-    class A4(HW):
-        def __init__(self):
-            self.reg = ComplexSfix(0 + 0j, 1, -18)
-            self._delay = 1
+    def test_conversion_reset(self):
+        conv = get_conversion(self.dut)
 
-        def main(self, x0):
-            self.next.reg.real = x0.real
-            self.next.reg.imag = x0.imag
-            return self.reg
+        expect = textwrap.dedent("""\
+                procedure \\_pyha_reset_self\\(self: inout self_t) is
+                begin
+                    self.\\next\\.reg := ((real=>Sfix(0.5, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.5, 1, -18), imag=>Sfix(0.2, 1, -18)), (real=>Sfix(0.1, 1, -18), imag=>Sfix(1.2, 1, -18)), (real=>Sfix(0.2, 1, -18), imag=>Sfix(-1.2, 1, -18)));
+                    \\_pyha_update_self\\(self);
+                end procedure;""")
 
-    dut = A4()
-    return dut
+        assert expect == str(conv.get_reset_self())
 
+    def test_simulate(self):
+        x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+        expected = [0.200001 - 1.200001j, 0.099998 + 1.200001j, 0.500000 + 0.200001j,
+                    0.500000 + 1.200001j, 0.500000 + 0.099998j]
 
-def test_comp_reg_self_consistensy(comp_reg):
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -23))
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
-def test_comp_reg_self_consistensy_shady(comp_reg):
-    pytest.xfail('shady shady stuff')
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+class TestMoreRegisters:
+    def setup(self):
+        class A3(HW):
+            def __init__(self):
+                self.reg0 = ComplexSfix(0.5 + 1.2j, 1, -12)
+                self.reg1 = ComplexSfix(0.5 + 1.2j, 1, -21)
+                self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
+
+            def main(self, x0, x1, x2):
+                self.next.reg0 = x0
+                self.next.reg0 = x0
+                self.next.reg1 = x1
+                self.next.reg2 = x2
+                return self.reg0, self.reg1, self.reg2
+
+        self.dut = A3()
+        self.dut.main(ComplexSfix(0.5 + 1.2j, 1, -12), ComplexSfix(0.5 + 1.2j, 1, -21), ComplexSfix(0.5 + 1.2j, 1, -12))
+
+    def test_complex_types_generation(self):
+        conv = Conversion(self.dut)
+        expect = textwrap.dedent("""\
+                library ieee;
+                    use ieee.fixed_pkg.all;
+
+                package ComplexTypes is
+                type complex_sfix1_12 is record
+                    real: sfixed(1 downto -12);
+                    imag: sfixed(1 downto -12);
+                end record;
+                function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12;
+
+                type complex_sfix1_21 is record
+                    real: sfixed(1 downto -21);
+                    imag: sfixed(1 downto -21);
+                end record;
+                function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21;
+
+                end package;
+
+                package body ComplexTypes is
+                function ComplexSfix(a, b: sfixed(1 downto -12)) return complex_sfix1_12 is
+                begin
+                    return (a, b);
+                end function;
+
+                function ComplexSfix(a, b: sfixed(1 downto -21)) return complex_sfix1_21 is
+                begin
+                    return (a, b);
+                end function;
+
+                end package body;
+                """)
+
+        files = conv.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            next(f)
+            assert expect == f.read()
+
+    def test_more_regs_simulate(self):
+        x = [[0.5 + 0.1j, 0.5 + 0.2j, 0.5 + 0.1j],
+             [0.5 - 0.09j, 0.5 - 0.09j, 0.5 - 0.09j],
+             [-0.5 + 0.1j, -0.5 + 0.1j, -0.5 + 0.1j]]
+        expected = [[0.500000 + 1.199951j, 0.500000 + 0.1j, 0.500000 + 0.2j],
+                    [0.500000 + 1.2j, 0.500000 - 0.090088j, 0.500000 - 0.090088j],
+                    [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
+
+        assert_sim_match(self.dut,
+                         [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
+                          ComplexSfix(left=1, right=-12)],
+                         expected, *x, rtol=1e-3,
+                         simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
-def test_comp_reg_self_consistensy_shady2(comp_reg):
-    pytest.xfail('value is same as initial value, breaks consistecy check, bug -> feature -> wont fix')
-    with pytest.raises(TypeNotConsistent):
-        comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
+class TestRegisterIQ:
+    """ This assigns to I and Q separately -> there were pointer problems here.. """
+
+    def setup(self):
+        class A4(HW):
+            def __init__(self):
+                self.reg = ComplexSfix(0 + 0j, 1, -18)
+                self._delay = 1
+
+            def main(self, x0):
+                self.next.reg.real = x0.real
+                self.next.reg.imag = x0.imag
+                return self.reg
+
+        self.dut = A4()
+
+    # def test_comp_reg_self_consistensy(comp_reg):
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -23))
+    #
+    #
+    # def test_comp_reg_self_consistensy_shady(comp_reg):
+    #     pytest.xfail('shady shady stuff')
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 1j, 1, -22))
+    #
+    #
+    # def test_comp_reg_self_consistensy_shady2(comp_reg):
+    #     pytest.xfail('value is same as initial value, breaks consistecy check, bug -> feature -> wont fix')
+    #     with pytest.raises(TypeNotConsistent):
+    #         comp_reg.main(ComplexSfix(0 + 0j, 1, -22))
 
 
-def test_comp_reg_delay(comp_reg):
-    dut = comp_reg
-    next = ComplexSfix(1 + 1j, 1, -18)
-    dut.main(next)
-    assert dut.next.reg.real == next.real
-    assert dut.next.reg.imag == next.imag
+    def test_comp_reg_delay(self):
+        next = ComplexSfix(1 + 1j, 1, -18)
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
 
-    assert dut.reg.real != next.real
-    assert dut.reg.imag != next.imag
+        self.dut.main(next)
 
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
 
-def test_comp_reg_simulate(comp_reg):
-    dut = comp_reg
-    inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
-    expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+        self.dut._pyha_update_self()
 
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
 
+        next = ComplexSfix(2 + 2j, 1, -18)
+        self.dut.main(next)
 
-def test_comp_reg_simulate2(comp_reg):
-    # -real made cocotb code fail
-    dut = comp_reg
-    inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
-    expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+        assert self.dut.next.reg.real == next.real
+        assert self.dut.next.reg.imag == next.imag
 
-    assert_sim_match(dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert self.dut.reg.real != next.real
+        assert self.dut.reg.imag != next.imag
 
+    def test_comp_reg_simulate(self):
+        inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
+        expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
 
-@pytest.fixture
-def complex_inits_return():
-    class A5(HW):
-        def __init__(self):
-            self.reg0 = ComplexSfix()
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
 
-        def main(self, x0, x1, x2, x3):
-            self.next.reg0 = ComplexSfix(x0, x1)
-            ret = ComplexSfix(x2, x3)
-            return self.reg0, ret
+    def test_comp_reg_simulate2(self):
+        # -real made cocotb code fail
+        inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
+        expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
 
-    dut = A5()
-    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
-    dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
-    return dut
+        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
 
 
-def test_complex_inits_return_complex_types_generation(complex_inits_return):
-    conv = Conversion(complex_inits_return)
-    expect = textwrap.dedent("""\
-            library ieee;
-                use ieee.fixed_pkg.all;
+class TestComplexReturn:
+    def setup(self):
+        class A5(HW):
+            def __init__(self):
+                self.reg0 = ComplexSfix()
 
-            package ComplexTypes is
-            type complex_sfix0_18 is record
-                real: sfixed(0 downto -18);
-                imag: sfixed(0 downto -18);
-            end record;
-            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
+            def main(self, x0, x1, x2, x3):
+                self.next.reg0 = ComplexSfix(x0, x1)
+                ret = ComplexSfix(x2, x3)
+                return self.reg0, ret
 
-            type complex_sfix0_32 is record
-                real: sfixed(0 downto -32);
-                imag: sfixed(0 downto -32);
-            end record;
-            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32;
+        self.dut = A5()
+        self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+        self.dut._pyha_update_self()
 
-            end package;
+    def test_complex_types_generation(self):
+        conv = Conversion(self.dut)
+        expect = textwrap.dedent("""\
+                library ieee;
+                    use ieee.fixed_pkg.all;
 
-            package body ComplexTypes is
-            function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
-            begin
-                return (a, b);
-            end function;
+                package ComplexTypes is
+                type complex_sfix0_18 is record
+                    real: sfixed(0 downto -18);
+                    imag: sfixed(0 downto -18);
+                end record;
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18;
 
-            function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32 is
-            begin
-                return (a, b);
-            end function;
+                type complex_sfix0_32 is record
+                    real: sfixed(0 downto -32);
+                    imag: sfixed(0 downto -32);
+                end record;
+                function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32;
 
-            end package body;
-            """)
+                end package;
 
-    files = conv.write_vhdl_files(Path('/tmp/'))
-    with files[0].open('r') as f:
-        next(f)
-        assert expect == f.read()
+                package body ComplexTypes is
+                function ComplexSfix(a, b: sfixed(0 downto -18)) return complex_sfix0_18 is
+                begin
+                    return (a, b);
+                end function;
 
+                function ComplexSfix(a, b: sfixed(0 downto -32)) return complex_sfix0_32 is
+                begin
+                    return (a, b);
+                end function;
 
-def test_complex_inits_return_simulate(complex_inits_return):
-    dut = complex_inits_return
-    x = [[-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, 0.1234],
-         [-0.24, -0.24, -0.24, 0.1234]]
-    expected = [
-        [0.000000 + 0.j, -0.240002 - 0.240002j, -0.240002 - 0.240002j, -0.240002 - 0.240002j],
-        [-0.240000 - 0.24j, -0.240000 - 0.24j, -0.240000 - 0.24j, 0.1234 + 0.1234j]
-    ]
+                end package body;
+                """)
 
-    assert_sim_match(dut,
-                     [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
-                      Sfix(left=0, right=-32)],
-                     expected, *x, rtol=1e-3,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        files = conv.write_vhdl_files(Path('/tmp/'))
+        with files[0].open('r') as f:
+            next(f)
+            assert expect == f.read()
+
+    def test_complex_inits_return_simulate(self):
+        x = [[-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, -0.24], [-0.24, -0.24, -0.24, 0.1234],
+             [-0.24, -0.24, -0.24, 0.1234]]
+        expected = [
+            [0.000000 + 0.j, -0.240002 - 0.240002j, -0.240002 - 0.240002j, -0.240002 - 0.240002j],
+            [-0.240000 - 0.24j, -0.240000 - 0.24j, -0.240000 - 0.24j, 0.1234 + 0.1234j]
+        ]
+
+        assert_sim_match(self.dut,
+                         [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
+                          Sfix(left=0, right=-32)],
+                         expected, *x, rtol=1e-3)
 
 
 class TestList:

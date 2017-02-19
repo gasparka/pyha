@@ -153,8 +153,11 @@ class Simulation:
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
             # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.model.next = deepcopy(self.model.__initial_self__)
-            ret = [self.model.main(*x) for x in args]
+            self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
+            ret = []
+            for x in args:
+                ret.append(self.model.main(*x))
+                self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
@@ -213,7 +216,7 @@ class Simulation:
 def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
                            fuck_it=False, **kwards):
     """ Instead of asserting anything return outputs of each simulation """
-    simulations = sim_rules(simulations)
+    simulations = sim_rules(simulations, model)
     outs = []
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
@@ -240,7 +243,7 @@ def assert_hwmodel_rtl_match(model, types, *x):
 def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
                           fuck_it=False, skip_first=0):
     import matplotlib.pyplot as plt
-    simulations = sim_rules(simulations)
+    simulations = sim_rules(simulations, model)
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
@@ -250,10 +253,9 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
     plt.show()
 
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, fuck_it=False,
-                     skip_first=0):
+def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
     l = logging.getLogger(__name__)
-    simulations = sim_rules(simulations)
+    simulations = sim_rules(simulations, model)
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
@@ -261,9 +263,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         if expected is None and sim_type is simulations[0]:
             expected = hw_y
 
-        if fuck_it:
-            l.error('FUKC_IT MODE!')
-            continue
         try:
             assert len(expected) > 0
             # if type(expected[0]) != type(hw_y[0]):
@@ -277,8 +276,6 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             l.error('##############################################################')
 
             raise
-            #     print('\n\nSim "{}" failed:'.format(sim_type))
-            #     print(e.args[0])
 
 
 def skipping_gate_simulations():
@@ -302,8 +299,7 @@ def skipping_model_simulations():
     return SKIP_SIMULATIONS_MASK & 1
 
 
-
-def sim_rules(simulations):
+def sim_rules(simulations, model):
     if simulations is None:
         simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
@@ -316,6 +312,11 @@ def sim_rules(simulations):
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
+
+    if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
+        simulations.remove(SIM_MODEL)
+        logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
+
 
     # for travis build, skip all the tests involving quartus
     if skipping_model_simulations() and SIM_MODEL in simulations:

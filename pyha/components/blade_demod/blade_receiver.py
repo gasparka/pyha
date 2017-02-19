@@ -13,8 +13,8 @@ class Phantom2ReceiverBlade(HW):
         self._delay = self.recv._delay + self.blade_to_complex._delay
 
     def main(self, i, q):
-        c = self.next.blade_to_complex.main(i, q)
-        packet_part, valid = self.next.recv.main(c)
+        c = self.blade_to_complex.main(i, q)
+        packet_part, valid = self.recv.main(c)
         return packet_part, valid
 
     def model_main(self, i, q):
@@ -31,8 +31,8 @@ class Phantom2Receiver(HW):
         self._delay = self.demod._delay + self.packet._delay
 
     def main(self, c):
-        demod = self.next.demod.main(c)
-        packet_part, valid = self.next.packet.main(demod)
+        demod = self.demod.main(c)
+        packet_part, valid = self.packet.main(demod)
         return packet_part, valid
 
     def model_main(self, c):

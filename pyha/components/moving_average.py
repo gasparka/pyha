@@ -27,9 +27,12 @@ class MovingAverage(HW):
     def main(self, x):
         self.next.shift_register = [x] + self.shift_register[:-1]
 
-        self.next.sum = resize(self.sum + x - self.shift_register[-1],
-                               left_index=self.window_pow + left_index(x),
-                               right_index=right_index(x))
+        left = self.window_pow + left_index(x)
+        right = right_index(x)
+        last = self.shift_register[-1]
+        self.next.sum = resize(self.sum + x - last,
+                               left_index=left,
+                               right_index=right)
 
         ret = resize(self.sum >> self.window_pow, size_res=x)
         return ret

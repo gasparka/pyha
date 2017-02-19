@@ -1,7 +1,4 @@
-from enum import Enum
-
-from pyha.common.const import Const
-from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES
 from pyha.common.sfix import Sfix, ComplexSfix
 
 
@@ -17,32 +14,13 @@ class VariableNotConvertible(Exception):
         super().__init__(message)
 
 
-def is_convertible(obj):
-    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
-    if type(obj) in allowed_types:
-        return True
-    elif isinstance(obj, list):
-        # To check whether all elements are of the same type
-        if len(set(map(type, obj))) == 1:
-            if all(type(x) in allowed_types for x in obj):
-                return True
-            elif isinstance(obj[0], HW):  # list of submodules
-                return True
-    elif isinstance(obj, Enum):
-        return True
-    elif isinstance(obj, HW):
-        return True
-
-    return False
-
-
 def extract_datamodel(obj):
     ret = {}
-    for key, val in obj.__dict__['__initial_self__'].__dict__.items():
-        if key == 'pyha_instance_id':
+    for key, val in obj.__dict__['_pyha_initial_self'].__dict__.items():
+        if key in PYHA_VARIABLES:
             continue
         if is_convertible(val):
-            last = obj.next.__dict__[key]
+            last = obj.__dict__[key]
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
                 val = Sfix(val.init_val, last.left, last.right)
@@ -56,9 +34,9 @@ def extract_datamodel(obj):
                 # list of submodules
                 # set all to single id
                 val = last
-                first_id = val[0].pyha_instance_id
+                first_id = val[0]._pyha_instance_id
                 for x in val:
-                    x.pyha_instance_id = first_id
+                    x._pyha_instance_id = first_id
             ret.update({key: val})
     return ret
 
@@ -72,8 +50,6 @@ def extract_locals(obj):
         # if hasattr(call, 'knows_locals'):
         if isinstance(call, PyhaFunc):
             if call.calls == 0:
-                if call.func.__name__ == 'get_delay':
-                    continue
                 raise FunctionNotSimulated(class_name, call.func.__name__)
 
             for key, val in call.locals.items():
@@ -95,7 +71,7 @@ class DataModel:
         else:
             dm = extract_datamodel(obj)
 
-            constants = obj.__constants__
+            constants = obj._pyha_constants
 
             # remove constants from self data
             dm_clean = {k: v for k, v in dm.items() if k not in constants}

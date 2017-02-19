@@ -1,11 +1,10 @@
 # Simple tests for an adder module
 
+import cocotb
 import numpy as np
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue
 from cocotb.triggers import RisingEdge, Timer, FallingEdge
-
-import cocotb
 
 
 @cocotb.coroutine
@@ -63,6 +62,6 @@ def test_main(dut):
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
     # hdl_out = np.transpose(hdl_out)
-    print(hdl_out)
+    # print(hdl_out)
 
     np.save(os.getcwd() + '/../output.npy', hdl_out)

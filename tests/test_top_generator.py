@@ -162,7 +162,7 @@ def test_full(basic_obj, tmpdir):
                     architecture arch of top is
                     begin
                         process(clk, rst_n)
-                            variable self: Register_0.register_t;
+                            variable self: Register_0.self_t;
                             -- input variables
                             variable var_in0: integer;
                             variable var_in1: sfixed(2 downto -17);
@@ -174,7 +174,7 @@ def test_full(basic_obj, tmpdir):
                             variable var_out2: sfixed(5 downto -8);
                         begin
                         if (not rst_n) then
-                            Register_0.reset(self);
+                            Register_0.\_pyha_reset_self\(self);
                         elsif rising_edge(clk) then
                             if enable then
                                 --convert slv to normal types
@@ -183,7 +183,10 @@ def test_full(basic_obj, tmpdir):
                                 var_in2 := logic_to_bool(in2);
 
                                 --call the main entry
+                                -- without this Quartus wont honor constants
+                                Register_0.\_pyha_constants_self\(self);
                                 Register_0.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
+                                Register_0.\_pyha_update_self\(self);
 
                                 --convert normal types to slv
                                 out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -261,7 +264,7 @@ def test_simple_full(simple_obj):
                     architecture arch of top is
                     begin
                         process(clk, rst_n)
-                            variable self: Simple_0.register_t;
+                            variable self: Simple_0.self_t;
                             -- input variables
                             variable var_in0: integer;
 
@@ -269,14 +272,17 @@ def test_simple_full(simple_obj):
                             variable var_out0: integer;
                         begin
                         if (not rst_n) then
-                            Simple_0.reset(self);
+                            Simple_0.\\_pyha_reset_self\\(self);
                         elsif rising_edge(clk) then
                             if enable then
                                 --convert slv to normal types
                                 var_in0 := to_integer(signed(in0));
 
                                 --call the main entry
+                                -- without this Quartus wont honor constants
+                                Simple_0.\_pyha_constants_self\(self);
                                 Simple_0.main(self, var_in0, ret_0=>var_out0);
+                                Simple_0.\_pyha_update_self\(self);
 
                                 --convert normal types to slv
                                 out0 <= std_logic_vector(to_signed(var_out0, 32));
@@ -325,9 +331,7 @@ def test_no_sim():
         def main(self, a):
             return a
 
-    # only trains 1 time, must be > 1
     dut = Simple()
-    dut.main(2)
 
     with pytest.raises(NotTrainedError):
         TopGenerator(dut)

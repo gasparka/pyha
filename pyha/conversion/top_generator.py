@@ -24,7 +24,7 @@ class TopGenerator:
         self.simulated_object = simulated_object
 
         # 0 or 1 calls wont propagate register outputs
-        if self.simulated_object.main.calls <= 1:
+        if self.simulated_object.main.calls == 0:
             raise NotTrainedError('Object must be trained > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
@@ -184,7 +184,7 @@ class TopGenerator:
                 architecture arch of top is
                 begin
                     process(clk, rst_n)
-                        variable self: {DUT_NAME}.register_t;
+                        variable self: {DUT_NAME}.self_t;
                         -- input variables
                 {INPUT_VARIABLES}
 
@@ -192,14 +192,17 @@ class TopGenerator:
                 {OUTPUT_VARIABLES}
                     begin
                     if (not rst_n) then
-                        {DUT_NAME}.reset(self);
+                        {DUT_NAME}.\\_pyha_reset_self\\(self);
                     elsif rising_edge(clk) then
                         if enable then
                             --convert slv to normal types
                 {INPUT_TYPE_CONVERSIONS}
 
                             --call the main entry
+                            -- without this Quartus wont honor constants
+                            {DUT_NAME}.\\_pyha_constants_self\\(self);
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
+                            {DUT_NAME}.\\_pyha_update_self\\(self);
 
                             --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}

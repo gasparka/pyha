@@ -2,7 +2,7 @@ import numpy as np
 
 from pyha.common.sfix import ComplexSfix
 from pyha.components.util_complex import Conjugate, ComplexMultiply
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 def test_conjugate():
@@ -11,9 +11,7 @@ def test_conjugate():
 
     dut = Conjugate()
 
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-18)], expect, inputs,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE]
-                     )
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-18)], expect, inputs)
 
 
 def test_multiply_consept():
@@ -39,11 +37,7 @@ def test_multiply():
          0.111281 - 0.212802j]
 
     dut = ComplexMultiply()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, y, a, b,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4,
-                     # dir_path='/home/gaspar/git/pyha/playground/conv'
-                     )
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, y, a, b, rtol=1e-4)
 
 
 def test_multiply_harmonic():
@@ -55,8 +49,4 @@ def test_multiply_harmonic():
     b = np.exp(1j * 2 * np.pi * 4 * t)
 
     dut = ComplexMultiply()
-    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, a * b, a, b,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4,
-                     # dir_path='/home/gaspar/git/pyha/playground/conv'
-                     )
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)] * 2, a * b, a, b, rtol=1e-4, )
