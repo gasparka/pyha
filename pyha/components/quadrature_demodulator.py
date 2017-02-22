@@ -9,30 +9,39 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 
 class QuadratureDemodulator(HW):
     def __init__(self, gain):
-        # self.logger = logging.getLogger(__name__)
+
         self.gain = gain * np.pi # pi term puts angle output to pi range
-        self.gain_sfix = Const(Sfix(self.gain, 3, -14))
-        # self.logger.info('Gain:{} Sfix:{}'.format(self.gain, self.gain_sfix))
+
+        # components
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.angle = Angle()
         self.out = Sfix()
 
+        # specify component delay
         self._delay = self.conjugate._delay + \
                      self.complex_mult._delay + \
                      self.angle._delay + 1
 
-    def main(self, c):
-        c_conj = self.conjugate.main(c)
-        cmult = self.complex_mult.main(c, c_conj)
-        angle = self.angle.main(cmult)
+        # constants
+        self.gain_sfix = Const(Sfix(self.gain, 3, -14))
 
-        self.next.out = resize(self.gain_sfix * angle, c.real, round_style=fixed_truncate)
+    def main(self, c):
+        """ This is HW model, to be converted to VHDL """
+        conj = self.conjugate.main(c)
+        mult = self.complex_mult.main(c, conj)
+        angle = self.angle.main(mult)
+        fix_gain = resize(self.gain_sfix * angle, c.real, round_style=fixed_truncate)
+
+        # output register
+        self.next.out = fix_gain
         return self.out
 
     def model_main(self, c):
-        demod = self.gain * np.angle(c[1:] * np.conjugate(c[:-1])) / np.pi
-        return demod
+        """ Model that verification is ran against """
+        demod = np.angle(c[1:] * np.conjugate(c[:-1]))
+        fix_gain = self.gain * demod / np.pi
+        return fix_gain
 
 
 # test modules
