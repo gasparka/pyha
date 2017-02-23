@@ -10,6 +10,11 @@ Stable release
 
 To install pyha, run this command in your terminal:
 
+Requres Python 3.6, follow (this guide sucks...it needs sudo in many places):
+http://tecadmin.net/install-python-3-6-ubuntu-linuxmint/
+
+or use lastes Anaconda distribution
+
 .. code-block:: console
 
     $ pip install pyha
