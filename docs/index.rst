@@ -8,9 +8,11 @@ Welcome to Pyha's documentation!
 
 .. toctree::
 :maxdepth: 2
-      :caption: Contents:
+        :caption: Contents:
 
-      installation
+        intro
+        installation
+        tutorial_register
 
 Indices and tables
 ==================
