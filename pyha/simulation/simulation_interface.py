@@ -108,6 +108,10 @@ class Simulation:
         if self.dir_path is None:
             self.keep_me_alive = TemporaryDirectory()
             self.dir_path = self.keep_me_alive.name
+        else:
+            self.dir_path = str(Path(self.dir_path).expanduser())
+            if not Path(self.dir_path).exists():
+                os.makedirs(self.dir_path)
 
         self.input_types = []
         self.model = None
