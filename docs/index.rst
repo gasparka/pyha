@@ -1,24 +1,16 @@
-.. pyha documentation master file, created by
-sphinx-quickstart on Tue Jul  9 22:26:36 2013.
+.. Pyha documentation master file, created by
+sphinx-quickstart on Thu Feb 23 21:19:09 2017.
 You can adapt this file completely to your liking, but it should at least
 contain the root `toctree` directive.
 
-Welcome to pyha's documentation!
-======================================
-
-
-
-Contents:
+Welcome to Pyha's documentation!
+================================
 
 .. toctree::
-    :maxdepth: 2
+:maxdepth: 2
+      :caption: Contents:
 
-    readme
-    installation
-    usage
-    contributing
-    history
-    intro
+      installation
 
 Indices and tables
 ==================
