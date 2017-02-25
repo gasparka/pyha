@@ -23,6 +23,11 @@ Limitations
 - Only one clock
 -
 
+Future plans
+------------
+Add multirate signals processing support. For example FSK modulator block can not
+handle SPS atm, because that would require increasing the sample rate.
+
 
 Credits
 -------
