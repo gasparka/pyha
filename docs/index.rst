@@ -13,6 +13,8 @@ Welcome to Pyha's documentation!
         intro
         installation
         tutorial_register
+        tutorial_moving_average
+
 
 Indices and tables
 ==================

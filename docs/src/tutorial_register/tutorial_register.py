@@ -34,10 +34,11 @@ def test_register_pos():
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      dir_path=conversion_path)
 
-# def test_register_neg():
-#     inputs = [-1, -2, -3, -4]
-#     expect = [-1, -2, -3, -4]
-#
-#     dut = Register()
-#     assert_sim_match(dut, [int], expect, inputs,
-#                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+def test_register_neg():
+    inputs = [-1, -2, -3, -4]
+    expect = [-1, -2, -3, -4]
+
+    dut = Register()
+    assert_sim_match(dut, [int], expect, inputs,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE])

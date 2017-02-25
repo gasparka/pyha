@@ -17,3 +17,15 @@ Example of converting very deep sequential stuff. Good quality of VHDL output.
 Reccommend pycharm as development platform.
 
 
+Limitations
+-----------
+
+- Only one clock
+-
+
+
+Credits
+-------
+
+MyHDL, RedBaron, CocoTb
+

@@ -35,7 +35,9 @@ sys.path.insert(0, os.path.abspath('/home/gaspar/git/pyha'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
-    'sphinxcontrib.fulltoc'
+    'sphinxcontrib.fulltoc',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'IPython.sphinxext.ipython_directive'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
