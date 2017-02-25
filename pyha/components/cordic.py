@@ -123,6 +123,7 @@ class Cordic(HW):
 
 
 class NCO(HW):
+    """ PHASE IS IN -1 to 1 RANGE, NOT -PI to PI """
     def __init__(self, cordic_iterations=16):
         self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION)
         self.phase_acc = Sfix()

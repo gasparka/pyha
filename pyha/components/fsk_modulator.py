@@ -1,5 +1,6 @@
 import numpy as np
 
+from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.components.cordic import NCO
@@ -12,19 +13,20 @@ class FSKModulator(HW):
         self.deviation = deviation
 
         self.sensitivity = 2 * np.pi * deviation / fs
-        self.sensitivity_sfix = Sfix(self.sensitivity / np.pi, 0, -27)
-        # self.sensitivity_sfix = Sfix(self.sensitivity / np.pi, -1, -27)
 
         self.nco = NCO()
 
         # constants
+        # / np.pi is to keep stuff in -1 to 1 range
+        self.sensitivity_pos = Const(Sfix(self.sensitivity / np.pi, 0, -17))
+        self.sensitivity_neg = Const(Sfix(-self.sensitivity / np.pi, 0, -17))
         self._delay = self.nco._delay
 
     def main(self, symbol):
         if symbol:
-            phase_step = self.sensitivity_sfix
+            phase_step = self.sensitivity_pos
         else:
-            phase_step = -self.sensitivity_sfix
+            phase_step = self.sensitivity_neg
 
         cout = self.nco.main(phase_step)
         return cout

@@ -1,8 +1,6 @@
-import matplotlib.pyplot as plt
-
 from pyha.components.fsk_modulator import FSKModulator
-from pyha.simulation.simulation_interface import plot_assert_sim_match, SIM_MODEL, \
-    SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import SIM_MODEL, \
+    SIM_HW_MODEL, SIM_RTL, assert_sim_match
 
 
 def test_basic():
@@ -11,8 +9,6 @@ def test_basic():
     deviation = 70e3  # deviation from center frequency
 
     symbols = [1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0]
-    # symbols = [0,0,0,0]
-    # # symbols = [1,1,1,1]
 
     # apply SPS
     data = []
@@ -21,15 +17,8 @@ def test_basic():
 
     dut = FSKModulator(deviation, fs)
 
-    # r = debug_assert_sim_match(dut, [bool],
-    plot_assert_sim_match(dut, [bool],
-                          None, data,
-                          rtol=1e-4,
-                          simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
-                          )
-
-    Pxx, freqs, bins, im = plt.specgram(r[1], Fs=fs, NFFT=64, noverlap=0)
-    plt.show()
-
-    Pxx, freqs, bins, im = plt.specgram(r[0], Fs=fs, NFFT=64, noverlap=0)
-    plt.show()
+    assert_sim_match(dut, [bool],
+                     None, data,
+                     rtol=1e-4,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+                     )
