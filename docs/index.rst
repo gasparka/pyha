@@ -7,9 +7,8 @@ Welcome to Pyha's documentation!
     intro
     installation
     fixed_point
+    examples
     tutorial_register
-    tutorial_moving_average
-
 
 Indices and tables
 ==================

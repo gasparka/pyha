@@ -5,14 +5,14 @@ Introduction
 Essentially it is an Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Here are the main features:
-    - Strong fixed point type support(maps to VHDLs fixed point library)
-    - Sequential coding
-    - Object oriented coding
-    - Good quality VHDL output (get what you write)
+    - Sequential and Object oriented designs
+    - Fixed point type support(maps to VHDLs fixed point library)
+    - Decent quality VHDL output (get what you write)
+    - Integration to Intel Quartus
+    - Tools to simplify verification
 
 
 Example of converting very deep sequential stuff. Good quality of VHDL output.
-Turn C like code to VHDL, debuggable!
 
 
 Limitations
@@ -34,7 +34,7 @@ Credits
 Inspiration:
 
 - `A Structured VHDL Design Method`_: Shows how to do structured VHDL by suggesting only two processes per entity. Pyha takes this idea to extreme, by using only 1 procedure and 1 entity per whole design.
-- `MyHDL`_:Pyha started as a PR for MyHDL, due to the inactivity it grew into separate project.
+- `MyHDL`_: Pyha started as a PR for MyHDL ...
 
 
 .. _A Structured VHDL Design Method: http://ens.ewi.tudelft.nl/Education/courses/et4351/structured_vhdl.pdf

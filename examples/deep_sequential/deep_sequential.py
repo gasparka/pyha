@@ -3,14 +3,15 @@ from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 """ This example shows how multiple classes can be used in one sequential design.
-It does not do anything meningful."""
+Everything is sequentially executed, you can use debugger to step around in code.
+Itself it does nothing useful."""
 
 
 class A0(HW):
     """ Simple module that has one Sfix register """
 
     def __init__(self, initial_value):
-        self.reg = Sfix(initial_value)
+        self.reg = Sfix(initial_value) # lazy sfix, bounds determined by simulation
 
         # how much does this block delay data flow?
         self._delay = 1
@@ -48,7 +49,6 @@ class A2(HW):
         self.sum = Sfix()
 
         # how much does this block delay data flow?
-        # NB! simulation will compensate for this delay
         self._delay = self.sub_list[0]._delay
 
     def main(self, new):
