@@ -11,6 +11,7 @@ developed by David Bishop.
 :members: Sfix
 
 
+
 Resize
 ------
 Sizing rules known from `VHDL fixed point library`_ apply.
