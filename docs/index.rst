@@ -2,8 +2,7 @@ Welcome to Pyha's documentation!
 ================================
 
 .. toctree::
-:maxdepth: 2
-        :caption: Contents:
+:caption: Contents:
 
         intro
         installation
