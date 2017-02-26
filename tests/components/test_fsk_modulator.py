@@ -1,10 +1,9 @@
 from pyha.components.fsk_modulator import FSKModulator
-from pyha.simulation.simulation_interface import SIM_MODEL, \
-    SIM_HW_MODEL, SIM_RTL, assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 def test_basic():
-    samples_per_symbol = 4  # this is so high to make stuff plottable
+    samples_per_symbol = 4
     fs = 300e3
     deviation = 70e3  # deviation from center frequency
 
@@ -20,5 +19,5 @@ def test_basic():
     assert_sim_match(dut, [bool],
                      None, data,
                      rtol=1e-4,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+                     # simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
                      )

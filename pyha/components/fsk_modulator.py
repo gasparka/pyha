@@ -38,6 +38,5 @@ class FSKModulator(HW):
             d_phase += self.sensitivity if symbol else -self.sensitivity  # this is FSK
             d_phase = ((d_phase + np.pi) % (2.0 * np.pi)) - np.pi  # keep in pi range
             phl.append(d_phase * 1j)
-            print(d_phase / np.pi)
 
         return np.exp(phl)
