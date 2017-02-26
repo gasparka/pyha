@@ -8,7 +8,7 @@ developed by David Bishop.
 
 
 .. automodule:: pyha.common.sfix
-:members: Sfix
+    :members: Sfix
 
 
 
@@ -17,7 +17,7 @@ Resize
 Sizing rules known from `VHDL fixed point library`_ apply.
 
 .. automodule:: pyha.common.sfix
-:members: resize
+    :members: resize
 
 
 Complex numbers
@@ -27,6 +27,6 @@ Puha supports complex numbers for interfacing means only, meaning there are no c
 defined. They can be function inputs or returns.
 
 .. automodule:: pyha.common.sfix
-:members: ComplexSfix
+    :members: ComplexSfix
 
 
