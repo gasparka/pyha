@@ -2,19 +2,17 @@
 Introduction
 ============
 
-Essentially it is a Python to VHDL converter, with a specific focus on implementing DSP systems.
+Essentially it is an Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Here are the main features:
     - Strong fixed point type support(maps to VHDLs fixed point library)
     - Sequential coding
     - Object oriented coding
-    - Test driven development
-    - Model based design
+    - Good quality VHDL output (get what you write)
 
 
 Example of converting very deep sequential stuff. Good quality of VHDL output.
-
-Reccommend pycharm as development platform.
+Turn C like code to VHDL, debuggable!
 
 
 Limitations
@@ -25,8 +23,9 @@ Limitations
 
 Future plans
 ------------
-Add multirate signals processing support. For example FSK modulator block can not
-handle SPS atm, because that would require increasing the sample rate.
+
+- Add multirate signals processing support. For example FSK modulator block can not handle SPS atm, because that would require increasing the sample rate.
+- Automatic float to fixed point:
 
 
 Credits
