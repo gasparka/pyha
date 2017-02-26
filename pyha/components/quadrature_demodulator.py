@@ -9,22 +9,21 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 
 class QuadratureDemodulator(HW):
     def __init__(self, gain):
+        self.gain = gain
 
-        self.gain = gain * np.pi # pi term puts angle output to pi range
-
-        # components
+        # components / registers
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.angle = Angle()
         self.out = Sfix()
 
-        # specify component delay
+        # constants
+        # pi term puts angle output to pi range
+        self.gain_sfix = Const(Sfix(self.gain * np.pi, 3, -14))
+
         self._delay = self.conjugate._delay + \
                      self.complex_mult._delay + \
                      self.angle._delay + 1
-
-        # constants
-        self.gain_sfix = Const(Sfix(self.gain, 3, -14))
 
     def main(self, c):
         """ This is HW model, to be converted to VHDL """
