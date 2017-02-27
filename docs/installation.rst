@@ -15,11 +15,12 @@ To install pyha:
     pip install -r requirements.txt
 
 
-Support for RTL-level simulations
----------------------------------
+RTL-level simulations
+---------------------
 
-For running RTL simulations, you must install GHDL and CocoTB. Currently it is required that
-both of them reside inside the cloned Pyha folder. CocoTB must be installed from private fork.
+GHDL and Cocotb are required to run RTL simulations.
+Currently both of them must reside inside the cloned Pyha folder.
+CocoTB must be installed from fork (it includes some Python3.6 overwrites).
 
 Install GHDL:
 
@@ -36,13 +37,12 @@ Install Cocotb:
     sh scripts/install_cocotb.sh
 
 
-Support for GATE-level simulations
-----------------------------------
+GATE-level simulations
+----------------------
 
-For this step you need to install `Intel Quartus`_ toolset and generate support libraries
-for the GHDL. Make sure that you enable Cyclone IV support when installing Quartus.
+Install `Intel Quartus`_ ,make sure that you enable Cyclone IV support.
 
-After you have Quartus installed you can build GHDL support libraries:
+After installing, you can build GHDL support libraries:
 
 .. code-block:: console
 

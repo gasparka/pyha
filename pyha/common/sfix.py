@@ -259,10 +259,6 @@ class Sfix:
         if not self.is_lazy_init() and not old == 1.0:
             logger.warning(f'Saturation {old} -> {self.val}')
 
-            # TODO: tests break
-            # raise Exception('Saturation {} -> {}'.format(old, self.val))
-
-    # TODO: add tests
     def wrap(self):
         if self.overflow_style is fixed_wrap_impossible:
             Exception('Wrap happened for "fixed_wrap_impossible"')
@@ -417,10 +413,29 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed
 
 
 def left_index(x: Sfix):
+    """
+    Use this in convertable code
+
+    :return: left bound
+
+    >>> a = Sfix(-0.5, 1, -7)
+    >>> left_index(a)
+    1
+
+    """
     return x.left
 
 
 def right_index(x: Sfix):
+    """
+    Use this in convertable code
+
+    :return: right bound
+
+    >>> a = Sfix(-0.5, 1, -7)
+    >>> right_index(a)
+    -7
+    """
     return x.right
 
 
