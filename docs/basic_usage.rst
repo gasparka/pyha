@@ -16,7 +16,7 @@ Model and unit-tests
 Lets follow the model and test-driven development, it goes like this:
 
 - Write simplest possible model of what you want to do
-- Experiment with it, dont throw away the experiments, rather turn them to unit-testsUnderstand it by writing unit-tests
+- Experiment with it, dont throw away the experiments, rather turn them to unit-tests
 - Profit
 
 Pyha operates on classes, that must be derived from pyha.HW baseclass.
@@ -169,7 +169,7 @@ Alternatively you can use a debug function:
 
 It would output:
 
-.. image:: ../examples/basic_plot.png
+.. image:: ../examples/basic_usage/basic_plot.png
 
 This is an standard hardware behaviour. Pyha provides special variable
 :code:`self._delay` that specifies the delay of the model. This field is useful because:
@@ -228,7 +228,7 @@ One useful tool there is RTL viewer, it can be opened from Tools-Netlist viewers
 
 RTL of this tutorial:
 
-.. image:: ../examples/basic_rtl.png
+.. image:: ../examples/basic_usage/basic_rtl.png
 
 .. note:: Design will be optimized if you mark :code:`self.coef` as Const, Quartus will use shift instead of multiply.
 

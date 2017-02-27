@@ -44,4 +44,4 @@ def test_basic():
                      expect, inputs,
                      simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      rtol=1e-4,
-                     dir_path='~/vhdl_conversion')
+                     dir_path='/home/gaspar/git/pyha/examples/basic_usage/conversion')
