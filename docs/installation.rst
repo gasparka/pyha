@@ -3,46 +3,50 @@
 ============
 Installation
 ============
-This notes apply to Ubuntu 14.04 and 16.04.
 
-Stable release
---------------
+.. note:: Pyha works only on Python 3.6 and currently is developed/tested on Ubuntu 12/14/16.
 
-Pyha requires Python 3.6, you can install it by running:
+To install pyha:
 
 .. code-block:: console
 
-    $ sudo add-apt-repository ppa:jonathonf/python-3.6
-    $ sudo apt-get update
-    $ sudo apt-get install python3.6
+    git clone https://github.com/petspats/pyha
+    cd pyha
+    pip install -r requirements.txt
 
-To install pyha, run this command in your terminal:
+
+Support for RTL-level simulations
+---------------------------------
+
+For running RTL simulations, you must install GHDL and CocoTB. Currently it is required that
+both of them reside inside the cloned Pyha folder. CocoTB must be installed from private fork.
+
+Install GHDL:
 
 .. code-block:: console
 
-    pip install pyha
+    # !! this writes to your .bashrc
+    sudo sh scripts/install_ghdl.sh
 
-.. note::
+Install Cocotb:
 
-    At this point you can use most of the Pyha features, you can continue to
-    install more support for RTL and GATE simulations.
+.. code-block:: console
 
-Dependencies for RTL-level simulations
---------------------------------------
+    sudo apt-get install git make gcc g++ swig
+    sh scripts/install_cocotb.sh
 
-Pyha supports running RTL simulations from generated VHDL sources. This requires installation of:
 
-- GHDL
-- CocoTB
+Support for GATE-level simulations
+----------------------------------
 
-Dependencies for GATE-level simulations
----------------------------------------
+For this step you need to install `Intel Quartus`_ toolset and generate support libraries
+for the GHDL. Make sure that you enable Cyclone IV support when installing Quartus.
 
-GATE-level simulations allow you to verify that your design is synthesysing correctly to the
-Intel FPGAs. For this step you need to install Intel Quartus toolset and generate support libraries
-for the GHDL.
+After you have Quartus installed you can build GHDL support libraries:
 
-The sources for pyha can be downloaded from the `Github repo`_.
+.. code-block:: console
 
-.. _Github repo: https://github.com/petspats/pyha
-.. _tarball: https://github.com/petspats/pyha/tarball/master
+    python scripts/compile_quartus_lib.py
+
+.. _Intel Quartus: http://dl.altera.com/?edition=lite
+

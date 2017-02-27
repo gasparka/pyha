@@ -44,7 +44,7 @@ Inspiration:
 Essential components:
 
 - `RedBaron`_: Enables conversion from Python to VHDL.
-- `GHDL`_: Open VHDL simulator, used to verify Pyha designs.
+- `GHDL`_: Open VHDL simulator.
 - `Cocotb`_: Python to simulator communications.
 - `PyTest`_: Unit testing.
 
