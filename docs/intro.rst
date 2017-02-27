@@ -2,7 +2,7 @@
 Introduction
 ============
 
-Essentially this is an Python to VHDL converter, with a specific focus on implementing DSP systems.
+Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Here are the main features:
     - Structured, all-sequential and object oriented designs
@@ -12,7 +12,7 @@ Here are the main features:
     - Tools to simplify verification
 
 Long term goal is to implement more DSP blocks, especially by using GNURadio blocks as models.
-In the end it may be possible to turn GNURadio flow-graphs into FPGA designs, assuming we have matching FPGA blocks available.
+In future it may be possible to turn GNURadio flow-graphs into FPGA designs, assuming we have matching FPGA blocks available.
 
 .. _VHDL fixed point library: https://github.com/FPHDL/fphdl
 
@@ -35,8 +35,7 @@ Credits
 Inspiration:
 
 - `A Structured VHDL Design Method`_: Shows how to do structured VHDL by suggesting only two processes per entity. Pyha takes this idea to extreme, by using only 1 procedure and 1 entity per whole design.
-- `MyHDL`_: Initial goal of Pyha was to extend MyHDL, but things diverged quickly..
-
+- `MyHDL`_: My experiments started with MyHDL, at some point in my mind i was working on on a PR for MyHDL, but this thing quickly grew and diverged from MyHDL..here it is.
 
 .. _A Structured VHDL Design Method: http://ens.ewi.tudelft.nl/Education/courses/et4351/structured_vhdl.pdf
 .. _MyHDL: http://www.myhdl.org/
