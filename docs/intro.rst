@@ -2,30 +2,31 @@
 Introduction
 ============
 
-Essentially it is an Python to VHDL converter, with a specific focus on implementing DSP systems.
+Essentially this is an Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Here are the main features:
-    - Sequential and Object oriented designs
-    - Fixed point type support(maps to VHDLs fixed point library)
-    - Decent quality VHDL output (get what you write)
-    - Integration to Intel Quartus
+    - Structured, all-sequential and object oriented designs
+    - Fixed point type support(maps to `VHDL fixed point library`_)
+    - Decent quality VHDL output (get what you write, keeps hierarchy)
+    - Integration to Intel Quartus (run GATE level simulations)
     - Tools to simplify verification
 
+Long term goal is to implement more DSP blocks, especially by using GNURadio blocks as models.
+In the end it may be possible to turn GNURadio flow-graphs into FPGA designs, assuming we have matching FPGA blocks available.
 
-Example of converting very deep sequential stuff. Good quality of VHDL output.
+.. _VHDL fixed point library: https://github.com/FPHDL/fphdl
 
+Limitations/future work
+-----------------------
 
-Limitations
------------
+Currently designs are limited to one clock signal, decimators are possible by using Streaming interface.
+Future plans is to add support for multirate signal processing, this would involve automatic PLL configuration.
 
-- Only one clock
--
+Synthesizability has been tested on Intel Quartus software and on Cyclone IV device (one on BladeRF and LimeSDR).
+I assume it will work on other Intel FPGAs aswell, but can not give guarantees.
 
-Future plans
-------------
-
-- Add multirate signals processing support. For example FSK modulator block can not handle SPS atm, because that would require increasing the sample rate.
-- Automatic float to fixed point:
+Fixed point conversion must be done by hand, however Pyha can keep track of all class and local variables during
+the simulations, so automatic conversion is very much possible in the future.
 
 
 Credits
@@ -34,7 +35,7 @@ Credits
 Inspiration:
 
 - `A Structured VHDL Design Method`_: Shows how to do structured VHDL by suggesting only two processes per entity. Pyha takes this idea to extreme, by using only 1 procedure and 1 entity per whole design.
-- `MyHDL`_: Pyha started as a PR for MyHDL ...
+- `MyHDL`_: Initial goal of Pyha was to extend MyHDL, but things diverged quickly..
 
 
 .. _A Structured VHDL Design Method: http://ens.ewi.tudelft.nl/Education/courses/et4351/structured_vhdl.pdf
@@ -45,7 +46,7 @@ Essential components:
 - `RedBaron`_: Enables conversion from Python to VHDL.
 - `GHDL`_: Open VHDL simulator, used to verify Pyha designs.
 - `Cocotb`_: Python to simulator communications.
-- `PyTest`_: Best unit testing library.
+- `PyTest`_: Unit testing.
 
 .. _RedBaron: https://github.com/PyCQA/redbaron
 .. _GHDL: https://github.com/tgingold/ghdl
