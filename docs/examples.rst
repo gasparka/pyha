@@ -9,13 +9,10 @@ This example shows how multiple classes and instances can be used in one sequent
 Everything is sequentially executed, you can use debugger to step around in code.
 Itself it does nothing useful.
 
-Source:
+`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/deep_sequential/deep_sequential.py>`__
 
-Code
+`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/deep_sequential/conversion/src>`__
 
-VHDL outputs
-
-Quartus project
 
 
 Moving average

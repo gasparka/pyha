@@ -5,12 +5,23 @@ from pathlib import Path
 
 import subprocess
 
-quartus_path = Path(shutil.which('quartus'))
-sim_libs = str(quartus_path.parent.parent / 'eda' / 'sim_lib')
+try:
+    quartus_path = Path(shutil.which('quartus'))
+except:
+    raise Exception('You dont have Quartus in PATH!')
+
+try:
+    ghdl_path = Path(shutil.which('ghdl'))
+except:
+    raise Exception('You dont have GHDL in PATH!')
+
+
+sim_libs = quartus_path.parent.parent / 'eda' / 'sim_lib'
 
 base = Path(__file__).parent.parent
-script_path = str(base / 'ghdl/lib/ghdl/vendors/compile-altera.sh')
-output_path = str(base / 'pyha/common/hdl/')
-os.makedirs(output_path, exist_ok=True)
+script_path = ghdl_path.parent.parent / 'lib/ghdl/vendors/compile-altera.sh'
+output_path = ghdl_path.parent.parent / 'lib/ghdl/'
 
 subprocess.run([script_path, '-a', '--src',  sim_libs], cwd=output_path, check=True)
+
+
