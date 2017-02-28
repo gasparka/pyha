@@ -28,7 +28,7 @@ Moving average is useful construct:
 
 Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/moving_average.ipynb>`__
 
 `Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/moving_average.py>`__
 
@@ -47,26 +47,26 @@ into SDR. Implementation uses NCO component, that in turn uses CORDIC algorithm 
 
 Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_modulator/fsk_modulator.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_modulator/fsk_modulator.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/moving_average/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/fsk_modulator/conversion/src>`__
 
 FSK demodulator
 ---------------
 Takes in complex signal and gives out bits. It uses Quadrature demodulator followed by
 matched filter (moving average). M&M clock recovery is the last DSP block, it performs timing recovery.
 
-.. note:: M&M clock recovery is currently not implemented
+.. note:: Under construction, M&M clock recovery is currently not implemented
 
 Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_demodulator/fsk_demodulator.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_demodulator/fsk_demodulator.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/moving_average/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/fsk_demodulator/conversion/src>`__
 
 
 More info:
