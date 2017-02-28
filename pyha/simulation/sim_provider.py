@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 from pathlib import Path
 
@@ -9,17 +10,27 @@ from pyha.simulation.cocotb import CocotbAuto
 
 
 class SimProvider:
-    def __init__(self, base_path, model, sim_type, copy_sources_dst='/home/gaspar/git/pyha/playground'):
+    def __init__(self, base_path, model, sim_type):
         self.logger = logging.getLogger(__name__)
-        self.copy_sources_dst = copy_sources_dst  # copy tmp dir of all sources to here
         self.sim_type = sim_type
         self.base_path = base_path
+
+        self.src_path = self.base_path / 'src'
+        self.quartus_path = self.base_path / 'quartus'
+
+        if not self.src_path.exists():
+            os.makedirs(self.src_path)
+
+        if not self.quartus_path.exists():
+            os.makedirs(self.quartus_path)
+
+
         self.model = model
         self.conv = Conversion(self.model)
 
     def get_conversion_sources(self):
         src = [pyha.__path__[0] + '/common/hdl/pyha_util.vhd']
-        src += self.conv.write_vhdl_files(self.base_path)
+        src += self.conv.write_vhdl_files(self.src_path)
         return src
 
     def main(self):
@@ -58,22 +69,22 @@ class SimProvider:
         for file in src:
             buffer += f"set_global_assignment -name VHDL_FILE {file}\n"
 
-        outpath = self.base_path / 'quartus_project.qsf'
+        outpath = self.quartus_path / 'quartus_project.qsf'
         with outpath.open('w') as f:
             f.write(buffer)
 
         # this is just useless project file, enables opening from IDE
-        outpath = self.base_path / 'quartus_project.qpf'
+        outpath = self.quartus_path / 'quartus_project.qpf'
         with outpath.open('w') as f:
             f.write('PROJECT_REVISION = "quartus_project"')
 
     def make_quartus_netlist(self):
         self.logger.info('Running quartus map...will take time.')
-        make_process = subprocess.call(['quartus_map', 'quartus_project'], cwd=str(self.base_path))
+        make_process = subprocess.call(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
         assert make_process == 0
 
         self.logger.info('Running netlist writer.')
-        make_process = subprocess.call(['quartus_eda', 'quartus_project'], cwd=str(self.base_path))
+        make_process = subprocess.call(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
         assert make_process == 0
 
-        return self.base_path / 'simulation/modelsim/quartus_project.vho'
+        return self.quartus_path / 'simulation/modelsim/quartus_project.vho'

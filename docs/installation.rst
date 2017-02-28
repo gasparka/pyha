@@ -1,51 +1,64 @@
-.. highlight:: shell
-
 ============
 Installation
 ============
 
+.. note:: Pyha works only on Python 3.6 and currently is developed/tested on Ubuntu 14/16.
 
-Stable release
---------------
+To install pyha:
 
-To install pyha, run this command in your terminal:
+.. code-block:: bash
 
-.. code-block:: console
-
-    $ pip install pyha
-
-This is the preferred method to install pyha, as it will always install the most recent stable release. 
-
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
+    git clone https://github.com/petspats/pyha
+    cd pyha
+    pip install .
 
 
-From sources
-------------
+RTL-level simulations
+---------------------
 
-The sources for pyha can be downloaded from the `Github repo`_.
+GHDL and Cocotb are required to run RTL simulations.
 
-You can either clone the public repository:
+Install GHDL:
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ git clone git://github.com/petspats/pyha
+    wget https://github.com/tgingold/ghdl/releases/download/2016-09-14/ghdl-0.34dev-mcode-2016-09-14.tgz -O /tmp/ghdl.tar.gz
+    mkdir ghdl
+    tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
-Or download the `tarball`_:
+    # add GHDL to path
+    echo 'export PATH=$PWD/ghdl/bin/:$PATH' >> ~/.bashrc
+    source ~/.bashrc
 
-.. code-block:: console
+Cocotb must be installed from fork (it includes some Python3.6 overwrites), it must also reside inside Pyha repo.
+Install Cocotb:
 
-    $ curl  -OL https://github.com/petspats/pyha/tarball/master
+.. code-block:: bash
 
-Once you have a copy of the source, you can install it with:
-
-.. code-block:: console
-
-    $ python setup.py install
+    # make sure you are inside Pyha directory
+    sudo apt-get install git make gcc g++ swig
+    git clone https://github.com/petspats/cocotb
 
 
-.. _Github repo: https://github.com/petspats/pyha
-.. _tarball: https://github.com/petspats/pyha/tarball/master
+GATE-level simulations
+----------------------
+
+Install `Intel Quartus`_ ,make sure that you enable Cyclone IV support.
+
+After installing, you can build GHDL support libraries:
+
+.. code-block:: bash
+
+    python scripts/compile_quartus_lib.py
+
+This script should end like this:
+
+.. code-block:: bash
+
+    --------------------------------------------------------------------------------
+    Compiling Altera Quartus libraries [FAILED]
+
+    Process finished with exit code 0
+
+.. _Intel Quartus: http://dl.altera.com/?edition=lite
+

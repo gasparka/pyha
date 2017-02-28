@@ -230,43 +230,43 @@ def test_non_unit_resize():
     assert b.val == 0.499755859375
 
 
-def test_auto_size_bits_single():
-    a = 0.9
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == 0
-    assert b.right == -17
-
-    a = 1.54
-    b = Sfix.auto_size(a, 18)
-
-    np.isclose(b.val, a)
-    assert b.left == 1
-    assert b.right == -16
-
-    a = -a
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == 1
-    assert b.right == -16
-
-    a = np.pi
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == 2
-    assert b.right == -15
-
-    a = np.pi / 2
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == 1
-    assert b.right == -16
-
-    a = -np.pi * 2
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == 3
-    assert b.right == -14
+# def test_auto_size_bits_single():
+#     a = 0.9
+#     b = Sfix.auto_size(a, 18)
+#     np.isclose(b.val, a)
+#     assert b.left == 0
+#     assert b.right == -17
+#
+#     a = 1.54
+#     b = Sfix.auto_size(a, 18)
+#
+#     np.isclose(b.val, a)
+#     assert b.left == 1
+#     assert b.right == -16
+#
+#     a = -a
+#     b = Sfix.auto_size(a, 18)
+#     np.isclose(b.val, a)
+#     assert b.left == 1
+#     assert b.right == -16
+#
+#     a = np.pi
+#     b = Sfix.auto_size(a, 18)
+#     np.isclose(b.val, a)
+#     assert b.left == 2
+#     assert b.right == -15
+#
+#     a = np.pi / 2
+#     b = Sfix.auto_size(a, 18)
+#     np.isclose(b.val, a)
+#     assert b.left == 1
+#     assert b.right == -16
+#
+#     a = -np.pi * 2
+#     b = Sfix.auto_size(a, 18)
+#     np.isclose(b.val, a)
+#     assert b.left == 3
+#     assert b.right == -14
 
 
 def test_BROKEN_SHIT():

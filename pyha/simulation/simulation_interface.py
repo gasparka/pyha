@@ -108,6 +108,10 @@ class Simulation:
         if self.dir_path is None:
             self.keep_me_alive = TemporaryDirectory()
             self.dir_path = self.keep_me_alive.name
+        else:
+            self.dir_path = str(Path(self.dir_path).expanduser())
+            if not Path(self.dir_path).exists():
+                os.makedirs(self.dir_path)
 
         self.input_types = []
         self.model = None
@@ -240,8 +244,11 @@ def assert_hwmodel_rtl_match(model, types, *x):
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
 
-def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                          fuck_it=False, skip_first=0):
+def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+    """
+    Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
+
+    """
     import matplotlib.pyplot as plt
     simulations = sim_rules(simulations, model)
     for sim_type in simulations:
@@ -254,6 +261,26 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
 
 
 def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+    """
+    Run bunch of simulations and assert that they match outputs.
+
+    :param model: Instance of your class
+    :param types: If :code:`main` is defined, provide input types for each argument, all arguments will be
+     automatically casted to these types.
+    :param expected: Expected output of the simulation. If None, assert all simulations match eachother.
+    :param x: Inputs, if you have multiple inputs, use *x for unpacking.
+    :param simulations: Simulations to run and assert:
+    - SIM_MODEL: runs model ('model_main')
+    - SIM_HW_MODEL: runs HW model ('main')
+    - SIM_RTL: converts to VHDL and runs RTL simulation via GHDL and Cocotb
+    - SIM_GATE: runs sources trough Quartus and simulates the generated netlist
+    .. note:: If None(default), runs all simulations. SIM_HW_MODEL must be run if SIM_RTL or SIM_GATE are going to run.
+    :param rtol: Relative tolerance for assertion. Look np.testing.assert_allclose.
+    :param atol: Absolute tolerance for assertion. Look np.testing.assert_allclose.
+    :param dir_path: Where are conversion outputs written, if empty uses temporary directory.
+    :param skip_first: Skip first 'n' samples for assertion.
+
+    """
     l = logging.getLogger(__name__)
     simulations = sim_rules(simulations, model)
 

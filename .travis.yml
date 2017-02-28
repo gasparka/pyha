@@ -28,7 +28,7 @@ install:
 
 
 script:
-    - coverage run --source pyha -m py.test -s tests
+    - coverage run --source pyha -m py.test -m "not slowtest" tests
 
 after_success:
     - coveralls

@@ -165,7 +165,7 @@ class PyhaFunc:
         self.TraceManager.remove_profile()
 
         self.TraceManager.last_call_locals.pop('self')
-        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -289,12 +289,6 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        # for k,v in self.next.__dict__.items():
-        #     if isinstance(v, ComplexSfix):
-        #         setattr(self, k, deepcopy(v))
-        #     else:
-        #         setattr(self, k, v)
-        # self.__dict__ = deepish_copy(self.next.__dict__)
         self.__dict__.update(deepish_copy(self.next.__dict__))
 
         # update submodules

@@ -44,23 +44,6 @@ include $(COCOTB)/makefiles/Makefile.sim
 """
 
 
-# def std_logic_conversions(func):
-#     """ Convert input data to std_logic and output data to 'normal types' (sfix for example) """
-#     def to_std_logic(x):
-#         if isinstance(x, (Sfix, ComplexSfix)):
-#             return x.fixed_value()
-#         else:
-#             return x
-#     @wraps(func)
-#     def wrap(self, *args):
-#         input_data = np.vectorize(to_std_logic)(args)
-#
-#         ret = func(self, *input_data)
-#         return ret
-#
-#     return wrap
-
-
 class CocotbAuto(object):
     def __init__(self, base_path, src, outputs, sim_folder='coco_sim'):
         self.logger = logging.getLogger(__name__)
@@ -86,7 +69,12 @@ class CocotbAuto(object):
         self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
-            altera_libs = pyha.__path__[0] + '/common/hdl/altera'
+            try:
+                ghdl_path = Path(shutil.which('ghdl'))
+            except:
+                raise Exception('You dont have GHDL in PATH!')
+            altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
+            # altera_libs = pyha.__path__[0] + '/common/hdl/altera'
             self.environment[
                 'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'  # TODO: push PR to cocotb
 
@@ -102,7 +90,6 @@ class CocotbAuto(object):
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
         self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
 
-    # @std_logic_conversions
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
         # # convert all Sfix elements to 'integer' form
@@ -125,9 +112,7 @@ class CocotbAuto(object):
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(object)
-        # outp = outp.astype(complex)
 
-        # FIXME: fix this retarded solution, combien with Sfix to 'integer'part and implement in decorator, maybe after transpose decorator!
         # convert 'integer' form back to Sfix
         outp = np.transpose(outp)
 
@@ -148,7 +133,6 @@ class CocotbAuto(object):
                     outp[i][j] = val
                 elif not isinstance(self.outputs[i], list):
                     val = getSignedNumber(int(val, 2), len(self.outputs[i]))
-
 
                 if isinstance(self.outputs[i], Sfix):
                     outp[i][j] = (val * 2 ** self.outputs[i].right)

@@ -8,26 +8,36 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 
 
 class QuadratureDemodulator(HW):
+    """
+    http://gnuradio.org/doc/doxygen-3.7/classgr_1_1analog_1_1quadrature__demod__cf.html#details
+
+    :param gain: inverse of tx sensitivity. In RTL this is further multiplied by PI, because CORDIC returns angle in -1 to 1 range.
+    """
     def __init__(self, gain):
+        self.gain = gain
 
-        self.gain = gain * np.pi # pi term puts angle output to pi range
-
-        # components
+        # components / registers
         self.conjugate = Conjugate()
         self.complex_mult = ComplexMultiply()
         self.angle = Angle()
         self.out = Sfix()
 
-        # specify component delay
+        # constants
+        # pi term puts angle output to pi range
+        self.gain_sfix = Const(Sfix(self.gain * np.pi, 3, -14))
+
         self._delay = self.conjugate._delay + \
                      self.complex_mult._delay + \
                      self.angle._delay + 1
 
-        # constants
-        self.gain_sfix = Const(Sfix(self.gain, 3, -14))
-
     def main(self, c):
-        """ This is HW model, to be converted to VHDL """
+        """
+
+        :param c: baseband
+        :type c: ComplexSfix
+        :return: demodulated signal
+        :rtype: Sfix
+        """
         conj = self.conjugate.main(c)
         mult = self.complex_mult.main(c, conj)
         angle = self.angle.main(mult)
@@ -40,7 +50,7 @@ class QuadratureDemodulator(HW):
     def model_main(self, c):
         """ Model that verification is ran against """
         demod = np.angle(c[1:] * np.conjugate(c[:-1]))
-        fix_gain = self.gain * demod / np.pi
+        fix_gain = self.gain * demod
         return fix_gain
 
 

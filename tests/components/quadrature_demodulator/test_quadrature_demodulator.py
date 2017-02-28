@@ -57,6 +57,7 @@ class TestFm:
                          expect, inputs,
                          rtol=1e-3,
                          atol=1e-3,
+                         # dir_path='/home/gaspar/git/pyha/playground/example'
                          )
         # import matplotlib.pyplot as plt
         # plt.plot(out[0], label='MODEL')

@@ -15,6 +15,31 @@ fixed_wrap_impossible = 'fixed_wrap_impossible'
 
 
 class ComplexSfix:
+    """
+    Use real and imag members to access underlying Sfix elements.
+
+    :param val:
+    :param left: left bound for both components
+    :param right: right bound for both components
+    :param overflow_style: fixed_saturate(default) or fixed_wrap
+
+    >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
+    >>> a
+    0.45+0.88j [0:-17]
+    >>> a.real
+    0.4499969482421875 [0:-17]
+    >>> a.imag
+    0.8799972534179688 [0:-17]
+
+    Another way to construct it:
+
+    >>> a = Sfix(-0.5, 0, -17)
+    >>> b = Sfix(0.5, 0, -17)
+    >>> ComplexSfix(a, b)
+    -0.50+0.50j [0:-17]
+
+
+    """
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
@@ -102,6 +127,34 @@ class ComplexSfix:
 
 # TODO: Verify stuff against VHDL library
 class Sfix:
+    """
+    Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
+    are defined for this class.
+
+    More info: https://www.dsprelated.com/showarticle/139.php
+
+    :param val: initial value
+    :param left: bits for integer part.
+    :param right: bits for fractional part. This is negative number.
+    :param init_only: internal use only
+    :param overflow_style: fixed_saturate(default) or fixed_wrap
+    :param round_style: fixed_round(default) or fixed_truncate
+
+    >>> Sfix(0.123, left=0, right=-17)
+    0.1230010986328125 [0:-17]
+    >>> Sfix(0.123, left=0, right=-7)
+    0.125 [0:-7]
+
+    >>> Sfix(2.5, left=0, right=-17)
+    WARNING:pyha.common.sfix:Saturation 2.5 -> 0.9999923706054688
+    0.9999923706054688 [0:-17]
+    >>> Sfix(2.5, left=1, right=-17)
+    WARNING:pyha.common.sfix:Saturation 2.5 -> 1.9999923706054688
+    1.9999923706054688 [1:-17]
+    >>> Sfix(2.5, left=2, right=-17)
+    2.5 [2:-17]
+
+    """
     # original idea was to use float for internal computations, now it has turned out that\
     # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
     # to implement stuff as integer arithmetic
@@ -109,27 +162,41 @@ class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = False
 
-    @staticmethod
-    def auto_size(val, bits):
-        # FIXME: int_bits possibly not correct, since we cannot reporesent max positive value, actuall maximum value is (max_int) - (frac_min)
-        # calculates for signed type
-        if type(val) is list:
-            maxabs = max(abs(x) for x in val)
-            int_bits = np.floor(np.log2(np.abs(maxabs))) + 1
-            fract_bits = -bits + int_bits + 1
-            ret = [Sfix(x, int_bits, fract_bits) for x in val]
-            return [Sfix(x, int_bits, fract_bits) for x in val]
-        else:
-            int_bits = np.floor(np.log2(np.abs(val))) + 1
-            fract_bits = -bits + int_bits + 1
-            return Sfix(val, int_bits, fract_bits)
+    # TODO: finish this, there is unit test for it
+    # @staticmethod
+    # def auto_size(val, bits):
+    #     """
+    #     Find optimal sfixed format for value
+    #
+    #     :param val: May be list, then format is optimal including all elements
+    #     :param bits:
+    #     :return:
+    #     """
+    #     # FIXME: int_bits possibly not correct, since we cannot reporesent max positive value, actuall maximum value is (max_int) - (frac_min)
+    #     # calculates for signed type
+    #     if type(val) is list:
+    #         maxabs = max(abs(x) for x in val)
+    #         int_bits = np.floor(np.log2(np.abs(maxabs))) + 1
+    #         fract_bits = -bits + int_bits + 1
+    #         ret = [Sfix(x, int_bits, fract_bits) for x in val]
+    #         return [Sfix(x, int_bits, fract_bits) for x in val]
+    #     else:
+    #         int_bits = np.floor(np.log2(np.abs(val))) + 1
+    #         fract_bits = -bits + int_bits + 1
+    #         return Sfix(val, int_bits, fract_bits)
 
     @staticmethod
     def set_float_mode(x):
+        """
+        Can be used to turn off all quantization effects, useful for debugging.
+
+        :param x: True/False
+        """
         Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
                  round_style=fixed_round):
+
         self.round_style = round_style
         self.overflow_style = overflow_style
 
@@ -202,10 +269,6 @@ class Sfix:
         if not self.is_lazy_init() and not old == 1.0:
             logger.warning(f'Saturation {old} -> {self.val}')
 
-            # TODO: tests break
-            # raise Exception('Saturation {} -> {}'.format(old, self.val))
-
-    # TODO: add tests
     def wrap(self):
         if self.overflow_style is fixed_wrap_impossible:
             Exception('Wrap happened for "fixed_wrap_impossible"')
@@ -332,14 +395,57 @@ class Sfix:
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
+    """
+    Resize fixed point number.
+
+    :param fix: Sfix object to resize
+    :param left_index: new left bound
+    :param right_index: new right bound
+    :param size_res: provide another Sfix object as size reference
+    :param overflow_style: fixed_saturate(default) or fixed_wrap
+    :param round_style: fixed_round(default) or fixed_truncate
+    :return: New resized Sfix object
+
+    >>> a = Sfix(0.89, left=0, right=-17)
+    >>> a
+    0.8899993896484375 [0:-17]
+    >>> b = resize(a, 0, -6)
+    >>> b
+    0.890625 [0:-6]
+
+    >>> c = resize(a, size_res=b)
+    >>> c
+    0.890625 [0:-6]
+
+
+    """
     return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 
 def left_index(x: Sfix):
+    """
+    Use this in convertible code
+
+    :return: left bound
+
+    >>> a = Sfix(-0.5, 1, -7)
+    >>> left_index(a)
+    1
+
+    """
     return x.left
 
 
 def right_index(x: Sfix):
+    """
+    Use this in convertible code
+
+    :return: right bound
+
+    >>> a = Sfix(-0.5, 1, -7)
+    >>> right_index(a)
+    -7
+    """
     return x.right
 
 

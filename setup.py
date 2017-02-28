@@ -3,6 +3,12 @@
 from pip.req import parse_requirements
 from setuptools import setup, find_packages
 
+# read the docs dont have 3.6 lol...
+# import sys
+# if sys.version_info < (3, 6):
+#     sys.exit('Sorry, Python < 3.6 is not supported')
+
+
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
@@ -23,9 +29,12 @@ setup(
     author="Gaspar Karm",
     author_email='gkarm@live.com',
     url='https://github.com/petspats/pyha',
-    packages=find_packages(),
 
-    include_package_data=True,
+    # package_dir={'':'pyha'},
+    packages=find_packages(),
+    # py_modules=["pyha"],
+
+    include_package_data=False,
     install_requires=requirements,
     license="Apache Software License 2.0",
     zip_safe=False,
@@ -35,13 +44,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=test_requirements,

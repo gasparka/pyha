@@ -133,7 +133,6 @@ class CRC16(HW):
             self.next.lfsr = self.next.lfsr ^ self.xor
         return self.lfsr
 
-
     def model_main(self, data, reload):
         ret = []
         lfsr = self.init_galois
@@ -196,7 +195,6 @@ def bits_to_int(bits):
 
 # noinspection PyAugmentAssignment
 class PacketSync(HW):
-
     def __init__(self, header, packet_len):
         self.packet_len_lim = Const(packet_len - 1)
         self.n32out = ceil(self.packet_len_lim.value / 32)  # number of 32 bit output packets per correct packet
@@ -216,7 +214,7 @@ class PacketSync(HW):
         self.out = [False] * 32
         self.valid = False
 
-        self._delay = self.headercorr._delay + self.crc._delay + 1 + self.n32out # n32out: delay is needed if outputs are to be presented!
+        self._delay = self.headercorr._delay + self.crc._delay + 1 + self.n32out  # n32out: delay is needed if outputs are to be presented!
 
         # constants
         self.n32out = Const(self.n32out)
@@ -238,7 +236,7 @@ class PacketSync(HW):
         if self.armed and crc == 0 and self.packet_counter == 0:
             self.next.part_out_counter = 0
             if not reload:  # this may happen in case of two back to back packets!
-                self.next.armed = False # protect of fake packages
+                self.next.armed = False  # protect of fake packages
 
         if self.part_out_counter < self.n32out:
             self.next.part_out_counter = self.next.part_out_counter + 1
