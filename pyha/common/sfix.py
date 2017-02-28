@@ -131,6 +131,8 @@ class Sfix:
     Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
     are defined for this class.
 
+    More info: https://www.dsprelated.com/showarticle/139.php
+
     :param val: initial value
     :param left: bits for integer part.
     :param right: bits for fractional part. This is negative number.

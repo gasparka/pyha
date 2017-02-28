@@ -49,4 +49,5 @@ def test_noisy_signal():
     assert_sim_match(mov, [Sfix(left=0, right=-17)],
                      None,  # you can leave expected=None, then expected = output of model
                      y, rtol=1e-4, atol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/docs/src/moving_average/conversion')
+                     # dir_path='/home/gaspar/git/pyha/docs/src/moving_average/conversion'
+                     )

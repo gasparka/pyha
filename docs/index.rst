@@ -10,10 +10,3 @@ Welcome to Pyha's documentation!
     basic_usage
     examples
     tutorial_register
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
