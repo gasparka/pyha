@@ -2,7 +2,7 @@
 Introduction
 ============
 
-Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
+Essentially this is a Python to VHDL converter/simulator, with a specific focus on implementing DSP systems.
 
 Here are the main features:
     - Structured, all-sequential and object oriented designs
@@ -21,9 +21,10 @@ Limitations/future work
 
 Currently designs are limited to one clock signal, decimators are possible by using Streaming interface.
 Future plans is to add support for multirate signal processing, this would involve automatic PLL configuration.
+I am thinking about integration with Qsys to handle all the nasty clocking stuff.
 
 Synthesizability has been tested on Intel Quartus software and on Cyclone IV device (one on BladeRF and LimeSDR).
-I assume it will work on other Intel FPGAs aswell, but can not give guarantees.
+I assume it will work on other Intel FPGAs as well, no guarantees.
 
 Fixed point conversion must be done by hand, however Pyha can keep track of all class and local variables during
 the simulations, so automatic conversion is very much possible in the future.
@@ -37,8 +38,8 @@ Credits
 
 Inspiration:
 
-- `A Structured VHDL Design Method`_: Shows how to do structured VHDL by suggesting only two processes per entity. Pyha takes this idea to extreme, by using only 1 procedure and 1 entity per whole design.
-- `MyHDL`_: My experiments started with MyHDL, at some point in my mind i was working on on a PR for MyHDL, but this thing quickly grew and diverged from MyHDL..here it is.
+- `A Structured VHDL Design Method`_: Shows how to do structured VHDL by suggesting only two processed design with the use of functions and structures. Pyha takes this idea to extreme, by using only 1 procedure and 1 entity per whole design.
+- `MyHDL`_: It is great! I started from scratch because i wanted to try higher level approach for the conversion.
 
 .. _A Structured VHDL Design Method: http://ens.ewi.tudelft.nl/Education/courses/et4351/structured_vhdl.pdf
 .. _MyHDL: http://www.myhdl.org/
