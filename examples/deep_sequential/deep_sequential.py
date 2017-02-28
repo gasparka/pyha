@@ -17,7 +17,6 @@ class A0(HW):
         self._delay = 1
 
     def main(self, new):
-        # give new value to reg
         self.next.reg = new
         return self.reg
 
@@ -68,7 +67,7 @@ def test_sim_case2():
                           [Sfix(left=0, right=-17)],  # inputs will be casted to this types
                           None,  # expected result, if None assert all simulations are the same
                           x,  # inputs
-                          simulations=[SIM_HW_MODEL,  # simulates in python, you can use breakpoints
+                          simulations=[SIM_HW_MODEL,  # simulates in python
                                        SIM_RTL,  # requires GHDL and CocoTB
                                        SIM_GATE]  # requires Quartus and compiled libs
                           , dir_path='/home/gaspar/git/pyha/examples/deep_sequential/conversion'

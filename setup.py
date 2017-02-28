@@ -3,6 +3,11 @@
 from pip.req import parse_requirements
 from setuptools import setup, find_packages
 
+import sys
+if sys.version_info < (3, 6):
+    sys.exit('Sorry, Python < 3.6 is not supported')
+
+
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 

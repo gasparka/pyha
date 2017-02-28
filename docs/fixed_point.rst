@@ -12,8 +12,8 @@ Pyha maps fixed-point operations almost directly to `VHDL fixed point library`_
 Complex numbers
 ---------------
 
-Puha supports complex numbers for interfacing means only, meaning there are no convertable arithmetics
-defined. They can be function inputs or returns.
+Puha supports complex numbers for interfacing means, arithmetic operations are not defined.
+Use :code:`.real` and :code:`.imag` to do maths.
 
 .. automodule:: pyha.common.sfix
     :members: ComplexSfix

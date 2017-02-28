@@ -414,7 +414,7 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed
 
 def left_index(x: Sfix):
     """
-    Use this in convertable code
+    Use this in convertible code
 
     :return: left bound
 
@@ -428,7 +428,7 @@ def left_index(x: Sfix):
 
 def right_index(x: Sfix):
     """
-    Use this in convertable code
+    Use this in convertible code
 
     :return: right bound
 

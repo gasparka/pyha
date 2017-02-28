@@ -20,7 +20,7 @@ Lets follow the model and test-driven development, it goes like this:
 - Profit
 
 Pyha operates on classes, that must be derived from pyha.HW baseclass.
-First we start with defining the model of and register:
+First we start with defining the model:
 
 .. code-block:: python
 
@@ -34,13 +34,15 @@ First we start with defining the model of and register:
             return np.array(input_list) * self.coef
 
 
-.. note:: :code:`model_main` function is reserved for defining the model.
+.. note::
+    :code:`model_main` function is reserved for defining the model.
+    It is not convertable to VHDL, we use it to verify RTL against this.
 
 Next step is to define unit-tests on the model. Basically at this point we want to
 define all the tests we can imagine, later we can use the same tests to verify the operation of
 the RTL code.
 
-One test that i defined:
+One test derived from experiments:
 
 .. code-block:: python
 
@@ -111,11 +113,11 @@ Line 16 turns the floating point coef into fixed-point and also applies constant
 There is a new function called :code:`main`, this is default name for the hardware oriented model.
 In line 23 we assign the register value with the resized result of multiplication.
 
-Lastly on line 25 we return the value, you could return multiple values as well.
+Lastly on line 25 we return the value, you could return multiple values if needed.
 
 Testing
 ~~~~~~~
-We need to make only minor modifications to our test functions in order to run HW simulations:
+Only minor modifications are required to adept the test function:
 
 .. code-block:: python
     :emphasize-lines: 8, 10
@@ -132,7 +134,7 @@ We need to make only minor modifications to our test functions in order to run H
                          expect, inputs,
                          simulations=[SIM_MODEL, SIM_HW_MODEL])
 
-On line 7 we added the input signature of our 'main' function and on line 9
+On line 8 we added the input signature of our 'main' function and on line 10
 we added a HW simulation instruction.
 
 Upon running we would get:
@@ -196,15 +198,15 @@ One way to fix this would be to add more precision to our types, for example :co
 However better way is to just reduce the :code:`rtol` to 1e-4. We want to keep our 18 bit fixed-point numbers
 because Intel Cyclone FPGAs have DSP blocks that work on 18 bit data.
 
-In general i am okay when simulations pass rtol=1e-3. Sometimes you have to adjust atol also, be careful as it starts dominating your rtol value!
+In general i am okay when simulations pass :code:`rtol=1e-3`.
+If values close to 0 are failing, you may need to adjust :code:`atol`.
 
 RTL simulations
 ~~~~~~~~~~~~~~~
 
-All you have to do is add :code:`SIM_RTL` to the simulations list.
+All we need to do is add :code:`SIM_RTL` to the simulations list.
 
-In case you want to view the converted VHDL files, you can use :code:`dir_path='~/vhdl_conversion'`
-option.
+In case you want to view the converted VHDL files, you can use :code:`dir_path` option.
 
 Example:
 
