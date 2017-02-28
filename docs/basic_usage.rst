@@ -40,7 +40,7 @@ First we start with defining the model:
     It is not convertable to VHDL, we use it to verify RTL against this.
 
 .. note::
-    Pyha operates on classes, they must be derived from pyha.HW baseclass.
+    Pyha operates on classes, they must be derived from pyha.HW.
 
 Next step is to write some unit-tests, at this point we want to
 define all the tests we can imagine, later we can use the same tests to verify the operation of
@@ -96,7 +96,7 @@ Assuming we have now enough knowledge and unit-tests we can start implementing
 the Hardware model.
 
 .. code-block:: python
-    :emphasize-lines: 13,16,26,29
+    :emphasize-lines: 13,16,24,27
     :linenos:
 
     from pyha.common.const import Const
