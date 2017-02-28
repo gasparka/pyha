@@ -26,12 +26,11 @@ Moving average is useful construct:
 - Cheap low pass filter
 - DC/bias removal applications
 
-
 Sources:
 
 `Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
+`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/moving_average.py>`__
 
 `VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/moving_average/conversion/src>`__
 
@@ -39,7 +38,7 @@ Sources:
 More info:
 
 #. Good reference: http://www.analog.com/media/en/technical-documentation/dsp-book/dsp_book_Ch15.pdf
-#. Usage in DC removal cricuit: https://www.dsprelated.com/showarticle/58.php
+#. Usage in DC removal circuit: https://www.dsprelated.com/showarticle/58.php
 
 FSK modulator
 -------------
@@ -63,11 +62,13 @@ matched filter (moving average). M&M clock recovery is the last DSP block, it pe
 
 Sources:
 
-Code
+`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
 
-VHDL outputs
+`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/mavg.ipynb>`__
 
-Quartus project
+`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/moving_average/conversion/src>`__
 
 
-https://www.tablix.org/~avian/blog/archives/2015/03/notes_on_m_m_clock_recovery/
+More info:
+
+#. Good info on M&M: https://www.tablix.org/~avian/blog/archives/2015/03/notes_on_m_m_clock_recovery/

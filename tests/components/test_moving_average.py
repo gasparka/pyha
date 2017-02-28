@@ -14,7 +14,7 @@ def test_window2():
     mov = MovingAverage(window_len=2)
     x = [0., 1., 2., 3., 4.]
     expected = [0.0, 0.5, 1.5, 2.5, 3.5]
-    plot_assert_sim_match(mov, [Sfix(left=4, right=-18)], expected, x)
+    assert_sim_match(mov, [Sfix(left=4, right=-18)], expected, x)
 
 
 def test_window3():

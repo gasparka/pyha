@@ -274,7 +274,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
     - SIM_HW_MODEL: runs HW model ('main')
     - SIM_RTL: converts to VHDL and runs RTL simulation via GHDL and Cocotb
     - SIM_GATE: runs sources trough Quartus and simulates the generated netlist
-    .. note:: SIM_HW_MODEL must always run before SIM_RTL or SIM_GATE.
+    .. note:: If None(default), runs all simulations. SIM_HW_MODEL must be run if SIM_RTL or SIM_GATE are going to run.
     :param rtol: Relative tolerance for assertion. Look np.testing.assert_allclose.
     :param atol: Absolute tolerance for assertion. Look np.testing.assert_allclose.
     :param dir_path: Where are conversion outputs written, if empty uses temporary directory.
