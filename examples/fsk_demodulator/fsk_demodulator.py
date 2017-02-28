@@ -1,15 +1,13 @@
 import numpy as np
 
 from examples.moving_average.moving_average import MovingAverage
-from pyha.components.quadrature_demodulator import QuadratureDemodulator
-
-from pyha.simulation.simulation_interface import assert_sim_match
-
-from pyha.common.const import Const
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
-from pyha.components.cordic import NCO
+from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.components.quadrature_demodulator import QuadratureDemodulator
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_MODEL, SIM_HW_MODEL, \
+    SIM_GATE, SIM_RTL
 
+# TODO: this is work in progress
 
 class FSKDemodulator(HW):
     """
@@ -19,27 +17,33 @@ class FSKDemodulator(HW):
     .. note:: M&M clock recovery is currently not implemented
     """
 
-    def __init__(self, gain, sps):
+    def __init__(self, deviation, fs, sps):
+        self.fs = fs
+        self.deviation = deviation
 
-        self.demod = QuadratureDemodulator(gain)
+        self.gain = fs / (2 * np.pi * self.deviation) / np.pi
+
+        self.demod = QuadratureDemodulator(self.gain)
         self.match = MovingAverage(sps)
-
 
         # constants
         self._delay = self.demod._delay + self.match._delay
 
-    def main(self, c):
-        pass
+    def main(self, input):
+        """
+        :type  input: ComplexSfix
+        :rtype: Sfix
+        """
+        demod = self.demod.main(input)
+        match = self.match.main(demod)
 
-    def model_main(self, symbol_list):
-        d_phase = 0
-        phl = []
-        for symbol in symbol_list:
-            d_phase += self.sensitivity if symbol else -self.sensitivity  # this is FSK
-            d_phase = ((d_phase + np.pi) % (2.0 * np.pi)) - np.pi  # keep in pi range
-            phl.append(d_phase * 1j)
+        return match
 
-        return np.exp(phl)
+    def model_main(self, input_list):
+        demod = self.demod.model_main(input_list)
+        match = self.match.model_main(demod)
+
+        return match
 
 
 ###################################################################################
@@ -47,20 +51,33 @@ class FSKDemodulator(HW):
 ###################################################################################
 
 def test_basic():
+    # test signal
+    from pyha.components.fsk_modulator import FSKModulator
     samples_per_symbol = 4
-    fs = 300e3
-    deviation = 70e3  # deviation from center frequency
-
     symbols = [1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0]
 
-    # apply SPS
     data = []
     for x in symbols:
         data.extend([x] * samples_per_symbol)
 
-    dut = FSKModulator(deviation, fs)
+    fs = 300e3
+    deviation = 70e3
+    mod = FSKModulator(deviation, fs)
 
-    assert_sim_match(dut, [bool],
-                     None, data,
+    tx_signal = mod.model_main(data)
+
+    # awgn channel (add some noise)
+    # todo: this random stuff is not performing well
+    np.random.seed(1)
+    tx_signal = 0.5 * (tx_signal + np.random.normal(scale=np.sqrt(0.1)))
+
+    dut = FSKDemodulator(deviation, fs, samples_per_symbol)
+
+    assert_sim_match(dut, [ComplexSfix(left=0, right=-17)],
+                     None, tx_signal,
                      rtol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/examples/fsk_modulator/conversion')
+                     atol=1e-4,
+                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                     skip_first=samples_per_symbol,  # skip first moving average transient
+                     dir_path='/home/gaspar/git/pyha/examples/fsk_demodulator/conversion'
+                     )
