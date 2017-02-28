@@ -32,6 +32,7 @@ setup(
 
     # package_dir={'':'pyha'},
     packages=find_packages(),
+    package_data={'pyha': ['common/hdl/pyha_util.vhd', 'common/hdl/fixed_pkg/*']},
     # py_modules=["pyha"],
 
     include_package_data=False,

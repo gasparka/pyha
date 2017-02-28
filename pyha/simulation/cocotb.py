@@ -56,7 +56,7 @@ class CocotbAuto(object):
         self.default_assignments()
 
     def default_assignments(self):
-        self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
+        # self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
         # this line is called 'i hate cocotb'
         # ill throw my computer out of the window counter: 6
