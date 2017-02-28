@@ -1,6 +1,6 @@
-===============================
+====
 pyha
-===============================
+====
 
 
 .. image:: https://img.shields.io/pypi/v/pyha.svg
@@ -9,9 +9,9 @@ pyha
 .. image:: https://img.shields.io/travis/petspats/pyha.svg
         :target: https://travis-ci.org/petspats/pyha
 
-.. image:: https://readthedocs.org/projects/pyha/badge/?version=latest
-        :target: https://pyha.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+.. image:: https://readthedocs.org/projects/pyha/badge/?version=develop
+    :target: http://pyha.readthedocs.io/en/develop/?badge=develop
+    :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/petspats/pyha/shield.svg
      :target: https://pyup.io/repos/github/petspats/pyha/

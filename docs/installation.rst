@@ -51,14 +51,12 @@ After installing, you can build GHDL support libraries:
 
     python scripts/compile_quartus_lib.py
 
-This script should end like this:
+It is normal that is fails with 'error':
 
 .. code-block:: bash
 
     --------------------------------------------------------------------------------
     Compiling Altera Quartus libraries [FAILED]
-
-    Process finished with exit code 0
 
 .. _Intel Quartus: http://dl.altera.com/?edition=lite
 
