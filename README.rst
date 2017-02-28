@@ -20,6 +20,7 @@ pyha
 .. image:: https://coveralls.io/repos/github/petspats/pyha/badge.svg?branch=develop
     :target: https://coveralls.io/github/petspats/pyha?branch=develop
 
+..
 .. image:: https://landscape.io/github/petspats/pyha/develop/landscape.svg?style=flat
    :target: https://landscape.io/github/petspats/pyha/develop
    :alt: Code Health

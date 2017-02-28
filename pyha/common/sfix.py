@@ -160,8 +160,16 @@ class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = False
 
+    # TODO: finish this, there is unit test for it
     # @staticmethod
     # def auto_size(val, bits):
+    #     """
+    #     Find optimal sfixed format for value
+    #
+    #     :param val: May be list, then format is optimal including all elements
+    #     :param bits:
+    #     :return:
+    #     """
     #     # FIXME: int_bits possibly not correct, since we cannot reporesent max positive value, actuall maximum value is (max_int) - (frac_min)
     #     # calculates for signed type
     #     if type(val) is list:

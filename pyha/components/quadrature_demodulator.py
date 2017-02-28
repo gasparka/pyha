@@ -50,7 +50,7 @@ class QuadratureDemodulator(HW):
     def model_main(self, c):
         """ Model that verification is ran against """
         demod = np.angle(c[1:] * np.conjugate(c[:-1]))
-        fix_gain = self.gain * demod / np.pi
+        fix_gain = self.gain * demod
         return fix_gain
 
 

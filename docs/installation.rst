@@ -2,7 +2,7 @@
 Installation
 ============
 
-.. note:: Pyha works only on Python 3.6 and currently is developed/tested on Ubuntu 12/14/16.
+.. note:: Pyha works only on Python 3.6 and currently is developed/tested on Ubuntu 14/16.
 
 To install pyha:
 
@@ -26,7 +26,7 @@ Install GHDL:
     mkdir ghdl
     tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
-    # make sure GHDL is on path
+    # add GHDL to path
     echo 'export PATH=$PATH:$PWD/ghdl/bin/' >> ~/.bashrc
     source ~/.bashrc
 
