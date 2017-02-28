@@ -9,9 +9,9 @@ This example shows how multiple classes and instances can be used in one sequent
 Everything is sequentially executed, you can use debugger to step around in code.
 Itself it does nothing useful.
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/deep_sequential/deep_sequential.py>`__
+`Source code <https://github.com/petspats/pyha/blob/develop/examples/deep_sequential/deep_sequential.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/deep_sequential/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/deep_sequential/conversion/src>`__
 
 
 
@@ -23,13 +23,12 @@ Moving average is useful construct:
 - Cheap low pass filter
 - DC/bias removal applications
 
-Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/moving_average.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/develop/examples/moving_average/moving_average.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/moving_average/moving_average.py>`__
+`Source code <https://github.com/petspats/pyha/blob/develop/examples/moving_average/moving_average.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/moving_average/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/moving_average/conversion/src>`__
 
 
 More info:
@@ -42,13 +41,12 @@ FSK modulator
 Frequency shift-keying modulator. It takes in bits and outputs complex stream, that could be fed
 into SDR. Implementation uses NCO component, that in turn uses CORDIC algorithm for carrier generation.
 
-Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_modulator/fsk_modulator.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/develop/examples/fsk_modulator/fsk_modulator.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_modulator/fsk_modulator.py>`__
+`Source code <https://github.com/petspats/pyha/blob/develop/examples/fsk_modulator/fsk_modulator.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/fsk_modulator/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/fsk_modulator/conversion/src>`__
 
 FSK demodulator
 ---------------
@@ -57,13 +55,12 @@ matched filter (moving average). M&M clock recovery is the last DSP block, it pe
 
 .. note:: Under construction, M&M clock recovery is currently not implemented
 
-Sources:
 
-`Model/Doc <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_demodulator/fsk_demodulator.ipynb>`__
+`Model/Doc <https://github.com/petspats/pyha/blob/develop/examples/fsk_demodulator/fsk_demodulator.ipynb>`__
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/fsk_demodulator/fsk_demodulator.py>`__
+`Source code <https://github.com/petspats/pyha/blob/develop/examples/fsk_demodulator/fsk_demodulator.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/fsk_demodulator/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/fsk_demodulator/conversion/src>`__
 
 
 More info:

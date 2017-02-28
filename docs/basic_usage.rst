@@ -5,9 +5,9 @@ This tutorial will show the basic usage of Pyha features,
 we will design 1 tap FIR filter, some people call it just multiplier.
 
 
-`Source code <https://github.com/petspats/pyha/blob/feature/documentation/examples/basic_usage/basic_usage.py>`__
+`Source code <https://github.com/petspats/pyha/blob/develop/examples/basic_usage/basic_usage.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/feature/documentation/examples/basic_usage/conversion/src>`__
+`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/basic_usage/conversion/src>`__
 
 
 Model and unit-tests

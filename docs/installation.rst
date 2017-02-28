@@ -27,17 +27,20 @@ Install GHDL:
     tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
     # add GHDL to path
-    echo 'export PATH=$PWD/ghdl/bin/:$PATH' >> ~/.bashrc
+    echo export PATH=$PWD/ghdl/bin/:$PATH >> ~/.bashrc
     source ~/.bashrc
 
-Cocotb must be installed from fork (it includes some Python3.6 overwrites), it must also reside inside Pyha repo.
+Cocotb must be installed from fork (it includes some Python3.6 overwrites).
 Install Cocotb:
 
 .. code-block:: bash
 
-    # make sure you are inside Pyha directory
     sudo apt-get install git make gcc g++ swig
     git clone https://github.com/petspats/cocotb
+
+    # set COCOTB path
+    echo export COCOTB=$PWD/cocotb >> ~/.bashrc
+    source ~/.bashrc
 
 
 GATE-level simulations
@@ -51,7 +54,7 @@ After installing, you can build GHDL support libraries:
 
     python scripts/compile_quartus_lib.py
 
-It is normal that is fails with 'error':
+It is normal that is 'fails':
 
 .. code-block:: bash
 
@@ -60,3 +63,9 @@ It is normal that is fails with 'error':
 
 .. _Intel Quartus: http://dl.altera.com/?edition=lite
 
+
+At this point you can **optionally** run tests, be warned that it takes up to 30 minutes.
+
+.. code-block:: bash
+
+    pytest tests/
