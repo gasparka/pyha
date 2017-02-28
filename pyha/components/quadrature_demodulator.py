@@ -8,6 +8,11 @@ from pyha.components.util_complex import Conjugate, ComplexMultiply
 
 
 class QuadratureDemodulator(HW):
+    """
+    http://gnuradio.org/doc/doxygen-3.7/classgr_1_1analog_1_1quadrature__demod__cf.html#details
+
+    :param gain: inverse of tx sensitivity. In RTL this is further multiplied by PI, because CORDIC returns angle in -1 to 1 range.
+    """
     def __init__(self, gain):
         self.gain = gain
 
@@ -26,7 +31,13 @@ class QuadratureDemodulator(HW):
                      self.angle._delay + 1
 
     def main(self, c):
-        """ This is HW model, to be converted to VHDL """
+        """
+
+        :param c: baseband
+        :type c: ComplexSfix
+        :return: demodulated signal
+        :rtype: Sfix
+        """
         conj = self.conjugate.main(c)
         mult = self.complex_mult.main(c, conj)
         angle = self.angle.main(mult)
