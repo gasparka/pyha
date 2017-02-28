@@ -28,7 +28,8 @@ I assume it will work on other Intel FPGAs aswell, but can not give guarantees.
 Fixed point conversion must be done by hand, however Pyha can keep track of all class and local variables during
 the simulations, so automatic conversion is very much possible in the future.
 
-Integration to AvalonMM like buses, then we could easily design reconfiguratable FIR filters for example.
+Integration to bus structures is another item in the wish-list. Streaming blocks already exsist in very basic form.
+Ideally AvalonMM like buses should be supported, with automatic HAL generation, that would allow easily design reconfigurable FIR filters for example.
 
 
 Credits
