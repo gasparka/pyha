@@ -27,7 +27,7 @@ Install GHDL:
     tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
     # add GHDL to path
-    echo 'export PATH=$PATH:$PWD/ghdl/bin/' >> ~/.bashrc
+    echo 'export PATH=$PWD/ghdl/bin/:$PATH' >> ~/.bashrc
     source ~/.bashrc
 
 Cocotb must be installed from fork (it includes some Python3.6 overwrites), it must also reside inside Pyha repo.
