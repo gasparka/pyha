@@ -16,6 +16,15 @@ class CordicMode(Enum):
 
 
 class Cordic(HW):
+    """
+    CORDIC algorithm.
+
+    readable paper -> http://www.andraka.com/files/crdcsrvy.pdf
+
+    :param iterations: resource/ precision trade off
+    :param mode: vectoring or rotation
+    """
+
     def __init__(self, iterations, mode):
         self.mode = Const(mode)
         self.iterations = iterations
@@ -36,6 +45,10 @@ class Cordic(HW):
         self._delay = self.iterations
 
     def main(self, x, y, phase):
+        """
+        Runs one step of pipelined CORDIC
+        Returned phase is in 1 to -1 range
+        """
         self.initial_step(phase, x, y)
 
         for i in range(len(self.phase_lut_fix) - 1):
@@ -45,6 +58,9 @@ class Cordic(HW):
         return self.x[-1], self.y[-1], self.phase[-1]
 
     def initial_step(self, phase, x, y):
+        """
+        CORDIC works in only 1 quadrant, this performs hacks to make it usable on other qudrants as well.
+        """
         self.next.x[0] = x
         self.next.y[0] = y
         self.next.phase[0] = phase
@@ -71,6 +87,12 @@ class Cordic(HW):
                 self.next.phase[0] = Sfix(-1.0, phase)
 
     def pipeline_step(self, i, x, y, p, adj):
+        """
+        Core combinatory part, this will be pipeline
+
+        :param i: current pipeline step
+        :param adj: phase adjustment
+        """
         if self.mode == CordicMode.ROTATION:
             direction = p > 0
         elif self.mode == CordicMode.VECTORING:
@@ -123,13 +145,25 @@ class Cordic(HW):
 
 
 class NCO(HW):
-    """ PHASE IS IN -1 to 1 RANGE, NOT -PI to PI """
+    """
+    Signal generator. Input phase must be normalized to -1 to 1 range!
+
+    :param cordic_iterations: performace/resource usage trade off
+    """
     def __init__(self, cordic_iterations=16):
+
         self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION)
         self.phase_acc = Sfix()
         self._delay = self.cordic.iterations + 1
 
     def main(self, phase_inc):
+        """
+        18 bits precision.
+
+        :param phase_inc: amount of rotation applied for next clock cycle, must be normalized to -1 to 1.
+        :return: baseband signal
+        :rtype: ComplexSfix
+        """
         self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
                                      round_style=fixed_truncate)
 
@@ -148,10 +182,9 @@ class NCO(HW):
 
 
 class ToPolar(HW):
-    # """ Internal sizes are referenced to input 'c' size.
-    # Output is abs and angle. Abs is gain corrected and sized to 'c' size.
-    # Angle is sized to 'c' size.
-    # """
+    """
+    Converts IQ to polar.
+    """
 
     def __init__(self):
         self.core = Cordic(13, CordicMode.VECTORING)
@@ -161,9 +194,14 @@ class ToPolar(HW):
         self._delay = self.core.iterations + 1
 
     def main(self, c):
+        """
+        :param c: baseband in, internal sizes are derived from this.
+        :type c: ComplexSfix
+        :return: abs (gain corrected) angle (in 1 to -1 range)
+        """
         phase = Sfix(0.0, 0, -24)
 
-        # give 1 extra bit, as there is stuff like CORDIC gain.. in soem cases 2 bits may be needed!
+        # give 1 extra bit, as there is stuff like CORDIC gain.. in some cases 2 bits may be needed!
         # there will be CORDIC gain + abs value held by x can be > 1
         # remove 1 bit from fractional part, to keep 18 bit numbers
         x = resize(c.real, left_index(c.real) + 1, right_index(c.real) + 1, round_style=fixed_truncate)
@@ -184,6 +222,9 @@ class ToPolar(HW):
 
 
 class Angle(HW):
+    """
+    Wrapper around ToPolar. Abs output will be optimized away.
+    """
     def __init__(self):
         self.core = ToPolar()
         self._delay = self.core._delay
@@ -198,6 +239,9 @@ class Angle(HW):
 
 
 class Abs(HW):
+    """
+    Wrapper around ToPolar. Angle output will be optimized away.
+    """
     def __init__(self):
         self.core = ToPolar()
         self._delay = self.core._delay

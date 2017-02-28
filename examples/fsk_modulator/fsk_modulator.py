@@ -1,4 +1,5 @@
 import numpy as np
+from pyha.simulation.simulation_interface import assert_sim_match
 
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
@@ -13,6 +14,7 @@ into SDR. Implementation uses NCO component, that in turn uses CORDIC algorithm 
     :param deviation: From center frequency
     :param fs: Sample rate
     """
+
     # todo: this should handle 'sps', but needs upsamper
     def __init__(self, deviation, fs):
         """
@@ -35,7 +37,6 @@ into SDR. Implementation uses NCO component, that in turn uses CORDIC algorithm 
 
     def main(self, symbol):
         """
-
         :param symbol: Bit to modulate
         :return: Modulated signal in baseband
         :rtype: ComplexSfix
@@ -57,3 +58,27 @@ into SDR. Implementation uses NCO component, that in turn uses CORDIC algorithm 
             phl.append(d_phase * 1j)
 
         return np.exp(phl)
+
+
+###################################################################################
+# TESTS
+###################################################################################
+
+def test_basic():
+    samples_per_symbol = 4
+    fs = 300e3
+    deviation = 70e3  # deviation from center frequency
+
+    symbols = [1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0]
+
+    # apply SPS
+    data = []
+    for x in symbols:
+        data.extend([x] * samples_per_symbol)
+
+    dut = FSKModulator(deviation, fs)
+
+    assert_sim_match(dut, [bool],
+                     None, data,
+                     rtol=1e-4,
+                     dir_path='/home/gaspar/git/pyha/examples/fsk_modulator/conversion')
