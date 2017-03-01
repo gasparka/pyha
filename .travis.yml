@@ -16,6 +16,7 @@ before_script:
     # INSTALL COCOTB
     - sudo apt-get install git make gcc g++ swig
     - sh scripts/install_cocotb.sh #cant sudo this, files will lock, later
+    - export COCOTB=$PWD/cocotb
     - export PYHA_SKIP_QUARTUS_SIMS=1
 
 install:
