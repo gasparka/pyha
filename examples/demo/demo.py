@@ -35,6 +35,8 @@ class Demo(HW):
         return mult, add
 
 
+# run this to assert Python, RTL and GATE simulations match output
+# conversion files are written to 'dir_path'
 def test_demo():
     dut = Demo(coef=0.1)
     inputs = [0.1, 0.2, 0.3, 0.2, 0.1]
