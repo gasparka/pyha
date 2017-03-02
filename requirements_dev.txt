@@ -5,4 +5,4 @@ flake8==3.3.0
 coverage==4.3.4
 Sphinx==1.5.2
 sphinx-rtd-theme==0.2.0
-twine
+twine==1.8.1
