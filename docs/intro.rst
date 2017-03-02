@@ -2,19 +2,31 @@
 Introduction
 ============
 
-Essentially this is a Python to VHDL converter/simulator, with a specific focus on implementing DSP systems.
+Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
-Here are the main features:
+Main features:
     - Structured, all-sequential and object oriented designs
     - Fixed point type support(maps to `VHDL fixed point library`_)
     - Decent quality VHDL output (get what you write, keeps hierarchy)
     - Integration to Intel Quartus (run GATE level simulations)
     - Tools to simplify verification
 
+
 Long term goal is to implement more DSP blocks, especially by using GNURadio blocks as models.
 In future it may be possible to turn GNURadio flow-graphs into FPGA designs, assuming we have matching FPGA blocks available.
 
 .. _VHDL fixed point library: https://github.com/FPHDL/fphdl
+
+Working principle
+-----------------
+.. image:: img/working_principle.png
+
+As shown on above image, Python sources are turned into synthesizable VHDL code.
+In :code:`__init__`, you can write any valid Python code, it is ignored for conversion, only variables are collected as registers.
+You can use objects of other classes (derived from HW) as registers, even lists of objects is possible.
+
+In addition, there are tools to help verification by automating RTL and GATE simulations.
+
 
 Limitations/future work
 -----------------------
@@ -29,8 +41,8 @@ I assume it will work on other Intel FPGAs as well, no guarantees.
 Fixed point conversion must be done by hand, however Pyha can keep track of all class and local variables during
 the simulations, so automatic conversion is very much possible in the future.
 
-Integration to bus structures is another item in the wish-list. Streaming blocks already exsist in very basic form.
-Ideally AvalonMM like buses should be supported, with automatic HAL generation, that would allow easily design reconfigurable FIR filters for example.
+Integration to bus structures is another item in the wish-list. Streaming blocks already exist in very basic form.
+Ideally AvalonMM like buses should be supported, with automatic HAL generation, that would allow design of reconfigurable FIR filters for example.
 
 
 Credits

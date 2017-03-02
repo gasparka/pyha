@@ -1,8 +1,8 @@
 Tutorial:Basic usage
 ====================
 
-This tutorial will show the basic usage of Pyha features,
-we will design 1 tap FIR filter, some people call it just multiplier.
+In this tutorial we will write a simple fixed point multiplier.
+It serves as a basic example of turning DSP models into HDL in sensible and testable way.
 
 
 `Source code <https://github.com/petspats/pyha/blob/develop/examples/basic_usage/basic_usage.py>`__
@@ -17,9 +17,9 @@ Lets follow the model and test-driven development, it goes like this:
 
 - Write simplest possible model of what you want to do
 - Experiment with it, dont throw away the experiments, rather turn them into unit-tests
-- Profit
+- Profit (use the same tests to develop and verify HDL code)
 
-First we start with defining the model:
+Start by defining an model:
 
 .. code-block:: python
 
@@ -42,12 +42,9 @@ First we start with defining the model:
 .. note::
     Pyha operates on classes, they must be derived from pyha.HW.
 
-Next step is to write some unit-tests, at this point we want to
-define all the tests we can imagine, later we can use the same tests to verify the operation of
-the RTL code.
+Next step is to write all the tests we can imagine, later we can use the same tests on RTL code.
 
-One possible test derived from experiments,
-it pushes some data into the model and compares the output with the expected output.
+One possible test, that pushes some data into the model and compares the output with the expected output.
 
 .. code-block:: python
 
@@ -132,17 +129,20 @@ the Hardware model.
             return np.array(input_list) * self.coef
 
 
-In Line 13, we defined a register named :code:`out_resized`.
+In Line 13, we defined a register named :code:`out_resized`. It is using lazy-Sfix notation, meaning that the actual bounds are derived from the data you feed into the model.
 
 .. note::
     All the class variables are interpreted as registers, unconvertable types like float or Numpy arrays will be ignord for conversion. All the assignments to registers go trough :code:`self.next`
 
 Line 16 turns the floating point coef into fixed-point.
 
-There is a new function called :code:`main`, this is default name for the hardware oriented model.
-In line 23 we assign the register value with the resized result of multiplication.
+.. note::
+    :code:`main` function is reserved for defining the HDL model, this is convertable to VHDL.
+    This is the main entry to the model, you can call other functions if needed.
 
-Lastly on line 25 we return the value, you could return multiple values if needed.
+On line 23 resized result of multiplication is assigned to register. This also infers saturation logic.
+
+Results are returned on line 25, multiple values can be returned in Pyha.
 
 Testing
 ~~~~~~~
@@ -167,9 +167,12 @@ On line 8 we added the input signature of our 'main' function and on line 10
 we added a HW simulation instruction.
 
 .. note::
-    You can write your models in such way that input signature determines the output types. Meaning your VHDL conversion may depend on this.
+    :code:`SIM_HW_MODEL` is Python based simulation, you can use debugger to see how your 'main' function is called. Debugger is quite an useful tool in Pyha designs since everything is fully sequentially executed.
 
-Upon running we would get:
+.. note::
+    You can write models in such way that input signature determines the output types. Your VHDL conversion will depend on this.
+
+Upon running the test:
 
 .. code-block:: python
 
@@ -212,9 +215,9 @@ It would output:
 .. image:: ../examples/basic_usage/basic_plot.png
 
 This is an standard hardware behaviour. Pyha provides special variable
-:code:`self._delay` that specifies the delay of the model. This field is useful because:
+:code:`self._delay` that specifies the delay of the model, it is useful:
 
-- It documents the delay
+- Document the delay of your blocks
 - Upper level blocks can use it to define their own delay
 - Pyha simulations will adjust for the delay, so you can easily compare to your model.
 
@@ -230,11 +233,14 @@ After setting the :code:`self._delay = 1` in the __init__, we get:
     x: array([ 0.05,        0.1 ,       0.15,       0.05,        0.1 ])
     y: array([ 0.050003,    0.099998,   0.150002,   0.050003,    0.099998])
 
+.. note:: :code:`rtol=1e-5` requires that ~5 digits after decimal point must match. :code:`rtol=1e-4` would require 4 digits to match.
 
-Now values are aligned, but the tolerances are too strict, remember that we are using fixed-point after all.
-One way to fix this would be to add more precision to our types, for example :code:`Sfix(left=0, right=-19)`.
-However better way is to just reduce the :code:`rtol` to 1e-4. We want to keep our 18 bit fixed-point numbers
-because Intel Cyclone FPGAs have DSP blocks that work on 18 bit data.
+Now values are aligned, but the tolerances are too strict, we are using fixed-point after all.
+One way to solve this would be to add more bits to fixed-point type, for example :code:`Sfix(left=0, right=-19)`.
+Better way is to set :code:`rtol = 1e-4`. We want to keep 18 bit fixed-point numbers
+because Intel Cyclone FPGAs DSP blocks are of this size.
+
+
 
 In general i am okay when simulations pass :code:`rtol=1e-3`.
 You may need to adjust :code:`atol`, when failing numbers are close to 0.
@@ -295,7 +301,11 @@ Here is the final code that passes assertions:
 RTL simulations
 ~~~~~~~~~~~~~~~
 
-All we need to do is add :code:`SIM_RTL` to the simulations list.
+Add :code:`SIM_RTL` to the simulations list.
+
+.. note::
+    :code:`SIM_RTL` converts sources to VHDL and runs RTL simulation by using GHDL simulator.
+
 In case you want to view the converted VHDL files, you can use :code:`dir_path` option.
 
 Example:
@@ -311,12 +321,13 @@ Example:
 GATE simulation and Quartus
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Adding 'SIM_GATE' to the simulations list, runs GATE level simulation, this will
-usually take a long time to execute, but can be useful to gain full confidence on your design.
+Add :code:`SIM_GATE` to the simulations list.
+
+.. note::
+    :code:`SIM_GATE` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
 
 Running the GATE simulation, will produce 'quartus' directory in :code:`dir_path`.
-You can use it to open the project in Intel Quartus and investigate results.
-One useful tool there is RTL viewer, it can be opened from Tools-Netlist viewers-RTL viewer.
+One useful tool in Quartus software is RTL viewer, it can be opened from Tools-Netlist viewers-RTL viewer.
 
 RTL of this tutorial:
 

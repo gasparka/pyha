@@ -5,6 +5,7 @@ Welcome to Pyha's documentation!
     :caption: Contents:
 
     intro
+
     installation
     fixed_point
     basic_usage
