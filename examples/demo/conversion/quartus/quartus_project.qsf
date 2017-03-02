@@ -1,0 +1,21 @@
+set_global_assignment -name DEVICE EP4CE40F23C8
+set_global_assignment -name FAMILY "Cyclone IV E"
+set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST ON -section_id eda_simulation
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
+
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/pyha/common/hdl/fixed_pkg/fixed_pkg_c.vhd
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/pyha/common/hdl/fixed_pkg/fixed_float_types_c.vhd
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/pyha/common/hdl/pyha_util.vhd
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/examples/demo/conversion/src/complex_types.vhd
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/examples/demo/conversion/src/Demo_0.vhd
+set_global_assignment -name VHDL_FILE /home/gaspar/git/pyha/examples/demo/conversion/src/top.vhd
+
+set_global_assignment -name LAST_QUARTUS_VERSION "16.1.1 Lite Edition"
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
