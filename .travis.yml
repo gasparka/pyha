@@ -1,36 +1,29 @@
-# Config file for automatic testing at travis-ci.org
-# This file will be regenerated if you run travis_pypi_setup.py
-
 language: python
 python: 3.6
-
 before_script:
-    # INSTALL GHDL
-#    - sudo bash -c 'echo deb http://ee.archive.ubuntu.com/ubuntu precise main universe > /etc/apt/sources.list.d/pyha_tmp.list'
-#    - sudo apt-get update
-#    - sudo apt-get install -y gnat-4.6-base, libgnat-4.6
-#    - sudo rm -f /etc/apt/sources.list.d/pyha_tmp.list
-    - sudo sh scripts/install_ghdl.sh
-    - export PATH=$PATH:$PWD/ghdl/bin/
-
-    # INSTALL COCOTB
-    - sudo apt-get install git make gcc g++ swig
-    - sh scripts/install_cocotb.sh #cant sudo this, files will lock, later
-    - export COCOTB=$PWD/cocotb
-    - export PYHA_SKIP_QUARTUS_SIMS=1
-
+- sudo sh scripts/install_ghdl.sh
+- export PATH=$PATH:$PWD/ghdl/bin/
+- sudo apt-get install git make gcc g++ swig
+- sh scripts/install_cocotb.sh
+- export COCOTB=$PWD/cocotb
+- export PYHA_SKIP_QUARTUS_SIMS=1
 install:
-    - pip install .
-    - pip install -r requirements_dev.txt
-
-    - pip install coveralls
-    - pip install codeclimate-test-reporter
-
-
-
+- pip install .
+- pip install -r requirements_dev.txt
+- pip install coveralls
+- pip install codeclimate-test-reporter
 script:
-    - coverage run --source pyha -m py.test -m "not slowtest" tests
-
+- coverage run --source pyha -m py.test -m "not slowtest" tests
 after_success:
-    - coveralls
-    - codeclimate-test-reporter
+- coveralls
+- codeclimate-test-reporter
+deploy:
+  provider: pypi
+  user: gkarm
+  password:
+    secure: Gfr75PCnkpQ2wTs5DOUbxLf9own94hksSmTwn+ugpgv56yYQeD3PoFuc20vCAIR0YZa4SnDG9kIC/1GOabnnRbN+T6MVWezxgtauPl+GXqbZUeKsrmYqL3VoDq2J4/+wowtO3LB4HPenIo9TLXzaEGCBj6HMmbmTGbjYlBXa6ChFc6it0kMeHPgLGtXmrHlgWIyZIVVbhM8a4Nd4RXiMiL+Ea3nNBhD7cPWgAf8MzXN1WCAM7HLsb+I/lft0Ti6uf/hgdZ5Y8oFH/CBXXuBLfjg3TPbn0yT1OHbnrA67cEI7rcKUj2A3SedIJaVeMNBnKgz7U4zjCg7pvxfPWlK/OdPE8xtH1Nux76cnG6VsjSrW761H6jw10EV2Uf7+UU8HnGgZAKriSOU0bNShGW8FpnMmtXFTNLt5BsbqHGqPztuRnwcx9nxwKAjodzGHZ3phIcewMLzRnY8LJyxVYlNKJd2q3hVd1+YFkRjYZVADFyAa7aGP5pKrB5Xf7pI61XLkV/cmAcNGczI/peHnvdC89cGy8tOQoLMkKs9pl1cLj4mNI+61sXoEKTFI8ctyAv0N7goW1urudqjgpEB/Qj9BwsUqPnF4P2kxW7SRvyhCkHPCp8eTs2LpJqgHflYOSJdraBMxko/xonCaz8sXaKCN7E73T9xYy/RU1BfP2gkvLqk=
+  on:
+    branch: master
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: petspats/pyha
