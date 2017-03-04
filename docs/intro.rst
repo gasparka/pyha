@@ -5,6 +5,8 @@ Introduction
 Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Main features:
+
+    - Simulate in Python. Integration to run RTL and GATE simulations.
     - Structured, all-sequential and object oriented designs
     - Fixed point type support(maps to `VHDL fixed point library`_)
     - Decent quality VHDL output (get what you write, keeps hierarchy)
