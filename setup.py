@@ -32,10 +32,12 @@ setup(
 
     # package_dir={'':'pyha'},
     packages=find_packages(),
-    package_data={'pyha': ['common/hdl/pyha_util.vhd', 'common/hdl/fixed_pkg/*']},
+    package_data={'pyha': ['common/hdl/pyha_util.vhd',
+                           'common/hdl/fixed_pkg/*'
+                           'requirements.txt']},
     # py_modules=["pyha"],
 
-    include_package_data=False,
+    include_package_data=True,
     install_requires=requirements,
     license="Apache Software License 2.0",
     zip_safe=False,
