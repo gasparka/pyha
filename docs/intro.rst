@@ -24,8 +24,8 @@ Working principle
 .. image:: img/working_principle.png
 
 As shown on above image, Python sources are turned into synthesizable VHDL code.
-In :code:`__init__`, you can write any valid Python code, it is ignored for conversion, only variables are collected as registers.
-You can use objects of other classes (derived from HW) as registers, even lists of objects is possible.
+In :code:`__init__`, any valid Python code can be used, all the variables are collected as registers.
+Objects of other classes (derived from HW) can be used as registers, even lists of objects is possible.
 
 In addition, there are tools to help verification by automating RTL and GATE simulations.
 

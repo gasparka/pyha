@@ -7,7 +7,7 @@ It serves as a basic example of turning DSP models into HDL in sensible and test
 
 `Source code <https://github.com/petspats/pyha/blob/develop/examples/basic_usage/basic_usage.py>`__
 
-`VHDL outputs <https://github.com/petspats/pyha/tree/develop/examples/basic_usage/conversion/src>`__
+`VHDL conversion <https://github.com/petspats/pyha/tree/develop/examples/basic_usage/conversion/src>`__
 
 
 Model and unit-tests

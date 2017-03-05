@@ -25,7 +25,7 @@ class TestLaxySfixReg:
         assert_sim_match(self.dut, [Sfix(0, 0, -17)], expect, inputs, rtol=1e-4)
 
     def test_bits9(self):
-        # 0.1 fails, basically should we prequnatize sfix values into model_main?
+        # 0.1 fails, basically should we prequantize sfix values into model_main?
         pytest.xfail()
         inputs = [0.1, 0.2, 0.3, 0.4]
         expect = [0.1, 0.2, 0.3, 0.4]

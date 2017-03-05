@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="fast" type="tests" factoryName="py.test">
+  <configuration default="false" name="test_rtl" type="tests" factoryName="py.test">
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
@@ -20,7 +20,7 @@
     <option name="USE_PATTERN" value="false" />
     <option name="testToRun" value="$PROJECT_DIR$/tests" />
     <option name="keywords" value="" />
-    <option name="params" value="-m &quot;not slowtest and not components&quot;" />
+    <option name="params" value="" />
     <option name="USE_PARAM" value="false" />
     <option name="USE_KEYWORD" value="false" />
     <method />
