@@ -8,9 +8,7 @@ To install pyha:
 
 .. code-block:: bash
 
-    git clone https://github.com/petspats/pyha
-    cd pyha
-    pip install .
+    pip install pyha
 
 
 RTL-level simulations
