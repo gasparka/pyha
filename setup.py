@@ -23,7 +23,7 @@ test_requirements = [
 
 setup(
     name='pyha',
-    version='0.0.3',
+    version='0.0.4',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
