@@ -3,10 +3,11 @@ from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
+from Crypto.Util.number import size
 from six import iteritems, with_metaclass
 
 from pyha.common.const import Const
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.common.sfix import Sfix, ComplexSfix, resize
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -232,16 +233,6 @@ class Meta(type):
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
-        # # give self.next to the new object
-        # ret.__dict__['next'] = type('next', (cls,), {})()
-        #
-        # for k, v in ret.__dict__.items():
-        #     if isinstance(v, HW) \
-        #             or k in PYHA_VARIABLES \
-        #             or (isinstance(v, list) and isinstance(v[0], HW)):
-        #         continue
-        #     if is_convertible(v):
-        #         setattr(ret.next, k, deepcopy(v))
 
         ret.next = deepcopy(ret)
         ret.next.__dict__.clear()
@@ -253,6 +244,7 @@ class Meta(type):
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
 
+        ret.next.__pyha_is_next__ = True
 
         # register of submodules that need 'self update'
         ret._pyha_submodules = []
@@ -267,6 +259,9 @@ class Meta(type):
         # save the initial self values
         # all registers will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
+        # next needs this because it is used inside __setattr__
+        ret.next.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
         ret._outputs = []
@@ -312,10 +307,23 @@ class HW(with_metaclass(Meta)):
                 x._pyha_update_self()
 
     def __setattr__(self, name, value):
+        """ this is only enabled for 'main' function, that simulates hardware.
+        Assign to self."""
+
         if not HW.is_hw_simulation:
             self.__dict__[name] = value
             return
 
+        # this is only enabled for 'main' function
+        if hasattr(self, '__pyha_is_next__'):
+            attr = getattr(self._pyha_initial_self, name)
+            if isinstance(attr, Sfix):
+                self.__dict__[name] = resize(value, size_res=attr, round_style=attr.round_style, overflow_style=attr.overflow_style)
+                return
+        # else:
+        #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
 
-        print('LOL')
+
+        # if hasattr(self, 'next')
+
         self.__dict__[name] = value

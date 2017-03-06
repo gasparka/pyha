@@ -1,3 +1,7 @@
+import textwrap
+
+import pytest
+
 from pyha.common.hwsim import HW, Meta, PyhaFunc
 from pyha.common.sfix import Sfix, ComplexSfix
 import numpy as np
@@ -303,7 +307,9 @@ def test_outputs():
 
 
 
-def test_play():
+
+
+def test_setattr_assign_self():
     class A(HW):
         def __init__(self):
             self.a = 0
@@ -317,32 +323,45 @@ def test_play():
     HW.is_hw_simulation = True
     dut.main(1)
 
+
+def test_setattr_resize():
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0, 0, -2)
+
+        def main(self, a):
+            self.next.a = a
+            return self.a
+
+    dut = A()
+    HW.is_hw_simulation = True
+    dut.main(Sfix(0.1234, 0, -24))
+    assert dut.next.a.left == 0
+    assert dut.next.a.right == -2
+    print(dut.next.a)
+
 # def test_two_calls():
 
 
 
     #
-    # def test_forbid_self_assign_sfix_raises():
-    #     class A(HW):
-    #         def __init__(self):
-    #             self.a = Sfix(0.0)
-    #
-    #         def main(self, condition):
-    #             if condition:
-    #                 self.next.a = Sfix(1.2, 3, -18)
-    #             else:
-    #                 self.a = Sfix(2.2, 3, -18)
-    #
-    #     expect = textwrap.dedent("""\
-    #             Assigment to self.a, did you mean self.next.a?
-    #             Class: A""")
-    #
-    #     dut = A()
-    #     dut.main(True)
-    #     with pytest.raises(AssignToSelf) as e:
-    #         dut.main(False)
-    #
-    #     assert str(e.value) == expect
+# def test_forbid_self_assign_sfix_raises():
+#     class A(HW):
+#         def __init__(self):
+#             self.a = Sfix(0.0)
+#
+#         def main(self, condition):
+#             if condition:
+#                 self.next.a = Sfix(1.2, 3, -18)
+#             else:
+#                 self.a = Sfix(2.2, 3, -18)
+#
+#     dut = A()
+#     HW.is_hw_simulation = True
+#     dut.main(True)
+#     with pytest.raises(Exception) as e:
+#         dut.main(False)
+
     #
     #
     # def test_forbid_self_assign_list_raises():
