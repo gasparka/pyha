@@ -3,7 +3,6 @@ from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
-from Crypto.Util.number import size
 from six import iteritems, with_metaclass
 
 from pyha.common.const import Const
@@ -305,6 +304,10 @@ class HW(with_metaclass(Meta)):
                     item._pyha_update_self()
             else:
                 x._pyha_update_self()
+
+    def __setitem__(self, idx, value):
+        print('WTF')
+        pass
 
     def __setattr__(self, name, value):
         """ this is only enabled for 'main' function, that simulates hardware.
