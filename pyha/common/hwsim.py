@@ -225,16 +225,26 @@ class Meta(type):
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
+
         ret.__dict__ = cls.handle_constants(ret.__dict__)
         cls.validate_datamodel(ret.__dict__)
 
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
+        # # give self.next to the new object
+        # ret.__dict__['next'] = type('next', (cls,), {})()
+        #
+        # for k, v in ret.__dict__.items():
+        #     if isinstance(v, HW) \
+        #             or k in PYHA_VARIABLES \
+        #             or (isinstance(v, list) and isinstance(v[0], HW)):
+        #         continue
+        #     if is_convertible(v):
+        #         setattr(ret.next, k, deepcopy(v))
 
-        # give self.next to the new object
-        ret.__dict__['next'] = type('next', (object,), {})()
-
+        ret.next = deepcopy(ret)
+        ret.next.__dict__.clear()
         for k, v in ret.__dict__.items():
             if isinstance(v, HW) \
                     or k in PYHA_VARIABLES \
@@ -243,7 +253,8 @@ class Meta(type):
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
 
-        # registery of submodules that need 'self update'
+
+        # register of submodules that need 'self update'
         ret._pyha_submodules = []
         for k, v in ret.__dict__.items():
             if k in PYHA_VARIABLES:
@@ -274,6 +285,7 @@ class Meta(type):
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
+    is_hw_simulation = False
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
@@ -298,3 +310,12 @@ class HW(with_metaclass(Meta)):
                     item._pyha_update_self()
             else:
                 x._pyha_update_self()
+
+    def __setattr__(self, name, value):
+        if not HW.is_hw_simulation:
+            self.__dict__[name] = value
+            return
+
+
+        print('LOL')
+        self.__dict__[name] = value

@@ -1,5 +1,6 @@
 from pyha.common.hwsim import HW, Meta, PyhaFunc
 from pyha.common.sfix import Sfix, ComplexSfix
+import numpy as np
 
 
 def test_metaclass_assigned():
@@ -65,7 +66,6 @@ def test_next_ids():
 
 def test_next_filter():
     """ Next should contain only convertible items, shall not contain any submodules """
-    import numpy as np
     class Ob:
         pass
 
@@ -301,6 +301,21 @@ def test_outputs():
     dut.main(4)
     assert dut._outputs == [1, 2, 3, 4]
 
+
+
+def test_play():
+    class A(HW):
+        def __init__(self):
+            self.a = 0
+
+        def main(self, a):
+            self.next.a = a
+            self.a = a
+            return self.a
+
+    dut = A()
+    HW.is_hw_simulation = True
+    dut.main(1)
 
 # def test_two_calls():
 
