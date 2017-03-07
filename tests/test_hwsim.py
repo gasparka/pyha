@@ -338,30 +338,6 @@ def test_setattr_resize():
     print(dut.next.a)
 
 
-class Wat(list):
-
-    def __setitem__(self, key, value):
-        print('jo jo jo')
-
-
-
-class TestAutoResize
-def test_setattr_resize_list():
-    class A(HW):
-        def __init__(self):
-            self.a = Wat([Sfix(0, 0, -2)] * 2)
-
-        def main(self, a):
-            self.a[0] = a
-            return self.a
-
-    dut = A()
-    HW.is_hw_simulation = True
-    dut.main(Sfix(0.1234, 0, -24))
-    assert dut.next.a.left == 0
-    assert dut.next.a.right == -2
-    print(dut.next.a)
-
 # def test_two_calls():
 
 

@@ -777,6 +777,18 @@ def convert(red: Node, caller=None, datamodel=None):
 def redbaron_enum_to_vhdl(red_node):
     """ In python Enums must be referenced by type: EnumType.ENUMVALUE
     VHDL does not allow  this, only ENUMVALUE must be written"""
+    red_names = red_node.find_all('assignment', value=lambda x: x[0].value == type_name)
+    for x in enums:
+        type_name = type(x).__name__
+        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+        for i, node in enumerate(red_names):
+            red_names[i].replace(node[1])
+
+    return red_node
+
+def redbaron_enum_to_vhdl(red_node):
+    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
+    VHDL does not allow  this, only ENUMVALUE must be written"""
     enums = VHDLType.get_enum_vars()
     for x in enums:
         type_name = type(x).__name__
