@@ -257,10 +257,11 @@ class Meta(type):
 
         # save the initial self values
         # all registers will be derived from these values!
-        ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
-
         # next needs this because it is used inside __setattr__
         ret.next.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
+        ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
 
         # every call to 'main' will append returned values here
         ret._outputs = []

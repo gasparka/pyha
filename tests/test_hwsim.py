@@ -345,7 +345,7 @@ class Wat(list):
 
 
 
-
+class TestAutoResize
 def test_setattr_resize_list():
     class A(HW):
         def __init__(self):
