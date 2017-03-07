@@ -235,7 +235,6 @@ class Sfix:
             return self.__dict__ == other.__dict__
         return False
 
-    # FIXME: THESE ARE FUCKED UP
     def max_representable(self):
         if self.left < 0:
             # FIXME: I am not sure how to handle this when negative index

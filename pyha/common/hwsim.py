@@ -311,8 +311,9 @@ class HW(with_metaclass(Meta)):
         pass
 
     def __setattr__(self, name, value):
-        """ this is only enabled for 'main' function, that simulates hardware.
-        Assign to self."""
+        """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
+        this is only enabled for 'main' function, that simulates hardware.
+        """
 
         if not HW.is_hw_simulation:
             self.__dict__[name] = value
