@@ -222,6 +222,7 @@ class Meta(type):
 
         return dict
 
+
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
@@ -232,7 +233,13 @@ class Meta(type):
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
+        # Sfixed lists must be converted to SfixList class, need for setitem overload
+        for k, v in ret.__dict__.items():
+            if isinstance(v, list) and isinstance(v[0], Sfix):
+                ret.__dict__[k] = SfixList(v, v[0])
 
+
+        # make .next variable
         ret.next = deepcopy(ret)
         ret.next.__dict__.clear()
         for k, v in ret.__dict__.items():
@@ -277,6 +284,20 @@ class Meta(type):
                 setattr(ret, method_str, new)
 
         return ret
+
+
+class SfixList(list):
+    """ On assign to element resize the value """
+    def __init__(self, seq, type):
+        super().__init__(seq)
+        self.type = type
+
+    def __setitem__(self, i, y):
+        y = resize(y, size_res=self.type, round_style=self.type.round_style,
+                                     overflow_style=self.type.overflow_style)
+
+        super().__setitem__(i, y)
+
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
