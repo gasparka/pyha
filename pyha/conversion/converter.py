@@ -5,7 +5,7 @@ from contextlib import suppress
 from enum import Enum
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, GetitemNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -774,17 +774,44 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 
-def redbaron_enum_to_vhdl(red_node):
-    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
-    VHDL does not allow  this, only ENUMVALUE must be written"""
-    red_names = red_node.find_all('assignment', value=lambda x: x[0].value == type_name)
-    for x in enums:
-        type_name = type(x).__name__
-        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
-        for i, node in enumerate(red_names):
-            red_names[i].replace(node[1])
+
+def autosfix_find(red_node):
+    """ Find all assignments that are subject to auto resize conversion """
+    def is_subject(x):
+        """
+        Acceptable examples:
+                self.next.a = b
+                self.a.next.b = a
+                self.next.b[0] = a
+                self.a[3].b.next.b = a
+        """
+        if len(x.value) < 3:
+            return False
+
+        if x[0].value == 'self' and x[-2].value == 'next':
+            return True
+
+        if isinstance(x[-1], GetitemNode) and x[0].value == 'self' and x[-3].value == 'next':
+            return True
+
+        return False
+
+    return red_node.find_all('assign', target=is_subject)
+
+def type_filter(nodes):
+    """ Resize stuff should happen on Sfix registers only, filter others out """
+    r = VHDLType.walk_self_data(nodes.target)
+    pass
+
+
+def redbaron_autosfix(red_node):
+    """ """
+    red_node.find_all('assign', target=lambda x: x[0].value == 'self' and x[-2].value == 'next')
+
+    red_names = red_node.find_all('assignment', value=lambda x: x[0].value == 'self.next')
 
     return red_node
+
 
 def redbaron_enum_to_vhdl(red_node):
     """ In python Enums must be referenced by type: EnumType.ENUMVALUE

@@ -289,13 +289,14 @@ class VHDLType:
                 pass
         return var
 
-    def walk_self_data(self, atom_trailer):
+    @classmethod
+    def walk_self_data(cls, atom_trailer):
         """ atom_trailer is something like this: self.a.b.c.d
             This finds type of such nested variable
         """
 
         def find_from_self(atom_trailer):
-            var = self._datamodel.self_data
+            var = cls._datamodel.self_data
             for x in atom_trailer[1:]:
                 if str(x) == 'next': continue
                 if not isinstance(x, GetitemNode):
@@ -309,7 +310,7 @@ class VHDLType:
             return var
 
         def find_from_const(atom_trailer):
-            var = self._datamodel.constants
+            var = cls._datamodel.constants
             for x in atom_trailer[1:]:
                 if str(x) == 'next': continue
                 if not isinstance(x, GetitemNode):

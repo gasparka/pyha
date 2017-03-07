@@ -7,7 +7,7 @@ from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
-    convert
+    convert, autosfix_find
 from pyha.conversion.extract_datamodel import DataModel
 
 
@@ -515,3 +515,36 @@ def test_enum_in_if(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
+
+
+class TestAutoResize:
+
+    def test_find(self):
+        code = textwrap.dedent("""\
+            def f():
+                # invalid stuff
+                self.b = l
+                b = self.next.a
+
+                self.next.a = b
+                self.a.next.b = a
+                self.next.b[0] = a
+                self.a[3].b.next.b = a
+
+            """)
+        nodes = autosfix_find(RedBaron(code))
+        assert str(nodes[0]) == 'self.next.a = b'
+        assert str(nodes[1]) == 'self.a.next.b = a'
+        assert str(nodes[2]) == 'self.next.b[0] = a'
+        assert str(nodes[3]) == 'self.a[3].b.next.b = a'
+
+        assert len(nodes) == 4
+
+
+    def test_type_filter(self):
+        datamodel = DataModel(locals={'f': {'c': EnumType.ENUMVALUE}},
+                              self_data={})
+        type_filter(RedBaron('self.next.'))
+
+    def test_simple(self):
+        code = 'self.next = a'
