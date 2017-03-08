@@ -6,6 +6,7 @@ import pytest
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
     convert, autosfix_find
 from pyha.conversion.extract_datamodel import DataModel
@@ -518,6 +519,39 @@ def test_enum_in_if(converter):
 
 
 class TestAutoResize:
+    def setup_class(self):
+        class T1(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.sfix_reg = Sfix()
+
+        class T0(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.sfix_reg = Sfix()
+                self.submod_reg = T1()
+
+                self.sfix_list = [Sfix()] * 2
+                self.int_list = [0] * 2
+
+                self.submod_list = [T1(), T1()]
+
+            def main(self, a):
+                # not subjects to resize conversion
+                self.int_reg = a
+                b = self.next.sfix_reg
+                self.submod_reg.next.int_reg = a
+                self.next.int_list[0] = a
+                self.submod_list[3].next.int_reg = a
+                c = self.submod_list[3].next.sfix_reg
+
+                # subjects
+                self.next.sfix_reg = a
+                self.submod_reg.next.sfix_reg = a
+                self.next.sfix_list[0] = a
+                self.submod_list[3].next.sfix_reg = a
+
+
 
     def test_find(self):
         code = textwrap.dedent("""\
@@ -540,9 +574,8 @@ class TestAutoResize:
 
         assert len(nodes) == 4
 
-
     def test_type_filter(self):
-        datamodel = DataModel(locals={'f': {'c': EnumType.ENUMVALUE}},
+        datamodel = DataModel(locals={},
                               self_data={})
         type_filter(RedBaron('self.next.'))
 

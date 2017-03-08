@@ -774,7 +774,7 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 
-
+class AutoResize:
 def autosfix_find(red_node):
     """ Find all assignments that are subject to auto resize conversion """
     def is_subject(x):
