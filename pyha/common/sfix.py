@@ -40,15 +40,16 @@ class ComplexSfix:
 
 
     """
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
+    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate,
+                 round_style=fixed_round):
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
             self.real = val
             self.imag = left
         else:
             self.init_val = val
-            self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
-            self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+            self.real = Sfix(val.real, left, right, overflow_style, round_style)
+            self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
 
     @property
     def left(self):
@@ -194,8 +195,8 @@ class Sfix:
         """
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
-                 round_style=fixed_round):
+    def __init__(self, val=0.0, left=0, right=0, overflow_style=fixed_saturate,
+                 round_style=fixed_round, init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style

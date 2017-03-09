@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
     VariableNotConvertible
 
@@ -73,6 +73,26 @@ class TestDatamodel:
 
         result = extract_datamodel(dut)
         assert result == expect
+
+    def test_sfix_round_style(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56, 0, -10, round_style=fixed_truncate)
+
+        expect = {'a': Sfix(0.56, 0, -10, round_style=fixed_truncate)}
+        result = extract_datamodel(A())
+        assert result == expect
+
+
+    def test_sfix_overflow_style(self):
+        class A(HW):
+            def __init__(self):
+                self.a = Sfix(0.56, 0, -10, overflow_style=fixed_wrap)
+
+        expect = {'a': Sfix(0.56, 0, -10, overflow_style=fixed_wrap)}
+        result = extract_datamodel(A())
+        assert result == expect
+
 
     def test_sfix_list(self):
         class A(HW):
