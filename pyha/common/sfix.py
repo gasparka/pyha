@@ -42,6 +42,8 @@ class ComplexSfix:
     """
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate,
                  round_style=fixed_round):
+        self.overflow_style = fixed_saturate
+        self.round_style = fixed_round
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
             self.real = val

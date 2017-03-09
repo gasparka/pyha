@@ -54,6 +54,7 @@ def is_convertible(obj):
 
     return False
 
+
 def deepish_copy(org):
     """
     https://writeonly.wordpress.com/2009/05/07/deepcopy-is-a-pig-for-simple-data/
@@ -222,7 +223,6 @@ class Meta(type):
 
         return dict
 
-
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
@@ -237,7 +237,6 @@ class Meta(type):
         for k, v in ret.__dict__.items():
             if isinstance(v, list) and isinstance(v[0], Sfix):
                 ret.__dict__[k] = SfixList(v, v[0])
-
 
         # make .next variable
         ret.next = deepcopy(ret)
@@ -269,7 +268,6 @@ class Meta(type):
 
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
-
         # every call to 'main' will append returned values here
         ret._outputs = []
 
@@ -288,20 +286,31 @@ class Meta(type):
 
 class SfixList(list):
     """ On assign to element resize the value """
+
     def __init__(self, seq, type):
         super().__init__(seq)
         self.type = type
 
     def __setitem__(self, i, y):
         y = resize(y, size_res=self.type, round_style=self.type.round_style,
-                                     overflow_style=self.type.overflow_style)
+                   overflow_style=self.type.overflow_style)
 
         super().__setitem__(i, y)
 
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
-    is_hw_simulation = False
+
+    class auto_resize:
+        enabled = False
+
+        def __enter__(self):
+            HW.auto_resize.enabled = True
+
+        def __exit__(self, type, value, traceback):
+            HW.auto_resize.enabled = False
+
+
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
@@ -327,16 +336,11 @@ class HW(with_metaclass(Meta)):
             else:
                 x._pyha_update_self()
 
-    def __setitem__(self, idx, value):
-        print('WTF')
-        pass
-
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
-
-        if not HW.is_hw_simulation:
+        if not HW.auto_resize.enabled:
             self.__dict__[name] = value
             return
 
@@ -344,7 +348,8 @@ class HW(with_metaclass(Meta)):
         if hasattr(self, '__pyha_is_next__'):
             attr = getattr(self._pyha_initial_self, name)
             if isinstance(attr, Sfix):
-                self.__dict__[name] = resize(value, size_res=attr, round_style=attr.round_style, overflow_style=attr.overflow_style)
+                self.__dict__[name] = resize(value, size_res=attr, round_style=attr.round_style,
+                                             overflow_style=attr.overflow_style)
                 return
         # else:
         #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')

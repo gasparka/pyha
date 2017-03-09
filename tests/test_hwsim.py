@@ -317,8 +317,8 @@ def test_setattr_assign_self():
             return self.a
 
     dut = A()
-    HW.is_hw_simulation = True
-    dut.main(1)
+    with HW.auto_resize():
+        dut.main(1)
 
 
 def test_setattr_resize():
@@ -331,11 +331,11 @@ def test_setattr_resize():
             return self.a
 
     dut = A()
-    HW.is_hw_simulation = True
-    dut.main(Sfix(0.1234, 0, -24))
-    assert dut.next.a.left == 0
-    assert dut.next.a.right == -2
-    print(dut.next.a)
+    with HW.auto_resize():
+        dut.main(Sfix(0.1234, 0, -24))
+        assert dut.next.a.left == 0
+        assert dut.next.a.right == -2
+        print(dut.next.a)
 
 
 # def test_two_calls():

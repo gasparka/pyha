@@ -9,8 +9,8 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-from pyha.common.hwsim import HW
 
+from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
@@ -160,11 +160,10 @@ class Simulation:
             # reset registers, in order to match COCOTB RTL simulation behaviour
             self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
-            HW.is_hw_simulation = True
-            for x in args:
-                ret.append(self.model.main(*x))
-                self.model._pyha_update_self()
-            HW.is_hw_simulation = False
+            with HW.auto_resize():
+                for x in args:
+                    ret.append(self.model.main(*x))
+                    self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
