@@ -774,7 +774,7 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 
-class AutoResize:
+# class AutoResize:
 def autosfix_find(red_node):
     """ Find all assignments that are subject to auto resize conversion """
     def is_subject(x):
@@ -800,8 +800,15 @@ def autosfix_find(red_node):
 
 def type_filter(nodes):
     """ Resize stuff should happen on Sfix registers only, filter others out """
-    r = VHDLType.walk_self_data(nodes.target)
-    pass
+
+    passed_nodes = []
+    types = []
+    for x in nodes:
+        t = VHDLType.walk_self_data(x.target)
+        if isinstance(t, Sfix):
+            passed_nodes.append(x)
+            types.append(t)
+    return passed_nodes, types
 
 
 def redbaron_autosfix(red_node):

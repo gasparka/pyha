@@ -6,9 +6,11 @@ import pytest
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
+from pyha.conversion.conversion import get_objects_rednode
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
-    convert, autosfix_find
+    convert, autosfix_find, type_filter
+from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 
 
@@ -523,12 +525,12 @@ class TestAutoResize:
         class T1(HW):
             def __init__(self):
                 self.int_reg = 0
-                self.sfix_reg = Sfix()
+                self.sfix_reg = Sfix(0.1, 2, -19, round_style=fixed_truncate)
 
         class T0(HW):
             def __init__(self):
                 self.int_reg = 0
-                self.sfix_reg = Sfix()
+                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
                 self.submod_reg = T1()
 
                 self.sfix_list = [Sfix()] * 2
@@ -538,46 +540,56 @@ class TestAutoResize:
 
             def main(self, a):
                 # not subjects to resize conversion
+                # some may be rejected due to type
                 self.int_reg = a
                 b = self.next.sfix_reg
                 self.submod_reg.next.int_reg = a
                 self.next.int_list[0] = a
-                self.submod_list[3].next.int_reg = a
-                c = self.submod_list[3].next.sfix_reg
+                self.submod_list[1].next.int_reg = a
+                c = self.submod_list[1].next.sfix_reg
 
                 # subjects
                 self.next.sfix_reg = a
                 self.submod_reg.next.sfix_reg = a
                 self.next.sfix_list[0] = a
-                self.submod_list[3].next.sfix_reg = a
+                self.submod_list[1].next.sfix_reg = a
 
-
+        self.dut = T0()
+        self.dut.main(Sfix(0))
+        self.red_node = get_objects_rednode(self.dut)
+        self.datamodel = DataModel(self.dut)
+        VHDLType.set_datamodel(self.datamodel)
 
     def test_find(self):
-        code = textwrap.dedent("""\
-            def f():
-                # invalid stuff
-                self.b = l
-                b = self.next.a
+        """ Test all assignments that could be potential subjects, has no type info """
+        expect = ['self.submod_reg.next.int_reg = a',
+                  'self.next.int_list[0] = a',
+                  'self.submod_list[1].next.int_reg = a',
+                  'self.next.sfix_reg = a',
+                  'self.submod_reg.next.sfix_reg = a',
+                  'self.next.sfix_list[0] = a',
+                  'self.submod_list[1].next.sfix_reg = a']
 
-                self.next.a = b
-                self.a.next.b = a
-                self.next.b[0] = a
-                self.a[3].b.next.b = a
-
-            """)
-        nodes = autosfix_find(RedBaron(code))
-        assert str(nodes[0]) == 'self.next.a = b'
-        assert str(nodes[1]) == 'self.a.next.b = a'
-        assert str(nodes[2]) == 'self.next.b[0] = a'
-        assert str(nodes[3]) == 'self.a[3].b.next.b = a'
-
-        assert len(nodes) == 4
+        out = [str(x) for x in autosfix_find(self.red_node)]
+        assert out == expect
 
     def test_type_filter(self):
-        datamodel = DataModel(locals={},
-                              self_data={})
-        type_filter(RedBaron('self.next.'))
+        """ Subjects shall be of Sfix type """
+        expect_nodes = ['self.next.sfix_reg = a',
+                        'self.submod_reg.next.sfix_reg = a',
+                        'self.next.sfix_list[0] = a',
+                        'self.submod_list[1].next.sfix_reg = a']
+
+        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
+                        Sfix(0.1, 2, -19, round_style=fixed_truncate),
+                        Sfix(),
+                        Sfix(0.1, 2, -19, round_style=fixed_truncate)]
+
+        nodes = autosfix_find(self.red_node)
+        passed_nodes, passed_types = type_filter(nodes)
+
+        assert expect_nodes == [str(x) for x in passed_nodes]
+        assert expect_types == passed_types
 
     def test_simple(self):
         code = 'self.next = a'

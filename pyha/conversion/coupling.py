@@ -300,7 +300,10 @@ class VHDLType:
             for x in atom_trailer[1:]:
                 if str(x) == 'next': continue
                 if not isinstance(x, GetitemNode):
-                    var = var[str(x)]
+                    if isinstance(var, HW):
+                        var = var.__dict__[str(x)]
+                    else:
+                        var = var[str(x)]
                 else:
                     # index is some variable -> just take first element
                     if isinstance(x.value, NameNode):

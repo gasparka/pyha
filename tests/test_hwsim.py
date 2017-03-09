@@ -338,6 +338,21 @@ def test_setattr_resize():
         print(dut.next.a)
 
 
+def test_initial_self_next():
+    """ next should have this also, problem when it dissapeared after update_self """
+    class A(HW):
+        def __init__(self):
+            self.a = Sfix(0, 0, -2)
+
+        def main(self, a):
+            self.next.a = a
+            return self.a
+
+    dut = A()
+    assert hasattr(dut._pyha_initial_self.next, '_pyha_initial_self')
+
+    dut._pyha_update_self()
+    assert hasattr(dut._pyha_initial_self.next, '_pyha_initial_self')
 # def test_two_calls():
 
 
