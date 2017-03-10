@@ -178,7 +178,7 @@ class TestComplex:
 
         dut = self.A2(fixed_saturate, fixed_round)
         assert_sim_match(dut, [Sfix(left=0, right=-17)], expected, x,
-                         simulations=[SIM_HW_MODEL])
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -187,7 +187,7 @@ class TestComplex:
 
         dut = self.A2(fixed_saturate, fixed_truncate)
         assert_sim_match(dut, [Sfix(left=0, right=-17)], expected, x,
-                         simulations=[SIM_HW_MODEL])
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -195,7 +195,7 @@ class TestComplex:
 
         dut = self.A2(fixed_saturate, fixed_truncate)
         assert_sim_match(dut, [Sfix(left=2, right=-17)], expected, x,
-                         simulations=[SIM_HW_MODEL])
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -203,4 +203,4 @@ class TestComplex:
 
         dut = self.A2(fixed_wrap, fixed_truncate)
         assert_sim_match(dut, [Sfix(left=2, right=-17)], expected, x,
-                         simulations=[SIM_HW_MODEL])
+                         simulations=[SIM_HW_MODEL, SIM_RTL])

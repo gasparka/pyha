@@ -302,6 +302,8 @@ class VHDLType:
                 if not isinstance(x, GetitemNode):
                     if isinstance(var, HW):
                         var = var.__dict__[str(x)]
+                    elif isinstance(var, ComplexSfix):
+                        var = getattr(var, str(x))
                     else:
                         var = var[str(x)]
                 else:

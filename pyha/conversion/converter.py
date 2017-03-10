@@ -795,15 +795,10 @@ class AutoResize:
                     self.next.b[0] = a
                     self.a[3].b.next.b = a
             """
-            if len(x) < 3:
-                return False
-
-            if x[0].value == 'self' and x[-2].value == 'next':
-                return True
-
-            if isinstance(x[-1], GetitemNode) and x[0].value == 'self' and x[-3].value == 'next':
-                return True
-
+            if len(x) > 1:
+                s = [str(xx.value) for xx in x]
+                if 'self' in s and 'next' in s:
+                    return True
             return False
 
         return red_node.find_all('assign', target=is_subject)

@@ -530,7 +530,7 @@ class TestAutoResize:
         class T0(HW):
             def __init__(self):
                 self.int_reg = 0
-                self.complex_reg = ComplexSfix(2.5, 5, -29, overflow_style=fixed_wrap)
+                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style=fixed_wrap)
                 self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
                 self.submod_reg = T1()
 
@@ -555,6 +555,8 @@ class TestAutoResize:
                 self.submod_reg.next.sfix_reg = a
                 self.next.sfix_list[0] = a
                 self.submod_list[1].next.sfix_reg = a
+                self.next.complex_reg.real = a
+                self.next.complex_reg.imag = a
 
         self.dut = T0()
         self.dut.main(Sfix(0))
@@ -571,7 +573,9 @@ class TestAutoResize:
                   'self.next.sfix_reg = a',
                   'self.submod_reg.next.sfix_reg = a',
                   'self.next.sfix_list[0] = a',
-                  'self.submod_list[1].next.sfix_reg = a']
+                  'self.submod_list[1].next.sfix_reg = a',
+                  'self.next.complex_reg.real = a',
+                  'self.next.complex_reg.imag = a']
 
         out = [str(x) for x in AutoResize.find(self.red_node)]
         assert out == expect
@@ -581,12 +585,17 @@ class TestAutoResize:
         expect_nodes = ['self.next.sfix_reg = a',
                         'self.submod_reg.next.sfix_reg = a',
                         'self.next.sfix_list[0] = a',
-                        'self.submod_list[1].next.sfix_reg = a']
+                        'self.submod_list[1].next.sfix_reg = a',
+                        'self.next.complex_reg.real = a',
+                        'self.next.complex_reg.imag = a'
+                        ]
 
         expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
                         Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
                         Sfix(0, 0, 0, overflow_style=fixed_saturate, round_style=fixed_round),
-                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate)]
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
 
         nodes = AutoResize.find(self.red_node)
         passed_nodes, passed_types = AutoResize.filter(nodes)
@@ -598,15 +607,16 @@ class TestAutoResize:
         expect_nodes = ['self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
                         'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
                         'self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)',
-                        'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)']
+                        'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.next.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.next.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
+                        ]
 
         nodes = AutoResize.apply(self.red_node)
         assert expect_nodes == [str(x) for x in nodes]
 
 
-        # todo:
-        # * Default round style to truncate -> what to do with initial values??
-        # * auto resize on function calls that return to self.next ??
-        # * what if is already resized??
-        # * complex types resize/assign
-        # Hw enable should also go for lists and complex assigns
+# todo:
+# * Default round style to truncate -> what to do with initial values??
+# * auto resize on function calls that return to self.next ??
+# * what if is already resized??
