@@ -13,20 +13,20 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 def test_py_implementation():
     a = ComplexSfix()
-    assert a.real == Sfix(0.0, 0, 0)
-    assert a.imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0, 0, 0)
+    assert a._imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0)
-    assert a.real == Sfix(0.0, 0, 0)
-    assert a.imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0, 0, 0)
+    assert a._imag == Sfix(0.0, 0, 0)
 
     a = ComplexSfix(0.5 + 1.2j, 1, -12)
-    assert a.real == Sfix(0.5, 1, -12)
-    assert a.imag == Sfix(1.2, 1, -12)
+    assert a._real == Sfix(0.5, 1, -12)
+    assert a._imag == Sfix(1.2, 1, -12)
 
     a = ComplexSfix(0.699 + 0.012j, 0, -4)
-    assert a.real.val == 0.6875
-    assert a.imag.val == 0
+    assert a._real.val == 0.6875
+    assert a._imag.val == 0
     assert a.init_val == 0.699 + 0.012j
     assert a.left == 0
     assert a.right == -4
@@ -34,33 +34,33 @@ def test_py_implementation():
 
 def test_fixed_value():
     a = ComplexSfix(1 + 0.5j, 0, -2)
-    assert a.real.val == 0.75  # quantized
-    assert a.real.fixed_value() == 3
+    assert a._real.val == 0.75  # quantized
+    assert a._real.fixed_value() == 3
 
-    assert a.imag.val == 0.5
-    assert a.imag.fixed_value() == 2
+    assert a._imag.val == 0.5
+    assert a._imag.fixed_value() == 2
     r = a.fixed_value()
     assert r == 26
 
 
 def test_fixed_value2():
     a = ComplexSfix(1 + 1.95j, 1, -16)
-    assert a.real.val == 1.0
-    assert a.real.fixed_value() == 65536
+    assert a._real.val == 1.0
+    assert a._real.fixed_value() == 65536
 
-    assert a.imag.val == 1.9499969482421875
-    assert a.imag.fixed_value() == 127795
+    assert a._imag.val == 1.9499969482421875
+    assert a._imag.fixed_value() == 127795
     r = a.fixed_value()
     assert r == 17179996979
 
 
 def test_fixed_value3():
     a = ComplexSfix(-1 - 0.5j, 0, -2)
-    assert a.real.val == -1
-    assert a.real.fixed_value() == -4
+    assert a._real.val == -1
+    assert a._real.fixed_value() == -4
 
-    assert a.imag.val == -0.5
-    assert a.imag.fixed_value() == -2
+    assert a._imag.val == -0.5
+    assert a._imag.fixed_value() == -2
     r = a.fixed_value()
     assert r == 38
 
@@ -324,27 +324,27 @@ class TestRegisterIQ:
 
     def test_comp_reg_delay(self):
         next = ComplexSfix(1 + 1j, 1, -18)
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         self.dut.main(next)
 
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         self.dut._pyha_update_self()
 
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         next = ComplexSfix(2 + 2j, 1, -18)
         self.dut.main(next)
 
-        assert self.dut.next.reg.real == next.real
-        assert self.dut.next.reg.imag == next.imag
+        assert self.dut.next.reg.real == next._real
+        assert self.dut.next.reg.imag == next._imag
 
-        assert self.dut.reg.real != next.real
-        assert self.dut.reg.imag != next.imag
+        assert self.dut.reg._real != next._real
+        assert self.dut.reg._imag != next._imag
 
     def test_comp_reg_simulate(self):
         inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]

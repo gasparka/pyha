@@ -42,30 +42,59 @@ class ComplexSfix:
     """
     def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate,
                  round_style=fixed_round):
-        self.overflow_style = fixed_saturate
-        self.round_style = fixed_round
+
+        self.initial_left = left
+        self.initial_right = right
+        self.overflow_style = overflow_style
+        self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
-            self.real = val
-            self.imag = left
+            self._real = val
+            self._imag = left
         else:
             self.init_val = val
-            self.real = Sfix(val.real, left, right, overflow_style, round_style)
-            self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
+            self._real = Sfix(val.real, left, right, overflow_style, round_style)
+            self._imag = Sfix(val.imag, left, right, overflow_style, round_style)
+
+    @property
+    def imag(self):
+        return self._imag
+
+    @imag.setter
+    def imag(self, value):
+        from pyha.common.hwsim import HW
+        if HW.auto_resize.enabled:
+            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
+                       overflow_style=self.overflow_style)
+        self._imag = value
+
+    @property
+    def real(self):
+        return self._real
+
+    @real.setter
+    def real(self, value):
+        from pyha.common.hwsim import HW
+        if HW.auto_resize.enabled:
+            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
+                       overflow_style=self.overflow_style)
+        self._real = value
 
     @property
     def left(self):
-        assert self.real.left == self.imag.left
-        return self.real.left
+        assert self._real.left == self._imag.left
+        return self._real.left
 
     @property
     def right(self):
-        assert self.real.right == self.imag.right
-        return self.real.right
+        assert self._real.right == self._imag.right
+        return self._real.right
 
     @property
     def val(self):
-        return self.real.val + self.imag.val * 1j
+        return self._real.val + self._imag.val * 1j
+
+
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -76,7 +105,7 @@ class ComplexSfix:
         return ComplexSfix(x, self.left, self.right)
 
     def __str__(self):
-        return f'{self.real.val:.2f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.2f}j [{self.left}:{self.right}]'
+        return f'{self._real.val:.2f}{"" if self._imag.val < 0.0 else "+"}{self._imag.val:.2f}j [{self.left}:{self.right}]'
 
     def __repr__(self):
         return str(self)
@@ -96,12 +125,12 @@ class ComplexSfix:
         return f'std_logic_vector({self.bitwidth() - 1} downto 0)'
 
     def vhdl_reset(self):
-        return f'(real=>{self.real.vhdl_reset()}, imag=>{self.imag.vhdl_reset()})'
+        return f'(real=>{self._real.vhdl_reset()}, imag=>{self._imag.vhdl_reset()})'
 
     def fixed_value(self):
         assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
-        real = self.real.fixed_value()
-        imag = self.imag.fixed_value()
+        real = self._real.fixed_value()
+        imag = self._imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
         return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
 

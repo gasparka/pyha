@@ -292,8 +292,9 @@ class SfixList(list):
         self.type = type
 
     def __setitem__(self, i, y):
-        y = resize(y, size_res=self.type, round_style=self.type.round_style,
-                   overflow_style=self.type.overflow_style)
+        if HW.auto_resize.enabled:
+            y = resize(y, size_res=self.type, round_style=self.type.round_style,
+                       overflow_style=self.type.overflow_style)
 
         super().__setitem__(i, y)
 
@@ -310,8 +311,6 @@ class HW(with_metaclass(Meta)):
         def __exit__(self, type, value, traceback):
             HW.auto_resize.enabled = False
 
-
-
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -326,7 +325,7 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        init = self._pyha_initial_self # protect from overwrite
+        init = self._pyha_initial_self  # protect from overwrite
         self.__dict__.update(deepish_copy(self.next.__dict__))
         self.__dict__['_pyha_initial_self'] = init
 
