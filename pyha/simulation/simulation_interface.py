@@ -160,10 +160,10 @@ class Simulation:
             # reset registers, in order to match COCOTB RTL simulation behaviour
             self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
-            with HW.auto_resize():
-                for x in args:
+            for x in args:
+                with HW.auto_resize():
                     ret.append(self.model.main(*x))
-                    self.model._pyha_update_self()
+                self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
