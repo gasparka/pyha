@@ -231,10 +231,10 @@ class TestCombMulti:
         expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
         assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-8)], expect, *input)
 
-    def test_comb_multi_single(self):
-        input = np.array([[1], [True], [0.25]])
-        expect = [[2], [False], [-0.75]]
-        assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-8)], expect, *input)
+    # def test_comb_multi_single(self):
+    #     input = np.array([[1], [True], [0.25]])
+    #     expect = [[2], [False], [-0.75]]
+    #     assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-8)], expect, *input)
 
 
 #########################################

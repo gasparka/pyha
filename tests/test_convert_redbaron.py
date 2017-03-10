@@ -6,7 +6,7 @@ import pytest
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix
 from pyha.conversion.conversion import get_objects_rednode
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
     convert, AutoResize
@@ -530,6 +530,7 @@ class TestAutoResize:
         class T0(HW):
             def __init__(self):
                 self.int_reg = 0
+                self.complex_reg = ComplexSfix(2.5, 5, -29, overflow_style=fixed_wrap)
                 self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
                 self.submod_reg = T1()
 
@@ -542,6 +543,7 @@ class TestAutoResize:
                 # not subjects to resize conversion
                 # some may be rejected due to type
                 self.int_reg = a
+                self.next.complex_reg = ComplexSfix(0.45 + 0.88j)
                 b = self.next.sfix_reg
                 self.submod_reg.next.int_reg = a
                 self.next.int_list[0] = a
@@ -562,7 +564,8 @@ class TestAutoResize:
 
     def test_find(self):
         """ Test all assignments that could be potential subjects, has no type info """
-        expect = ['self.submod_reg.next.int_reg = a',
+        expect = ['self.next.complex_reg = ComplexSfix(0.45 + 0.88j)',
+                  'self.submod_reg.next.int_reg = a',
                   'self.next.int_list[0] = a',
                   'self.submod_list[1].next.int_reg = a',
                   'self.next.sfix_reg = a',
@@ -601,9 +604,9 @@ class TestAutoResize:
         assert expect_nodes == [str(x) for x in nodes]
 
 
-# todo:
-# * Default round style to truncate -> what to do with initial values??
-# * auto resize on function calls that return to self.next ??
-# * what if is already resized??
-# * complex types resize/assign
-# Hw enable should also go for lists and complex assigns
+        # todo:
+        # * Default round style to truncate -> what to do with initial values??
+        # * auto resize on function calls that return to self.next ??
+        # * what if is already resized??
+        # * complex types resize/assign
+        # Hw enable should also go for lists and complex assigns
