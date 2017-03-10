@@ -326,7 +326,9 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
+        init = self._pyha_initial_self # protect from overwrite
         self.__dict__.update(deepish_copy(self.next.__dict__))
+        self._pyha_initial_self = init
 
         # update submodules
         for x in self._pyha_submodules:
