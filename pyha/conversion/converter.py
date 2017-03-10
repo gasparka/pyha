@@ -761,6 +761,7 @@ def convert(red: Node, caller=None, datamodel=None):
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
+    AutoResize.apply(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 
@@ -774,50 +775,62 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 
-# class AutoResize:
-def autosfix_find(red_node):
-    """ Find all assignments that are subject to auto resize conversion """
-    def is_subject(x):
-        """
-        Acceptable examples:
-                self.next.a = b
-                self.a.next.b = a
-                self.next.b[0] = a
-                self.a[3].b.next.b = a
-        """
-        if len(x.value) < 3:
+class AutoResize:
+    """ Auto resize on Sfix assignments
+     Examples (depend on initial Sfix type):
+         self.next.sfix_reg = a        ->   self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
+         self.next.sfix_list[0] = a    ->   self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
+         """
+
+    @staticmethod
+    def find(red_node):
+        """ Find all assignments that are subject to auto resize conversion """
+
+        def is_subject(x):
+            """
+            Acceptable examples:
+                    self.next.a = b
+                    self.a.next.b = a
+                    self.next.b[0] = a
+                    self.a[3].b.next.b = a
+            """
+            if len(x.value) < 3:
+                return False
+
+            if x[0].value == 'self' and x[-2].value == 'next':
+                return True
+
+            if isinstance(x[-1], GetitemNode) and x[0].value == 'self' and x[-3].value == 'next':
+                return True
+
             return False
 
-        if x[0].value == 'self' and x[-2].value == 'next':
-            return True
+        return red_node.find_all('assign', target=is_subject)
 
-        if isinstance(x[-1], GetitemNode) and x[0].value == 'self' and x[-3].value == 'next':
-            return True
+    @staticmethod
+    def filter(nodes):
+        """ Resize stuff should happen on Sfix registers only, filter others out """
 
-        return False
+        passed_nodes = []
+        types = []
+        for x in nodes:
+            t = VHDLType.walk_self_data(x.target)
+            if isinstance(t, Sfix):
+                passed_nodes.append(x)
+                types.append(t)
+        return passed_nodes, types
 
-    return red_node.find_all('assign', target=is_subject)
+    @staticmethod
+    def apply(red_node):
+        """ Wrap all subjects to autosfix inside resize() according to initial type """
+        nodes = AutoResize.find(red_node)
 
-def type_filter(nodes):
-    """ Resize stuff should happen on Sfix registers only, filter others out """
+        pass_nodes, pass_types = AutoResize.filter(nodes)
+        for node, var_t in zip(pass_nodes, pass_types):
+            node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
+            print(node)
 
-    passed_nodes = []
-    types = []
-    for x in nodes:
-        t = VHDLType.walk_self_data(x.target)
-        if isinstance(t, Sfix):
-            passed_nodes.append(x)
-            types.append(t)
-    return passed_nodes, types
-
-
-def redbaron_autosfix(red_node):
-    """ """
-    red_node.find_all('assign', target=lambda x: x[0].value == 'self' and x[-2].value == 'next')
-
-    red_names = red_node.find_all('assignment', value=lambda x: x[0].value == 'self.next')
-
-    return red_node
+        return pass_nodes
 
 
 def redbaron_enum_to_vhdl(red_node):

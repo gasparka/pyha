@@ -6,10 +6,10 @@ import pytest
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate
 from pyha.conversion.conversion import get_objects_rednode
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
-    convert, autosfix_find, type_filter
+    convert, AutoResize
 from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 
@@ -570,26 +570,41 @@ class TestAutoResize:
                   'self.next.sfix_list[0] = a',
                   'self.submod_list[1].next.sfix_reg = a']
 
-        out = [str(x) for x in autosfix_find(self.red_node)]
+        out = [str(x) for x in AutoResize.find(self.red_node)]
         assert out == expect
 
-    def test_type_filter(self):
+    def test_filter(self):
         """ Subjects shall be of Sfix type """
         expect_nodes = ['self.next.sfix_reg = a',
                         'self.submod_reg.next.sfix_reg = a',
                         'self.next.sfix_list[0] = a',
                         'self.submod_list[1].next.sfix_reg = a']
 
-        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
-                        Sfix(0.1, 2, -19, round_style=fixed_truncate),
-                        Sfix(),
-                        Sfix(0.1, 2, -19, round_style=fixed_truncate)]
+        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(0, 0, 0, overflow_style=fixed_saturate, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate)]
 
-        nodes = autosfix_find(self.red_node)
-        passed_nodes, passed_types = type_filter(nodes)
+        nodes = AutoResize.find(self.red_node)
+        passed_nodes, passed_types = AutoResize.filter(nodes)
 
         assert expect_nodes == [str(x) for x in passed_nodes]
         assert expect_types == passed_types
 
+    def test_apply(self):
+        expect_nodes = ['self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)',
+                        'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)']
+
+        nodes = AutoResize.apply(self.red_node)
+        assert expect_nodes == [str(x) for x in nodes]
+
     def test_simple(self):
         code = 'self.next = a'
+
+
+# todo:
+# * Default round style to truncate -> what to do with initial values??
+# * auto resize on function calls that return to self.next ??
+# * what if is already resized??
