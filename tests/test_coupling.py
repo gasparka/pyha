@@ -434,7 +434,7 @@ def test_typed_def_infer_variable_selfnext_indexing(converter):
     code = textwrap.dedent("""\
         def a(b):
             self.next.c[0] = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
     expect = textwrap.dedent("""\
 
         procedure a(b: boolean) is
@@ -451,7 +451,7 @@ def test_typed_def_infer_variable_selfnext_indexing_resize(converter):
     code = textwrap.dedent("""\
         def a(b):
             self.next.c[0] = resize(b, size_res=self.x[i])""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
     expect = textwrap.dedent("""\
 
         procedure a(b: boolean) is

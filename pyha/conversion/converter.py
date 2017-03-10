@@ -761,7 +761,8 @@ def convert(red: Node, caller=None, datamodel=None):
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
-    AutoResize.apply(red)
+    if datamodel is not None:
+        AutoResize.apply(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 
@@ -794,7 +795,7 @@ class AutoResize:
                     self.next.b[0] = a
                     self.a[3].b.next.b = a
             """
-            if len(x.value) < 3:
+            if len(x) < 3:
                 return False
 
             if x[0].value == 'self' and x[-2].value == 'next':
@@ -828,7 +829,6 @@ class AutoResize:
         pass_nodes, pass_types = AutoResize.filter(nodes)
         for node, var_t in zip(pass_nodes, pass_types):
             node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
-            print(node)
 
         return pass_nodes
 

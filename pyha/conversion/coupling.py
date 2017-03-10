@@ -295,8 +295,8 @@ class VHDLType:
             This finds type of such nested variable
         """
 
-        def find_from_self(atom_trailer):
-            var = cls._datamodel.self_data
+        def find(atom_trailer, where):
+            var = where
             for x in atom_trailer[1:]:
                 if str(x) == 'next': continue
                 if not isinstance(x, GetitemNode):
@@ -312,24 +312,10 @@ class VHDLType:
                         var = var[int(str(x.value))]
             return var
 
-        def find_from_const(atom_trailer):
-            var = cls._datamodel.constants
-            for x in atom_trailer[1:]:
-                if str(x) == 'next': continue
-                if not isinstance(x, GetitemNode):
-                    var = var[str(x)]
-                else:
-                    # index is some variable -> just take first element
-                    if isinstance(x.value, NameNode):
-                        var = var[0]
-                    else:
-                        var = var[int(str(x.value))]
-            return var
-
         try:
-            var = find_from_self(atom_trailer)
+            var = find(atom_trailer, cls._datamodel.self_data)
         except KeyError:
-            var = find_from_const(atom_trailer)
+            var = find(atom_trailer, cls._datamodel.constants)
         return var
 
     def _defined_in_function(self):

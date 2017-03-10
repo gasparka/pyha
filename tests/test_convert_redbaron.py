@@ -600,11 +600,10 @@ class TestAutoResize:
         nodes = AutoResize.apply(self.red_node)
         assert expect_nodes == [str(x) for x in nodes]
 
-    def test_simple(self):
-        code = 'self.next = a'
-
 
 # todo:
 # * Default round style to truncate -> what to do with initial values??
 # * auto resize on function calls that return to self.next ??
 # * what if is already resized??
+# * complex types resize/assign
+# Hw enable should also go for lists and complex assigns
