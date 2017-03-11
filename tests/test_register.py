@@ -22,7 +22,7 @@ class TestLaxySfixReg:
         inputs = [0.1, 0.2, 0.3, 0.4]
         expect = [0.1, 0.2, 0.3, 0.4]
 
-        assert_sim_match(self.dut, [Sfix(0, 0, -17)], expect, inputs, rtol=1e-4)
+        assert_sim_match(self.dut, expect, inputs, rtol=1e-4)
 
     def test_bits9(self):
         # 0.1 fails, basically should we prequantize sfix values into model_main?
@@ -30,14 +30,14 @@ class TestLaxySfixReg:
         inputs = [0.1, 0.2, 0.3, 0.4]
         expect = [0.1, 0.2, 0.3, 0.4]
 
-        assert_sim_match(self.dut, [Sfix(0, 0, -8)], expect, inputs, rtol=1e-2)
+        assert_sim_match(self.dut, expect, inputs, rtol=1e-2)
 
 
 class TestRegisters:
     def setup(self):
         class Register(HW):
             def __init__(self):
-                self.a = Sfix(0.123, 0, -18)
+                self.a = Sfix(0.123, 0, -17)
                 self.b = 123
                 self.c = False
 
@@ -59,11 +59,12 @@ class TestRegisters:
 class TestShiftRegisters:
     def setup(self):
         class ShiftReg(HW):
-            def __init__(self):
+            def __init__(self, in_t=Sfix(left=2, right=-18)):
+                self.in_t = in_t
                 self.shr_int = [1, 2, 3, 4]
                 self.shr_bool = [True, False, False, True]
-                self.shr_sfix = [Sfix(0.5, 2, -18), Sfix(0.6, 2, -18),
-                                 Sfix(-0.5, 2, -18), Sfix(2.1, 2, -18)]
+                self.shr_sfix = [in_t(0.5), in_t(0.6),
+                                 in_t(-0.5), in_t(2.1)]
 
             def main(self, new_int, new_bool, new_sfix):
                 self.next.shr_int = [new_int] + self.shr_int[:-1]
@@ -82,4 +83,4 @@ class TestShiftRegisters:
                   [True, False, False, True, False, False],
                   [2.1, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-18)], expect, *inputs, rtol=1e-4)
+        assert_sim_match(self.dut, expect, *inputs, rtol=1e-4)
