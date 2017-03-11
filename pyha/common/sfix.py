@@ -187,6 +187,7 @@ class Sfix:
     2.5 [2:-17]
 
     """
+
     # original idea was to use float for internal computations, now it has turned out that\
     # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
     # to implement stuff as integer arithmetic
@@ -423,6 +424,8 @@ class Sfix:
 
     def vhdl_reset(self):
         return f'Sfix({self.init_val}, {self.left}, {self.right})'
+
+
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):

@@ -17,6 +17,7 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 # Pyha related variables in the object __dict__
 PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
 
+default_sfix = Sfix(0, 0, -17)
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):

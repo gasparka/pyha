@@ -53,7 +53,7 @@ class TestRegisters:
         inputs = [[0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4], [True, False, False, False]]
         expect = [[0.123, 0.1, 0.2, 0.3], [123, 1, 2, 3], [False, True, False, False]]
 
-        assert_sim_match(self.dut, [Sfix(0, 0, -18), int, bool], expect, *inputs, rtol=1e-4)
+        assert_sim_match(self.dut, expect, *inputs, rtol=1e-4)
 
 
 class TestShiftRegisters:
