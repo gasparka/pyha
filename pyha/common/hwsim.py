@@ -3,10 +3,9 @@ from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
-from six import iteritems, with_metaclass
-
 from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix, resize
+from six import iteritems, with_metaclass
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -297,6 +296,12 @@ class SfixList(list):
                        overflow_style=self.type.overflow_style)
 
         super().__setitem__(i, y)
+
+    # def __getitem__(self, y):
+    #     r = super().__getitem__(y)
+    #     if isinstance(r, list):
+    #         return SfixList(r, self.type)
+
 
 
 class HW(with_metaclass(Meta)):

@@ -204,3 +204,33 @@ class TestComplex:
         dut = self.A2(fixed_wrap, fixed_truncate)
         assert_sim_match(dut, [Sfix(left=2, right=-17)], expected, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
+
+
+class TestListConcat:
+    """ Currently list assigns will not be resized"""
+    class A3(HW):
+        def __init__(self):
+            self.a = [Sfix(0, 0, -4)] * 2
+
+            self._delay = 1
+
+        def main(self, a):
+            self.next.a = self.a[:-1] + [a]
+            return self.a[-1]
+
+
+    # def test_lol(self):
+    #     a = [Sfix(0.1, 1, -27)] * 2
+    #     b = SfixList(a, Sfix(0, 0, -4))
+    #
+    #     l = b[:-1] + [b]
+    #
+    # def test_basic(self):
+    #     dut = self.A3()
+    #
+    #     with HW.auto_resize():
+    #         dut.main(Sfix(0.1, 2, -27))
+    #
+    #         assert dut.next.a[0].left == 0
+    #         assert dut.next.a[0].right == -4
+    #         assert dut.next.a[0].val == 0.125
