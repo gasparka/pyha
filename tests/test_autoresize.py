@@ -246,6 +246,7 @@ class TestLazySfix:
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
+
 class TestLazySfixList:
     class A4(HW):
         def __init__(self):
@@ -261,32 +262,74 @@ class TestLazySfixList:
             self.next.c[0] = a
             return self.a[0], self.b[0], self.c[0]
 
-    def setup_class(self):
-        self.dut = self.A4()
-
     def test_basic(self):
-
+        dut = self.A4()
         with HW.auto_resize():
-            self.dut.main(Sfix(0.1, 2, -27))
+            dut.main(Sfix(0.1, 2, -27))
 
-            assert self.dut.next.a[0].left == 2
-            assert self.dut.next.a[0].right == -27
-            assert self.dut.next.a[0].val == 0.10000000149011612
+            assert dut.next.a[0].left == 2
+            assert dut.next.a[0].right == -27
+            assert dut.next.a[0].val == 0.10000000149011612
 
-            assert self.dut.next.b[0].left == 1
-            assert self.dut.next.b[0].right == -27
-            assert self.dut.next.b[0].val == 0.10000000149011612
+            assert dut.next.b[0].left == 1
+            assert dut.next.b[0].right == -27
+            assert dut.next.b[0].val == 0.10000000149011612
 
-            assert self.dut.next.c[0].left == 2
-            assert self.dut.next.c[0].right == -4
-            assert self.dut.next.c[0].val == 0.125
+            assert dut.next.c[0].left == 2
+            assert dut.next.c[0].right == -4
+            assert dut.next.c[0].val == 0.125
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-        assert_sim_match(self.dut, None, x,
+        assert_sim_match(self.A4(), None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
+
+class TestLazyComplexSfix:
+    class A5(HW):
+        def __init__(self):
+            self.a = ComplexSfix()
+            self.b = ComplexSfix(left=1)
+            self.c = ComplexSfix(right=-4)
+
+            self._delay = 1
+
+        def main(self, a):
+            self.next.a.real = a
+            self.next.a.imag = a
+
+            self.next.b.real = a
+            self.next.b.imag = a
+
+            self.next.c.real = a
+            self.next.c.imag = a
+            return self.a, self.b, self.c
+
+    def test_basic(self):
+        dut = self.A5()
+
+        with HW.auto_resize():
+            dut.main(Sfix(0.1, 2, -27))
+
+            assert dut.next.a.real.left == 2
+            assert dut.next.a.real.right == -27
+            assert dut.next.a.real.val == 0.10000000149011612
+
+            assert dut.next.b.imag.left == 1
+            assert dut.next.b.imag.right == -27
+            assert dut.next.b.imag.val == 0.10000000149011612
+
+            assert dut.next.c.real.left == 2
+            assert dut.next.c.real.right == -4
+            assert dut.next.c.real.val == 0.125
+
+    def test_sim(self):
+        x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+        dut = self.A5()
+        assert_sim_match(dut, None, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
         # class TestListConcat:
         #     """ Currently list assigns will not be resized"""

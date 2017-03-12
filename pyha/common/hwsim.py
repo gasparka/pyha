@@ -286,7 +286,7 @@ class Meta(type):
 
 
 def auto_resize(target, value):
-    if not isinstance(target, Sfix):
+    if not HW.auto_resize.enabled or not isinstance(target, Sfix):
         return value
 
     res = target
@@ -309,9 +309,7 @@ class SfixList(list):
         self.type = type
 
     def __setitem__(self, i, y):
-        if HW.auto_resize.enabled:
-            y = auto_resize(self.type, y)
-
+        y = auto_resize(self.type, y)
         super().__setitem__(i, y)
 
     # def __getitem__(self, y):

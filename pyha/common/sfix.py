@@ -40,11 +40,10 @@ class ComplexSfix:
 
 
     """
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate,
+
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round):
 
-        self.initial_left = left
-        self.initial_right = right
         self.overflow_style = overflow_style
         self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
@@ -62,11 +61,8 @@ class ComplexSfix:
 
     @imag.setter
     def imag(self, value):
-        from pyha.common.hwsim import HW
-        if HW.auto_resize.enabled:
-            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
-                       overflow_style=self.overflow_style)
-        self._imag = value
+        from pyha.common.hwsim import auto_resize
+        self._imag = auto_resize(self._imag, value)
 
     @property
     def real(self):
@@ -74,11 +70,8 @@ class ComplexSfix:
 
     @real.setter
     def real(self, value):
-        from pyha.common.hwsim import HW
-        if HW.auto_resize.enabled:
-            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
-                       overflow_style=self.overflow_style)
-        self._real = value
+        from pyha.common.hwsim import auto_resize
+        self._real = auto_resize(self._real, value)
 
     @property
     def left(self):
@@ -93,8 +86,6 @@ class ComplexSfix:
     @property
     def val(self):
         return self._real.val + self._imag.val * 1j
-
-
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -425,8 +416,6 @@ class Sfix:
 
     def vhdl_reset(self):
         return f'Sfix({self.init_val}, {self.left}, {self.right})'
-
-
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
