@@ -237,7 +237,7 @@ class Meta(type):
         # Sfixed lists must be converted to SfixList class, need for setitem overload
         for k, v in ret.__dict__.items():
             if isinstance(v, list) and isinstance(v[0], Sfix):
-                ret.__dict__[k] = SfixList(v, v[0])
+                ret.__dict__[k] = SfixList(v, deepcopy(v[0]))
 
         # make .next variable
         ret.next = deepcopy(ret)
@@ -290,7 +290,7 @@ def auto_resize(target, value):
     if not HW.auto_resize.enabled or not isinstance(target, Sfix):
         return value
 
-    res = target
+    res = deepcopy(target)
     if res.left is None:
         res.left = value.left
 

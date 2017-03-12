@@ -1,5 +1,6 @@
 import logging
 import os
+from cmath import isclose
 from contextlib import suppress
 from copy import deepcopy
 from enum import Enum
@@ -318,6 +319,10 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             l.error('##############################################################')
             l.error('##############################################################')
 
+            print(hw_y)
+            for i, (expect, actual) in enumerate(zip(expected[skip_first:].flat, hw_y[skip_first:len(expected)].flat)):
+                if not isclose(expect, actual, rel_tol=rtol, abs_tol=atol):
+                    print(i, expect, actual)
             raise
 
 

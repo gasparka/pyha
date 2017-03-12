@@ -337,10 +337,17 @@ class Sfix:
     def __add__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
-        return Sfix(self.val + other.val,
-                    max(self.left, other.left) + 1,
-                    min(self.right, other.right),
-                    init_only=True)
+
+        try:
+            return Sfix(self.val + other.val,
+                        max(self.left, other.left) + 1,
+                        min(self.right, other.right),
+                        init_only=True)
+        except:
+            return Sfix(self.val + other.val,
+                        1,
+                        0,
+                        init_only=True)
 
     def __sub__(self, other):
         if type(other) == float:
