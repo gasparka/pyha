@@ -3,8 +3,6 @@ import textwrap
 from enum import Enum
 
 import pytest
-from redbaron import RedBaron
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix
 from pyha.conversion.conversion import get_objects_rednode
@@ -12,6 +10,7 @@ from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_r
     convert, AutoResize
 from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
+from redbaron import RedBaron
 
 
 def test_redbaron_call_simple():
@@ -592,7 +591,7 @@ class TestAutoResize:
 
         expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
                         Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
-                        Sfix(0, 0, 0, overflow_style=fixed_saturate, round_style=fixed_round),
+                        Sfix(0, overflow_style=fixed_saturate, round_style=fixed_round),
                         Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
                         Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
                         Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
@@ -606,7 +605,7 @@ class TestAutoResize:
     def test_apply(self):
         expect_nodes = ['self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
                         'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
-                        'self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)',
+                        'self.next.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
                         'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
                         'self.next.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
                         'self.next.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'

@@ -2,7 +2,6 @@ import textwrap
 from enum import Enum
 
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.extract_datamodel import DataModel
@@ -77,5 +76,5 @@ def test_simulate(t0):
     dut = t0
     x = list(range(16))
     expected = list(range(16))
-    assert_sim_match(dut, [int], expected, x,
+    assert_sim_match(dut, expected, x,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.conversion.conversion import Conversion, MultipleNodesError, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match
@@ -67,7 +66,7 @@ def test_convert_submodule():
     expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     dut = B()
 
-    assert_sim_match(dut, [int], expected, x)
+    assert_sim_match(dut, expected, x)
 
 
 def test_convert_submodule_name_conflict():

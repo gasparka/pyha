@@ -2,7 +2,6 @@ from decimal import *
 
 import numpy as np
 import pytest
-
 from pyha.common.sfix import Sfix
 
 getcontext().prec = 128
@@ -11,8 +10,8 @@ getcontext().prec = 128
 def test_default():
     a = Sfix()
     assert float(a) == 0.0
-    assert a.left == 0
-    assert a.right == 0
+    assert a.left == None
+    assert a.right == None
 
 
 def test_init():

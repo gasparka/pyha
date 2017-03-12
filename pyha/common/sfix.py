@@ -40,11 +40,10 @@ class ComplexSfix:
 
 
     """
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate,
+
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round):
 
-        self.initial_left = left
-        self.initial_right = right
         self.overflow_style = overflow_style
         self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
@@ -62,11 +61,8 @@ class ComplexSfix:
 
     @imag.setter
     def imag(self, value):
-        from pyha.common.hwsim import HW
-        if HW.auto_resize.enabled:
-            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
-                       overflow_style=self.overflow_style)
-        self._imag = value
+        from pyha.common.hwsim import auto_resize
+        self._imag = auto_resize(self._imag, value)
 
     @property
     def real(self):
@@ -74,11 +70,8 @@ class ComplexSfix:
 
     @real.setter
     def real(self, value):
-        from pyha.common.hwsim import HW
-        if HW.auto_resize.enabled:
-            value = resize(value, self.initial_left, self.initial_right, round_style=self.round_style,
-                       overflow_style=self.overflow_style)
-        self._real = value
+        from pyha.common.hwsim import auto_resize
+        self._real = auto_resize(self._real, value)
 
     @property
     def left(self):
@@ -93,8 +86,6 @@ class ComplexSfix:
     @property
     def val(self):
         return self._real.val + self._imag.val * 1j
-
-
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -187,6 +178,7 @@ class Sfix:
     2.5 [2:-17]
 
     """
+
     # original idea was to use float for internal computations, now it has turned out that\
     # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
     # to implement stuff as integer arithmetic
@@ -226,15 +218,13 @@ class Sfix:
         """
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, overflow_style=fixed_saturate,
+    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round, init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
 
         val = float(val)
-        if type(val) not in [float, int]:
-            raise Exception('Value must be float or int!')
 
         if isinstance(left, Sfix):
             self.right = left.right
@@ -243,10 +233,13 @@ class Sfix:
             self.right = right
             self.left = left
 
-        assert self.left >= self.right
         self.val = val
         self.init_val = val
 
+        if left is None or right is None:
+            return
+
+        assert self.left >= self.right
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
         if init_only or Sfix._float_mode:
             return
