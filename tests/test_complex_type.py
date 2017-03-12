@@ -2,7 +2,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
@@ -13,12 +12,12 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 def test_py_implementation():
     a = ComplexSfix()
-    assert a._real == Sfix(0.0, 0, 0)
-    assert a._imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0)
+    assert a._imag == Sfix(0.0)
 
     a = ComplexSfix(0)
-    assert a._real == Sfix(0.0, 0, 0)
-    assert a._imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0)
+    assert a._imag == Sfix(0.0)
 
     a = ComplexSfix(0.5 + 1.2j, 1, -12)
     assert a._real == Sfix(0.5, 1, -12)
@@ -176,7 +175,7 @@ class TestRegister:
         x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
+        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-12)], rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
@@ -211,7 +210,7 @@ class TestShiftReg:
         expected = [0.200001 - 1.200001j, 0.099998 + 1.200001j, 0.500000 + 0.200001j,
                     0.500000 + 1.200001j, 0.500000 + 0.099998j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
+        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
@@ -282,9 +281,10 @@ class TestMoreRegisters:
                     [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
         assert_sim_match(self.dut,
-                         [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
-                          ComplexSfix(left=1, right=-12)],
-                         expected, *x, rtol=1e-3,
+                         expected, *x,
+                         types=[ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
+                                ComplexSfix(left=1, right=-12)],
+                         rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
@@ -350,14 +350,14 @@ class TestRegisterIQ:
         inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
 
     def test_comp_reg_simulate2(self):
         # -real made cocotb code fail
         inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
         expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
 
 
 class TestComplexReturn:
@@ -372,6 +372,9 @@ class TestComplexReturn:
                 return self.reg0, ret
 
         self.dut = A5()
+        self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+        self.dut._pyha_update_self()
+
         self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
         self.dut._pyha_update_self()
 
@@ -424,9 +427,10 @@ class TestComplexReturn:
         ]
 
         assert_sim_match(self.dut,
-                         [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
-                          Sfix(left=0, right=-32)],
-                         expected, *x, rtol=1e-3)
+                         expected, *x,
+                         types=[Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
+                                Sfix(left=0, right=-32)],
+                         rtol=1e-3)
 
 
 class TestList:

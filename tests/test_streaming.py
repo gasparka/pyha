@@ -27,5 +27,5 @@ class TestBasic:
     def test_wtf(self):
         inputs = [1, 2, 3]
 
-        assert_sim_match(self.dut, [int], None, inputs,
+        assert_sim_match(self.dut, None, inputs,
                          simulations=[SIM_HW_MODEL, SIM_RTL])

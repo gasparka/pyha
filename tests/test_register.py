@@ -37,7 +37,7 @@ class TestRegisters:
     def setup(self):
         class Register(HW):
             def __init__(self):
-                self.a = Sfix(0.123, 0, -17)
+                self.a = Sfix(0.123)
                 self.b = 123
                 self.c = False
 
