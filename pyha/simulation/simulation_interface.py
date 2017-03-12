@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-from pyha.common.hwsim import HW, default_sfix
+from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
@@ -77,12 +77,14 @@ def type_conversions(func):
             args = list(args)
             for i, arg in enumerate(args):
                 if isinstance(arg[0], float):
-                    if not hasattr(self.model, 'in_t'):
-                        self.logger.info(f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
-                        t = default_sfix
-                    else:
-                        t = self.model.in_t
+                    self.logger.info(f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
+                    t = default_sfix
                     args[i] = [t(x) for x in arg]
+                elif isinstance(arg[0], complex):
+                    t = default_complex_sfix
+                    self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
+                    args[i] = [t(x) for x in arg]
+
 
 
         ret = func(self, *args, **kwargs)
@@ -272,7 +274,7 @@ def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rto
     plt.show()
 
 
-def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2**-17)*2, dir_path=None, skip_first=0):
     """
     Run bunch of simulations and assert that they match outputs.
 
@@ -308,6 +310,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             # if type(expected[0]) != type(hw_y[0]):
             #     hw_y = hw_y.astype(type(expected[0]))
             np.testing.assert_allclose(expected[skip_first:], hw_y[skip_first:len(expected)], rtol, atol=atol)
+            l.info('########### Pass! ###########')
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')
@@ -358,7 +361,6 @@ def sim_rules(simulations, model):
         logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
 
 
-    # for travis build, skip all the tests involving quartus
     if skipping_model_simulations() and SIM_MODEL in simulations:
         simulations.remove(SIM_MODEL)
         logging.getLogger(__name__).warning('########## SKIPPING MODEL SIMULATIONS ##########')
