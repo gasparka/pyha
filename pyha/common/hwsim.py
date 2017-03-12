@@ -284,6 +284,23 @@ class Meta(type):
         return ret
 
 
+
+def auto_resize(target, value):
+    if not isinstance(target, Sfix):
+        return value
+
+    res = target
+    if res.left is None:
+        res.left = value.left
+
+    if res.right is None:
+        res.right = value.right
+
+    return resize(value, size_res=res, round_style=target.round_style,
+                                 overflow_style=target.overflow_style)
+
+
+
 class SfixList(list):
     """ On assign to element resize the value """
 
@@ -293,8 +310,7 @@ class SfixList(list):
 
     def __setitem__(self, i, y):
         if HW.auto_resize.enabled:
-            y = resize(y, size_res=self.type, round_style=self.type.round_style,
-                       overflow_style=self.type.overflow_style)
+            y = auto_resize(self.type, y)
 
         super().__setitem__(i, y)
 
@@ -353,11 +369,10 @@ class HW(with_metaclass(Meta)):
 
         # this is only enabled for 'main' function
         if hasattr(self, '__pyha_is_next__'):
-            attr = getattr(self._pyha_initial_self, name)
-            if isinstance(attr, Sfix):
-                self.__dict__[name] = resize(value, size_res=attr, round_style=attr.round_style,
-                                             overflow_style=attr.overflow_style)
-                return
+            target = getattr(self._pyha_initial_self, name)
+            self.__dict__[name] = auto_resize(target, value)
+            return
+
         # else:
         #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
 

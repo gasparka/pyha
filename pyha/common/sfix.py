@@ -227,15 +227,13 @@ class Sfix:
         """
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, overflow_style=fixed_saturate,
+    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round, init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
 
         val = float(val)
-        if type(val) not in [float, int]:
-            raise Exception('Value must be float or int!')
 
         if isinstance(left, Sfix):
             self.right = left.right
@@ -244,10 +242,13 @@ class Sfix:
             self.right = right
             self.left = left
 
-        assert self.left >= self.right
         self.val = val
         self.init_val = val
 
+        if left is None or right is None:
+            return
+
+        assert self.left >= self.right
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
         if init_only or Sfix._float_mode:
             return
