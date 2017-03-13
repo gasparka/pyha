@@ -334,27 +334,40 @@ class Sfix:
             right = type.right
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
+
+    @staticmethod
+    def max(a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+
+        return max(a, b)
+
+    @staticmethod
+    def min(a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+
+        return min(a, b)
+
     def __add__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
-        try:
-            return Sfix(self.val + other.val,
-                        max(self.left, other.left) + 1,
-                        min(self.right, other.right),
-                        init_only=True)
-        except:
-            return Sfix(self.val + other.val,
-                        1,
-                        0,
-                        init_only=True)
+        return Sfix(self.val + other.val,
+                    self.max(self.left, other.left) + 1,
+                    self.min(self.right, other.right),
+                    init_only=True)
 
     def __sub__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
-                    max(self.left, other.left) + 1,
-                    min(self.right, other.right),
+                    self.max(self.left, other.left) + 1,
+                    self.min(self.right, other.right),
                     init_only=True)
 
     def __mul__(self, other):

@@ -63,6 +63,15 @@ def test_add():
     assert c.right == -18
 
 
+def test_add_none():
+    a = Sfix(0.123, None, None)
+    b = Sfix(-0.223, 0, -18)
+    c = a + b
+    assert float(c) == float(a) + float(b)
+    assert c.left == 1
+    assert c.right == -18
+
+
 def test_sub():
     a = Sfix(0.223, 0, -8)
     b = Sfix(0.013, 0, -18)
@@ -70,6 +79,15 @@ def test_sub():
     assert float(c) == float(a) - float(b)
     assert c.left == 1
     assert c.right == -18
+
+
+def test_sub_none():
+    a = Sfix(0.223, 0, -8)
+    b = Sfix(0.013, None, None)
+    c = a - b
+    assert float(c) == float(a) - float(b)
+    assert c.left == 1
+    assert c.right == -8
 
 
 def test_sub_overlow():

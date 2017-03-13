@@ -275,7 +275,7 @@ def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rto
     plt.show()
 
 
-def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2**-17)*2, dir_path=None, skip_first=0):
+def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2**-17)*4, dir_path=None, skip_first=0):
     """
     Run bunch of simulations and assert that they match outputs.
 
@@ -319,10 +319,19 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             l.error('##############################################################')
             l.error('##############################################################')
 
-            print(hw_y)
+            print('Failures (* shows what failed):')
+            print(f'Expected \t Actual \t ATOL \t\t\t RTOL')
+            print(f'---------------------------------------------------')
+            # abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
             for i, (expect, actual) in enumerate(zip(expected[skip_first:].flat, hw_y[skip_first:len(expected)].flat)):
                 if not isclose(expect, actual, rel_tol=rtol, abs_tol=atol):
-                    print(i, expect, actual)
+                    a = abs(expect - actual)
+                    r = rtol * max(abs(expect), abs(actual))
+                    if r > atol:
+                        print(f'{expect:.5} \t {actual:.5} \t {a:.5} \t *{r:.5}')
+                    else:
+                        print(f'{expect:.5} \t {actual:.5} \t *{a:.5} \t {r:.5}')
+
             raise
 
 
