@@ -1,13 +1,12 @@
 import textwrap
 
 import pytest
-from redbaron import RedBaron
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
 from pyha.conversion.extract_datamodel import DataModel
+from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -799,6 +798,16 @@ def test_class_datamodel_submodule(converter):
     conv = conv.get_update_self()
     assert expect == str(conv)
 
+    expect = textwrap.dedent("""\
+        procedure \\_pyha_init_self\\(self: inout self_t) is
+        begin
+            A_0.\\_pyha_init_self\\(self.sub);
+            \\_pyha_constants_self\\(self);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_init_self()
+    assert expect == str(conv)
+
 
 def test_class_infer_local_variable_list(converter):
     code = textwrap.dedent("""\
@@ -845,6 +854,7 @@ def test_typedefs_duplicate(converter):
     conv = converter(code, datamodel)
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.get_typedefs()
+
 
 def test_datamodel_list_int(converter):
     code = textwrap.dedent("""\
@@ -1089,6 +1099,32 @@ def test_class_datamodel_update_self2(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     conv = conv.get_update_self()
+    assert expect == str(conv)
+
+
+def test_class_datamodel_init_self(converter):
+    code = textwrap.dedent("""\
+            class Tc(HW):
+                    pass""")
+
+    datamodel = DataModel(locals={}, self_data={
+        'a': Sfix(1.0, 2, -27),
+        'b': Sfix(4.0, 6, -27),
+        'c': 25,
+        'd': False
+    })
+
+    expect = textwrap.dedent("""\
+        procedure \\_pyha_init_self\\(self: inout self_t) is
+        begin
+            self.\\next\\.a := self.a;
+            self.\\next\\.b := self.b;
+            self.\\next\\.c := self.c;
+            self.\\next\\.d := self.d;
+            \\_pyha_constants_self\\(self);
+        end procedure;""")
+    conv = converter(code, datamodel)
+    conv = conv.get_init_self()
     assert expect == str(conv)
 
 
