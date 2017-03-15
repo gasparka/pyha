@@ -199,8 +199,7 @@ class TopGenerator:
                 {INPUT_TYPE_CONVERSIONS}
 
                             --call the main entry
-                            -- without this Quartus wont honor constants
-                            {DUT_NAME}.\\_pyha_constants_self\\(self);
+                            {DUT_NAME}.\\_pyha_init_self\\(self);
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
                             {DUT_NAME}.\\_pyha_update_self\\(self);
 
