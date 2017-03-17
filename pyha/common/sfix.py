@@ -418,8 +418,9 @@ class Sfix:
 
     # TODO: add tests
     def __neg__(self):
+        left = None if self.left is None else self.left + 1
         return Sfix(-self.val,
-                    self.left + 1,
+                    left,
                     self.right,
                     init_only=True)
 
