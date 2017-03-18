@@ -69,12 +69,13 @@ def deepish_copy(org):
             try:
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
-                # Without this assign to imag or real will fuck up everything
-                out[k] = deepcopy(v)
-                # if isinstance(v, ComplexSfix):
-                #     out[k] = copy(v)
-                # else:
-                #     out[k] = v  # ints
+                # out[k] = v
+                # # Without this assign to imag or real will fuck up everything
+                # out[k] = deepcopy(v)
+                if isinstance(v, ComplexSfix):
+                    out[k] = deepcopy(v)
+                else:
+                    out[k] = v  # ints
 
     return out
 
@@ -290,14 +291,10 @@ def auto_resize(target, value):
     if not HW.auto_resize.enabled or not isinstance(target, Sfix):
         return value
 
-    res = deepcopy(target)
-    if res.left is None:
-        res.left = value.left
+    left = target.left if target.left is not None else value.left
+    right = target.right if target.right is not None else value.right
 
-    if res.right is None:
-        res.right = value.right
-
-    return resize(value, size_res=res, round_style=target.round_style,
+    return resize(value, left, right, round_style=target.round_style,
                                  overflow_style=target.overflow_style)
 
 

@@ -11,7 +11,6 @@ fixed_round = 'fixed_round'
 
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
-fixed_wrap_impossible = 'fixed_wrap_impossible'
 
 
 class ComplexSfix:
@@ -294,9 +293,6 @@ class Sfix:
             logger.warning(f'Saturation {old} -> {self.val}')
 
     def wrap(self):
-        if self.overflow_style is fixed_wrap_impossible:
-            Exception('Wrap happened for "fixed_wrap_impossible"')
-
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
