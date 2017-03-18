@@ -211,7 +211,7 @@ def test_passtrough_boolean():
             return x
 
     x = [True, False, True, False]
-    assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    assert_sim_match(T14(), [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 def test_int_operations():

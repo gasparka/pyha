@@ -3,12 +3,14 @@ import textwrap
 from enum import Enum
 
 import pytest
-from redbaron import RedBaron
-
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix
+from pyha.conversion.conversion import get_objects_rednode
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
-    convert
+    convert, AutoResize
+from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
+from redbaron import RedBaron
 
 
 def test_redbaron_call_simple():
@@ -515,3 +517,105 @@ def test_enum_in_if(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
+
+
+class TestAutoResize:
+    def setup_class(self):
+        class T1(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.sfix_reg = Sfix(0.1, 2, -19, round_style=fixed_truncate)
+
+        class T0(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style=fixed_wrap)
+                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
+                self.submod_reg = T1()
+
+                self.sfix_list = [Sfix()] * 2
+                self.int_list = [0] * 2
+
+                self.submod_list = [T1(), T1()]
+
+            def main(self, a):
+                # not subjects to resize conversion
+                # some may be rejected due to type
+                self.int_reg = a
+                self.next.complex_reg = ComplexSfix(0.45 + 0.88j)
+                b = self.next.sfix_reg
+                self.submod_reg.next.int_reg = a
+                self.next.int_list[0] = a
+                self.submod_list[1].next.int_reg = a
+                c = self.submod_list[1].next.sfix_reg
+
+                # subjects
+                self.next.sfix_reg = a
+                self.submod_reg.next.sfix_reg = a
+                self.next.sfix_list[0] = a
+                self.submod_list[1].next.sfix_reg = a
+                self.next.complex_reg.real = a
+                self.next.complex_reg.imag = a
+
+        self.dut = T0()
+        self.dut.main(Sfix(0))
+        self.red_node = get_objects_rednode(self.dut)
+        self.datamodel = DataModel(self.dut)
+        VHDLType.set_datamodel(self.datamodel)
+
+    def test_find(self):
+        """ Test all assignments that could be potential subjects, has no type info """
+        expect = ['self.next.complex_reg = ComplexSfix(0.45 + 0.88j)',
+                  'self.submod_reg.next.int_reg = a',
+                  'self.next.int_list[0] = a',
+                  'self.submod_list[1].next.int_reg = a',
+                  'self.next.sfix_reg = a',
+                  'self.submod_reg.next.sfix_reg = a',
+                  'self.next.sfix_list[0] = a',
+                  'self.submod_list[1].next.sfix_reg = a',
+                  'self.next.complex_reg.real = a',
+                  'self.next.complex_reg.imag = a']
+
+        out = [str(x) for x in AutoResize.find(self.red_node)]
+        assert out == expect
+
+    def test_filter(self):
+        """ Subjects shall be of Sfix type """
+        expect_nodes = ['self.next.sfix_reg = a',
+                        'self.submod_reg.next.sfix_reg = a',
+                        'self.next.sfix_list[0] = a',
+                        'self.submod_list[1].next.sfix_reg = a',
+                        'self.next.complex_reg.real = a',
+                        'self.next.complex_reg.imag = a'
+                        ]
+
+        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(0, overflow_style=fixed_saturate, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
+
+        nodes = AutoResize.find(self.red_node)
+        passed_nodes, passed_types = AutoResize.filter(nodes)
+
+        assert expect_nodes == [str(x) for x in passed_nodes]
+        assert expect_types == passed_types
+
+    def test_apply(self):
+        expect_nodes = ['self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.next.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
+                        'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.next.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.next.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
+                        ]
+
+        nodes = AutoResize.apply(self.red_node)
+        assert expect_nodes == [str(x) for x in nodes]
+
+
+# todo:
+# * Default round style to truncate -> what to do with initial values??
+# * auto resize on function calls that return to self.next ??
+# * what if is already resized??

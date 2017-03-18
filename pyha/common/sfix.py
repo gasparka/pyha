@@ -11,7 +11,6 @@ fixed_round = 'fixed_round'
 
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
-fixed_wrap_impossible = 'fixed_wrap_impossible'
 
 
 class ComplexSfix:
@@ -40,29 +39,52 @@ class ComplexSfix:
 
 
     """
-    def __init__(self, val=0.0 + 0.0j, left=0, right=0, overflow_style=fixed_saturate):
+
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
+                 round_style=fixed_round):
+
+        self.overflow_style = overflow_style
+        self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
             self.init_val = val.init_val + left.init_val * 1j
-            self.real = val
-            self.imag = left
+            self._real = val
+            self._imag = left
         else:
             self.init_val = val
-            self.real = Sfix(val.real, left, right, overflow_style=overflow_style)
-            self.imag = Sfix(val.imag, left, right, overflow_style=overflow_style)
+            self._real = Sfix(val.real, left, right, overflow_style, round_style)
+            self._imag = Sfix(val.imag, left, right, overflow_style, round_style)
+
+    @property
+    def imag(self):
+        return self._imag
+
+    @imag.setter
+    def imag(self, value):
+        from pyha.common.hwsim import auto_resize
+        self._imag = auto_resize(self._imag, value)
+
+    @property
+    def real(self):
+        return self._real
+
+    @real.setter
+    def real(self, value):
+        from pyha.common.hwsim import auto_resize
+        self._real = auto_resize(self._real, value)
 
     @property
     def left(self):
-        assert self.real.left == self.imag.left
-        return self.real.left
+        assert self._real.left == self._imag.left
+        return self._real.left
 
     @property
     def right(self):
-        assert self.real.right == self.imag.right
-        return self.real.right
+        assert self._real.right == self._imag.right
+        return self._real.right
 
     @property
     def val(self):
-        return self.real.val + self.imag.val * 1j
+        return self._real.val + self._imag.val * 1j
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -73,7 +95,7 @@ class ComplexSfix:
         return ComplexSfix(x, self.left, self.right)
 
     def __str__(self):
-        return f'{self.real.val:.2f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.2f}j [{self.left}:{self.right}]'
+        return f'{self._real.val:.2f}{"" if self._imag.val < 0.0 else "+"}{self._imag.val:.2f}j [{self.left}:{self.right}]'
 
     def __repr__(self):
         return str(self)
@@ -93,12 +115,12 @@ class ComplexSfix:
         return f'std_logic_vector({self.bitwidth() - 1} downto 0)'
 
     def vhdl_reset(self):
-        return f'(real=>{self.real.vhdl_reset()}, imag=>{self.imag.vhdl_reset()})'
+        return f'(real=>{self._real.vhdl_reset()}, imag=>{self._imag.vhdl_reset()})'
 
     def fixed_value(self):
         assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
-        real = self.real.fixed_value()
-        imag = self.imag.fixed_value()
+        real = self._real.fixed_value()
+        imag = self._imag.fixed_value()
         mask = (2 ** (self.bitwidth() // 2)) - 1
         return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
 
@@ -155,6 +177,7 @@ class Sfix:
     2.5 [2:-17]
 
     """
+
     # original idea was to use float for internal computations, now it has turned out that\
     # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
     # to implement stuff as integer arithmetic
@@ -194,15 +217,13 @@ class Sfix:
         """
         Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=0, right=0, init_only=False, overflow_style=fixed_saturate,
-                 round_style=fixed_round):
+    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_saturate,
+                 round_style=fixed_round, init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
 
         val = float(val)
-        if type(val) not in [float, int]:
-            raise Exception('Value must be float or int!')
 
         if isinstance(left, Sfix):
             self.right = left.right
@@ -211,10 +232,13 @@ class Sfix:
             self.right = right
             self.left = left
 
-        assert self.left >= self.right
         self.val = val
         self.init_val = val
 
+        if left is None or right is None:
+            return
+
+        assert self.left >= self.right
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
         if init_only or Sfix._float_mode:
             return
@@ -235,7 +259,6 @@ class Sfix:
             return self.__dict__ == other.__dict__
         return False
 
-    # FIXME: THESE ARE FUCKED UP
     def max_representable(self):
         if self.left < 0:
             # FIXME: I am not sure how to handle this when negative index
@@ -270,9 +293,6 @@ class Sfix:
             logger.warning(f'Saturation {old} -> {self.val}')
 
     def wrap(self):
-        if self.overflow_style is fixed_wrap_impossible:
-            Exception('Wrap happened for "fixed_wrap_impossible"')
-
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         self.val = (self.val - fmin) % (fmax - fmin) + fmin
@@ -310,20 +330,40 @@ class Sfix:
             right = type.right
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
+
+    @staticmethod
+    def max(a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+
+        return max(a, b)
+
+    @staticmethod
+    def min(a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+
+        return min(a, b)
+
     def __add__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
+
         return Sfix(self.val + other.val,
-                    max(self.left, other.left) + 1,
-                    min(self.right, other.right),
+                    self.max(self.left, other.left) + 1,
+                    self.min(self.right, other.right),
                     init_only=True)
 
     def __sub__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val - other.val,
-                    max(self.left, other.left) + 1,
-                    min(self.right, other.right),
+                    self.max(self.left, other.left) + 1,
+                    self.min(self.right, other.right),
                     init_only=True)
 
     def __mul__(self, other):
@@ -374,8 +414,9 @@ class Sfix:
 
     # TODO: add tests
     def __neg__(self):
+        left = None if self.left is None else self.left + 1
         return Sfix(-self.val,
-                    self.left + 1,
+                    left,
                     self.right,
                     init_only=True)
 

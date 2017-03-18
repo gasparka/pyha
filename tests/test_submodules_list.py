@@ -2,7 +2,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
@@ -90,7 +89,7 @@ class TestBasic:
         expected = [[0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(self.dut, [int, int], expected, *x)
+        assert_sim_match(self.dut, expected, *x)
 
 
 class TestDeepSubmodules:
@@ -129,7 +128,7 @@ class TestDeepSubmodules:
         expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(self.dut, [int, int], expected, *x)
+        assert_sim_match(self.dut, expected, *x)
 
     def test_datamodel(self):
         conv, datamodel = get_conversion_datamodel(self.dut)
@@ -221,7 +220,7 @@ def test_for():
     x = list(range(16))
     expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 
-    assert_sim_match(dut, [int], expected, x)
+    assert_sim_match(dut, expected, x)
 
 
 def test_const_illegal():
