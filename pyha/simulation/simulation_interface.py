@@ -323,7 +323,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             print(f'Expected \t Actual \t ATOL \t\t\t RTOL')
             print(f'---------------------------------------------------')
             # abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-            for i, (expect, actual) in enumerate(zip(expected[skip_first:].flat, hw_y[skip_first:len(expected)].flat)):
+            for i, (expect, actual) in enumerate(zip(np.array(expected)[skip_first:].flat, np.array(hw_y)[skip_first:len(expected)].flat)):
                 if not isclose(expect, actual, rel_tol=rtol, abs_tol=atol):
                     a = abs(expect - actual)
                     r = rtol * max(abs(expect), abs(actual))

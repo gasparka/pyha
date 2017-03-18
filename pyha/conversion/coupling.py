@@ -1,7 +1,7 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
 from enum import Enum
 
-from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 from pyha.common.hwsim import HW
@@ -308,7 +308,7 @@ class VHDLType:
                         var = var[str(x)]
                 else:
                     # index is some variable -> just take first element
-                    if isinstance(x.value, NameNode):
+                    if isinstance(x.value, (NameNode, BinaryOperatorNode)):
                         var = var[0]
                     else:
                         var = var[int(str(x.value))]
