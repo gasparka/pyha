@@ -1,13 +1,12 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
 from enum import Enum
 
-from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
-from redbaron.nodes import DefArgumentNode, AtomtrailersNode
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
+from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 
 class ExceptionCoupling(Exception):

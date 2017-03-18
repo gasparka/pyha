@@ -1,7 +1,6 @@
 import textwrap
 
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
@@ -183,8 +182,7 @@ def test_full(basic_obj, tmpdir):
                                 var_in2 := logic_to_bool(in2);
 
                                 --call the main entry
-                                -- without this Quartus wont honor constants
-                                Register_0.\_pyha_constants_self\(self);
+                                Register_0.\_pyha_init_self\(self);
                                 Register_0.main(self, var_in0, var_in1, c=>var_in2, ret_0=>var_out0, ret_1=>var_out1, ret_2=>var_out2);
                                 Register_0.\_pyha_update_self\(self);
 
@@ -279,8 +277,7 @@ def test_simple_full(simple_obj):
                                 var_in0 := to_integer(signed(in0));
 
                                 --call the main entry
-                                -- without this Quartus wont honor constants
-                                Simple_0.\_pyha_constants_self\(self);
+                                Simple_0.\_pyha_init_self\(self);
                                 Simple_0.main(self, var_in0, ret_0=>var_out0);
                                 Simple_0.\_pyha_update_self\(self);
 

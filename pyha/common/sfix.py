@@ -248,7 +248,7 @@ class Sfix:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style in (fixed_wrap, fixed_wrap_impossible):  # TODO: add tests
+        elif overflow_style in fixed_wrap:  # TODO: add tests
             self.quantize()
             self.wrap()
         else:

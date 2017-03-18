@@ -2,7 +2,6 @@ import textwrap
 
 import numpy as np
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
 from pyha.conversion.extract_datamodel import extract_datamodel, extract_locals, FunctionNotSimulated, \
