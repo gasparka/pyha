@@ -1,13 +1,12 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
 from enum import Enum
 
-from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode
-from redbaron.nodes import DefArgumentNode, AtomtrailersNode
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import escape_for_vhdl
 from pyha.conversion.extract_datamodel import DataModel
+from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
+from redbaron.nodes import DefArgumentNode, AtomtrailersNode
 
 
 class ExceptionCoupling(Exception):
@@ -289,43 +288,35 @@ class VHDLType:
                 pass
         return var
 
-    def walk_self_data(self, atom_trailer):
+    @classmethod
+    def walk_self_data(cls, atom_trailer):
         """ atom_trailer is something like this: self.a.b.c.d
             This finds type of such nested variable
         """
 
-        def find_from_self(atom_trailer):
-            var = self._datamodel.self_data
+        def find(atom_trailer, where):
+            var = where
             for x in atom_trailer[1:]:
                 if str(x) == 'next': continue
                 if not isinstance(x, GetitemNode):
-                    var = var[str(x)]
-                else:
-                    # index is some variable -> just take first element
-                    if isinstance(x.value, NameNode):
-                        var = var[0]
+                    if isinstance(var, HW):
+                        var = var.__dict__[str(x)]
+                    elif isinstance(var, ComplexSfix):
+                        var = getattr(var, str(x))
                     else:
-                        var = var[int(str(x.value))]
-            return var
-
-        def find_from_const(atom_trailer):
-            var = self._datamodel.constants
-            for x in atom_trailer[1:]:
-                if str(x) == 'next': continue
-                if not isinstance(x, GetitemNode):
-                    var = var[str(x)]
+                        var = var[str(x)]
                 else:
                     # index is some variable -> just take first element
-                    if isinstance(x.value, NameNode):
+                    if isinstance(x.value, (NameNode, BinaryOperatorNode)):
                         var = var[0]
                     else:
                         var = var[int(str(x.value))]
             return var
 
         try:
-            var = find_from_self(atom_trailer)
+            var = find(atom_trailer, cls._datamodel.self_data)
         except KeyError:
-            var = find_from_const(atom_trailer)
+            var = find(atom_trailer, cls._datamodel.constants)
         return var
 
     def _defined_in_function(self):

@@ -2,7 +2,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion import get_conversion, Conversion
@@ -13,20 +12,20 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 def test_py_implementation():
     a = ComplexSfix()
-    assert a.real == Sfix(0.0, 0, 0)
-    assert a.imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0)
+    assert a._imag == Sfix(0.0)
 
     a = ComplexSfix(0)
-    assert a.real == Sfix(0.0, 0, 0)
-    assert a.imag == Sfix(0.0, 0, 0)
+    assert a._real == Sfix(0.0)
+    assert a._imag == Sfix(0.0)
 
     a = ComplexSfix(0.5 + 1.2j, 1, -12)
-    assert a.real == Sfix(0.5, 1, -12)
-    assert a.imag == Sfix(1.2, 1, -12)
+    assert a._real == Sfix(0.5, 1, -12)
+    assert a._imag == Sfix(1.2, 1, -12)
 
     a = ComplexSfix(0.699 + 0.012j, 0, -4)
-    assert a.real.val == 0.6875
-    assert a.imag.val == 0
+    assert a._real.val == 0.6875
+    assert a._imag.val == 0
     assert a.init_val == 0.699 + 0.012j
     assert a.left == 0
     assert a.right == -4
@@ -34,33 +33,33 @@ def test_py_implementation():
 
 def test_fixed_value():
     a = ComplexSfix(1 + 0.5j, 0, -2)
-    assert a.real.val == 0.75  # quantized
-    assert a.real.fixed_value() == 3
+    assert a._real.val == 0.75  # quantized
+    assert a._real.fixed_value() == 3
 
-    assert a.imag.val == 0.5
-    assert a.imag.fixed_value() == 2
+    assert a._imag.val == 0.5
+    assert a._imag.fixed_value() == 2
     r = a.fixed_value()
     assert r == 26
 
 
 def test_fixed_value2():
     a = ComplexSfix(1 + 1.95j, 1, -16)
-    assert a.real.val == 1.0
-    assert a.real.fixed_value() == 65536
+    assert a._real.val == 1.0
+    assert a._real.fixed_value() == 65536
 
-    assert a.imag.val == 1.9499969482421875
-    assert a.imag.fixed_value() == 127795
+    assert a._imag.val == 1.9499969482421875
+    assert a._imag.fixed_value() == 127795
     r = a.fixed_value()
     assert r == 17179996979
 
 
 def test_fixed_value3():
     a = ComplexSfix(-1 - 0.5j, 0, -2)
-    assert a.real.val == -1
-    assert a.real.fixed_value() == -4
+    assert a._real.val == -1
+    assert a._real.fixed_value() == -4
 
-    assert a.imag.val == -0.5
-    assert a.imag.fixed_value() == -2
+    assert a._imag.val == -0.5
+    assert a._imag.fixed_value() == -2
     r = a.fixed_value()
     assert r == 38
 
@@ -176,7 +175,7 @@ class TestRegister:
         x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-12)], expected, x, rtol=1e-3,
+        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-12)], rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
@@ -211,7 +210,7 @@ class TestShiftReg:
         expected = [0.200001 - 1.200001j, 0.099998 + 1.200001j, 0.500000 + 0.200001j,
                     0.500000 + 1.200001j, 0.500000 + 0.099998j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expected, x, rtol=1e-3,
+        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
@@ -282,9 +281,10 @@ class TestMoreRegisters:
                     [0.679932 - 0.987061j, -0.500000 + 0.1j, -0.500000 + 0.1j]]
 
         assert_sim_match(self.dut,
-                         [ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
-                          ComplexSfix(left=1, right=-12)],
-                         expected, *x, rtol=1e-3,
+                         expected, *x,
+                         types=[ComplexSfix(left=1, right=-12), ComplexSfix(left=1, right=-21),
+                                ComplexSfix(left=1, right=-12)],
+                         rtol=1e-3,
                          simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
@@ -324,40 +324,40 @@ class TestRegisterIQ:
 
     def test_comp_reg_delay(self):
         next = ComplexSfix(1 + 1j, 1, -18)
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         self.dut.main(next)
 
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         self.dut._pyha_update_self()
 
-        assert id(self.dut.reg.real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg.imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
+        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
 
         next = ComplexSfix(2 + 2j, 1, -18)
         self.dut.main(next)
 
-        assert self.dut.next.reg.real == next.real
-        assert self.dut.next.reg.imag == next.imag
+        assert self.dut.next.reg.real == next._real
+        assert self.dut.next.reg.imag == next._imag
 
-        assert self.dut.reg.real != next.real
-        assert self.dut.reg.imag != next.imag
+        assert self.dut.reg._real != next._real
+        assert self.dut.reg._imag != next._imag
 
     def test_comp_reg_simulate(self):
         inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
 
     def test_comp_reg_simulate2(self):
         # -real made cocotb code fail
         inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
         expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
 
-        assert_sim_match(self.dut, [ComplexSfix(left=1, right=-18)], expect, inputs, rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
 
 
 class TestComplexReturn:
@@ -372,6 +372,9 @@ class TestComplexReturn:
                 return self.reg0, ret
 
         self.dut = A5()
+        self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
+        self.dut._pyha_update_self()
+
         self.dut.main(Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -18), Sfix(-0.24, 0, -32), Sfix(-0.24, 0, -32))
         self.dut._pyha_update_self()
 
@@ -424,9 +427,10 @@ class TestComplexReturn:
         ]
 
         assert_sim_match(self.dut,
-                         [Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
-                          Sfix(left=0, right=-32)],
-                         expected, *x, rtol=1e-3)
+                         expected, *x,
+                         types=[Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
+                                Sfix(left=0, right=-32)],
+                         rtol=1e-3)
 
 
 class TestList:

@@ -3,10 +3,9 @@ from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
-from six import iteritems, with_metaclass
-
 from pyha.common.const import Const
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.common.sfix import Sfix, ComplexSfix, resize
+from six import iteritems, with_metaclass
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -17,6 +16,9 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
 PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
+
+default_sfix = Sfix(0, 0, -17)
+default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 
 
 class AssignToSelf(Exception):
@@ -54,6 +56,7 @@ def is_convertible(obj):
 
     return False
 
+
 def deepish_copy(org):
     """
     https://writeonly.wordpress.com/2009/05/07/deepcopy-is-a-pig-for-simple-data/
@@ -67,12 +70,13 @@ def deepish_copy(org):
             try:
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
-                # Without this assign to imag or real will fuck up everything
-                out[k] = deepcopy(v)
-                # if isinstance(v, ComplexSfix):
-                #     out[k] = copy(v)
-                # else:
-                #     out[k] = v  # ints
+                # out[k] = v
+                # # Without this assign to imag or real will fuck up everything
+                # out[k] = deepcopy(v)
+                if isinstance(v, ComplexSfix):
+                    out[k] = deepcopy(v)
+                else:
+                    out[k] = v  # ints
 
     return out
 
@@ -225,16 +229,21 @@ class Meta(type):
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
+
         ret.__dict__ = cls.handle_constants(ret.__dict__)
         cls.validate_datamodel(ret.__dict__)
 
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
+        # Sfixed lists must be converted to SfixList class, need for setitem overload
+        for k, v in ret.__dict__.items():
+            if isinstance(v, list) and isinstance(v[0], Sfix):
+                ret.__dict__[k] = SfixList(v, deepcopy(v[0]))
 
-        # give self.next to the new object
-        ret.__dict__['next'] = type('next', (object,), {})()
-
+        # make .next variable
+        ret.next = deepcopy(ret)
+        ret.next.__dict__.clear()
         for k, v in ret.__dict__.items():
             if isinstance(v, HW) \
                     or k in PYHA_VARIABLES \
@@ -243,7 +252,9 @@ class Meta(type):
             if is_convertible(v):
                 setattr(ret.next, k, deepcopy(v))
 
-        # registery of submodules that need 'self update'
+        ret.next.__pyha_is_next__ = True
+
+        # register of submodules that need 'self update'
         ret._pyha_submodules = []
         for k, v in ret.__dict__.items():
             if k in PYHA_VARIABLES:
@@ -255,6 +266,9 @@ class Meta(type):
 
         # save the initial self values
         # all registers will be derived from these values!
+        # next needs this because it is used inside __setattr__
+        ret.next.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
@@ -272,8 +286,64 @@ class Meta(type):
 
         return ret
 
+
+def auto_resize(target, value):
+    if not HW.auto_resize.enabled or not isinstance(target, Sfix):
+        return value
+
+    left = target.left if target.left is not None else value.left
+    right = target.right if target.right is not None else value.right
+
+    return resize(value, left, right, round_style=target.round_style,
+                  overflow_style=target.overflow_style)
+
+
+class SfixList(list):
+    """ On assign to element resize the value """
+
+    def __init__(self, seq, type):
+        super().__init__(seq)
+        self.type = type
+
+    def __setitem__(self, i, y):
+        y = auto_resize(self.type, y)
+
+        if self.type.left is None:
+            self.type.left = y.left
+
+        if self.type.right is None:
+            self.type.right = y.right
+
+        super().__setitem__(i, y)
+
+    def __getitem__(self, y):
+        r = super().__getitem__(y)
+        if isinstance(r, list):
+            return SfixList(r, self.type)
+        return r
+
+    def copy(self):
+        return SfixList(super().copy(), self.type)
+
+    # these may be needed to support shift reg resizes
+    # def __add__(self, other):
+    #    assert 0
+    #
+    # def __radd__(self, other):
+    #     pass
+
+
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
+
+    class auto_resize:
+        enabled = False
+
+        def __enter__(self):
+            HW.auto_resize.enabled = True
+
+        def __exit__(self, type, value, traceback):
+            HW.auto_resize.enabled = False
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
@@ -289,7 +359,9 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
+        init = self._pyha_initial_self  # protect from overwrite
         self.__dict__.update(deepish_copy(self.next.__dict__))
+        self.__dict__['_pyha_initial_self'] = init
 
         # update submodules
         for x in self._pyha_submodules:
@@ -298,3 +370,25 @@ class HW(with_metaclass(Meta)):
                     item._pyha_update_self()
             else:
                 x._pyha_update_self()
+
+    def __setattr__(self, name, value):
+        """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
+        this is only enabled for 'main' function, that simulates hardware.
+        """
+        if not HW.auto_resize.enabled:
+            self.__dict__[name] = value
+            return
+
+        # this is only enabled for 'main' function
+        if hasattr(self, '__pyha_is_next__'):
+            target = getattr(self._pyha_initial_self, name)
+            self.__dict__[name] = auto_resize(target, value)
+            return
+
+        # else:
+        #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
+
+
+        # if hasattr(self, 'next')
+
+        self.__dict__[name] = value

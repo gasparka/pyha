@@ -2,13 +2,12 @@
 import subprocess
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose, InputTypesError, SIM_GATE
+    type_conversions, in_out_transpose, SIM_GATE, assert_sim_match
 
 
 def test_ghdl_version():
@@ -112,207 +111,140 @@ def test_type_conversions_multi():
     # assert type(cout[0]) == float
 
 
-#########################################
-# SIMPLE COMB INT
-#########################################
+class TestCombInt:
+    def setup_class(self):
+        class T0(HW):
+            def __init__(self):
+                self.dummy = 0
 
+            def main(self, in_int):
+                ret = in_int * 2
+                return ret
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def comb_int(request):
-    class Dummy_HW(HW):
-        def __init__(self):
-            self.dummy = 0
+            def model_main(self, in_int):
+                return [x * 2 for x in in_int]
 
-        def main(self, in_int):
-            ret = in_int * 2
-            return ret
+        self.dut = T0()
 
-        def model_main(self, in_int):
-            return [x * 2 for x in in_int]
+    def test_list(self):
+        input = [1, 2, 3, 4, 5]
+        assert_sim_match(self.dut, None, input)
 
-    return Simulation(request.param, model=Dummy_HW(), input_types=[int])
-
-
-def test_comb_int_list(comb_int):
-    in_int = [1, 2, 3, 4, 5]
-    expect = np.array([x * 2 for x in in_int])
-    ret = comb_int.main(in_int)
-
-    assert (ret == expect).all()
-
-
-def test_comb_int_numpy(comb_int):
-    in_int = np.array([1, 2, 3, 4, 5])
-    ret = comb_int.main(in_int)
-
-    assert (ret == in_int * 2).all()
-
-
-# def test_comb_int_single(comb_int):
-#     # fails if run separately! (not enough training)
-#     in_int = np.array([1])
-#     ret = comb_int.main(in_int)
-#
-#     assert (ret == in_int * 2).all()
+    # def test_numpy(self):
+    #     input = np.array([1, 2, 3, 4, 5])
+    #     assert_sim_match(self.dut, None, input)
 
 
 #########################################
 # SIMPLE COMB BOOL
 #########################################
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def comb_bool(request):
-    class Bool_HW(HW):
-        def __init__(self):
-            self.dummy = 0
+class TestCombBool:
+    def setup_class(self):
+        class T1(HW):
+            def __init__(self):
+                self.dummy = 0
 
-        def main(self, in_int):
-            ret = not in_int
-            return ret
+            def main(self, in_int):
+                ret = not in_int
+                return ret
 
-        def model_main(self, in_int):
-            return [not x for x in in_int]
+            def model_main(self, in_int):
+                return [not x for x in in_int]
 
-    return Simulation(request.param, model=Bool_HW(), input_types=[bool])
+        self.dut = T1()
 
+    def test_list(self):
+        input = [True, False, False]
+        assert_sim_match(self.dut, None, input)
 
-def test_comb_bool_list(comb_bool):
-    input = [True, False, False]
-    expect = np.array([not x for x in input])
-    ret = comb_bool.main(input)
-    assert (ret.astype(bool) == expect).all()
-
-
-def test_comb_bool_numpy(comb_bool):
-    input = np.array([True, False, False])
-    expect = np.array([not x for x in input])
-    ret = comb_bool.main(input)
-    assert (ret.astype(bool) == expect).all()
+    # def test_numpy(self):
+    #     input = np.array([True, False, False])
+    #     assert_sim_match(self.dut, None, input)
 
 
-#
-# def test_comb_bool_single(comb_bool):
-#     # fails if run separately! (not enough training)
-#     input = np.array([True])
-#     expect = np.array([not x for x in input])
-#     ret = comb_bool.main(input)
-#     assert (ret.astype(bool) == expect).all()
+class TestCombSfix:
+    def setup_class(self):
+        class T2(HW):
+            def __init__(self):
+                self.dummy = 0
 
+            def main(self, in_int):
+                ret = in_int - 1.0
+                return ret
 
-#########################################
-# SIMPLE COMB BOOL
-#########################################
+            def model_main(self, in_int):
+                return [x - 1.0 for x in in_int]
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def comb_sfix(request):
-    class Sfix_HW(HW):
-        def __init__(self):
-            self.dummy = 0
+        self.dut = T2()
 
-        def main(self, in_int):
-            ret = in_int - 1.0
-            return ret
+    def test_list(self):
+        input = [0.25, 1, 1.5]
+        assert_sim_match(self.dut, None, input, types=[Sfix(left=2, right=-8)])
 
-        def model_main(self, in_int):
-            return [x - 1.0 for x in in_int]
-
-    return Simulation(request.param, model=Sfix_HW(), input_types=[Sfix(left=2, right=-8)])
-
-
-def test_comb_sfix_list(comb_sfix):
-    input = [0.25, 1, 1.5]
-    expect = np.array([x - 1.0 for x in input])
-    ret = comb_sfix.main(input)
-    assert (ret == expect).all()
-
-
-def test_comb_sfix_numpy(comb_sfix):
-    input = np.array([0.25, 1, 1.5])
-    expect = np.array([x - 1.0 for x in input])
-    ret = comb_sfix.main(input)
-    assert (ret == expect).all()
-
-
-# def test_comb_sfix_single(comb_sfix):
-#     # fails if run separately! (not enough training)
-#     input = np.array([0.25])
-#     expect = np.array([x - 1.0 for x in input])
-#     ret = comb_sfix.main(input)
-#     assert (ret == expect).all()
+    def test_numpy(self):
+        input = np.array([0.25, 1, 1.5])
+        assert_sim_match(self.dut, None, input, types=[Sfix(left=2, right=-8)])
 
 
 #########################################
 # MULTIPLE COMB
 #########################################
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def comb_multi(request):
-    class Multi_HW(HW):
-        def __init__(self):
-            self.dummy = 0
+class TestCombMulti:
+    def setup_class(self):
+        class T3(HW):
+            def __init__(self):
+                self.dummy = 0
 
-        def main(self, in_int, in_bool, in_sfix):
-            ret_int = in_int * 2
-            ret_bool = not in_bool
-            ret_sfix = in_sfix - 1.0
-            return ret_int, ret_bool, ret_sfix
+            def main(self, in_int, in_bool, in_sfix):
+                ret_int = in_int * 2
+                ret_bool = not in_bool
+                ret_sfix = in_sfix - 1.0
+                return ret_int, ret_bool, ret_sfix
 
-        def model_main(self, in_int, in_bool, in_sfix):
-            return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
+            def model_main(self, in_int, in_bool, in_sfix):
+                return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
 
-    return Simulation(request.param, model=Multi_HW(),
-                      input_types=[int, bool, Sfix(left=2, right=-8)])
+        self.dut = T3()
 
+    # def test_arguments_mismatch(self):
+    #     with pytest.raises(InputTypesError):
+    #         assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-8)], None, [1, 2], [False, True], [0.5, 0, 6], [3, 4])
+    #         comb_multi.main([1, 2], [False, True], [0.5, 0, 6], [3, 4])
+    #
+    #     with pytest.raises(InputTypesError):
+    #         comb_multi.main([1, 2], [False, True])
+    #
+    # def test_pass_sfixed(comb_multi):
+    #     with pytest.raises(InputTypesError):
+    #         comb_multi.main([1, 2], [False, True], [Sfix(0.5, 2, -8), Sfix(0.5, 2, -8)])
 
-def test_comb_multi_arguments_mismatch(comb_multi):
-    with pytest.raises(InputTypesError):
-        comb_multi.main([1, 2], [False, True], [0.5, 0, 6], [3, 4])
+    def test_comb_multi_list(self):
+        input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
+        expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
+        assert_sim_match(self.dut, expect, *input, types=[int, bool, Sfix(left=2, right=-8)])
 
-    with pytest.raises(InputTypesError):
-        comb_multi.main([1, 2], [False, True])
+    def test_comb_multi_numpy(self):
+        input = np.array([[1, 2, 3], [True, False, False], [0.25, 1, 1.5]])
+        expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
+        assert_sim_match(self.dut, expect, *input, types=[int, bool, Sfix(left=2, right=-8)])
 
-
-def test_comb_multi_pass_sfixed(comb_multi):
-    with pytest.raises(InputTypesError):
-        comb_multi.main([1, 2], [False, True], [Sfix(0.5, 2, -8), Sfix(0.5, 2, -8)])
-
-
-def test_comb_multi_list(comb_multi):
-    input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
-    expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = comb_multi.main(*input)
-    assert (ret[0] == expect[0]).all()
-    assert (ret[1].astype(bool) == expect[1]).all()
-    assert (ret[2] == expect[2]).all()
-
-
-def test_comb_multi_numpy(comb_multi):
-    input = np.array([[1, 2, 3], [True, False, False], [0.25, 1, 1.5]])
-    expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = comb_multi.main(*input)
-    assert (ret[0] == expect[0]).all()
-    assert (ret[1].astype(bool) == expect[1]).all()
-    assert (ret[2] == expect[2]).all()
-
-
-def test_comb_multi_single(comb_multi):
-    input = np.array([[1], [True], [0.25]])
-    expect = [[2], [False], [-0.75]]
-    ret = comb_multi.main(*input)
-    assert (ret[0] == expect[0]).all()
-    assert (ret[1].astype(bool) == expect[1]).all()
-    assert (ret[2] == expect[2]).all()
+    # def test_comb_multi_single(self):
+    #     input = np.array([[1], [True], [0.25]])
+    #     expect = [[2], [False], [-0.75]]
+    #     assert_sim_match(self.dut, [int, bool, Sfix(left=2, right=-8)], expect, *input)
 
 
 #########################################
 # MULTIPLE SEQUENTIAL
 # Purpose is to test @flush_pipeline at real environment
 #########################################
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def sequential_single(request):
+
+def test_sequential_single():
     class SeqSingle_HW(HW):
         def __init__(self):
-            self.sfix_reg = Sfix(0.0)
+            self.sfix_reg = Sfix(0.0, 2, -8)
             self._delay = 1
 
         def main(self, in_sfix):
@@ -322,23 +254,19 @@ def sequential_single(request):
         def model_main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
 
-    return Simulation(request.param, model=SeqSingle_HW(),
-                      input_types=[Sfix(left=2, right=-8)])
+    dut = SeqSingle_HW()
 
-
-def test_sequential_single(sequential_single):
     input = [0.25, 1, 1.5]
     expect = [-0.75, 0.0, 0.5]
-    ret = sequential_single.main(input)
-    assert (ret == expect).all()
+
+    assert_sim_match(dut, expect, input, types=[Sfix(left=2, right=-8)])
 
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def sequential_single_delay2(request):
+def test_sequential_single_delay2():
     class SeqSingle2_HW(HW):
         def __init__(self):
-            self.sfix_reg = Sfix(0.0)
-            self.sfix_reg2 = Sfix(0.0)
+            self.sfix_reg = Sfix(0.0, 2, -8)
+            self.sfix_reg2 = Sfix(0.0, 2, -8)
             self._delay = 2
 
         def main(self, in_sfix):
@@ -349,24 +277,18 @@ def sequential_single_delay2(request):
         def model_main(self, in_sfix):
             return [xf - 1 for xf in in_sfix]
 
-    return Simulation(request.param, model=SeqSingle2_HW(),
-                      input_types=[Sfix(left=2, right=-8)])
-
-
-def test_sequential_single_delay2(sequential_single_delay2):
+    dut = SeqSingle2_HW()
     input = [0.25, 1, 1.5]
     expect = [-0.75, 0.0, 0.5]
-    ret = sequential_single_delay2.main(input)
-    assert (ret == expect).all()
+    assert_sim_match(dut, expect, input, types= [Sfix(left=2, right=-8)])
 
 
-@pytest.fixture(scope='session', params=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-def sequential_multi(request):
+def test_sequential_multi():
     class MultiSeq_HW(HW):
         def __init__(self):
             self.int_reg = 0
             self.bool_reg = False
-            self.sfix_reg = Sfix(0.0)
+            self.sfix_reg = Sfix(0.0, 2, -8)
             self._delay = 1
 
         def main(self, in_int, in_bool, in_sfix):
@@ -378,17 +300,10 @@ def sequential_multi(request):
         def model_main(self, in_int, in_bool, in_sfix):
             return [(xi * 2, not xb, xf - 1) for xi, xb, xf in zip(in_int, in_bool, in_sfix)]
 
-    return Simulation(request.param, model=MultiSeq_HW(),
-                      input_types=[int, bool, Sfix(left=2, right=-8)])
-
-
-def test_sequential_multi(sequential_multi):
+    dut = MultiSeq_HW()
     input = [[1, 2, 3], [True, False, False], [0.25, 1, 1.5]]
     expect = [[2, 4, 6], [False, True, True], [-0.75, 0.0, 0.5]]
-    ret = sequential_multi.main(*input)
-    assert (ret[0] == expect[0]).all()
-    assert (ret[1].astype(bool) == expect[1]).all()
-    assert (ret[2] == expect[2]).all()
+    assert_sim_match(dut, expect, *input, types=[int, bool, Sfix(left=2, right=-8)])
 
 
 def test_hw_sim_resets():
@@ -404,7 +319,7 @@ def test_hw_sim_resets():
             self.next.sfix_reg = in_sfix
             return self.sfix_reg
 
-    dut = Simulation(SIM_HW_MODEL, model=Rst_Hw(), input_types=[Sfix(left=0, right=-18)])
+    dut = Simulation(SIM_HW_MODEL, model=Rst_Hw())
     dut.main([0.1])
     first_out = float(dut.pure_output[0])
     assert first_out == 0.5

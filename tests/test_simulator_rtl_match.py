@@ -10,7 +10,7 @@ from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_as
 def assert_exact_match(model, types, *x):
     if skipping_rtl_simulations() or skipping_hwmodel_simulations():
         return
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+    outs = debug_assert_sim_match(model, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL], types=types)
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
 
@@ -18,7 +18,7 @@ def assert_exact_match_gate(model, types, *x):
     if skipping_rtl_simulations() or skipping_gate_simulations():
         return
 
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    outs = debug_assert_sim_match(model, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE], types=types)
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
     np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
 
@@ -211,7 +211,7 @@ def test_passtrough_boolean():
             return x
 
     x = [True, False, True, False]
-    assert_sim_match(T14(), [bool], [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    assert_sim_match(T14(), [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 def test_int_operations():

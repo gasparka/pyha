@@ -1,9 +1,9 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="test_rtl" type="tests" factoryName="py.test">
+  <configuration default="false" name="test_hwsim" type="tests" factoryName="py.test">
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="SKIP_SIMULATIONS_MASK" value="8" />
+      <env name="SKIP_SIMULATIONS_MASK" value="C" />
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="" />

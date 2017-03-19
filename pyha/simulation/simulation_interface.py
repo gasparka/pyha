@@ -1,5 +1,6 @@
 import logging
 import os
+from cmath import isclose
 from contextlib import suppress
 from copy import deepcopy
 from enum import Enum
@@ -9,7 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-
+from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.simulation.sim_provider import SimProvider
@@ -73,6 +74,19 @@ def type_conversions(func):
         # force input types
         if self.input_types is not None:
             args = [[to_type(x) for x in data] for data, to_type in zip(args, self.input_types)]
+        else:
+            args = list(args)
+            for i, arg in enumerate(args):
+                if isinstance(arg[0], float):
+                    self.logger.info(f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
+                    t = default_sfix
+                    args[i] = [t(x) for x in arg]
+                elif isinstance(arg[0], complex):
+                    t = default_complex_sfix
+                    self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
+                    args[i] = [t(x) for x in arg]
+
+
 
         ret = func(self, *args, **kwargs)
 
@@ -160,7 +174,8 @@ class Simulation:
             self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
             for x in args:
-                ret.append(self.model.main(*x))
+                with HW.auto_resize():
+                    ret.append(self.model.main(*x))
                 self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
@@ -173,9 +188,9 @@ class Simulation:
     def main(self, *args) -> np.array:
         self.logger.info(f'Running {self.simulation_type} simulation!')
         # test if user provided legal 'input_types'
-        if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
-            if self.input_types is None or (len(args) != len(self.input_types)):
-                raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
+        # if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
+        #     if self.input_types is None or (len(args) != len(self.input_types)):
+        #         raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
         # test that there are no Sfix arguments
         for x in args:
@@ -217,7 +232,7 @@ class Simulation:
 ##############################################################################
 # utility functions
 
-def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+def debug_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
                            fuck_it=False, **kwards):
     """ Instead of asserting anything return outputs of each simulation """
     simulations = sim_rules(simulations, model)
@@ -229,7 +244,7 @@ def debug_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e
     return outs
 
 
-def assert_model_hwmodel_match(model, types, *x, rtol=1e-9, atol=1e-9):
+def assert_model_hwmodel_match(model, *x, types=None, rtol=1e-9, atol=1e-9):
     if skipping_hwmodel_simulations() or skipping_model_simulations():
         return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
@@ -237,14 +252,14 @@ def assert_model_hwmodel_match(model, types, *x, rtol=1e-9, atol=1e-9):
     np.testing.assert_allclose(outs[0], outs[1], rtol, atol)
 
 
-def assert_hwmodel_rtl_match(model, types, *x):
+def assert_hwmodel_rtl_match(model, *x, types=None):
     if skipping_hwmodel_simulations() or skipping_rtl_simulations():
         return
     outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
 
-def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
     """
     Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
 
@@ -252,7 +267,7 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
     import matplotlib.pyplot as plt
     simulations = sim_rules(simulations, model)
     for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
+        dut = Simulation(sim_type, model=model, dir_path=dir_path)
         hw_y = dut.main(*x)
         plt.plot(hw_y[skip_first:], label=str(sim_type))
 
@@ -260,7 +275,7 @@ def plot_assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-
     plt.show()
 
 
-def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2**-17)*4, dir_path=None, skip_first=0):
     """
     Run bunch of simulations and assert that they match outputs.
 
@@ -288,6 +303,7 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
         hw_y = dut.main(*x)
         if expected is None and sim_type is simulations[0]:
+            l.warning(f'"expected=None", all sims must output: \n{hw_y}')
             expected = hw_y
 
         try:
@@ -295,12 +311,26 @@ def assert_sim_match(model, types, expected, *x, simulations=None, rtol=1e-05, a
             # if type(expected[0]) != type(hw_y[0]):
             #     hw_y = hw_y.astype(type(expected[0]))
             np.testing.assert_allclose(expected[skip_first:], hw_y[skip_first:len(expected)], rtol, atol=atol)
+            l.info('########### Pass! ###########')
         except AssertionError as e:
             l.error('##############################################################')
             l.error('##############################################################')
             l.error(f'\t\t"{sim_type}" failed')
             l.error('##############################################################')
             l.error('##############################################################')
+
+            print('Failures (* shows what failed):')
+            print(f'Expected \t Actual \t ATOL \t\t\t RTOL')
+            print(f'---------------------------------------------------')
+            # abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+            for i, (expect, actual) in enumerate(zip(np.array(expected)[skip_first:].flat, np.array(hw_y)[skip_first:len(expected)].flat)):
+                if not isclose(expect, actual, rel_tol=rtol, abs_tol=atol):
+                    a = abs(expect - actual)
+                    r = rtol * max(abs(expect), abs(actual))
+                    if r > atol:
+                        print(f'{expect:.5} \t {actual:.5} \t {a:.5} \t *{r:.5}')
+                    else:
+                        print(f'{expect:.5} \t {actual:.5} \t *{a:.5} \t {r:.5}')
 
             raise
 
@@ -345,7 +375,6 @@ def sim_rules(simulations, model):
         logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
 
 
-    # for travis build, skip all the tests involving quartus
     if skipping_model_simulations() and SIM_MODEL in simulations:
         simulations.remove(SIM_MODEL)
         logging.getLogger(__name__).warning('########## SKIPPING MODEL SIMULATIONS ##########')

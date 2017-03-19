@@ -3,7 +3,6 @@ from enum import Enum
 
 import numpy as np
 import pytest
-
 from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
@@ -113,7 +112,7 @@ class TestSingleInt:
     def test_simulate(self):
         x = [0] * 8
         expected = [self.dut.mode] * 8
-        assert_sim_match(self.dut, [int], expected, x)
+        assert_sim_match(self.dut, expected, x)
 
 
 class DummyEnum(Enum):
@@ -199,7 +198,7 @@ class TestMultiIntSfixEnumBooleanCFix:
             [0.5 - 0.25j] * 8
         ]
 
-        assert_sim_match(self.dut, [int], expected, x)
+        assert_sim_match(self.dut, expected, x)
 
 
 class TestFloat:

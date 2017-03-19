@@ -4,18 +4,17 @@ import textwrap
 from contextlib import suppress
 from enum import Enum
 
-from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
-
 import pyha
+from parse import parse
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import ComplexSfix
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -555,6 +554,34 @@ class ClassNodeConv(NodeConv):
 
         return template.format(**sockets)
 
+    def get_init_self_prototype(self):
+        return 'procedure \\_pyha_init_self\\(self: inout self_t);'
+
+    def get_init_self(self):
+        template = textwrap.dedent("""\
+        procedure \\_pyha_init_self\\(self: inout self_t) is
+        begin
+        {DATA}
+            \\_pyha_constants_self\\(self);
+        end procedure;""")
+
+        sockets = {'DATA': ''}
+        lines = []
+        for x in VHDLType.get_self():
+            var_name = x.name
+            var_value = x.variable
+            if isinstance(var_value, HW):
+                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_init_self\\(self.{var_name});')
+            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
+                for i in range(len(var_value)):
+                    lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_init_self\\(self.{var_name}({i}));')
+            else:
+                lines.append(f'self.\\next\\.{var_name} := self.{var_name};')
+
+        sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
+
+        return template.format(**sockets)
+
     def get_constants_self_prototype(self):
         return 'procedure \\_pyha_constants_self\\(self: inout self_t);'
 
@@ -652,7 +679,8 @@ class ClassNodeConv(NodeConv):
         return VHDLType.get_self_vhdl_name()
 
     def get_headers(self):
-        ret = self.get_constants_self_prototype() + '\n\n'
+        ret = self.get_init_self_prototype() + '\n\n'
+        ret += self.get_constants_self_prototype() + '\n\n'
         ret += self.get_reset_self_prototype() + '\n\n'
         ret += self.get_update_self_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
@@ -688,6 +716,8 @@ class ClassNodeConv(NodeConv):
     def get_package_body(self):
         template = textwrap.dedent("""\
             package body {NAME} is
+            {INIT_SELF}
+
             {CONSTANT_SELF}
 
             {RESET_SELF}
@@ -700,6 +730,7 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
 
+        sockets['INIT_SELF'] = tabber(self.get_init_self())
         sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
         sockets['RESET_SELF'] = tabber(self.get_reset_self())
         sockets['UPDATE_SELF'] = tabber(self.get_update_self())
@@ -761,6 +792,8 @@ def convert(red: Node, caller=None, datamodel=None):
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
+    if datamodel is not None:
+        AutoResize.apply(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 
@@ -773,6 +806,58 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 #####################################################################
+
+class AutoResize:
+    """ Auto resize on Sfix assignments
+     Examples (depend on initial Sfix type):
+         self.next.sfix_reg = a        ->   self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
+         self.next.sfix_list[0] = a    ->   self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
+         """
+
+    @staticmethod
+    def find(red_node):
+        """ Find all assignments that are subject to auto resize conversion """
+
+        def is_subject(x):
+            """
+            Acceptable examples:
+                    self.next.a = b
+                    self.a.next.b = a
+                    self.next.b[0] = a
+                    self.a[3].b.next.b = a
+            """
+            if len(x) > 1:
+                s = [str(xx.value) for xx in x]
+                if 'self' in s and 'next' in s:
+                    return True
+            return False
+
+        return red_node.find_all('assign', target=is_subject)
+
+    @staticmethod
+    def filter(nodes):
+        """ Resize stuff should happen on Sfix registers only, filter others out """
+
+        passed_nodes = []
+        types = []
+        for x in nodes:
+            t = VHDLType.walk_self_data(x.target)
+            if isinstance(t, Sfix):
+                passed_nodes.append(x)
+                types.append(t)
+        return passed_nodes, types
+
+    @staticmethod
+    def apply(red_node):
+        """ Wrap all subjects to autosfix inside resize() according to initial type """
+        nodes = AutoResize.find(red_node)
+
+        pass_nodes, pass_types = AutoResize.filter(nodes)
+        for node, var_t in zip(pass_nodes, pass_types):
+            node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
+
+        return pass_nodes
+
 
 def redbaron_enum_to_vhdl(red_node):
     """ In python Enums must be referenced by type: EnumType.ENUMVALUE
