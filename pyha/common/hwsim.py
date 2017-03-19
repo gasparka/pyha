@@ -18,7 +18,8 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
 
 default_sfix = Sfix(0, 0, -17)
-default_complex_sfix = ComplexSfix(0+0j, 0, -17)
+default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
+
 
 class AssignToSelf(Exception):
     def __init__(self, class_name, variable_name):
@@ -286,7 +287,6 @@ class Meta(type):
         return ret
 
 
-
 def auto_resize(target, value):
     if not HW.auto_resize.enabled or not isinstance(target, Sfix):
         return value
@@ -295,8 +295,7 @@ def auto_resize(target, value):
     right = target.right if target.right is not None else value.right
 
     return resize(value, left, right, round_style=target.round_style,
-                                 overflow_style=target.overflow_style)
-
+                  overflow_style=target.overflow_style)
 
 
 class SfixList(list):
@@ -308,13 +307,30 @@ class SfixList(list):
 
     def __setitem__(self, i, y):
         y = auto_resize(self.type, y)
+
+        if self.type.left is None:
+            self.type.left = y.left
+
+        if self.type.right is None:
+            self.type.right = y.right
+
         super().__setitem__(i, y)
 
-    # def __getitem__(self, y):
-    #     r = super().__getitem__(y)
-    #     if isinstance(r, list):
-    #         return SfixList(r, self.type)
+    def __getitem__(self, y):
+        r = super().__getitem__(y)
+        if isinstance(r, list):
+            return SfixList(r, self.type)
+        return r
 
+    def copy(self):
+        return SfixList(super().copy(), self.type)
+
+    # these may be needed to support shift reg resizes
+    # def __add__(self, other):
+    #    assert 0
+    #
+    # def __radd__(self, other):
+    #     pass
 
 
 class HW(with_metaclass(Meta)):
