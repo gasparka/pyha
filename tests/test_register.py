@@ -59,12 +59,12 @@ class TestRegisters:
 class TestShiftRegisters:
     def setup(self):
         class ShiftReg(HW):
-            def __init__(self, in_t=Sfix(left=2, right=-18)):
+            def __init__(self, in_t=Sfix(left=0, right=-17)):
                 self.in_t = in_t
                 self.shr_int = [1, 2, 3, 4]
                 self.shr_bool = [True, False, False, True]
                 self.shr_sfix = [in_t(0.5), in_t(0.6),
-                                 in_t(-0.5), in_t(2.1)]
+                                 in_t(-0.5), in_t(0.5)]
 
             def main(self, new_int, new_bool, new_sfix):
                 self.next.shr_int = [new_int] + self.shr_int[:-1]
@@ -81,6 +81,6 @@ class TestShiftRegisters:
 
         expect = [[4, 3, 2, 1, 0, -1],
                   [True, False, False, True, False, False],
-                  [2.1, -0.5, 0.6, 0.5, 0.1, 0.2]]
+                  [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(self.dut, expect, *inputs, rtol=1e-4)
+        assert_sim_match(self.dut, expect, *inputs)

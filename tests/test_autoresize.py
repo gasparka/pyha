@@ -1,5 +1,7 @@
 from pyha.common.hwsim import HW, SfixList
 from pyha.common.sfix import Sfix, fixed_saturate, fixed_round, fixed_truncate, fixed_wrap, ComplexSfix
+from pyha.conversion.conversion import get_conversion_datamodel
+from pyha.conversion.coupling import reset_maker
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
@@ -85,6 +87,18 @@ class TestSfixList:
         """ Metaclass shall turn lists of Sfix to SfixList """
         dut = self.A1(fixed_saturate, fixed_round)
         assert type(dut.a) == SfixList
+        assert type(dut.next.a) == SfixList
+        assert type(dut._pyha_initial_self.a) == SfixList
+        assert type(dut._pyha_initial_self.next.a) == SfixList
+
+        # make sure types stay after sim
+        assert_sim_match(dut, None, [0.1, 0.2], simulations=[SIM_HW_MODEL])
+
+        assert type(dut.a) == SfixList
+        assert type(dut.next.a) == SfixList
+        assert type(dut._pyha_initial_self.a) == SfixList
+        assert type(dut._pyha_initial_self.next.a) == SfixList
+
 
     def test_basic(self):
         dut = self.A1(fixed_saturate, fixed_round)
@@ -221,6 +235,7 @@ class TestLazySfix:
             self.next.c = a
             return self.a, self.b, self.c
 
+
     def test_basic(self):
         dut = self.A3()
 
@@ -278,6 +293,28 @@ class TestLazySfixList:
             assert dut.next.c[0].left == 2
             assert dut.next.c[0].right == -4
             assert dut.next.c[0].val == 0.125
+
+    def test_type_build(self):
+        """ Fill Nones in initial type """
+        dut = self.A4()
+        assert_sim_match(dut, None, [0.1, 0.2, 0.3], simulations=[SIM_HW_MODEL])
+        assert dut.a.type == Sfix(0, 0, -17)
+        assert dut.b.type == Sfix(0, 1, -17)
+        assert dut.c.type == Sfix(0, 0, -4)
+
+    def test_reset(self):
+        dut = self.A4()
+        assert_sim_match(dut, None, [0.1, 0.2, 0.3], simulations=[SIM_HW_MODEL])
+        conv, datamodel = get_conversion_datamodel(dut)
+
+        expect = [
+            'self.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));',
+            'self.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));',
+            'self.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));'
+        ]
+        ret = reset_maker(datamodel.self_data)
+
+        assert expect == ret
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]

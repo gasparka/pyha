@@ -27,7 +27,8 @@ def extract_datamodel(obj):
             elif isinstance(val, ComplexSfix):
                 val = ComplexSfix(val.init_val, last.left, last.right, last.overflow_style, last.round_style)
             elif isinstance(val, list) and isinstance(val[0], Sfix):
-                val = [Sfix(new_val.init_val, last_val.left, last_val.right, last_val.overflow_style, last_val.round_style) for new_val, last_val in zip(val, last)]
+                val = [Sfix(new_val.init_val, last[0].left, last[0].right, last[0].overflow_style, last[0].round_style)
+                       for new_val in val]
             elif isinstance(val, HW):
                 val = last
             elif isinstance(val, list) and isinstance(val[0], HW):
