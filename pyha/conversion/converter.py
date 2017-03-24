@@ -141,6 +141,8 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         if self.value == '+':
             if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
                 self.value = '&'
+        elif self.value == '//':
+            return f'integer({self.first} / {self.second})'
         elif self.value == '>>':
             self.value = 'sra'
         elif self.value == '<<':

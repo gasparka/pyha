@@ -1,9 +1,8 @@
 import textwrap
 
 import pytest
+from pyha.conversion.converter import ExceptionReturnFunctionCall, convert
 from redbaron import RedBaron
-
-from pyha.conversion.converter import ExceptionReturnFunctionCall, convert, file_header
 
 
 @pytest.fixture
@@ -1501,6 +1500,28 @@ def test_list_post_append(converter):
 
     expect = textwrap.dedent("""\
             a & b""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_binaryoperator_divide_int(converter):
+    code = textwrap.dedent("""\
+            a // 1""")
+
+    expect = textwrap.dedent("""\
+            integer(a / 1)""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_binaryoperator_divide_int2(converter):
+    code = textwrap.dedent("""\
+            a // 1 + 1""")
+
+    expect = textwrap.dedent("""\
+            integer(a / 1) + 1""")
 
     conv = converter(code)
     assert expect == str(conv)
