@@ -368,6 +368,53 @@ class TestLazyComplexSfix:
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
+
+class TestAssignConstant:
+    class A6(HW):
+        def __init__(self):
+            self.a = Sfix(0, 0, -17)
+            self.b = Sfix(0, 2, -17)
+
+            self.c = ComplexSfix(0, 0, -17)
+            self._delay = 1
+
+        def main(self, a):
+            self.next.a = 0.123
+            self.next.b = -2
+
+            self.next.c.real = 0.78
+            self.next.c.imag = -0.56
+            return self.a, self.b, self.c
+
+    def test_basic(self):
+        dut = self.A6()
+
+        with HW.auto_resize():
+            dut.main(0)
+
+            assert dut.next.a.left == 0
+            assert dut.next.a.right == -17
+            assert dut.next.a.val == 0.1230010986328125
+
+            assert dut.next.b.left == 2
+            assert dut.next.b.right == -17
+            assert dut.next.b.val == -2
+
+            assert dut.next.c.real.left == 0
+            assert dut.next.c.real.right == -17
+            assert dut.next.c.real.val == 0.779998779296875
+
+            assert dut.next.c.imag.left == 0
+            assert dut.next.c.imag.right == -17
+            assert dut.next.c.imag.val == -0.55999755859375
+
+    def test_sim(self):
+        x = [1, 2]
+
+        dut = self.A6()
+        assert_sim_match(dut, None, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
+
         # class TestListConcat:
         #     """ Currently list assigns will not be resized"""
         #     class A3(HW):

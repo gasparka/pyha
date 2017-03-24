@@ -465,6 +465,12 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed
 
 
     """
+    if isinstance(fix, (float, int)):
+        if size_res is not None:
+            left_index = size_res.left
+            right_index = size_res.right
+        return Sfix(fix, left_index, right_index, overflow_style=overflow_style, round_style=round_style)
+
     return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 
