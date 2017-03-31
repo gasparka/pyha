@@ -12,7 +12,8 @@ from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -854,7 +855,10 @@ class AutoResize:
 
         pass_nodes, pass_types = AutoResize.filter(nodes)
         for node, var_t in zip(pass_nodes, pass_types):
-            node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
+            if isinstance(node.value, (FloatNode, IntNode, UnitaryOperatorNode)):
+                node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+            else:
+                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
 
         return pass_nodes
 

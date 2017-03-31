@@ -14,6 +14,7 @@ package PyhaUtil is
   function right_index(x: sfixed) return integer;
   function \>>\(x: sfixed; n: integer) return sfixed;
   function Sfix(a:real; left_index, right_index:integer) return sfixed;
+  function Sfix(a:integer; left_index, right_index:integer) return sfixed;
   function Sfix(a:real; size_res:sfixed) return sfixed;
 
   function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed;
@@ -64,6 +65,11 @@ package body PyhaUtil is
   function Sfix(a:real; left_index, right_index:integer) return sfixed is
   begin
     return to_sfixed(a, left_index, right_index, guard_bits=>16);
+  end function;
+
+  function Sfix(a:integer; left_index, right_index:integer) return sfixed is
+  begin
+    return to_sfixed(real(a), left_index, right_index, guard_bits=>16);
   end function;
 
   function Sfix(a:real; size_res:sfixed) return sfixed is

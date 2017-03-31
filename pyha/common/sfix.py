@@ -324,6 +324,9 @@ class Sfix:
     def __float__(self):
         return float(self.val)
 
+    def __int__(self):
+        return int(np.floor(self.val))
+
     def resize(self, left=0, right=0, type=None, overflow_style=fixed_saturate, round_style=fixed_round):
         if type is not None:  # TODO: add tests
             left = type.left
@@ -431,6 +434,8 @@ class Sfix:
         assert self.left >= 0
         return -self.right + self.left + 1
 
+
+
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)
 
@@ -466,6 +471,12 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed
 
 
     """
+    if isinstance(fix, (float, int)):
+        if size_res is not None:
+            left_index = size_res.left
+            right_index = size_res.right
+        return Sfix(fix, left_index, right_index, overflow_style=overflow_style, round_style=round_style)
+
     return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
 
 
@@ -497,5 +508,16 @@ def right_index(x: Sfix):
 
 
 def scalb(x: Sfix, i: int):
+    """
+    Shift decimal point by i, basically it performs shift operation without losing precison
+
+    >>> a = Sfix(0.5, 0, -17)
+    >>> a
+    0.5 [0:-17]
+    >>> scalb(a, 8)
+    128.0 [8:-9]
+    >>> scalb(a, -8)
+    0.001953125 [-8:-25]
+    """
     n = 2 ** i
     return Sfix(x.val * n, x.left + i, x.right + i)
