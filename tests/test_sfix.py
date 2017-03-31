@@ -395,3 +395,30 @@ def test_to_stdlogic():
 
     a = Sfix(0.1, 3, -4)
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
+
+
+def test_shift_none():
+    """ Shift operator but bounds are None, can happen for Lazy code """
+
+    a = Sfix(2.0)
+    b = a >> 1
+    assert b.val == 4.0
+    assert b.left == None
+    assert b.right == None
+
+    b = a >> 2
+    assert b.val == 8.0
+    assert b.left == None
+    assert b.right == None
+
+    b = a << 1
+    assert b.val == 1.0
+    assert b.left == None
+    assert b.right == None
+
+    b = a << 2
+    assert b.val == 0.5
+    assert b.left == None
+    assert b.right == None
+
+

@@ -382,8 +382,11 @@ class Sfix:
 
     def __rshift__(self, other):
         # todo: in float mode this should not lose precison
-        o = int(self.val / 2 ** self.right)
-        o = (o >> other) * 2 ** self.right
+        if self.right is None:
+            o = np.ldexp(self.val, other)
+        else:
+            o = int(self.val / 2 ** self.right)
+            o = (o >> other) * 2 ** self.right
         return Sfix(o,
                     self.left,
                     self.right,
@@ -391,8 +394,11 @@ class Sfix:
 
     def __lshift__(self, other):
         # todo: in float mode this should not lose precison
-        o = int(self.val / 2 ** self.right)
-        o = (o << other) * 2 ** self.right
+        if self.right is None:
+            o = np.ldexp(self.val, -other)
+        else:
+            o = int(self.val / 2 ** self.right)
+            o = (o << other) * 2 ** self.right
         return Sfix(o,
                     self.left,
                     self.right,
