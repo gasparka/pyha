@@ -128,3 +128,37 @@ def plot_freqz(b):
     plt.grid()
     plt.axis('tight')
     plt.show()
+
+
+# # https://se.mathworks.com/matlabcentral/newsreader/view_thread/154499
+# from scipy.fftpack import fft, fftshift
+#
+#
+# def estimate_frequency_phase_response(input, output):
+#     sum_h = None
+#     H1 = np.array([0 + 0 * 1j] * len(input[0]))
+#     for i, o in zip(input, output):
+#         I = fft(i)
+#         O = fft(o)
+#         new_h = I * O / I ** 2
+#         new_h /= len(input)  # average
+#         H1 += new_h
+#
+#     H1 = fftshift(H1)
+#     magnitude = 20 * np.log10(abs(H1))
+#     phase = np.angle(H1) * 180 / np.pi
+#
+#     return magnitude, phase
+#
+#
+# u = [np.random.uniform(-1, 1, 1024 * 2) for _ in range(1024)]
+# av = CascadeAverage(9, 2)
+# y = [av.abstract2(x) for x in u]
+# # y = [x for x in u]
+# mag, phase = estimate_frequency_phase_response(u, y)
+#
+# plt.plot(mag)
+# plt.show()
+#
+# plt.plot(phase)
+# plt.show()
