@@ -857,7 +857,10 @@ class AutoResize:
 
         pass_nodes, pass_types = AutoResize.filter(nodes)
         for node, var_t in zip(pass_nodes, pass_types):
-            if isinstance(node.value, (FloatNode, IntNode, UnitaryOperatorNode)):
+
+            if isinstance(node.value, (FloatNode, IntNode)) \
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (FloatNode, IntNode))):
+                # second term to pass marked nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'

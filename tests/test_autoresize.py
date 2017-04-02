@@ -415,6 +415,12 @@ class TestAssignConstant:
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
+
+
+
+
+
+
         # class TestListConcat:
         #     """ Currently list assigns will not be resized"""
         #     class A3(HW):

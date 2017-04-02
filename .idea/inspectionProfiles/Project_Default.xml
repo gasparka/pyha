@@ -55,6 +55,7 @@
           <option value="pyha.conversion.converter.SliceNodeConv.*" />
           <option value="tests.test_const.TestClass.*" />
           <option value="pyha.common.const.Const.__neg__" />
+          <option value="tests.test_autoresize.TestAssignConstant.A6.*" />
         </list>
       </option>
     </inspection_tool>

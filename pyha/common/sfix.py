@@ -373,8 +373,8 @@ class Sfix:
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
         return Sfix(self.val * other.val,
-                    self.left + other.left + 1,
-                    self.right + other.right,
+                    self.left + (other.left or 0) + 1,
+                    self.right + (other.right or 0),
                     init_only=True)
 
     def sign_bit(self):
