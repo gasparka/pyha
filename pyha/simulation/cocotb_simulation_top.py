@@ -25,13 +25,13 @@ def run_dut(dut, in_data, out_count):
 
     # FIXME: test input and output names and report error
     ret = []
-    # print('Input data: {}'.format(in_data))
+    print('Input data: {}'.format(in_data))
     for x in in_data:
 
         # put input
-        # print('Processing slice: {}'.format(x))
+        print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
-            # print('Set {} to {}'.format('in' + str(i), xi))
+            print('Set {} to {}'.format('in' + str(i), xi))
             setattr(dut, 'in' + str(i), int(xi.astype(int)))
 
         # NOTICE: need to have both yields to match simulation.
@@ -42,13 +42,13 @@ def run_dut(dut, in_data, out_count):
         tmp = []
         for i in range(out_count):
             var = 'out' + str(i)
-            # val = getattr(dut, var).value.signed_integer
+            val = getattr(dut, var).value.signed_integer
             val = str(getattr(dut, var).value)
-            # print(val)
+            print(val)
             tmp.append(val)
         ret.append(tmp)
 
-    # print('Finish, ret: {}'.format(ret))
+    print('Finish, ret: {}'.format(ret))
     raise ReturnValue(ret)
 
 
@@ -57,11 +57,11 @@ def test_main(dut):
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')
     # in_data = np.transpose(in_data)
-    # print(in_data)
+    print(in_data)
 
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
     # hdl_out = np.transpose(hdl_out)
-    # print(hdl_out)
+    print(hdl_out)
 
     np.save(os.getcwd() + '/../output.npy', hdl_out)
