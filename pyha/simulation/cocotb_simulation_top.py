@@ -20,6 +20,7 @@ def reset(dut, duration=10000):
 @cocotb.coroutine
 def run_dut(dut, in_data, out_count):
     dut.enable = 1
+    # dut.in0 = 0
     cocotb.fork(Clock(dut.clk, 5000).start())
     yield reset(dut)
 
@@ -42,7 +43,7 @@ def run_dut(dut, in_data, out_count):
         tmp = []
         for i in range(out_count):
             var = 'out' + str(i)
-            val = getattr(dut, var).value.signed_integer
+            # val = getattr(dut, var).value.signed_integer
             val = str(getattr(dut, var).value)
             print(val)
             tmp.append(val)

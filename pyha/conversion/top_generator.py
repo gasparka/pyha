@@ -190,19 +190,25 @@ class TopGenerator:
 
                         --output variables
                 {OUTPUT_VARIABLES}
+                        variable is_inited: boolean := False;
                     begin
 
-                    --convert slv to normal types
-                {INPUT_TYPE_CONVERSIONS}
 
-                    --call the main entry
-                    {DUT_NAME}.\\_pyha_init_self\\(self);
-                    {DUT_NAME}.main(self, {CALL_ARGUMENTS});
-                    --convert normal types to slv
-                {OUTPUT_TYPE_CONVERSIONS}
+                    -- report to_string(clk) & to_string(rst_n) & to_string(enable) & to_string(in0);
+                    if rst_n = '1' then
+                            --convert slv to normal types
+                        {INPUT_TYPE_CONVERSIONS}
+
+                            --call the main entry
+                            {DUT_NAME}.\\_pyha_init_self\\(self);
+                            {DUT_NAME}.main(self, {CALL_ARGUMENTS});
+                            --convert normal types to slv
+                        {OUTPUT_TYPE_CONVERSIONS}
+                    end if;
 
                     if (not rst_n) then
                         {DUT_NAME}.\\_pyha_reset_self\\(self);
+                        is_inited := True;
                     elsif rising_edge(clk) then
                         if enable then
                             {DUT_NAME}.\\_pyha_update_self\\(self);
