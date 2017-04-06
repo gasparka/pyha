@@ -184,42 +184,37 @@ class TopGenerator:
                 end entity;
 
                 architecture arch of top is
+                    signal self_reg: {DUT_NAME}.self_t := (a=>0, \\next\\=>(a=>0));
                 begin
                     process(clk, rst_n)
                         variable self: {DUT_NAME}.self_t;
                         -- input variables
-                {INPUT_VARIABLES}
+                        {INPUT_VARIABLES}
 
                         --output variables
-                {OUTPUT_VARIABLES}
-                        variable is_inited: boolean := False;
+                        {OUTPUT_VARIABLES}
 
                     begin
 
+                    self := self_reg;
 
-                    -- report to_string(clk) & to_string(rst_n) & to_string(enable) & to_string(in0);
+                    --convert slv to normal types
+                    {INPUT_TYPE_CONVERSIONS}
 
-                    -- a altera translate_off
-                    if is_inited then
-                    -- a altera translate_on
-                            --convert slv to normal types
-                        {INPUT_TYPE_CONVERSIONS}
+                    --call the main entry
+                    {DUT_NAME}.\\_pyha_init_self\\(self);
+                    {DUT_NAME}.main(self, {CALL_ARGUMENTS});
+                    --convert normal types to slv
+                    {OUTPUT_TYPE_CONVERSIONS}
 
-                            --call the main entry
-                            {DUT_NAME}.\\_pyha_init_self\\(self);
-                            {DUT_NAME}.main(self, {CALL_ARGUMENTS});
-                            --convert normal types to slv
-                        {OUTPUT_TYPE_CONVERSIONS}
-                    -- a altera translate_off
-                    end if;
-                    -- a altera translate_on
 
                     if (not rst_n) then
                         {DUT_NAME}.\\_pyha_reset_self\\(self);
-                        is_inited := True;
+                        self_reg <= self;
                     elsif rising_edge(clk) then
                         if enable then
                             {DUT_NAME}.\\_pyha_update_self\\(self);
+                            self_reg <= self;
                         end if;
                       end if;
 
