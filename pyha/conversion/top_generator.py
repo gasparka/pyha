@@ -193,11 +193,15 @@ class TopGenerator:
                         --output variables
                 {OUTPUT_VARIABLES}
                         variable is_inited: boolean := False;
+
                     begin
 
 
                     -- report to_string(clk) & to_string(rst_n) & to_string(enable) & to_string(in0);
-                    if rst_n = '1' then
+
+                    -- a altera translate_off
+                    if is_inited then
+                    -- a altera translate_on
                             --convert slv to normal types
                         {INPUT_TYPE_CONVERSIONS}
 
@@ -206,7 +210,9 @@ class TopGenerator:
                             {DUT_NAME}.main(self, {CALL_ARGUMENTS});
                             --convert normal types to slv
                         {OUTPUT_TYPE_CONVERSIONS}
+                    -- a altera translate_off
                     end if;
+                    -- a altera translate_on
 
                     if (not rst_n) then
                         {DUT_NAME}.\\_pyha_reset_self\\(self);
