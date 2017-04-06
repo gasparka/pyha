@@ -165,6 +165,8 @@ class TopGenerator:
         return ', '.join([inputs, outputs])
 
     def make(self):
+
+        # http://stackoverflow.com/questions/8782630/how-to-detect-compiler
         template = textwrap.dedent("""\
                 {FILE_HEADER}
                 {IMPORTS}
