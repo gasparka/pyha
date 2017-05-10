@@ -336,6 +336,9 @@ class Sfix:
 
     @staticmethod
     def max(a, b):
+        if a is None and b is None:
+            return 0
+
         if a is None:
             return b
         if b is None:
@@ -345,6 +348,9 @@ class Sfix:
 
     @staticmethod
     def min(a, b):
+        if a is None and b is None:
+            return 0
+
         if a is None:
             return b
         if b is None:

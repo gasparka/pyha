@@ -69,7 +69,7 @@ class Conversion:
 
         for x in self.obj._pyha_submodules:
             if isinstance(x, list):
-                x = x[0]  # in case of submodules list -> only convert one
+                x = x[1]  # in case of submodules list -> only convert one
             self.childs.append(Conversion(x, is_child=True))
 
     @property
