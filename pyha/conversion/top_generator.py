@@ -184,7 +184,7 @@ class TopGenerator:
                 end entity;
 
                 architecture arch of top is
-                    signal self_reg: {DUT_NAME}.self_t := (a=>0, \\next\\=>(a=>0));
+                    signal self_reg: {DUT_NAME}.self_t := (a=>0, b=>0, \\next\\=>(a=>0, b=>0));
                 begin
                     process(clk, rst_n)
                         variable self: {DUT_NAME}.self_t;

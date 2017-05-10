@@ -29,6 +29,8 @@ def run_dut(dut, in_data, out_count):
     print('Input data: {}'.format(in_data))
     for x in in_data:
 
+
+
         # put input
         print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
@@ -37,7 +39,7 @@ def run_dut(dut, in_data, out_count):
 
         # NOTICE: need to have both yields to match simulation.
         yield RisingEdge(dut.clk)
-        yield FallingEdge(dut.clk)
+        # yield FallingEdge(dut.clk)
 
         # collect output
         tmp = []
