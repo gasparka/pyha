@@ -6,6 +6,7 @@ from cocotb.clock import Clock
 from cocotb.result import ReturnValue
 from cocotb.triggers import RisingEdge, Timer, FallingEdge
 
+debug = False
 
 @cocotb.coroutine
 def reset(dut, duration=10000):
@@ -20,13 +21,15 @@ def reset(dut, duration=10000):
 @cocotb.coroutine
 def run_dut(dut, in_data, out_count):
     dut.enable = 1
+    # dut.in0 = 0
     cocotb.fork(Clock(dut.clk, 5000).start())
     yield reset(dut)
 
-    # FIXME: test input and output names and report error
     ret = []
     # print('Input data: {}'.format(in_data))
     for x in in_data:
+
+
 
         # put input
         # print('Processing slice: {}'.format(x))
@@ -34,9 +37,7 @@ def run_dut(dut, in_data, out_count):
             # print('Set {} to {}'.format('in' + str(i), xi))
             setattr(dut, 'in' + str(i), int(xi.astype(int)))
 
-        # NOTICE: need to have both yields to match simulation.
         yield RisingEdge(dut.clk)
-        yield FallingEdge(dut.clk)
 
         # collect output
         tmp = []
@@ -56,12 +57,8 @@ def run_dut(dut, in_data, out_count):
 def test_main(dut):
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')
-    # in_data = np.transpose(in_data)
-    # print(in_data)
 
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
-    # hdl_out = np.transpose(hdl_out)
-    # print(hdl_out)
 
     np.save(os.getcwd() + '/../output.npy', hdl_out)
