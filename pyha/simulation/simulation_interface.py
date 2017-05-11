@@ -174,8 +174,9 @@ class Simulation:
             self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
             for x in args:
-                with HW.auto_resize():
-                    ret.append(self.model.main(*x))
+                with HW.implicit_next():
+                    with HW.auto_resize():
+                        ret.append(self.model.main(*x))
                 self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
@@ -328,9 +329,9 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
                     a = abs(expect - actual)
                     r = rtol * max(abs(expect), abs(actual))
                     if r > atol:
-                        print(f'{expect:.5} \t {actual:.5} \t {a:.5} \t *{r:.5}')
+                        print(f'{expect:.5f} \t {actual:.5f} \t {a:.5f} \t *{r:.5f}')
                     else:
-                        print(f'{expect:.5} \t {actual:.5} \t *{a:.5} \t {r:.5}')
+                        print(f'{expect:.5f} \t {actual:.5f} \t *{a:.5f} \t {r:.5f}')
 
             raise
 
