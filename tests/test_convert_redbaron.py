@@ -7,7 +7,7 @@ from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix
 from pyha.conversion.conversion import get_objects_rednode
 from pyha.conversion.converter import redbaron_pycall_to_vhdl, redbaron_pycall_returns_to_vhdl, redbaron_pyfor_to_vhdl, \
-    convert, AutoResize
+    convert, AutoResize, ImplicitNext
 from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import RedBaron
@@ -619,3 +619,62 @@ class TestAutoResize:
 # * Default round style to truncate -> what to do with initial values??
 # * auto resize on function calls that return to self.next ??
 # * what if is already resized??
+
+
+
+class TestImplicitNext:
+    def test_basic(self):
+        code = 'self.a = 1'
+        expect = 'self.next.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_list(self):
+        code = 'self.a[i] = 1'
+        expect = 'self.next.a[i] = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_submod(self):
+        code = 'self.submod.a = 1'
+        expect = 'self.submod.next.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_submod_list(self):
+        code = 'self.submod.a[i].b = 1'
+        expect = 'self.submod.a[i].next.b = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_call(self):
+        code = 'self.a = self.call()'
+        expect = 'self.next.a = self.call()'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_call_multi_return(self):
+        code = 'self.a, self.b[i], local = self.call()'
+        expect = 'self.next.a, self.next.b[i], local = self.call()'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_non_target(self):
+        code = 'b.self.a = 1'
+        expect = 'b.self.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect

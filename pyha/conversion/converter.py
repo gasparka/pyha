@@ -13,7 +13,7 @@ from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode
+    IntNode, UnitaryOperatorNode, GetitemNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -800,6 +800,7 @@ def convert(red: Node, caller=None, datamodel=None):
     red = redbaron_pycall_to_vhdl(red)
     if datamodel is not None:
         AutoResize.apply(red)
+        ImplicitNext.apply(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 
@@ -862,13 +863,47 @@ class AutoResize:
         for node, var_t in zip(pass_nodes, pass_types):
 
             if isinstance(node.value, (FloatNode, IntNode)) \
-                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (FloatNode, IntNode))):
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target,
+                                                                                   (FloatNode, IntNode))):
                 # second term to pass marked nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
 
         return pass_nodes
+
+
+class ImplicitNext:
+    """
+    On all assignments add 'next' before the final target. This is to support variable based signal assignment in VHDL code.
+
+    Examples:
+    self.a -> self.next.a
+    self.a[i] -> self.next.a[i]
+    self.submod.a -> self.submod.next.a
+    self.submod.a[i].a -> self.submod.a[i].next.a
+
+    self.a, self.b = call() -> self.next.a, self.next.b = call()
+
+    """
+
+    @staticmethod
+    def apply(red_node):
+
+        def add_next(x):
+            if len(x) > 1 and str(x[0].value) == 'self':
+                loc = len(x) - 1
+                if isinstance(x[loc], GetitemNode):
+                    loc -= 1
+                x.insert(loc, 'next')
+
+        assigns = red_node.find_all('assign')
+        for node in assigns:
+            if isinstance(node.target, TupleNode):
+                for mn in node.target:
+                    add_next(mn)
+            else:
+                add_next(node.target)
 
 
 def redbaron_enum_to_vhdl(red_node):
