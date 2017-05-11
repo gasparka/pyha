@@ -184,39 +184,47 @@ class TopGenerator:
                 end entity;
 
                 architecture arch of top is
-                    signal self_reg: {DUT_NAME}.self_t := (a=>0, b=>0, \\next\\=>(a=>0, b=>0));
+                    -- make reset procedure callable
+                    function init_regs return {DUT_NAME}.self_t is
+                        variable self: {DUT_NAME}.self_t;
+                    begin
+                          {DUT_NAME}.\_pyha_reset_self\(self);
+                          return self;
+                    end function;
+
+                    signal self: {DUT_NAME}.self_t := init_regs;
                 begin
                     process(clk, rst_n)
-                        variable self: {DUT_NAME}.self_t;
+                        variable self_var: {DUT_NAME}.self_t;
                         -- input variables
-                        {INPUT_VARIABLES}
+                {INPUT_VARIABLES}
 
                         --output variables
-                        {OUTPUT_VARIABLES}
+                {OUTPUT_VARIABLES}
 
                     begin
+                        self_var := self;
 
-                    self := self_reg;
+                        --convert slv to normal types
+                {INPUT_TYPE_CONVERSIONS}
 
-                    --convert slv to normal types
-                    {INPUT_TYPE_CONVERSIONS}
+                        --call the main entry
+                        {DUT_NAME}.\\_pyha_init_self\\(self_var);
+                        {DUT_NAME}.main(self_var, {CALL_ARGUMENTS});
 
-                    --call the main entry
-                    {DUT_NAME}.\\_pyha_init_self\\(self);
-                    {DUT_NAME}.main(self, {CALL_ARGUMENTS});
-                    --convert normal types to slv
-                    {OUTPUT_TYPE_CONVERSIONS}
+                        --convert normal types to slv
+                {OUTPUT_TYPE_CONVERSIONS}
 
 
-                    if (not rst_n) then
-                        {DUT_NAME}.\\_pyha_reset_self\\(self);
-                        self_reg <= self;
-                    elsif rising_edge(clk) then
-                        if enable then
-                            {DUT_NAME}.\\_pyha_update_self\\(self);
-                            self_reg <= self;
+                        if (not rst_n) then
+                            {DUT_NAME}.\\_pyha_reset_self\\(self_var);
+                            self <= self_var;
+                        elsif rising_edge(clk) then
+                            if enable then
+                                {DUT_NAME}.\\_pyha_update_self\\(self_var);
+                                self <= self_var;
+                            end if;
                         end if;
-                      end if;
 
                     end process;
                 end architecture;""")
@@ -233,8 +241,8 @@ class TopGenerator:
             self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
         sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
         sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
-        sockets['INPUT_TYPE_CONVERSIONS'] = tabber(tab(self.make_input_type_conversions()))
-        sockets['OUTPUT_TYPE_CONVERSIONS'] = tabber(tab(self.make_output_type_conversions()))
+        sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
+        sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.make_output_type_conversions())
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
 
         res = template.format(**sockets)
