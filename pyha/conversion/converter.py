@@ -211,7 +211,7 @@ class DefNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-        # remove last line,i f it is \n
+        # remove last line,if it is \n
         if isinstance(self.value[-1], EndlNodeConv):
             del self.value[-1]
 
@@ -219,6 +219,7 @@ class DefNodeConv(NodeConv):
         self.variables = self.infer_variables()
 
     def infer_return_arguments(self):
+        # TODO: could use datamodel to get this info..
         try:
             rets = self.red_node('return')[0]
         except IndexError:
@@ -235,6 +236,7 @@ class DefNodeConv(NodeConv):
         return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
+        # TODO: could use datamodel to get this info..
         assigns = self.red_node.value('assign')
 
         variables = []
@@ -790,6 +792,7 @@ def convert(red: Node, caller=None, datamodel=None):
     with suppress(AttributeError):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
+
     if datamodel is not None:
         red = redbaron_enum_to_vhdl(red)
     red = redbaron_pyfor_to_vhdl(red)

@@ -200,6 +200,7 @@ class Meta(type):
     instance_count = 0
 
     def validate_datamodel(cls, dict):
+        # TODO: not required actually?
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
@@ -241,34 +242,24 @@ class Meta(type):
             if isinstance(v, list) and isinstance(v[0], Sfix):
                 ret.__dict__[k] = SfixList(v, deepcopy(v[0]))
 
-        # make .next variable
-        ret.next = deepcopy(ret)
-        ret.next.__dict__.clear()
+        # make ._next variable that holds 'next' state for primitives (lists and objects handle this itself)
+        ret._next = {}
         for k, v in ret.__dict__.items():
-            if isinstance(v, HW) \
-                    or k in PYHA_VARIABLES \
-                    or (isinstance(v, list) and isinstance(v[0], HW)):
-                continue
-            if is_convertible(v):
-                setattr(ret.next, k, deepcopy(v))
-
-        ret.next.__pyha_is_next__ = True
+            if isinstance(v, int):
+                ret._next[k] = v
 
         # register of submodules that need 'self update'
         ret._pyha_submodules = []
-        for k, v in ret.__dict__.items():
-            if k in PYHA_VARIABLES:
-                continue
-            if isinstance(v, HW):
-                ret._pyha_submodules.append(v)
-            elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
-                ret._pyha_submodules.append(v)
+        # for k, v in ret.__dict__.items():
+        #     if k in PYHA_VARIABLES:
+        #         continue
+        #     if isinstance(v, HW):
+        #         ret._pyha_submodules.append(v)
+        #     elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
+        #         ret._pyha_submodules.append(v)
 
         # save the initial self values
         # all registers will be derived from these values!
-        # next needs this because it is used inside __setattr__
-        ret.next.__dict__['_pyha_initial_self'] = deepcopy(ret)
-
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
@@ -345,6 +336,15 @@ class HW(with_metaclass(Meta)):
         def __exit__(self, type, value, traceback):
             HW.auto_resize.enabled = False
 
+    class implicit_next:
+        enabled = False
+
+        def __enter__(self):
+            HW.implicit_next.enabled = True
+
+        def __exit__(self, type, value, traceback):
+            HW.implicit_next.enabled = False
+
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -359,9 +359,8 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        init = self._pyha_initial_self  # protect from overwrite
-        self.__dict__.update(deepish_copy(self.next.__dict__))
-        self.__dict__['_pyha_initial_self'] = init
+        # update atoms
+        self.__dict__.update(self._next)
 
         # update submodules
         for x in self._pyha_submodules:
@@ -375,20 +374,25 @@ class HW(with_metaclass(Meta)):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
-        if not HW.auto_resize.enabled:
+        if not HW.implicit_next.enabled:
             self.__dict__[name] = value
             return
 
-        # this is only enabled for 'main' function
-        if hasattr(self, '__pyha_is_next__'):
-            target = getattr(self._pyha_initial_self, name)
-            self.__dict__[name] = auto_resize(target, value)
-            return
+        self._next[name] = value
+        # if not HW.auto_resize.enabled:
+        #     self.__dict__[name] = value
+        #     return
+        #
+        # # this is only enabled for 'main' function
+        # if hasattr(self, '__pyha_is_next__'):
+        #     target = getattr(self._pyha_initial_self, name)
+        #     self.__dict__[name] = auto_resize(target, value)
+        #     return
+        #
+        # # else:
+        # #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
+        #
+        #
+        # # if hasattr(self, 'next')
 
-        # else:
-        #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
-
-
-        # if hasattr(self, 'next')
-
-        self.__dict__[name] = value
+        # self.__dict__[name] = value
