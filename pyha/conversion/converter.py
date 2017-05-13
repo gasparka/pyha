@@ -795,12 +795,12 @@ def convert(red: Node, caller=None, datamodel=None):
 
     if datamodel is not None:
         red = redbaron_enum_to_vhdl(red)
+        ImplicitNext.apply(red)
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
     if datamodel is not None:
         AutoResize.apply(red)
-        ImplicitNext.apply(red)
 
     conv = red_to_conv_hub(red, caller)  # converts all nodes
 

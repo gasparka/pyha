@@ -128,6 +128,7 @@ class TestSfix:
         dut = self.T2()
         assert_sim_match(dut, expected, x)
 
+
 class TestSfixList:
     class T3(HW):
         def __init__(self):
@@ -164,3 +165,62 @@ class TestSfixList:
 
         dut = self.T3()
         assert_sim_match(dut, expected, x)
+
+
+class TestSubmodule:
+    class T4Sub(HW):
+        def __init__(self):
+            self.i = 1
+            self.i2 = 2
+
+        def main(self, i):
+            self.i = i
+            return self.i
+
+    class T4(HW):
+        def __init__(self):
+            self.sub = TestSubmodule.T4Sub()
+            self.i = 0
+
+        def main(self, i):
+            self.sub.i2 = i
+            self.i = self.sub.main(i)
+            return self.i, self.sub.i2, self.sub.i
+
+    def test_basic(self):
+        dut = self.T4()
+        dut._pyha_update_self()
+
+        assert dut.i == 0
+        assert dut.sub.i2 == 2
+        assert dut.sub.i == 1
+        assert dut._next['i'] == 0
+        assert dut.sub._next['i'] == 1
+        assert dut.sub._next['i2'] == 2
+
+        with HW.implicit_next():
+            dut.main(5)
+
+        assert dut.i == 0
+        assert dut.sub.i2 == 2
+        assert dut.sub.i == 1
+        assert dut._next['i'] == 1
+        assert dut.sub._next['i'] == 5
+        assert dut.sub._next['i2'] == 5
+
+        dut._pyha_update_self()
+
+        assert dut.i == 1
+        assert dut.sub.i2 == 5
+        assert dut.sub.i == 5
+        assert dut._next['i'] == 1
+        assert dut.sub._next['i'] == 5
+        assert dut.sub._next['i2'] == 5
+
+    def test_simulate(self):
+        x = [1, 2, 3]
+
+        dut = self.T4()
+        assert_sim_match(dut, None, x, dir_path='/home/gaspar/git/pyha/playground')
+
+
