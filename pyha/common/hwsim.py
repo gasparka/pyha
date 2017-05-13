@@ -252,7 +252,7 @@ class Meta(type):
                 continue
             if hasattr(v, '_pyha_update_self'):
                 continue
-            ret._next[k] = v
+            ret._next[k] = deepcopy(v)
 
         # save the initial self values - all registers and initial values will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
@@ -296,6 +296,15 @@ class PyhaList(UserList):
             # object already knows how to handle registers
             self[i] = y
         else:
+            if isinstance(self.type, Sfix):
+                y = auto_resize(self.type, y)
+
+                if self.type.left is None:
+                    self.type.left = y.left
+
+                if self.type.right is None:
+                    self.type.right = y.right
+
             self._next[i] = y
 
     def _pyha_update_self(self):
@@ -392,6 +401,11 @@ class HW(with_metaclass(Meta)):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
+
+        if HW.auto_resize.enabled:
+            target = getattr(self._pyha_initial_self, name)
+            value = auto_resize(target, value)
+
         if not HW.implicit_next.enabled:
             self.__dict__[name] = value
             return

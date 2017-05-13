@@ -817,8 +817,8 @@ def convert(red: Node, caller=None, datamodel=None):
 class AutoResize:
     """ Auto resize on Sfix assignments
      Examples (depend on initial Sfix type):
-         self.next.sfix_reg = a        ->   self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
-         self.next.sfix_list[0] = a    ->   self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
+         self.sfix_reg = a        ->   self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
+         self.sfix_list[0] = a    ->   self.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
          """
 
     @staticmethod
@@ -828,15 +828,13 @@ class AutoResize:
         def is_subject(x):
             """
             Acceptable examples:
-                    self.next.a = b
-                    self.a.next.b = a
-                    self.next.b[0] = a
-                    self.a[3].b.next.b = a
+                    self.a = b
+                    self.a.b = a
+                    self.b[0] = a
+                    self.a[3].b.b = a
             """
-            if len(x) > 1:
-                s = [str(xx.value) for xx in x]
-                if 'self' in s and 'next' in s:
-                    return True
+            if len(x) > 1 and str(x[0].value) == 'self':
+                return True
             return False
 
         return red_node.find_all('assign', target=is_subject)

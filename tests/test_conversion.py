@@ -51,7 +51,7 @@ def test_convert_submodule():
             self.reg = 0
 
         def main(self, a):
-            self.next.reg = a
+            self.reg = a
             return self.reg
 
     class B(HW):
@@ -75,7 +75,7 @@ def test_convert_submodule_name_conflict():
             self.reg = 0
 
         def main(self, a):
-            self.next.reg = a
+            self.reg = a
             return self.reg
 
     class B2(HW):

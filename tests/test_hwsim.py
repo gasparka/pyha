@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from pyha.common.hwsim import HW, Meta, PyhaFunc
 from pyha.common.sfix import Sfix, ComplexSfix
@@ -53,6 +54,7 @@ def test_next_init():
 
 def test_next_filter():
     """ Next should contain only convertible items, shall not contain any submodules """
+
     class B(HW):
         pass
 
@@ -70,7 +72,6 @@ def test_next_filter():
 
     dut = A()
     assert dut._next == {'a': 1, 'b': Sfix()}
-
 
 
 def test_float_register():
@@ -106,7 +107,6 @@ def test_submodule_float_register():
 
         def main(self, next):
             self.b.main(next)
-
 
     dut = A()
     assert dut.b.a == 1.0
@@ -190,6 +190,7 @@ def test_list_cascade_register():
     assert dut.a.a == [3.0, 4.0, 1.0]
     dut._pyha_update_self()
 
+
 def test_initial_self():
     class A(HW):
         def __init__(self):
@@ -218,6 +219,7 @@ def test_meta_deepcopy():
     """ this test used to run 4s, with exponential growth on each added level
     problem was in nested deepcopy() calls
     """
+
     class A(HW):
         def __init__(self):
             self.a = Sfix(0.592)
@@ -243,10 +245,14 @@ def test_meta_deepcopy():
             self.b = D()
             self.a = Sfix(0.592)
 
+    start = time.time()
     dut = E()
+    end = time.time()
 
-    assert id(dut.l.a) != id(dut.l.next.a) != id(dut.l.__dict__['_pyha_initial_self'].a)
-    assert id(dut.l.l.a) != id(dut.l.l.next.a) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
+    assert end - start < 0.1
+    assert id(dut.l.a) != id(dut.l._next['a']) != id(dut.l.__dict__['_pyha_initial_self'].a)
+    assert id(dut.l.l.a) != id(dut.l.l._next['a']) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
+
 
 def test_outputs():
     class A(HW):
@@ -261,9 +267,6 @@ def test_outputs():
     assert dut._outputs == [1, 2, 3, 4]
 
 
-
-
-
 def test_setattr_assign_self():
     class A(HW):
         def __init__(self):
@@ -275,8 +278,7 @@ def test_setattr_assign_self():
             return self.a
 
     dut = A()
-    with HW.auto_resize():
-        dut.main(1)
+    dut.main(1)
 
 
 def test_setattr_resize():
@@ -289,25 +291,7 @@ def test_setattr_resize():
             return self.a
 
     dut = A()
-    with HW.auto_resize():
-        dut.main(Sfix(0.1234, 0, -24))
-        assert dut.next.a.left == 0
-        assert dut.next.a.right == -2
-        print(dut.next.a)
 
-
-def test_initial_self_next():
-    """ next should have this also, problem when it dissapeared after update_self """
-    class A(HW):
-        def __init__(self):
-            self.a = Sfix(0, 0, -2)
-
-        def main(self, a):
-            self.a = a
-            return self.a
-
-    dut = A()
-    assert hasattr(dut._pyha_initial_self.next, '_pyha_initial_self')
-
-    dut._pyha_update_self()
-    assert hasattr(dut._pyha_initial_self.next, '_pyha_initial_self')
+    dut.main(Sfix(0.1234, 0, -24))
+    assert dut._next['a'].left == 0
+    assert dut._next['a'].right == -2

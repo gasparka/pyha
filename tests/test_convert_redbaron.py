@@ -25,7 +25,7 @@ def test_redbaron_call_simple():
     assert expect == y.dumps()
 
     x = 'self.moving_average.main(x)'
-    expect = 'unknown_type.main(self.next.moving_average, x)'
+    expect = 'unknown_type.main(self.moving_average, x)'
     y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
@@ -53,12 +53,12 @@ def test_redbaron_call_returns():
     assert expect == y.dumps()
 
     x = 'self.b = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=self.next.b)'
+    expect = 'self.a(self.a, ret_0=self.b)'
     y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
     x = 'self.b[0], self.b[1] = self.a(self.a)'
-    expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
+    expect = 'self.a(self.a, ret_0=self.b[0], ret_1=self.b[1])'
     y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
@@ -149,7 +149,7 @@ def test_convert_call_returns_multi(converter):
                 """)
 
     expect = textwrap.dedent("""\
-            d(self.\\next\\, ret_0=>b, ret_1=>self.\\next\\.a);""")
+            d(self, ret_0=>b, ret_1=>self.a);""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -193,7 +193,7 @@ def test_typed_def_call_submod_self_next(converter):
         procedure a(b: boolean) is
 
         begin
-            D_0.main(self.\\next\\.submod, b);
+            D_0.main(self.submod, b);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -237,7 +237,7 @@ def test_typed_def_call_submod_returns_self(converter):
         procedure a(b: boolean) is
 
         begin
-            D_0.main(self.submod, b, ret_0=>self.c);
+            D_0.main(self.submod, b, ret_0=>self.\\next\\.c);
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -294,8 +294,8 @@ def test_typed_def_for_call(converter):
         procedure f is
 
         begin
-            for \\_i_\\ in self.\\next\\.arr'range loop
-                D_0.call(self.\\next\\.arr(\\_i_\\));
+            for \\_i_\\ in self.arr'range loop
+                D_0.call(self.arr(\\_i_\\));
             end loop;
         end procedure;""")
     conv = converter(code, datamodel)
@@ -317,8 +317,8 @@ def test_typed_def_for_call_return(converter):
         procedure f is
             variable a: integer;
         begin
-            for \\_i_\\ in self.\\next\\.arr'range loop
-                D_0.call(self.\\next\\.arr(\\_i_\\), ret_0=>a);
+            for \\_i_\\ in self.arr'range loop
+                D_0.call(self.arr(\\_i_\\), ret_0=>a);
             end loop;
         end procedure;""")
     conv = converter(code, datamodel)
@@ -341,8 +341,8 @@ def test_typed_def_for_call_return_multi(converter):
             variable a: integer;
             variable b: boolean;
         begin
-            for \\_i_\\ in self.\\next\\.arr'range loop
-                D_0.call(self.\\next\\.arr(\\_i_\\), ret_0=>a, ret_1=>b);
+            for \\_i_\\ in self.arr'range loop
+                D_0.call(self.arr(\\_i_\\), ret_0=>a, ret_1=>b);
             end loop;
         end procedure;""")
     conv = converter(code, datamodel)
@@ -439,8 +439,8 @@ def test_typed_def_for_combined(converter):
             variable outs: integer_list_t(0 to 3);
         begin
             outs := (0, 0, 0, 0);
-            for i in self.\\next\\.arr'range loop
-                D_0.main(self.\\next\\.arr(i), x, ret_0=>outs(i));
+            for i in self.arr'range loop
+                D_0.main(self.arr(i), x, ret_0=>outs(i));
 
             end loop;
             ret_0 := outs(0);
@@ -488,7 +488,7 @@ def test_enum_self_var_assign(converter):
         procedure f is
 
         begin
-            self.a := ENUMVALUE;
+            self.\\next\\.a := ENUMVALUE;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -544,35 +544,39 @@ class TestAutoResize:
                 self.int_reg = a
                 self.complex_reg = ComplexSfix(0.45 + 0.88j)
                 b = self.sfix_reg
-                self.submod_reg.next.int_reg = a
+                self.submod_reg.int_reg = a
                 self.int_list[0] = a
-                self.submod_list[1].next.int_reg = a
-                c = self.submod_list[1].next.sfix_reg
+                self.submod_list[1].int_reg = a
+                c = self.submod_list[1].sfix_reg
 
                 # subjects
                 self.sfix_reg = a
-                self.submod_reg.next.sfix_reg = a
+                self.submod_reg.sfix_reg = a
                 self.sfix_list[0] = a
-                self.submod_list[1].next.sfix_reg = a
+                self.submod_list[1].sfix_reg = a
                 self.complex_reg.real = a
                 self.complex_reg.imag = a
 
         self.dut = T0()
         self.dut.main(Sfix(0))
         self.red_node = get_objects_rednode(self.dut)
+        f = self.red_node.find('def', name='__init__')
+        f.parent.remove(f)
         self.datamodel = DataModel(self.dut)
         VHDLType.set_datamodel(self.datamodel)
 
     def test_find(self):
         """ Test all assignments that could be potential subjects, has no type info """
-        expect = ['self.complex_reg = ComplexSfix(0.45 + 0.88j)',
-                  'self.submod_reg.next.int_reg = a',
+        expect = [
+                  'self.int_reg = a',
+                 'self.complex_reg = ComplexSfix(0.45 + 0.88j)',
+                  'self.submod_reg.int_reg = a',
                   'self.int_list[0] = a',
-                  'self.submod_list[1].next.int_reg = a',
+                  'self.submod_list[1].int_reg = a',
                   'self.sfix_reg = a',
-                  'self.submod_reg.next.sfix_reg = a',
+                  'self.submod_reg.sfix_reg = a',
                   'self.sfix_list[0] = a',
-                  'self.submod_list[1].next.sfix_reg = a',
+                  'self.submod_list[1].sfix_reg = a',
                   'self.complex_reg.real = a',
                   'self.complex_reg.imag = a']
 
@@ -582,9 +586,9 @@ class TestAutoResize:
     def test_filter(self):
         """ Subjects shall be of Sfix type """
         expect_nodes = ['self.sfix_reg = a',
-                        'self.submod_reg.next.sfix_reg = a',
+                        'self.submod_reg.sfix_reg = a',
                         'self.sfix_list[0] = a',
-                        'self.submod_list[1].next.sfix_reg = a',
+                        'self.submod_list[1].sfix_reg = a',
                         'self.complex_reg.real = a',
                         'self.complex_reg.imag = a'
                         ]
@@ -604,9 +608,9 @@ class TestAutoResize:
 
     def test_apply(self):
         expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
-                        'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.submod_reg.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
                         'self.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
-                        'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.submod_list[1].sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
                         'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
                         'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
                         ]

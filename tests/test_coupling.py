@@ -399,13 +399,13 @@ def test_typed_def_infer_variable_self_reject(converter):
     code = textwrap.dedent("""\
         def a(b):
             self.c = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': True})
     expect = textwrap.dedent("""\
 
         procedure a(b: boolean) is
 
         begin
-            self.c := b;
+            self.\\next\\.c := b;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -416,13 +416,13 @@ def test_typed_def_infer_variable_self_indexing(converter):
     code = textwrap.dedent("""\
         def a(b):
             self.c[0] = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
+    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
     expect = textwrap.dedent("""\
 
         procedure a(b: boolean) is
 
         begin
-            self.c(0) := b;
+            self.\\next\\.c(0) := b;
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
@@ -593,7 +593,7 @@ def test_typed_def_complex(converter):
         'l': True,
         'o': Sfix(12, 12, -12)
     }},
-        self_data={'b': 12})
+        self_data={'b': 12, 'a': True})
 
     expect = textwrap.dedent("""\
 
@@ -601,9 +601,9 @@ def test_typed_def_complex(converter):
             variable o: sfixed(12 downto -12);
         begin
             o := h;
-            self.a := l;
+            self.\\next\\.a := l;
             ret_0 := a;
-            ret_1 := self.\\next\\.b;
+            ret_1 := self.b;
             return;
         end procedure;""")
     conv = converter(code, datamodel)

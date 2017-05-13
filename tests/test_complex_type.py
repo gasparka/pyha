@@ -77,7 +77,7 @@ class TestRegister:
                 self.reg = ComplexSfix(0.5 + 1.2j, 1, -12)
 
             def main(self, x):
-                self.next.reg = x
+                self.reg = x
                 return self.reg
 
         self.dut = A()
@@ -86,7 +86,7 @@ class TestRegister:
     def test_delay(self):
         next = ComplexSfix(1 + 1j, 1, -12)
         self.dut.main(ComplexSfix(1 + 1j, 1, -12))
-        assert self.dut.next.reg == next
+        assert self.dut._next['reg'] == next
         assert self.dut.reg != next
 
     # def test_reg_self_consistensy(self):
@@ -187,7 +187,7 @@ class TestShiftReg:
                             ComplexSfix(0.1 + 1.2j, 1, -18), ComplexSfix(0.2 - 1.2j, 1, -18)]
 
             def main(self, x):
-                self.next.reg = [x] + self.reg[:-1]
+                self.reg = [x] + self.reg[:-1]
                 return self.reg[-1]
 
         self.dut = A1()
@@ -223,10 +223,10 @@ class TestMoreRegisters:
                 self.reg2 = ComplexSfix(0.68 - 0.987j, 1, -12)
 
             def main(self, x0, x1, x2):
-                self.next.reg0 = x0
-                self.next.reg0 = x0
-                self.next.reg1 = x1
-                self.next.reg2 = x2
+                self.reg0 = x0
+                self.reg0 = x0
+                self.reg1 = x1
+                self.reg2 = x2
                 return self.reg0, self.reg1, self.reg2
 
         self.dut = A3()
@@ -298,8 +298,8 @@ class TestRegisterIQ:
                 self._delay = 1
 
             def main(self, x0):
-                self.next.reg.real = x0.real
-                self.next.reg.imag = x0.imag
+                self.reg.real = x0.real
+                self.reg.imag = x0.imag
                 return self.reg
 
         self.dut = A4()
@@ -324,24 +324,24 @@ class TestRegisterIQ:
 
     def test_comp_reg_delay(self):
         next = ComplexSfix(1 + 1j, 1, -18)
-        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut._next['reg'].real)
+        assert id(self.dut.reg._imag) != id(self.dut._next['reg'].imag)
 
         self.dut.main(next)
 
-        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut._next['reg'].real)
+        assert id(self.dut.reg._imag) != id(self.dut._next['reg'].imag)
 
         self.dut._pyha_update_self()
 
-        assert id(self.dut.reg._real) != id(self.dut.next.reg.real)
-        assert id(self.dut.reg._imag) != id(self.dut.next.reg.imag)
+        assert id(self.dut.reg._real) != id(self.dut._next['reg'].real)
+        assert id(self.dut.reg._imag) != id(self.dut._next['reg'].imag)
 
         next = ComplexSfix(2 + 2j, 1, -18)
         self.dut.main(next)
 
-        assert self.dut.next.reg.real == next._real
-        assert self.dut.next.reg.imag == next._imag
+        assert self.dut._next['reg'].real == next._real
+        assert self.dut._next['reg'].imag == next._imag
 
         assert self.dut.reg._real != next._real
         assert self.dut.reg._imag != next._imag
@@ -367,7 +367,7 @@ class TestComplexReturn:
                 self.reg0 = ComplexSfix()
 
             def main(self, x0, x1, x2, x3):
-                self.next.reg0 = ComplexSfix(x0, x1)
+                self.reg0 = ComplexSfix(x0, x1)
                 ret = ComplexSfix(x2, x3)
                 return self.reg0, ret
 
