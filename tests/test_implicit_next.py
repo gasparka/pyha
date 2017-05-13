@@ -221,6 +221,75 @@ class TestSubmodule:
         x = [1, 2, 3]
 
         dut = self.T4()
-        assert_sim_match(dut, None, x, dir_path='/home/gaspar/git/pyha/playground')
+        assert_sim_match(dut, None, x)
 
+
+class TestSubmoduleList:
+    class T5Sub(HW):
+        def __init__(self):
+            self.i = 1
+            self.i2 = 2
+
+        def main(self, i):
+            self.i = i
+            return self.i
+
+    class T5(HW):
+        def __init__(self):
+            self.sub = [TestSubmoduleList.T5Sub(), TestSubmoduleList.T5Sub()]
+            self.i = 0
+
+        def main(self, i):
+            self.i = self.sub[0].main(i)
+            self.sub[0].i2 = i
+            self.sub[1].i2 = i
+            return self.i, self.sub[0].i, self.sub[1].i, self.sub[0].i2, self.sub[1].i2
+
+    def test_basic(self):
+        dut = self.T5()
+        dut._pyha_update_self()
+
+        assert dut.i == 0
+        assert dut._next['i'] == 0
+        assert dut.sub[0].i2 == 2
+        assert dut.sub[0].i == 1
+        assert dut.sub[0]._next['i'] == 1
+        assert dut.sub[0]._next['i2'] == 2
+        assert dut.sub[1].i2 == 2
+        assert dut.sub[1].i == 1
+        assert dut.sub[1]._next['i'] == 1
+        assert dut.sub[1]._next['i2'] == 2
+
+        with HW.implicit_next():
+            dut.main(15)
+
+        assert dut.i == 0
+        assert dut._next['i'] == 1
+        assert dut.sub[0].i2 == 2
+        assert dut.sub[0].i == 1
+        assert dut.sub[0]._next['i'] == 15
+        assert dut.sub[0]._next['i2'] == 15
+        assert dut.sub[1].i2 == 2
+        assert dut.sub[1].i == 1
+        assert dut.sub[1]._next['i'] == 1
+        assert dut.sub[1]._next['i2'] == 15
+
+        dut._pyha_update_self()
+
+        assert dut.i == 1
+        assert dut._next['i'] == 1
+        assert dut.sub[0].i2 == 15
+        assert dut.sub[0].i == 15
+        assert dut.sub[0]._next['i'] == 15
+        assert dut.sub[0]._next['i2'] == 15
+        assert dut.sub[1].i2 == 15
+        assert dut.sub[1].i == 1
+        assert dut.sub[1]._next['i'] == 1
+        assert dut.sub[1]._next['i2'] == 15
+
+    def test_simulate(self):
+        x = [1, 2, 3]
+
+        dut = self.T5()
+        assert_sim_match(dut, None, x)
 

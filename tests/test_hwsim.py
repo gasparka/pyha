@@ -67,9 +67,6 @@ def test_next_ids():
 
 def test_next_filter():
     """ Next should contain only convertible items, shall not contain any submodules """
-    class Ob:
-        pass
-
     class B(HW):
         pass
 
@@ -77,26 +74,16 @@ def test_next_filter():
         def __init__(self):
             self.a = 1
             self.b = Sfix()
-            self.bb = ComplexSfix()
-            self.bbb = [1, 2, 3, 4]
 
             # these shall not make it to 'next'
+            # self.bb = ComplexSfix()
+            self.bbb = [1, 2, 3, 4]
             self.c = B()
-            self.d = Ob()
-            self.e = np.array([1, 2, 3])
+            # self.e = np.array([1, 2, 3])
             self.f = [B(), B()]
 
     dut = A()
-
-    assert hasattr(dut.next, 'a')
-    assert hasattr(dut.next, 'b')
-    assert hasattr(dut.next, 'bb')
-    assert hasattr(dut.next, 'bbb')
-
-    assert not hasattr(dut.next, 'c')
-    assert not hasattr(dut.next, 'd')
-    assert not hasattr(dut.next, 'e')
-    assert not hasattr(dut.next, 'f')
+    assert dut._next == {'a': 1, 'b': Sfix()}
 
 
 def test_submodules_discovery():
