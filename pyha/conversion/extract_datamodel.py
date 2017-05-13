@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES, PyhaList
 from pyha.common.sfix import Sfix, ComplexSfix
 
 
@@ -21,6 +21,11 @@ def extract_datamodel(obj):
             continue
         if is_convertible(val):
             last = obj.__dict__[key]
+
+            if isinstance(val, PyhaList):
+                val = list(val)
+                last = list(last)
+
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
                 val = Sfix(val.init_val, last.left, last.right, last.overflow_style, last.round_style)
@@ -38,6 +43,7 @@ def extract_datamodel(obj):
                 first_id = val[0]._pyha_instance_id
                 for x in val:
                     x._pyha_instance_id = first_id
+
             ret.update({key: val})
     return ret
 
