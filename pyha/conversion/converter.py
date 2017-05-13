@@ -885,6 +885,9 @@ class ImplicitNext:
 
     self.a, self.b = call() -> self.next.a, self.next.b = call()
 
+    Special case, when ComplexSfix: NOT IMPLEMENTED
+    self.complx.real -> self.next.complx.real
+
     """
 
     @staticmethod

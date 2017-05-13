@@ -1,4 +1,6 @@
 import sys
+from collections import UserList
+from contextlib import suppress
 from copy import deepcopy, copy
 from enum import Enum
 
@@ -237,10 +239,9 @@ class Meta(type):
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
-        # Sfixed lists must be converted to SfixList class, need for setitem overload
         for k, v in ret.__dict__.items():
-            if isinstance(v, list) and isinstance(v[0], Sfix):
-                ret.__dict__[k] = SfixList(v, deepcopy(v[0]))
+            if isinstance(v, list):
+                ret.__dict__[k] = PyhaList(v, deepcopy(v[0]))
 
         # make ._next variable that holds 'next' state for primitives (lists and objects handle this itself)
         ret._next = {}
@@ -248,18 +249,7 @@ class Meta(type):
             if isinstance(v, int):
                 ret._next[k] = v
 
-        # register of submodules that need 'self update'
-        ret._pyha_submodules = []
-        # for k, v in ret.__dict__.items():
-        #     if k in PYHA_VARIABLES:
-        #         continue
-        #     if isinstance(v, HW):
-        #         ret._pyha_submodules.append(v)
-        #     elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
-        #         ret._pyha_submodules.append(v)
-
-        # save the initial self values
-        # all registers will be derived from these values!
+        # save the initial self values - all registers will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
@@ -289,6 +279,19 @@ def auto_resize(target, value):
                   overflow_style=target.overflow_style)
 
 
+class PyhaList(UserList):
+    def __init__(self, seq, type):
+        super().__init__(seq)
+        self.type = type
+        self._next = deepcopy(seq)
+
+    def __setitem__(self, i, y):
+        self._next[i] = y
+
+    def _pyha_update_self(self):
+        self.data = self._next[:]
+
+
 class SfixList(list):
     """ On assign to element resize the value """
 
@@ -316,12 +319,12 @@ class SfixList(list):
     def copy(self):
         return SfixList(super().copy(), self.type)
 
-    # these may be needed to support shift reg resizes
-    # def __add__(self, other):
-    #    assert 0
-    #
-    # def __radd__(self, other):
-    #     pass
+        # these may be needed to support shift reg resizes
+        # def __add__(self, other):
+        #    assert 0
+        #
+        # def __radd__(self, other):
+        #     pass
 
 
 class HW(with_metaclass(Meta)):
@@ -362,12 +365,9 @@ class HW(with_metaclass(Meta)):
         # update atoms
         self.__dict__.update(self._next)
 
-        # update submodules
-        for x in self._pyha_submodules:
-            if isinstance(x, list):
-                for item in x:
-                    item._pyha_update_self()
-            else:
+        # update all childs that have '_pyha_update_self()'
+        for x in self.__dict__.values():
+            with suppress(AttributeError):
                 x._pyha_update_self()
 
     def __setattr__(self, name, value):
@@ -376,6 +376,12 @@ class HW(with_metaclass(Meta)):
         """
         if not HW.implicit_next.enabled:
             self.__dict__[name] = value
+            return
+
+        if isinstance(value, list):
+            # example: self.i = [i] + self.i[:-1]
+            assert isinstance(self.__dict__[name], PyhaList)
+            self.__dict__[name]._next = value
             return
 
         self._next[name] = value
