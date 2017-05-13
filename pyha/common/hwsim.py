@@ -187,7 +187,9 @@ class PyhaFunc:
         self.calls += 1
 
         # # CALL IS HERE!
-        ret = self.call_with_locals_discovery(*args, **kwargs)
+        with HW.implicit_next():
+            with HW.auto_resize():
+                ret = self.call_with_locals_discovery(*args, **kwargs)
 
         self.last_return = ret
 
@@ -345,22 +347,24 @@ class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
 
     class auto_resize:
-        enabled = False
+        enabled = 0
 
         def __enter__(self):
-            HW.auto_resize.enabled = True
+            HW.auto_resize.enabled += 1
 
         def __exit__(self, type, value, traceback):
-            HW.auto_resize.enabled = False
+            HW.auto_resize.enabled -= 1
+            assert HW.auto_resize.enabled >= 0
 
     class implicit_next:
-        enabled = False
+        enabled = 0
 
         def __enter__(self):
-            HW.implicit_next.enabled = True
+            HW.implicit_next.enabled += 1
 
         def __exit__(self, type, value, traceback):
-            HW.implicit_next.enabled = False
+            HW.implicit_next.enabled -= 1
+            assert HW.implicit_next.enabled >= 0
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """

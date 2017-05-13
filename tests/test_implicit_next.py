@@ -23,8 +23,8 @@ class TestBuiltins:
         assert dut.b == True
         assert dut._next['b'] == True
 
-        with HW.implicit_next():
-            dut.main(2, False)
+
+        dut.main(2, False)
 
         assert dut.i == 1
         assert dut._next['i'] == 2
@@ -71,8 +71,7 @@ class TestBuiltinsList:
         assert dut.b._next == [True, False, True]
         assert not hasattr(dut._next, 'b')
 
-        with HW.implicit_next():
-            dut.main(2, False)
+        dut.main(2, False)
 
         assert dut.i == [1, 2, 3]
         assert dut.i._next == [2, 1, 2]
@@ -110,8 +109,7 @@ class TestSfix:
         assert dut.i == Sfix(0.1, 0, -17)
         assert dut._next['i'] == Sfix(0.1, 0, -17)
 
-        with HW.implicit_next():
-            dut.main(Sfix(0.5, 0, -17))
+        dut.main(Sfix(0.5, 0, -17))
 
         assert dut.i == Sfix(0.1, 0, -17)
         assert dut._next['i'] == Sfix(0.5, 0, -17)
@@ -148,8 +146,7 @@ class TestSfixList:
         assert dut.i._next == init
         assert not hasattr(dut._next, 'i')
 
-        with HW.implicit_next():
-            dut.main(Sfix(0.5, 0, -17))
+        dut.main(Sfix(0.5, 0, -17))
 
         assert dut.i == init
         assert dut.i._next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
@@ -198,8 +195,7 @@ class TestSubmodule:
         assert dut.sub._next['i'] == 1
         assert dut.sub._next['i2'] == 2
 
-        with HW.implicit_next():
-            dut.main(5)
+        dut.main(5)
 
         assert dut.i == 0
         assert dut.sub.i2 == 2
@@ -260,8 +256,8 @@ class TestSubmoduleList:
         assert dut.sub[1]._next['i'] == 1
         assert dut.sub[1]._next['i2'] == 2
 
-        with HW.implicit_next():
-            dut.main(15)
+
+        dut.main(15)
 
         assert dut.i == 0
         assert dut._next['i'] == 1

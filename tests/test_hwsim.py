@@ -109,7 +109,6 @@ def test_submodule_float_register():
 
 
     dut = A()
-    assert id(dut.b) == id(dut._pyha_submodules[0])
     assert dut.b.a == 1.0
     dut.main(2.0)
     dut._pyha_update_self()

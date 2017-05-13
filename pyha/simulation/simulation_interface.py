@@ -174,9 +174,7 @@ class Simulation:
             self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
             ret = []
             for x in args:
-                with HW.implicit_next():
-                    with HW.auto_resize():
-                        ret.append(self.model.main(*x))
+                ret.append(self.model.main(*x))
                 self.model._pyha_update_self()
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
