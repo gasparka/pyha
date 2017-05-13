@@ -17,7 +17,7 @@ class TestBasic:
                 self.reg = 0
 
             def main(self, x):
-                self.next.reg = x
+                self.reg = x
                 return self.reg
 
         class B(HW):
@@ -108,7 +108,7 @@ class TestDeepSubmodules:
 
             def main(self, x):
                 r = self.submodule.main(1)
-                self.next.reg = x
+                self.reg = x
                 return self.reg
 
         class B2(HW):
@@ -201,7 +201,7 @@ def test_for():
             self.reg = reg_init
 
         def main(self, x):
-            self.next.reg = x
+            self.reg = x
             return self.reg
 
     class B4(HW):

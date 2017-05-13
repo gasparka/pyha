@@ -44,9 +44,7 @@ def is_convertible(obj):
     allowed_types = [ComplexSfix, Sfix, int, bool, Const]
     if type(obj) in allowed_types:
         return True
-    elif isinstance(obj, list):
-        assert False
-    elif isinstance(obj, PyhaList):
+    elif isinstance(obj, (PyhaList, list)):
         # To check whether all elements are of the same type
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):

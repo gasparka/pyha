@@ -432,7 +432,7 @@ def test_typed_def_infer_variable_selfnext_indexing(converter):
     # should not create variable
     code = textwrap.dedent("""\
         def a(b):
-            self.next.c[0] = b""")
+            self.c[0] = b""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
     expect = textwrap.dedent("""\
 
@@ -449,7 +449,7 @@ def test_typed_def_infer_variable_selfnext_indexing_resize(converter):
     # should not create variable
     code = textwrap.dedent("""\
         def a(b):
-            self.next.c[0] = resize(b, size_res=self.x[i])""")
+            self.c[0] = resize(b, size_res=self.x[i])""")
     datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
     expect = textwrap.dedent("""\
 
@@ -584,7 +584,7 @@ def test_typed_def_complex(converter):
         def a(self, a, b=next):
             o = h
             self.a = l
-            return a, self.next.b""")
+            return a, self.b""")
 
     datamodel = DataModel(locals={'a': {
         'next': 1,

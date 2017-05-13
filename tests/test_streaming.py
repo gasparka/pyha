@@ -8,8 +8,8 @@ class Streaming(HW):
         self.valid = False
 
     def set_valid_data(self, data):
-        self.next.data = data
-        self.next.valid = True
+        self.data = data
+        self.valid = True
 
 
 class TestBasic:

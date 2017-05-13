@@ -24,7 +24,7 @@ def test_redbaron_call_simple():
     y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
-    x = 'self.next.moving_average.main(x)'
+    x = 'self.moving_average.main(x)'
     expect = 'unknown_type.main(self.next.moving_average, x)'
     y = redbaron_pycall_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
@@ -52,12 +52,12 @@ def test_redbaron_call_returns():
     y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
-    x = 'self.next.b = self.a(self.a)'
+    x = 'self.b = self.a(self.a)'
     expect = 'self.a(self.a, ret_0=self.next.b)'
     y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
 
-    x = 'self.next.b[0], self.next.b[1] = self.a(self.a)'
+    x = 'self.b[0], self.b[1] = self.a(self.a)'
     expect = 'self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])'
     y = redbaron_pycall_returns_to_vhdl(RedBaron(x)[0])
     assert expect == y.dumps()
@@ -105,14 +105,14 @@ def converter():
 def test_convert_call(converter):
     code = textwrap.dedent("""\
             def a():
-                self.next.moving_average.main(x)
+                self.moving_average.main(x)
                 """)
     expect = textwrap.dedent("""\
 
         procedure a is
 
         begin
-            unknown_type.main(self.\\next\\.moving_average, x);
+            unknown_type.main(self.moving_average, x);
         end procedure;""")
 
     conv = converter(code)
@@ -121,11 +121,11 @@ def test_convert_call(converter):
 
 def test_convert_call2(converter):
     code = textwrap.dedent("""\
-            self.next.d()
+            self.d()
             """)
 
     expect = textwrap.dedent("""\
-            d(self.\\next\\);""")
+            d(self);""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -133,11 +133,11 @@ def test_convert_call2(converter):
 
 def test_convert_call_returns(converter):
     code = textwrap.dedent("""\
-                b = self.next.d()
+                b = self.d()
                 """)
 
     expect = textwrap.dedent("""\
-            d(self.\\next\\, ret_0=>b);""")
+            d(self, ret_0=>b);""")
 
     conv = converter(code)
     assert expect == str(conv)
@@ -145,7 +145,7 @@ def test_convert_call_returns(converter):
 
 def test_convert_call_returns_multi(converter):
     code = textwrap.dedent("""\
-                b, self.next.a = self.next.d()
+                b, self.a = self.d()
                 """)
 
     expect = textwrap.dedent("""\
@@ -180,7 +180,7 @@ def test_typed_def_call_submod_self(converter):
 def test_typed_def_call_submod_self_next(converter):
     code = textwrap.dedent("""\
         def a(b):
-            self.next.submod.main(b)""")
+            self.submod.main(b)""")
 
     class D(HW):
         pass
@@ -282,7 +282,7 @@ def test_for_redbaron_self(converter):
 def test_typed_def_for_call(converter):
     code = textwrap.dedent("""\
             def f():
-                for x in self.next.arr:
+                for x in self.arr:
                     x.call()""")
 
     class D(HW):
@@ -305,7 +305,7 @@ def test_typed_def_for_call(converter):
 def test_typed_def_for_call_return(converter):
     code = textwrap.dedent("""\
             def f():
-                for x in self.next.arr:
+                for x in self.arr:
                     a = x.call()""")
 
     class D(HW):
@@ -328,7 +328,7 @@ def test_typed_def_for_call_return(converter):
 def test_typed_def_for_call_return_multi(converter):
     code = textwrap.dedent("""\
             def f():
-                for x in self.next.arr:
+                for x in self.arr:
                     a, b = x.call()""")
 
     class D(HW):
@@ -423,8 +423,8 @@ def test_typed_def_for_combined(converter):
     code = textwrap.dedent("""\
         def b():
             outs = [0, 0, 0, 0]
-            for i in range(len(self.next.arr)):
-                outs[i] = self.next.arr[i].main(x)
+            for i in range(len(self.arr)):
+                outs[i] = self.arr[i].main(x)
 
             return outs[0]""")
 
@@ -542,20 +542,20 @@ class TestAutoResize:
                 # not subjects to resize conversion
                 # some may be rejected due to type
                 self.int_reg = a
-                self.next.complex_reg = ComplexSfix(0.45 + 0.88j)
-                b = self.next.sfix_reg
+                self.complex_reg = ComplexSfix(0.45 + 0.88j)
+                b = self.sfix_reg
                 self.submod_reg.next.int_reg = a
-                self.next.int_list[0] = a
+                self.int_list[0] = a
                 self.submod_list[1].next.int_reg = a
                 c = self.submod_list[1].next.sfix_reg
 
                 # subjects
-                self.next.sfix_reg = a
+                self.sfix_reg = a
                 self.submod_reg.next.sfix_reg = a
-                self.next.sfix_list[0] = a
+                self.sfix_list[0] = a
                 self.submod_list[1].next.sfix_reg = a
-                self.next.complex_reg.real = a
-                self.next.complex_reg.imag = a
+                self.complex_reg.real = a
+                self.complex_reg.imag = a
 
         self.dut = T0()
         self.dut.main(Sfix(0))
@@ -565,28 +565,28 @@ class TestAutoResize:
 
     def test_find(self):
         """ Test all assignments that could be potential subjects, has no type info """
-        expect = ['self.next.complex_reg = ComplexSfix(0.45 + 0.88j)',
+        expect = ['self.complex_reg = ComplexSfix(0.45 + 0.88j)',
                   'self.submod_reg.next.int_reg = a',
-                  'self.next.int_list[0] = a',
+                  'self.int_list[0] = a',
                   'self.submod_list[1].next.int_reg = a',
-                  'self.next.sfix_reg = a',
+                  'self.sfix_reg = a',
                   'self.submod_reg.next.sfix_reg = a',
-                  'self.next.sfix_list[0] = a',
+                  'self.sfix_list[0] = a',
                   'self.submod_list[1].next.sfix_reg = a',
-                  'self.next.complex_reg.real = a',
-                  'self.next.complex_reg.imag = a']
+                  'self.complex_reg.real = a',
+                  'self.complex_reg.imag = a']
 
         out = [str(x) for x in AutoResize.find(self.red_node)]
         assert out == expect
 
     def test_filter(self):
         """ Subjects shall be of Sfix type """
-        expect_nodes = ['self.next.sfix_reg = a',
+        expect_nodes = ['self.sfix_reg = a',
                         'self.submod_reg.next.sfix_reg = a',
-                        'self.next.sfix_list[0] = a',
+                        'self.sfix_list[0] = a',
                         'self.submod_list[1].next.sfix_reg = a',
-                        'self.next.complex_reg.real = a',
-                        'self.next.complex_reg.imag = a'
+                        'self.complex_reg.real = a',
+                        'self.complex_reg.imag = a'
                         ]
 
         expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
@@ -603,12 +603,12 @@ class TestAutoResize:
         assert expect_types == passed_types
 
     def test_apply(self):
-        expect_nodes = ['self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
+        expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
                         'self.submod_reg.next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
-                        'self.next.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
+                        'self.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
                         'self.submod_list[1].next.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
-                        'self.next.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
-                        'self.next.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
+                        'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
                         ]
 
         nodes = AutoResize.apply(self.red_node)
@@ -662,6 +662,7 @@ class TestImplicitNext:
         red = RedBaron(code)
         ImplicitNext.apply(red)
         assert red.dumps() == expect
+
 
     def test_call_multi_return(self):
         code = 'self.a, self.b[i], local = self.call()'

@@ -15,7 +15,7 @@ class TestDatamodel:
                 self.a = Sfix(0.56)
 
             def main(self):
-                self.next.a = Sfix(0.0, 0, -10)
+                self.a = Sfix(0.0, 0, -10)
 
         expect = {'a': Sfix(0.56, 0, -10)}
         dut = A()
@@ -45,7 +45,7 @@ class TestDatamodel:
                 self.a = Sfix(0.56)
 
             def main(self):
-                self.next.a = Sfix(0.0, 0, -10)
+                self.a = Sfix(0.0, 0, -10)
 
         expect = {'a': Sfix(0.56, 0, -10)}
         dut = A()
@@ -108,7 +108,7 @@ class TestDatamodel:
                 self.b = [Sfix(-1.4), Sfix(2.5), Sfix(-0.52)]
 
             def main(self):
-                self.next.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
+                self.b = [Sfix(0.0, 2, -18), Sfix(0.0, 2, -18), Sfix(0.0, 2, -18)]
 
         expect = {'b': [Sfix(-1.4, 2, -18), Sfix(2.5, 2, -18), Sfix(-0.52, 2, -18)]}
 
@@ -125,7 +125,7 @@ class TestDatamodel:
                 self.a = 20
 
             def main(self):
-                self.next.a = 162
+                self.a = 162
 
         expect = {'a': 20}
 
@@ -142,7 +142,7 @@ class TestDatamodel:
                 self.b = [0] * 10
 
             def main(self):
-                self.next.b = [25] * 10
+                self.b = [25] * 10
 
         expect = {'b': [0] * 10}
         dut = A()
@@ -158,7 +158,7 @@ class TestDatamodel:
                 self.b = True
 
             def main(self):
-                self.next.b = False
+                self.b = False
 
         expect = {'b': True}
         dut = A()
@@ -174,7 +174,7 @@ class TestDatamodel:
                 self.b = [True, False]
 
             def main(self):
-                self.next.b = [False, False]
+                self.b = [False, False]
 
         expect = {'b': [True, False]}
         dut = A()
@@ -227,7 +227,7 @@ class TestDatamodel:
                 self.c = self.b.tolist()
 
             def main(self, *args, **kwargs):
-                self.next.c = [3, 3, 3]
+                self.c = [3, 3, 3]
 
         expect = {'inte': 20, 'fix': [Sfix(-10, 8, -10)] * 10, 'c': [1, 2, 3]}
         dut = A()
@@ -348,7 +348,7 @@ class TestLocals:
                 self.a = 15
 
             def main(self, b):
-                self.next.a = b
+                self.a = b
 
         expect = {
             'main':
