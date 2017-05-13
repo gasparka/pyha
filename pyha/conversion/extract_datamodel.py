@@ -69,7 +69,7 @@ def extract_locals(obj):
 
 
 class DataModel:
-    def __init__(self, obj=None, self_data=None, locals=None):
+    def __init__(self, obj=None, self_data=None, locals=None, skip_locals=False):
         self.obj = obj
         if obj is None:
             self.self_data = None if self_data is None else self_data
@@ -84,7 +84,7 @@ class DataModel:
             dm_clean = {k: v for k, v in dm.items() if k not in constants}
             if len(dm_clean) == 0:
                 dm_clean['much_dummy_very_wow'] = 0  # this simplifies many testing code
-            loc = extract_locals(obj)
+            loc = {} if skip_locals else extract_locals(obj)
             self.self_data = dm_clean
             self.locals = loc
             self.constants = constants

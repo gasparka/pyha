@@ -291,5 +291,5 @@ class TestSubmoduleList:
         x = [1, 2, 3]
 
         dut = self.T5()
-        assert_sim_match(dut, None, x)
+        assert_sim_match(dut, None, x, dir_path='/home/gaspar/git/pyha/playground')
 

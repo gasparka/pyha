@@ -285,16 +285,27 @@ def auto_resize(target, value):
 
 
 class PyhaList(UserList):
+    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, seq, type):
         super().__init__(seq)
         self.type = type
         self._next = deepcopy(seq)
 
     def __setitem__(self, i, y):
-        self._next[i] = y
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            self[i] = y
+        else:
+            self._next[i] = y
 
     def _pyha_update_self(self):
-        self.data = self._next[:]
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            for x in self.data:
+                x._pyha_update_self()
+        else:
+            self.data = self._next[:]
+
 
 
 class SfixList(list):

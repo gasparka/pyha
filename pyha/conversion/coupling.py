@@ -75,7 +75,7 @@ def reset_maker(self_data, recursion_depth=0):
         # list of submodules
         elif isinstance(var_value, list) and isinstance(var_value[0], HW):
             for i, x in enumerate(var_value):
-                dm = DataModel(x)
+                dm = DataModel(x, skip_locals=True)
                 resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
                 vars = [f'{prefix}.{var_name}({i}){x}' for x in resets]
                 lines.extend(vars)
