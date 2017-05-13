@@ -86,7 +86,7 @@ class TestBuiltinsList:
         assert dut.b._next == [False, True, False]
 
     def test_simulate(self):
-        x = [[5,4,3,2,1,0], [False, True, False, False, True, False]]
+        x = [[5, 4, 3, 2, 1, 0], [False, True, False, False, True, False]]
         expected = [[3, 2, 1, 5, 4, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
