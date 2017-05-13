@@ -127,3 +127,40 @@ class TestSfix:
 
         dut = self.T2()
         assert_sim_match(dut, expected, x)
+
+class TestSfixList:
+    class T3(HW):
+        def __init__(self):
+            self.i = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
+
+        def main(self, i):
+            self.i[0] = i
+            self.i = [i] + self.i[:-1]
+            return self.i[-1]
+
+    def test_basic(self):
+        dut = self.T3()
+        dut._pyha_update_self()
+
+        init = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
+        assert dut.i == init
+        assert dut.i._next == init
+        assert not hasattr(dut._next, 'i')
+
+        with HW.implicit_next():
+            dut.main(Sfix(0.5, 0, -17))
+
+        assert dut.i == init
+        assert dut.i._next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
+
+        dut._pyha_update_self()
+
+        assert dut.i == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
+        assert dut.i._next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
+
+    def test_simulate(self):
+        x = [0.1, 0.2, 0.3]
+        expected = [0.2, 0.1, 0.1]
+
+        dut = self.T3()
+        assert_sim_match(dut, expected, x)
