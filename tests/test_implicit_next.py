@@ -1,4 +1,5 @@
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
@@ -42,7 +43,7 @@ class TestBuiltins:
         expected = [[1, 5, 2], [True, False, True]]
 
         dut = self.T0()
-        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+        assert_sim_match(dut, expected, *x)
 
 
 class TestBuiltinsList:
@@ -90,4 +91,39 @@ class TestBuiltinsList:
         expected = [[3, 2, 1, 5, 4, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
-        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL])
+        assert_sim_match(dut, expected, *x)
+
+
+class TestSfix:
+    class T2(HW):
+        def __init__(self):
+            self.i = Sfix(0.1, 0, -17)
+
+        def main(self, i):
+            self.i = i
+            return self.i
+
+    def test_basic(self):
+        dut = self.T2()
+        dut._pyha_update_self()
+
+        assert dut.i == Sfix(0.1, 0, -17)
+        assert dut._next['i'] == Sfix(0.1, 0, -17)
+
+        with HW.implicit_next():
+            dut.main(Sfix(0.5, 0, -17))
+
+        assert dut.i == Sfix(0.1, 0, -17)
+        assert dut._next['i'] == Sfix(0.5, 0, -17)
+
+        dut._pyha_update_self()
+
+        assert dut.i == Sfix(0.5, 0, -17)
+        assert dut._next['i'] == Sfix(0.5, 0, -17)
+
+    def test_simulate(self):
+        x = [0.1, 0.2, 0.3]
+        expected = [0.1, 0.1, 0.2]
+
+        dut = self.T2()
+        assert_sim_match(dut, expected, x)

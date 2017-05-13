@@ -245,11 +245,12 @@ class Meta(type):
             if isinstance(v, list):
                 ret.__dict__[k] = PyhaList(v, deepcopy(v[0]))
 
-        # make ._next variable that holds 'next' state for primitives (lists and objects handle this itself)
+        # make ._next variable that holds 'next' state for elements that dont know how to update themself
         ret._next = {}
         for k, v in ret.__dict__.items():
-            if isinstance(v, int):
-                ret._next[k] = v
+            if hasattr(v, '_pyha_update_self'):
+                continue
+            ret._next[k] = v
 
         # save the initial self values - all registers will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
@@ -257,7 +258,7 @@ class Meta(type):
         # every call to 'main' will append returned values here
         ret._outputs = []
 
-        # decorate all methods
+        # decorate all methods -> for locals discovery
         for method_str in dir(ret):
             if method_str in SKIP_FUNCTIONS:
                 continue
