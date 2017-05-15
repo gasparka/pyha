@@ -5,9 +5,13 @@ from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
+
+from pyha.common import shit
 from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
+
+from pyha.common.shit import implicit_next_enabled, auto_resize_enabled
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -72,13 +76,7 @@ def deepish_copy(org):
             try:
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
-                # out[k] = v
-                # # Without this assign to imag or real will fuck up everything
-                # out[k] = deepcopy(v)
-                if isinstance(v, ComplexSfix):
-                    out[k] = deepcopy(v)
-                else:
-                    out[k] = v  # ints
+                out[k] = v  # ints
 
     return out
 
@@ -360,9 +358,11 @@ class HW(with_metaclass(Meta)):
 
         def __enter__(self):
             HW.auto_resize.enabled += 1
+            shit.auto_resize_enabled = HW.auto_resize.enabled
 
         def __exit__(self, type, value, traceback):
             HW.auto_resize.enabled -= 1
+            shit.auto_resize_enabled = HW.auto_resize.enabled
             assert HW.auto_resize.enabled >= 0
 
     class implicit_next:
@@ -370,10 +370,16 @@ class HW(with_metaclass(Meta)):
 
         def __enter__(self):
             HW.implicit_next.enabled += 1
+            shit.implicit_next_enabled = HW.implicit_next.enabled
 
         def __exit__(self, type, value, traceback):
             HW.implicit_next.enabled -= 1
+            shit.implicit_next_enabled = HW.implicit_next.enabled
             assert HW.implicit_next.enabled >= 0
+
+    # def is_local_object(self):
+    #     """ Object is created locally, because these are enabled only during the function calls """
+    #     return HW.implicit_next.enabled or HW.auto_resize.enabled
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
@@ -417,20 +423,4 @@ class HW(with_metaclass(Meta)):
             return
 
         self._next[name] = value
-        # if not HW.auto_resize.enabled:
-        #     self.__dict__[name] = value
-        #     return
-        #
-        # # this is only enabled for 'main' function
-        # if hasattr(self, '__pyha_is_next__'):
-        #     target = getattr(self._pyha_initial_self, name)
-        #     self.__dict__[name] = auto_resize(target, value)
-        #     return
-        #
-        # # else:
-        # #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
-        #
-        #
-        # # if hasattr(self, 'next')
 
-        # self.__dict__[name] = value

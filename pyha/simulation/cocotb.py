@@ -107,8 +107,8 @@ class CocotbAuto(object):
             pass
         except subprocess.CalledProcessError as err:
             print('GHDL failed!')
-            import os
-            os._exit(-1)
+            # import os
+            # os._exit(-1)
 
         outp = np.load(str(self.base_path / 'output.npy'))
         outp = outp.astype(object)

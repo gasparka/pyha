@@ -2,6 +2,7 @@ import collections
 
 import numpy as np
 import scipy
+from pyha.common.hwsim import HW
 from scipy import signal
 
 
@@ -128,6 +129,9 @@ def plot_freqz(b):
     plt.grid()
     plt.axis('tight')
     plt.show()
+
+
+
 
 
 # # https://se.mathworks.com/matlabcentral/newsreader/view_thread/154499
