@@ -24,8 +24,7 @@ def test_basic():
 
     r = debug_assert_sim_match(dut, None, inputs,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/playground')
+                     rtol=1e-4)
 
     print(r)
 
@@ -52,8 +51,7 @@ def test_basic2():
 
     r = debug_assert_sim_match(dut, None, inputs, b,
                      simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/playground')
+                     rtol=1e-4)
 
     print(r)
 
