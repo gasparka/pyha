@@ -168,16 +168,15 @@ class TestComplex:
     def test_basic(self):
         dut = self.A2(fixed_saturate, fixed_round)
 
-        with HW.auto_resize():
-            dut.main(Sfix(0.1, 2, -27))
+        dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.real.left == 0
-            assert dut.next.a.real.right == -4
-            assert dut.next.a.real.val == 0.125
+        assert dut.a._next['real'].left == 0
+        assert dut.a._next['real'].right == -4
+        assert dut.a._next['real'].val == 0.125
 
-            assert dut.next.a.imag.left == 0
-            assert dut.next.a.imag.right == -4
-            assert dut.next.a.imag.val == 0.125
+        assert dut.a._next['imag'].left == 0
+        assert dut.a._next['imag'].right == -4
+        assert dut.a._next['imag'].val == 0.125
 
     def test_round(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -340,20 +339,17 @@ class TestLazyComplexSfix:
     def test_basic(self):
         dut = self.A5()
 
-        with HW.auto_resize():
-            dut.main(Sfix(0.1, 2, -27))
+        dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.real.left == 2
-            assert dut.next.a.real.right == -27
-            assert dut.next.a.real.val == 0.10000000149011612
-
-            assert dut.next.b.imag.left == 1
-            assert dut.next.b.imag.right == -27
-            assert dut.next.b.imag.val == 0.10000000149011612
-
-            assert dut.next.c.real.left == 2
-            assert dut.next.c.real.right == -4
-            assert dut.next.c.real.val == 0.125
+        assert dut.a._next['real'].left == 2
+        assert dut.a._next['real'].right == -27
+        assert dut.a._next['real'].val == 0.10000000149011612
+        assert dut.b._next['imag'].left == 1
+        assert dut.b._next['imag'].right == -27
+        assert dut.b._next['imag'].val == 0.10000000149011612
+        assert dut.c._next['real'].left == 2
+        assert dut.c._next['real'].right == -4
+        assert dut.c._next['real'].val == 0.125
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -394,13 +390,13 @@ class TestAssignConstant:
             assert dut._next['b'].right == -17
             assert dut._next['b'].val == -2
 
-            assert dut._next['c'].real.left == 0
-            assert dut._next['c'].real.right == -17
-            assert dut._next['c'].real.val == 0.779998779296875
+            assert dut.c._next['real'].left == 0
+            assert dut.c._next['real'].right == -17
+            assert dut.c._next['real'].val == 0.779998779296875
 
-            assert dut._next['c'].imag.left == 0
-            assert dut._next['c'].imag.right == -17
-            assert dut._next['c'].imag.val == -0.55999755859375
+            assert dut.c._next['imag'].left == 0
+            assert dut.c._next['imag'].right == -17
+            assert dut.c._next['imag'].val == -0.55999755859375
 
     def test_sim(self):
         x = [1, 2]

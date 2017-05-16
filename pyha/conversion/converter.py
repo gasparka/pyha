@@ -896,6 +896,10 @@ class ImplicitNext:
                 loc = len(x) - 1
                 if isinstance(x[loc], GetitemNode):
                     loc -= 1
+
+                # fixme: ComplexSfix ralated hack
+                if str(x[len(x)-1]) in ('real', 'imag'):
+                    loc -= 1
                 x.insert(loc, 'next')
 
         assigns = red_node.find_all('assign')
