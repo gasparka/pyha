@@ -1,11 +1,17 @@
 import sys
+from collections import UserList
+from contextlib import suppress
 from copy import deepcopy, copy
 from enum import Enum
 
 import numpy as np
+
+from pyha.common import shit
 from pyha.common.const import Const
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
+
+from pyha.common.shit import implicit_next_enabled, auto_resize_enabled
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -42,7 +48,7 @@ def is_convertible(obj):
     allowed_types = [ComplexSfix, Sfix, int, bool, Const]
     if type(obj) in allowed_types:
         return True
-    elif isinstance(obj, list):
+    elif isinstance(obj, (PyhaList, list)):
         # To check whether all elements are of the same type
         if len(set(map(type, obj))) == 1:
             if all(type(x) in allowed_types for x in obj):
@@ -70,13 +76,7 @@ def deepish_copy(org):
             try:
                 out[k] = v[:]  # lists, tuples, strings, unicode
             except TypeError:
-                # out[k] = v
-                # # Without this assign to imag or real will fuck up everything
-                # out[k] = deepcopy(v)
-                if isinstance(v, ComplexSfix):
-                    out[k] = deepcopy(v)
-                else:
-                    out[k] = v  # ints
+                out[k] = v  # ints
 
     return out
 
@@ -185,8 +185,12 @@ class PyhaFunc:
         self.calls += 1
 
         # # CALL IS HERE!
-        ret = self.call_with_locals_discovery(*args, **kwargs)
+        with HW.implicit_next():
+            with HW.auto_resize():
+                ret = self.call_with_locals_discovery(*args, **kwargs)
 
+        # fixme: ComplexSfix related hack, can remove later
+        ret = deepcopy(ret)
         self.last_return = ret
 
         real_self._outputs.append(ret)
@@ -200,6 +204,7 @@ class Meta(type):
     instance_count = 0
 
     def validate_datamodel(cls, dict):
+        # TODO: not required actually?
         # if list of submodules, make sure all 'constants' are the same
         for x in dict.values():
             if isinstance(x, list) and isinstance(x[0], HW):
@@ -236,45 +241,26 @@ class Meta(type):
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
 
-        # Sfixed lists must be converted to SfixList class, need for setitem overload
         for k, v in ret.__dict__.items():
-            if isinstance(v, list) and isinstance(v[0], Sfix):
-                ret.__dict__[k] = SfixList(v, deepcopy(v[0]))
+            if isinstance(v, list):
+                ret.__dict__[k] = PyhaList(v, deepcopy(v[0]))
 
-        # make .next variable
-        ret.next = deepcopy(ret)
-        ret.next.__dict__.clear()
+        # make ._next variable that holds 'next' state for elements that dont know how to update themself
+        ret._next = {}
         for k, v in ret.__dict__.items():
-            if isinstance(v, HW) \
-                    or k in PYHA_VARIABLES \
-                    or (isinstance(v, list) and isinstance(v[0], HW)):
+            if k in ['__dict__', '_next', '_pyha_constants', '_pyha_instance_id']:
                 continue
-            if is_convertible(v):
-                setattr(ret.next, k, deepcopy(v))
-
-        ret.next.__pyha_is_next__ = True
-
-        # register of submodules that need 'self update'
-        ret._pyha_submodules = []
-        for k, v in ret.__dict__.items():
-            if k in PYHA_VARIABLES:
+            if hasattr(v, '_pyha_update_self'):
                 continue
-            if isinstance(v, HW):
-                ret._pyha_submodules.append(v)
-            elif isinstance(v, list) and v != [] and isinstance(v[0], HW):
-                ret._pyha_submodules.append(v)
+            ret._next[k] = deepcopy(v)
 
-        # save the initial self values
-        # all registers will be derived from these values!
-        # next needs this because it is used inside __setattr__
-        ret.next.__dict__['_pyha_initial_self'] = deepcopy(ret)
-
+        # save the initial self values - all registers and initial values will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
         ret._outputs = []
 
-        # decorate all methods
+        # decorate all methods -> for locals discovery
         for method_str in dir(ret):
             if method_str in SKIP_FUNCTIONS:
                 continue
@@ -296,6 +282,39 @@ def auto_resize(target, value):
 
     return resize(value, left, right, round_style=target.round_style,
                   overflow_style=target.overflow_style)
+
+
+class PyhaList(UserList):
+    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
+    def __init__(self, seq, type):
+        super().__init__(seq)
+        self.type = type
+        self._next = deepcopy(seq)
+
+    def __setitem__(self, i, y):
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            self[i] = y
+        else:
+            if isinstance(self.type, Sfix):
+                y = auto_resize(self.type, y)
+
+                if self.type.left is None:
+                    self.type.left = y.left
+
+                if self.type.right is None:
+                    self.type.right = y.right
+
+            self._next[i] = y
+
+    def _pyha_update_self(self):
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            for x in self.data:
+                x._pyha_update_self()
+        else:
+            self.data = self._next[:]
+
 
 
 class SfixList(list):
@@ -325,25 +344,44 @@ class SfixList(list):
     def copy(self):
         return SfixList(super().copy(), self.type)
 
-    # these may be needed to support shift reg resizes
-    # def __add__(self, other):
-    #    assert 0
-    #
-    # def __radd__(self, other):
-    #     pass
+        # these may be needed to support shift reg resizes
+        # def __add__(self, other):
+        #    assert 0
+        #
+        # def __radd__(self, other):
+        #     pass
 
 
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
 
     class auto_resize:
-        enabled = False
+        enabled = 0
 
         def __enter__(self):
-            HW.auto_resize.enabled = True
+            HW.auto_resize.enabled += 1
+            shit.auto_resize_enabled = HW.auto_resize.enabled
 
         def __exit__(self, type, value, traceback):
-            HW.auto_resize.enabled = False
+            HW.auto_resize.enabled -= 1
+            shit.auto_resize_enabled = HW.auto_resize.enabled
+            assert HW.auto_resize.enabled >= 0
+
+    class implicit_next:
+        enabled = 0
+
+        def __enter__(self):
+            HW.implicit_next.enabled += 1
+            shit.implicit_next_enabled = HW.implicit_next.enabled
+
+        def __exit__(self, type, value, traceback):
+            HW.implicit_next.enabled -= 1
+            shit.implicit_next_enabled = HW.implicit_next.enabled
+            assert HW.implicit_next.enabled >= 0
+
+    # def is_local_object(self):
+    #     """ Object is created locally, because these are enabled only during the function calls """
+    #     return HW.implicit_next.enabled or HW.auto_resize.enabled
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
@@ -359,36 +397,32 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        init = self._pyha_initial_self  # protect from overwrite
-        self.__dict__.update(deepish_copy(self.next.__dict__))
-        self.__dict__['_pyha_initial_self'] = init
+        # update atoms
+        self.__dict__.update(self._next)
 
-        # update submodules
-        for x in self._pyha_submodules:
-            if isinstance(x, list):
-                for item in x:
-                    item._pyha_update_self()
-            else:
+        # update all childs that have '_pyha_update_self()'
+        for x in self.__dict__.values():
+            with suppress(AttributeError):
                 x._pyha_update_self()
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
-        if not HW.auto_resize.enabled:
+
+        if HW.auto_resize.enabled:
+            target = getattr(self._pyha_initial_self, name)
+            value = auto_resize(target, value)
+
+        if not HW.implicit_next.enabled:
             self.__dict__[name] = value
             return
 
-        # this is only enabled for 'main' function
-        if hasattr(self, '__pyha_is_next__'):
-            target = getattr(self._pyha_initial_self, name)
-            self.__dict__[name] = auto_resize(target, value)
+        if isinstance(value, list):
+            # example: self.i = [i] + self.i[:-1]
+            assert isinstance(self.__dict__[name], PyhaList)
+            self.__dict__[name]._next = value
             return
 
-        # else:
-        #     raise Exception(f'Trying to assign into self.{name}, did you mean self.next.{name}? For debug purposes you can prepend you variable with "_dbg"!')
+        self._next[name] = value
 
-
-        # if hasattr(self, 'next')
-
-        self.__dict__[name] = value

@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW, SfixList
+from pyha.common.hwsim import HW, SfixList, PyhaList
 from pyha.common.sfix import Sfix, fixed_saturate, fixed_round, fixed_truncate, fixed_wrap, ComplexSfix
 from pyha.conversion.conversion import get_conversion_datamodel
 from pyha.conversion.coupling import reset_maker
@@ -13,18 +13,17 @@ class TestSfix:
             self._delay = 1
 
         def main(self, a):
-            self.next.a = a
+            self.a = a
             return self.a
 
     def test_basic(self):
         dut = self.A(fixed_saturate, fixed_round)
 
-        with HW.auto_resize():
-            dut.main(Sfix(0.1, 2, -27))
+        dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.left == 0
-            assert dut.next.a.right == -4
-            assert dut.next.a.val == 0.125
+        assert dut._next['a'].left == 0
+        assert dut._next['a'].right == -4
+        assert dut._next['a'].val == 0.125
 
     def test_round(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -69,8 +68,8 @@ class TestSfixList:
             self._delay = 1
 
         def main(self, a):
-            self.next.a[0] = a
-            self.next.a[1] = a
+            self.a[0] = a
+            self.a[1] = a
             return self.a[0], self.a[1]
 
     def test_sfixlist_operation(self):
@@ -86,19 +85,14 @@ class TestSfixList:
     def test_lists_to_sfixedlist(self):
         """ Metaclass shall turn lists of Sfix to SfixList """
         dut = self.A1(fixed_saturate, fixed_round)
-        assert type(dut.a) == SfixList
-        assert type(dut.next.a) == SfixList
-        assert type(dut._pyha_initial_self.a) == SfixList
-        assert type(dut._pyha_initial_self.next.a) == SfixList
+        assert type(dut.a) == PyhaList
+        assert type(dut._pyha_initial_self.a) == PyhaList
 
         # make sure types stay after sim
         assert_sim_match(dut, None, [0.1, 0.2], simulations=[SIM_HW_MODEL])
 
-        assert type(dut.a) == SfixList
-        assert type(dut.next.a) == SfixList
-        assert type(dut._pyha_initial_self.a) == SfixList
-        assert type(dut._pyha_initial_self.next.a) == SfixList
-
+        assert type(dut.a) == PyhaList
+        assert type(dut._pyha_initial_self.a) == PyhaList
 
     def test_basic(self):
         dut = self.A1(fixed_saturate, fixed_round)
@@ -106,13 +100,13 @@ class TestSfixList:
         with HW.auto_resize():
             dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a[0].left == 0
-            assert dut.next.a[0].right == -4
-            assert dut.next.a[0].val == 0.125
+            assert dut.a._next[0].left == 0
+            assert dut.a._next[0].right == -4
+            assert dut.a._next[0].val == 0.125
 
-            assert dut.next.a[1].left == 0
-            assert dut.next.a[1].right == -4
-            assert dut.next.a[1].val == 0.125
+            assert dut.a._next[1].left == 0
+            assert dut.a._next[1].right == -4
+            assert dut.a._next[1].val == 0.125
 
     def test_round(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -167,23 +161,22 @@ class TestComplex:
             self._delay = 1
 
         def main(self, a):
-            self.next.a.real = a
-            self.next.a.imag = a
+            self.a.real = a
+            self.a.imag = a
             return self.a
 
     def test_basic(self):
         dut = self.A2(fixed_saturate, fixed_round)
 
-        with HW.auto_resize():
-            dut.main(Sfix(0.1, 2, -27))
+        dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.real.left == 0
-            assert dut.next.a.real.right == -4
-            assert dut.next.a.real.val == 0.125
+        assert dut.a._next['real'].left == 0
+        assert dut.a._next['real'].right == -4
+        assert dut.a._next['real'].val == 0.125
 
-            assert dut.next.a.imag.left == 0
-            assert dut.next.a.imag.right == -4
-            assert dut.next.a.imag.val == 0.125
+        assert dut.a._next['imag'].left == 0
+        assert dut.a._next['imag'].right == -4
+        assert dut.a._next['imag'].val == 0.125
 
     def test_round(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -230,9 +223,9 @@ class TestLazySfix:
             self._delay = 1
 
         def main(self, a):
-            self.next.a = a
-            self.next.b = a
-            self.next.c = a
+            self.a = a
+            self.b = a
+            self.c = a
             return self.a, self.b, self.c
 
 
@@ -242,17 +235,17 @@ class TestLazySfix:
         with HW.auto_resize():
             dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.left == 2
-            assert dut.next.a.right == -27
-            assert dut.next.a.val == 0.10000000149011612
+            assert dut._next['a'].left == 2
+            assert dut._next['a'].right == -27
+            assert dut._next['a'].val == 0.10000000149011612
 
-            assert dut.next.b.left == 1
-            assert dut.next.b.right == -27
-            assert dut.next.b.val == 0.10000000149011612
+            assert dut._next['b'].left == 1
+            assert dut._next['b'].right == -27
+            assert dut._next['b'].val == 0.10000000149011612
 
-            assert dut.next.c.left == 2
-            assert dut.next.c.right == -4
-            assert dut.next.c.val == 0.125
+            assert dut._next['c'].left == 2
+            assert dut._next['c'].right == -4
+            assert dut._next['c'].val == 0.125
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -272,9 +265,9 @@ class TestLazySfixList:
             self._delay = 1
 
         def main(self, a):
-            self.next.a[0] = a
-            self.next.b[0] = a
-            self.next.c[0] = a
+            self.a[0] = a
+            self.b[0] = a
+            self.c[0] = a
             return self.a[0], self.b[0], self.c[0]
 
     def test_basic(self):
@@ -282,17 +275,17 @@ class TestLazySfixList:
         with HW.auto_resize():
             dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a[0].left == 2
-            assert dut.next.a[0].right == -27
-            assert dut.next.a[0].val == 0.10000000149011612
+            assert dut.a._next[0].left == 2
+            assert dut.a._next[0].right == -27
+            assert dut.a._next[0].val == 0.10000000149011612
 
-            assert dut.next.b[0].left == 1
-            assert dut.next.b[0].right == -27
-            assert dut.next.b[0].val == 0.10000000149011612
+            assert dut.b._next[0].left == 1
+            assert dut.b._next[0].right == -27
+            assert dut.b._next[0].val == 0.10000000149011612
 
-            assert dut.next.c[0].left == 2
-            assert dut.next.c[0].right == -4
-            assert dut.next.c[0].val == 0.125
+            assert dut.c._next[0].left == 2
+            assert dut.c._next[0].right == -4
+            assert dut.c._next[0].val == 0.125
 
     def test_type_build(self):
         """ Fill Nones in initial type """
@@ -333,33 +326,30 @@ class TestLazyComplexSfix:
             self._delay = 1
 
         def main(self, a):
-            self.next.a.real = a
-            self.next.a.imag = a
+            self.a.real = a
+            self.a.imag = a
 
-            self.next.b.real = a
-            self.next.b.imag = a
+            self.b.real = a
+            self.b.imag = a
 
-            self.next.c.real = a
-            self.next.c.imag = a
+            self.c.real = a
+            self.c.imag = a
             return self.a, self.b, self.c
 
     def test_basic(self):
         dut = self.A5()
 
-        with HW.auto_resize():
-            dut.main(Sfix(0.1, 2, -27))
+        dut.main(Sfix(0.1, 2, -27))
 
-            assert dut.next.a.real.left == 2
-            assert dut.next.a.real.right == -27
-            assert dut.next.a.real.val == 0.10000000149011612
-
-            assert dut.next.b.imag.left == 1
-            assert dut.next.b.imag.right == -27
-            assert dut.next.b.imag.val == 0.10000000149011612
-
-            assert dut.next.c.real.left == 2
-            assert dut.next.c.real.right == -4
-            assert dut.next.c.real.val == 0.125
+        assert dut.a._next['real'].left == 2
+        assert dut.a._next['real'].right == -27
+        assert dut.a._next['real'].val == 0.10000000149011612
+        assert dut.b._next['imag'].left == 1
+        assert dut.b._next['imag'].right == -27
+        assert dut.b._next['imag'].val == 0.10000000149011612
+        assert dut.c._next['real'].left == 2
+        assert dut.c._next['real'].right == -4
+        assert dut.c._next['real'].val == 0.125
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -379,11 +369,11 @@ class TestAssignConstant:
             self._delay = 1
 
         def main(self, a):
-            self.next.a = 0.123
-            self.next.b = -2
+            self.a = 0.123
+            self.b = -2
 
-            self.next.c.real = 0.78
-            self.next.c.imag = -0.56
+            self.c.real = 0.78
+            self.c.imag = -0.56
             return self.a, self.b, self.c
 
     def test_basic(self):
@@ -392,21 +382,21 @@ class TestAssignConstant:
         with HW.auto_resize():
             dut.main(0)
 
-            assert dut.next.a.left == 0
-            assert dut.next.a.right == -17
-            assert dut.next.a.val == 0.1230010986328125
+            assert dut._next['a'].left == 0
+            assert dut._next['a'].right == -17
+            assert dut._next['a'].val == 0.1230010986328125
 
-            assert dut.next.b.left == 2
-            assert dut.next.b.right == -17
-            assert dut.next.b.val == -2
+            assert dut._next['b'].left == 2
+            assert dut._next['b'].right == -17
+            assert dut._next['b'].val == -2
 
-            assert dut.next.c.real.left == 0
-            assert dut.next.c.real.right == -17
-            assert dut.next.c.real.val == 0.779998779296875
+            assert dut.c._next['real'].left == 0
+            assert dut.c._next['real'].right == -17
+            assert dut.c._next['real'].val == 0.779998779296875
 
-            assert dut.next.c.imag.left == 0
-            assert dut.next.c.imag.right == -17
-            assert dut.next.c.imag.val == -0.55999755859375
+            assert dut.c._next['imag'].left == 0
+            assert dut.c._next['imag'].right == -17
+            assert dut.c._next['imag'].val == -0.55999755859375
 
     def test_sim(self):
         x = [1, 2]
@@ -430,7 +420,7 @@ class TestAssignConstant:
         #             self._delay = 1
         #
         #         def main(self, a):
-        #             self.next.a = self.a[:-1] + [a]
+        #             self.a = self.a[:-1] + [a]
         #             return self.a[-1]
 
 

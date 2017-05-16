@@ -11,8 +11,8 @@ class Simple(HW):
         self.b = 0
 
     def main(self, a):
-        self.next.a = a
-        self.next.b = self.a
+        self.a = a
+        self.b = self.a
         return self.b
 
 
@@ -36,9 +36,9 @@ class Simple2(HW):
         self.b = 0
 
     def main(self, a, b):
-        self.next.a = a
+        self.a = a
         if b:
-            self.next.b = self.a
+            self.b = self.a
 
         return self.b
 

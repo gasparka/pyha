@@ -13,7 +13,7 @@ class TestLaxySfixReg:
                 self._delay = 1
 
             def main(self, new_value):
-                self.next.a = new_value
+                self.a = new_value
                 return self.a
 
         self.dut = LazySfixReg()
@@ -42,9 +42,9 @@ class TestRegisters:
                 self.c = False
 
             def main(self, na, nb, nc):
-                self.next.a = na
-                self.next.b = nb
-                self.next.c = nc
+                self.a = na
+                self.b = nb
+                self.c = nc
                 return self.a, self.b, self.c
 
         self.dut = Register()
@@ -67,9 +67,9 @@ class TestShiftRegisters:
                                  in_t(-0.5), in_t(0.5)]
 
             def main(self, new_int, new_bool, new_sfix):
-                self.next.shr_int = [new_int] + self.shr_int[:-1]
-                self.next.shr_bool = [new_bool] + self.shr_bool[:-1]
-                self.next.shr_sfix = [new_sfix] + self.shr_sfix[:-1]
+                self.shr_int = [new_int] + self.shr_int[:-1]
+                self.shr_bool = [new_bool] + self.shr_bool[:-1]
+                self.shr_sfix = [new_sfix] + self.shr_sfix[:-1]
                 return self.shr_int[-1], self.shr_bool[-1], self.shr_sfix[-1]
 
         self.dut = ShiftReg()

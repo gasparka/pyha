@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES
+from pyha.common.hwsim import HW, PyhaFunc, SKIP_FUNCTIONS, is_convertible, PYHA_VARIABLES, PyhaList
 from pyha.common.sfix import Sfix, ComplexSfix
 
 
@@ -21,6 +21,11 @@ def extract_datamodel(obj):
             continue
         if is_convertible(val):
             last = obj.__dict__[key]
+
+            if isinstance(val, PyhaList):
+                val = list(val)
+                last = list(last)
+
             # for Sfix use the initial value but LATEST bounds
             if isinstance(val, Sfix):
                 val = Sfix(val.init_val, last.left, last.right, last.overflow_style, last.round_style)
@@ -38,6 +43,7 @@ def extract_datamodel(obj):
                 first_id = val[0]._pyha_instance_id
                 for x in val:
                     x._pyha_instance_id = first_id
+
             ret.update({key: val})
     return ret
 
@@ -63,7 +69,7 @@ def extract_locals(obj):
 
 
 class DataModel:
-    def __init__(self, obj=None, self_data=None, locals=None):
+    def __init__(self, obj=None, self_data=None, locals=None, skip_locals=False):
         self.obj = obj
         if obj is None:
             self.self_data = None if self_data is None else self_data
@@ -78,7 +84,7 @@ class DataModel:
             dm_clean = {k: v for k, v in dm.items() if k not in constants}
             if len(dm_clean) == 0:
                 dm_clean['much_dummy_very_wow'] = 0  # this simplifies many testing code
-            loc = extract_locals(obj)
+            loc = {} if skip_locals else extract_locals(obj)
             self.self_data = dm_clean
             self.locals = loc
             self.constants = constants

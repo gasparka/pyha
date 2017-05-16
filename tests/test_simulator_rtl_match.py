@@ -148,7 +148,7 @@ def test_sfix_wrapper(left, right):
             self._delay = 1
 
         def main(self, phase_inc):
-            self.next.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
+            self.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
                                          round_style=fixed_truncate)
             return self.phase_acc
 

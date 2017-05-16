@@ -248,7 +248,7 @@ def test_sequential_single():
             self._delay = 1
 
         def main(self, in_sfix):
-            self.next.sfix_reg = in_sfix - 1.0
+            self.sfix_reg = in_sfix - 1.0
             return self.sfix_reg
 
         def model_main(self, in_sfix):
@@ -270,8 +270,8 @@ def test_sequential_single_delay2():
             self._delay = 2
 
         def main(self, in_sfix):
-            self.next.sfix_reg = in_sfix - 1.0
-            self.next.sfix_reg2 = self.sfix_reg
+            self.sfix_reg = in_sfix - 1.0
+            self.sfix_reg2 = self.sfix_reg
             return self.sfix_reg2
 
         def model_main(self, in_sfix):
@@ -292,9 +292,9 @@ def test_sequential_multi():
             self._delay = 1
 
         def main(self, in_int, in_bool, in_sfix):
-            self.next.int_reg = in_int * 2
-            self.next.bool_reg = not in_bool
-            self.next.sfix_reg = in_sfix - 1.0
+            self.int_reg = in_int * 2
+            self.bool_reg = not in_bool
+            self.sfix_reg = in_sfix - 1.0
             return self.int_reg, self.bool_reg, self.sfix_reg
 
         def model_main(self, in_int, in_bool, in_sfix):
@@ -316,7 +316,7 @@ def test_hw_sim_resets():
             self._delay = 1
 
         def main(self, in_sfix):
-            self.next.sfix_reg = in_sfix
+            self.sfix_reg = in_sfix
             return self.sfix_reg
 
     dut = Simulation(SIM_HW_MODEL, model=Rst_Hw())

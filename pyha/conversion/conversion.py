@@ -5,6 +5,7 @@ from typing import List
 
 from redbaron import RedBaron
 
+from pyha.common.hwsim import HW, PyhaList
 from pyha.common.util import get_iterable
 from pyha.conversion.converter import convert, file_header
 from pyha.conversion.coupling import get_instance_vhdl_name, VHDLType
@@ -67,10 +68,15 @@ class Conversion:
         # recursively convert all child modules
         self.childs = []
 
-        for x in self.obj._pyha_submodules:
-            if isinstance(x, list):
-                x = x[1]  # in case of submodules list -> only convert one
-            self.childs.append(Conversion(x, is_child=True))
+        for k, x in self.obj.__dict__.items():
+            if isinstance(x, PyhaList) and isinstance(x[0], HW):
+                x = x[0]
+                self.childs.append(Conversion(x, is_child=True))
+            elif isinstance(x, HW) and k != '_pyha_initial_self':
+                self.childs.append(Conversion(x, is_child=True))
+            else:
+                continue
+
 
     @property
     def inputs(self) -> List[object]:

@@ -13,7 +13,7 @@ from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode
+    IntNode, UnitaryOperatorNode, GetitemNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -211,7 +211,7 @@ class DefNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-        # remove last line,i f it is \n
+        # remove last line,if it is \n
         if isinstance(self.value[-1], EndlNodeConv):
             del self.value[-1]
 
@@ -219,6 +219,7 @@ class DefNodeConv(NodeConv):
         self.variables = self.infer_variables()
 
     def infer_return_arguments(self):
+        # TODO: could use datamodel to get this info..
         try:
             rets = self.red_node('return')[0]
         except IndexError:
@@ -235,6 +236,7 @@ class DefNodeConv(NodeConv):
         return [get_type(i, x) for i, x in enumerate(rets.value)]
 
     def infer_variables(self):
+        # TODO: could use datamodel to get this info..
         assigns = self.red_node.value('assign')
 
         variables = []
@@ -790,8 +792,10 @@ def convert(red: Node, caller=None, datamodel=None):
     with suppress(AttributeError):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
+
     if datamodel is not None:
         red = redbaron_enum_to_vhdl(red)
+        ImplicitNext.apply(red)
     red = redbaron_pyfor_to_vhdl(red)
     red = redbaron_pycall_returns_to_vhdl(red)
     red = redbaron_pycall_to_vhdl(red)
@@ -813,8 +817,8 @@ def convert(red: Node, caller=None, datamodel=None):
 class AutoResize:
     """ Auto resize on Sfix assignments
      Examples (depend on initial Sfix type):
-         self.next.sfix_reg = a        ->   self.next.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
-         self.next.sfix_list[0] = a    ->   self.next.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
+         self.sfix_reg = a        ->   self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
+         self.sfix_list[0] = a    ->   self.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
          """
 
     @staticmethod
@@ -824,15 +828,13 @@ class AutoResize:
         def is_subject(x):
             """
             Acceptable examples:
-                    self.next.a = b
-                    self.a.next.b = a
-                    self.next.b[0] = a
-                    self.a[3].b.next.b = a
+                    self.a = b
+                    self.a.b = a
+                    self.b[0] = a
+                    self.a[3].b.b = a
             """
-            if len(x) > 1:
-                s = [str(xx.value) for xx in x]
-                if 'self' in s and 'next' in s:
-                    return True
+            if len(x) > 1 and str(x[0].value) == 'self':
+                return True
             return False
 
         return red_node.find_all('assign', target=is_subject)
@@ -859,13 +861,54 @@ class AutoResize:
         for node, var_t in zip(pass_nodes, pass_types):
 
             if isinstance(node.value, (FloatNode, IntNode)) \
-                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (FloatNode, IntNode))):
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target,
+                                                                                   (FloatNode, IntNode))):
                 # second term to pass marked nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
 
         return pass_nodes
+
+
+class ImplicitNext:
+    """
+    On all assignments add 'next' before the final target. This is to support variable based signal assignment in VHDL code.
+
+    Examples:
+    self.a -> self.next.a
+    self.a[i] -> self.next.a[i]
+    self.submod.a -> self.submod.next.a
+    self.submod.a[i].a -> self.submod.a[i].next.a
+
+    self.a, self.b = call() -> self.next.a, self.next.b = call()
+
+    Special case, when ComplexSfix: NOT IMPLEMENTED
+    self.complx.real -> self.next.complx.real
+
+    """
+
+    @staticmethod
+    def apply(red_node):
+
+        def add_next(x):
+            if len(x) > 1 and str(x[0].value) == 'self':
+                loc = len(x) - 1
+                if isinstance(x[loc], GetitemNode):
+                    loc -= 1
+
+                # fixme: ComplexSfix ralated hack
+                if str(x[len(x)-1]) in ('real', 'imag'):
+                    loc -= 1
+                x.insert(loc, 'next')
+
+        assigns = red_node.find_all('assign')
+        for node in assigns:
+            if isinstance(node.target, TupleNode):
+                for mn in node.target:
+                    add_next(mn)
+            else:
+                add_next(node.target)
 
 
 def redbaron_enum_to_vhdl(red_node):
