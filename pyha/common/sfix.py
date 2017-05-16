@@ -46,6 +46,7 @@ class ComplexSfix:
     def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round):
 
+        self.is_local = shit.implicit_next_enabled or shit.auto_resize_enabled
         self.overflow_style = overflow_style
         self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
@@ -63,14 +64,18 @@ class ComplexSfix:
     def _pyha_update_self(self):
         # update atoms
         self.__dict__.update(deepcopy(self._next))
+        pass
 
     def __setattr__(self, name, value):
         # todo: temporary hack, remove with types overhaul
 
+        if name == 'is_local':
+            self.__dict__[name] = value
+            return
         #
-        # if self.is_local:
-        #     self.__dict__[name] = value
-        #     return
+        if self.is_local:
+            self.__dict__[name] = value
+            return
 
         if shit.auto_resize_enabled:
             target = getattr(self, name)

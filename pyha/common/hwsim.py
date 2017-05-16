@@ -189,6 +189,8 @@ class PyhaFunc:
             with HW.auto_resize():
                 ret = self.call_with_locals_discovery(*args, **kwargs)
 
+        # fixme: ComplexSfix related hack, can remove later
+        ret = deepcopy(ret)
         self.last_return = ret
 
         real_self._outputs.append(ret)
