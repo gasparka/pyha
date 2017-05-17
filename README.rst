@@ -6,8 +6,8 @@ pyha
 .. image:: https://img.shields.io/pypi/v/pyha.svg
         :target: https://pypi.python.org/pypi/pyha
 
-.. image:: https://img.shields.io/travis/petspats/pyha.svg
-        :target: https://travis-ci.org/petspats/pyha
+.. image:: https://travis-ci.org/gasparka/pyha.svg?branch=master
+    :target: https://travis-ci.org/gasparka/pyha
 
 .. image:: https://readthedocs.org/projects/pyha/badge/?version=develop
     :target: http://pyha.readthedocs.io/en/develop/?badge=develop
