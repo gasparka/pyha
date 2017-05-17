@@ -2,7 +2,7 @@ bumpversion==0.5.3
 wheel==0.29.0
 watchdog==0.8.3
 flake8==3.3.0
-coverage==4.3.4
+coverage==4.4.1
 Sphinx==1.5.5
 sphinx-rtd-theme==0.2.4
 twine==1.8.1
