@@ -2,6 +2,8 @@
 Introduction
 ============
 
+.. warning:: Most of this is outdated, i am currently working on the first release.
+
 Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Main features:

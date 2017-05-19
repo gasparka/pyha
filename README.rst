@@ -2,6 +2,7 @@
 pyha
 ====
 
+.. warning:: Ongoing work on the first release. Many things will change, not advised to use this tool at the moment.
 
 .. image:: https://img.shields.io/pypi/v/pyha.svg
         :target: https://pypi.python.org/pypi/pyha
