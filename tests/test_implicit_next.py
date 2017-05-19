@@ -38,6 +38,25 @@ class TestBuiltins:
         assert dut.b == False
         assert dut._next['b'] == False
 
+
+    def test_force_disable(self):
+        dut = self.T0()
+        dut._pyha_update_self()
+        HW.implicit_next.force_disable = True
+
+        assert dut.i == 1
+        assert dut._next['i'] == 1
+        assert dut.b == True
+        assert dut._next['b'] == True
+
+
+        dut.main(2, False)
+
+        assert dut.i == 1
+        assert dut._next['i'] == 2
+        assert dut.b == True
+        assert dut._next['b'] == False
+
     def test_simulate(self):
         x = [[5, 2, 3], [False, True, False]]
         expected = [[1, 5, 2], [True, False, True]]

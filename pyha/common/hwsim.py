@@ -1,6 +1,6 @@
 import sys
 from collections import UserList
-from contextlib import suppress
+from contextlib import suppress, AbstractContextManager
 from copy import deepcopy, copy
 from enum import Enum
 
@@ -352,6 +352,9 @@ class SfixList(list):
         #     pass
 
 
+
+
+
 class HW(with_metaclass(Meta)):
     """ For metaclass inheritance """
 
@@ -368,16 +371,22 @@ class HW(with_metaclass(Meta)):
             assert HW.auto_resize.enabled >= 0
 
     class implicit_next:
-        enabled = 0
+        ref_count = 0
+        enabled = False
+        force_disable = False
 
         def __enter__(self):
-            HW.implicit_next.enabled += 1
-            shit.implicit_next_enabled = HW.implicit_next.enabled
+            HW.implicit_next.ref_count += 1
+            self._set_state()
 
         def __exit__(self, type, value, traceback):
-            HW.implicit_next.enabled -= 1
+            HW.implicit_next.ref_count -= 1
+            assert HW.implicit_next.ref_count >= 0
+            self._set_state()
+
+        def _set_state(self):
+            HW.implicit_next.enabled = False if HW.implicit_next.force_disable else HW.implicit_next.ref_count
             shit.implicit_next_enabled = HW.implicit_next.enabled
-            assert HW.implicit_next.enabled >= 0
 
     # def is_local_object(self):
     #     """ Object is created locally, because these are enabled only during the function calls """
@@ -414,7 +423,7 @@ class HW(with_metaclass(Meta)):
             target = getattr(self._pyha_initial_self, name)
             value = auto_resize(target, value)
 
-        if not HW.implicit_next.enabled:
+        if not HW.implicit_next.ref_count:
             self.__dict__[name] = value
             return
 
