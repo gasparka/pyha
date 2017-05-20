@@ -193,11 +193,11 @@ class Simulation:
 
         if self.simulation_type == SIM_MODEL:
 
-            if self.main_as_model:
-                # there is no 'model_main' function
-
-
-                return
+            # if self.main_as_model:
+            #     # there is no 'model_main' function
+            #
+            #
+            #     return
 
             r = self.model.model_main(*args)
 
@@ -368,6 +368,10 @@ def sim_rules(simulations, model):
                            [SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
+
+    if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
+        simulations.remove(SIM_MODEL)
+        logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
 
     if skipping_model_simulations() and SIM_MODEL in simulations:
         simulations.remove(SIM_MODEL)

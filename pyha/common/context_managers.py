@@ -29,6 +29,9 @@ class RegisterBehaviour:
     def is_enabled():
         return False if RegisterBehaviour._force_disable.enabled else RegisterBehaviour._enable.enabled
 
+    @staticmethod
+    def is_force_disabled():
+        return RegisterBehaviour._force_disable.enabled
 
 class AutoResize:
     """ Controls if assignments to Sfix registers should be resized """

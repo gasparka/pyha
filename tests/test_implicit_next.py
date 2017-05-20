@@ -109,7 +109,6 @@ class TestBuiltinsList:
         assert dut.b == [False, True, False]
         assert dut.b._next == [False, True, False]
 
-
     def test_force_disable(self):
         with RegisterBehaviour.force_disable():
             dut = self.T1()
@@ -130,7 +129,7 @@ class TestBuiltinsList:
 
     def test_simulate(self):
         x = [[5, 4, 3, 2, 1, 0], [False, True, False, False, True, False]]
-        expected = [[3, 2, 1, 5, 4, 3], [True, False, True, False, True, False]]
+        expected = [[3, 3, 3, 3, 3, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
         assert_sim_match(dut, expected, *x)

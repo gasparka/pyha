@@ -63,6 +63,8 @@ class ComplexSfix:
         self._next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
 
     def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
         # update atoms
         self.__dict__.update(deepcopy(self._next))
         pass

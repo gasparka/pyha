@@ -313,7 +313,7 @@ class PyhaList(UserList):
                 self.data[i] = y
 
     def _pyha_update_self(self):
-        if not RegisterBehaviour.is_enabled():
+        if RegisterBehaviour.is_force_disabled():
             return
         if hasattr(self.type, '_pyha_update_self'):
             # object already knows how to handle registers
@@ -409,7 +409,7 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
-        if not RegisterBehaviour.is_enabled():
+        if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
         self.__dict__.update(self._next)
