@@ -8,6 +8,7 @@ import numpy as np
 
 from pyha.common import shit
 from pyha.common.const import Const
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
@@ -185,7 +186,7 @@ class PyhaFunc:
         self.calls += 1
 
         # # CALL IS HERE!
-        with HW.implicit_next():
+        with RegisterBehaviour.enable():
             with HW.auto_resize():
                 ret = self.call_with_locals_discovery(*args, **kwargs)
 
@@ -285,6 +286,7 @@ def auto_resize(target, value):
 
 
 class PyhaList(UserList):
+
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, seq, type):
         super().__init__(seq)
@@ -305,9 +307,14 @@ class PyhaList(UserList):
                 if self.type.right is None:
                     self.type.right = y.right
 
-            self._next[i] = y
+            if RegisterBehaviour.is_enabled():
+                self._next[i] = y
+            else:
+                self.data[i] = y
 
     def _pyha_update_self(self):
+        if not RegisterBehaviour.is_enabled():
+            return
         if hasattr(self.type, '_pyha_update_self'):
             # object already knows how to handle registers
             for x in self.data:
@@ -352,11 +359,7 @@ class SfixList(list):
         #     pass
 
 
-
-
-
 class HW(with_metaclass(Meta)):
-    """ For metaclass inheritance """
 
     class auto_resize:
         enabled = 0
@@ -406,6 +409,8 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
+        if not RegisterBehaviour.is_enabled():
+            return
         # update atoms
         self.__dict__.update(self._next)
 
@@ -423,7 +428,7 @@ class HW(with_metaclass(Meta)):
             target = getattr(self._pyha_initial_self, name)
             value = auto_resize(target, value)
 
-        if not HW.implicit_next.ref_count:
+        if not RegisterBehaviour.is_enabled():
             self.__dict__[name] = value
             return
 

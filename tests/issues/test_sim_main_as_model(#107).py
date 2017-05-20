@@ -20,23 +20,3 @@ class TestCounterInt:
         dut = self.T0()
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
 
-
-
-class EnableRefCounted(AbstractContextManager):
-    def __init__(self):
-        self.enabled = 0
-
-    def __enter__(self):
-        self.enabled += 1
-
-    def __exit__(self, type, value, traceback):
-        self.enabled -= 1
-
-def test_play():
-    con = EnableRefCounted()
-
-    with con:
-        print(con.enabled)
-        with con:
-            print(con.enabled)
-

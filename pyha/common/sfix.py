@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 
 from pyha.common import shit
+from pyha.common.context_managers import RegisterBehaviour
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ class ComplexSfix:
             from pyha.common.hwsim import auto_resize
             value = auto_resize(target, value)
 
-        if not shit.implicit_next_enabled:
+        if not RegisterBehaviour.is_enabled():
             self.__dict__[name] = value
             return
 
