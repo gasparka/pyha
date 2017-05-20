@@ -10,6 +10,8 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
@@ -163,16 +165,28 @@ class Simulation:
     @flush_pipeline
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
-            # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
-            ret = []
-            for x in args:
-                ret.append(self.model.main(*x))
-                self.model._pyha_update_self()
+            ret = self.run_hw_model(args)
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
             assert 0
+
+        self.pure_output = ret
+        return ret
+
+    def run_hw_model(self, args):
+        # reset registers, in order to match COCOTB RTL simulation behaviour
+        self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
+        ret = []
+        for x in args:
+            ret.append(self.model.main(*x))
+            self.model._pyha_update_self()
+        return ret
+
+    @in_out_transpose
+    def test(self, *args):
+        with RegisterBehaviour.force_disable():
+            ret = self.run_hw_model(args)
 
         self.pure_output = ret
         return ret
@@ -193,11 +207,9 @@ class Simulation:
 
         if self.simulation_type == SIM_MODEL:
 
-            # if self.main_as_model:
-            #     # there is no 'model_main' function
-            #
-            #
-            #     return
+            if self.main_as_model:
+                self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
+                return self.test(*args)
 
             r = self.model.model_main(*args)
 
@@ -369,9 +381,9 @@ def sim_rules(simulations, model):
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
 
-    if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
-        simulations.remove(SIM_MODEL)
-        logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
+    # if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
+    #     simulations.remove(SIM_MODEL)
+    #     logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
 
     if skipping_model_simulations() and SIM_MODEL in simulations:
         simulations.remove(SIM_MODEL)
