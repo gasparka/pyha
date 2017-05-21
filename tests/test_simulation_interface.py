@@ -43,8 +43,8 @@ def test_sim_no_model():
     with pytest.raises(NoModelError):
         Simulation(SIM_RTL, NoMain(), None)
 
-    with pytest.raises(NoModelError):
-        Simulation(SIM_MODEL, NoModelMain(), None)
+    # with pytest.raises(NoModelError):
+    #     Simulation(SIM_MODEL, NoModelMain(), None)
 
     # this shall not raise as we are not simulating model
     Simulation(SIM_HW_MODEL, NoModelMain(), None)

@@ -1,6 +1,7 @@
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestBuiltins:
@@ -23,7 +24,6 @@ class TestBuiltins:
         assert dut.b == True
         assert dut._next['b'] == True
 
-
         dut.main(2, False)
 
         assert dut.i == 1
@@ -38,12 +38,36 @@ class TestBuiltins:
         assert dut.b == False
         assert dut._next['b'] == False
 
+    def test_force_disable(self):
+        with RegisterBehaviour.force_disable():
+            dut = self.T0()
+            dut._pyha_update_self()
+
+            assert dut.i == 1
+            assert dut._next['i'] == 1
+            assert dut.b == True
+            assert dut._next['b'] == True
+
+            dut.main(2, False)
+
+            assert dut.i == 2
+            assert dut._next['i'] == 1
+            assert dut.b == False
+            assert dut._next['b'] == True
+
+            dut._pyha_update_self()
+
+            assert dut.i == 2
+            assert dut._next['i'] == 1
+            assert dut.b == False
+            assert dut._next['b'] == True
+
     def test_simulate(self):
         x = [[5, 2, 3], [False, True, False]]
         expected = [[1, 5, 2], [True, False, True]]
 
         dut = self.T0()
-        assert_sim_match(dut, expected, *x)
+        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestBuiltinsList:
@@ -54,7 +78,7 @@ class TestBuiltinsList:
 
         def main(self, i, b):
             self.i[0] = i
-            self.i = [i] + self.i[:-1]
+            # self.i = [i] + self.i[:-1]
 
             self.b[1] = b
             self.b = [b] + self.b[:-1]
@@ -74,23 +98,41 @@ class TestBuiltinsList:
         dut.main(2, False)
 
         assert dut.i == [1, 2, 3]
-        assert dut.i._next == [2, 1, 2]
+        assert dut.i._next == [2, 2, 3]
         assert dut.b == [True, False, True]
         assert dut.b._next == [False, True, False]
 
         dut._pyha_update_self()
 
-        assert dut.i == [2, 1, 2]
-        assert dut.i._next == [2, 1, 2]
+        assert dut.i == [2, 2, 3]
+        assert dut.i._next == [2, 2, 3]
         assert dut.b == [False, True, False]
         assert dut.b._next == [False, True, False]
 
+    def test_force_disable(self):
+        with RegisterBehaviour.force_disable():
+            dut = self.T1()
+            dut._pyha_update_self()
+
+            assert dut.i == [1, 2, 3]
+            assert dut.b == [True, False, True]
+
+            dut.main(2, False)
+
+            assert dut.i == [2, 2, 3]
+            assert dut.b == [False, True, False]
+
+            dut._pyha_update_self()
+
+            assert dut.i == [2, 2, 3]
+            assert dut.b == [False, True, False]
+
     def test_simulate(self):
         x = [[5, 4, 3, 2, 1, 0], [False, True, False, False, True, False]]
-        expected = [[3, 2, 1, 5, 4, 3], [True, False, True, False, True, False]]
+        expected = [[3, 3, 3, 3, 3, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
-        assert_sim_match(dut, expected, *x)
+        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestSfix:
@@ -124,7 +166,7 @@ class TestSfix:
         expected = [0.1, 0.1, 0.2]
 
         dut = self.T2()
-        assert_sim_match(dut, expected, x)
+        assert_sim_match(dut, expected, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestSfixList:
@@ -161,7 +203,7 @@ class TestSfixList:
         expected = [0.2, 0.1, 0.1]
 
         dut = self.T3()
-        assert_sim_match(dut, expected, x)
+        assert_sim_match(dut, expected, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestSubmodule:
@@ -217,7 +259,7 @@ class TestSubmodule:
         x = [1, 2, 3]
 
         dut = self.T4()
-        assert_sim_match(dut, None, x)
+        assert_sim_match(dut, None, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestSubmoduleList:
@@ -256,7 +298,6 @@ class TestSubmoduleList:
         assert dut.sub[1]._next['i'] == 1
         assert dut.sub[1]._next['i2'] == 2
 
-
         dut.main(15)
 
         assert dut.i == 0
@@ -287,5 +328,4 @@ class TestSubmoduleList:
         x = [1, 2, 3]
 
         dut = self.T5()
-        assert_sim_match(dut, None, x)
-
+        assert_sim_match(dut, None, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

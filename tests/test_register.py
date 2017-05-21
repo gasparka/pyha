@@ -2,7 +2,7 @@ import pytest
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_GATE, SIM_RTL, SIM_HW_MODEL
 
 
 class TestLaxySfixReg:
@@ -53,7 +53,7 @@ class TestRegisters:
         inputs = [[0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4], [True, False, False, False]]
         expect = [[0.123, 0.1, 0.2, 0.3], [123, 1, 2, 3], [False, True, False, False]]
 
-        assert_sim_match(self.dut, expect, *inputs, rtol=1e-4)
+        assert_sim_match(self.dut, expect, *inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestShiftRegisters:
@@ -83,4 +83,4 @@ class TestShiftRegisters:
                   [True, False, False, True, False, False],
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(self.dut, expect, *inputs)
+        assert_sim_match(self.dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])

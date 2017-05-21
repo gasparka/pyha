@@ -57,13 +57,14 @@ def test_convert_submodule():
     class B(HW):
         def __init__(self):
             self.sub = Aa()
+            self._delay = 1
 
         def main(self, a):
             ret = self.sub.main(a)
             return ret
 
     x = list(range(16))
-    expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     dut = B()
 
     assert_sim_match(dut, expected, x)

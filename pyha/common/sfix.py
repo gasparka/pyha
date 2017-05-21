@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 
 from pyha.common import shit
+from pyha.common.context_managers import RegisterBehaviour, ContextManagerRefCounted
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,6 +63,8 @@ class ComplexSfix:
         self._next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
 
     def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
         # update atoms
         self.__dict__.update(deepcopy(self._next))
         pass
@@ -82,7 +85,7 @@ class ComplexSfix:
             from pyha.common.hwsim import auto_resize
             value = auto_resize(target, value)
 
-        if not shit.implicit_next_enabled:
+        if not RegisterBehaviour.is_enabled():
             self.__dict__[name] = value
             return
 
@@ -199,7 +202,7 @@ class Sfix:
     # to implement stuff as integer arithmetic
 
     # Disables all quantization and saturating stuff
-    _float_mode = False
+    _float_mode = ContextManagerRefCounted()
 
     # TODO: finish this, there is unit test for it
     # @staticmethod
@@ -224,14 +227,15 @@ class Sfix:
     #         fract_bits = -bits + int_bits + 1
     #         return Sfix(val, int_bits, fract_bits)
 
-    @staticmethod
-    def set_float_mode(x):
-        """
-        Can be used to turn off all quantization effects, useful for debugging.
 
-        :param x: True/False
-        """
-        Sfix._float_mode = x
+    # @staticmethod
+    # def set_float_mode(x):
+    #     """
+    #     Can be used to turn off all quantization effects, useful for debugging.
+    #
+    #     :param x: True/False
+    #     """
+    #     Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_saturate,
                  round_style=fixed_round, init_only=False):
@@ -256,7 +260,7 @@ class Sfix:
 
         assert self.left >= self.right
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
-        if init_only or Sfix._float_mode:
+        if init_only or Sfix._float_mode.enabled:
             return
 
         if overflow_style is fixed_saturate:
@@ -406,9 +410,8 @@ class Sfix:
         return 1
 
     def __rshift__(self, other):
-        # todo: in float mode this should not lose precison
-        if self.right is None:
-            o = np.ldexp(self.val, other)
+        if self.right is None or Sfix._float_mode.enabled:
+            o = np.ldexp(self.val, -other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o >> other) * 2 ** self.right
@@ -418,16 +421,15 @@ class Sfix:
                     init_only=True)
 
     def __lshift__(self, other):
-        # todo: in float mode this should not lose precison
-        if self.right is None:
-            o = np.ldexp(self.val, -other)
+        if self.right is None or Sfix._float_mode.enabled:
+            o = np.ldexp(self.val, other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o << other) * 2 ** self.right
         return Sfix(o,
                     self.left,
                     self.right,
-                    overflow_style=fixed_wrap)
+                    init_only=True)
 
     def __abs__(self):
         return Sfix(abs(self.val),

@@ -7,7 +7,7 @@ from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import get_conversion_datamodel, Conversion
 from pyha.conversion.coupling import reset_maker
-from pyha.simulation.simulation_interface import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match, SIM_GATE, SIM_RTL, SIM_HW_MODEL
 
 
 class TestBasic:
@@ -23,6 +23,7 @@ class TestBasic:
         class B(HW):
             def __init__(self):
                 self.sublist = [A(), A()]
+                self._delay = 1
 
             def main(self, a, b):
                 r0 = self.sublist[0].main(a)
@@ -58,6 +59,8 @@ class TestBasic:
                     end record;
 
                     type self_t is record
+                        -- constants
+                        \_delay\: integer;
 
                         sublist: A_0_list_t(0 to 1);
                         \\next\\: next_t;
@@ -86,8 +89,8 @@ class TestBasic:
 
     def test_sim(self):
         x = [range(16), range(16)]
-        expected = [[0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-                    [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+        expected = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 
         assert_sim_match(self.dut, expected, *x)
 
@@ -128,7 +131,7 @@ class TestDeepSubmodules:
         expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(self.dut, expected, *x)
+        assert_sim_match(self.dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_datamodel(self):
         conv, datamodel = get_conversion_datamodel(self.dut)
@@ -207,6 +210,7 @@ def test_for():
     class B4(HW):
         def __init__(self):
             self.sublist = [A4(i) for i in range(4)]
+            self._delay = 1
 
         def main(self, x):
             outs = [0, 0, 0, 0]
@@ -218,7 +222,7 @@ def test_for():
     dut = B4()
 
     x = list(range(16))
-    expected = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    expected = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     assert_sim_match(dut, expected, x)
 

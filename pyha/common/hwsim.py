@@ -1,6 +1,6 @@
 import sys
 from collections import UserList
-from contextlib import suppress
+from contextlib import suppress, AbstractContextManager
 from copy import deepcopy, copy
 from enum import Enum
 
@@ -8,6 +8,7 @@ import numpy as np
 
 from pyha.common import shit
 from pyha.common.const import Const
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
@@ -169,7 +170,7 @@ class PyhaFunc:
         self.TraceManager.remove_profile()
 
         self.TraceManager.last_call_locals.pop('self')
-        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -185,7 +186,7 @@ class PyhaFunc:
         self.calls += 1
 
         # # CALL IS HERE!
-        with HW.implicit_next():
+        with RegisterBehaviour.enable():
             with HW.auto_resize():
                 ret = self.call_with_locals_discovery(*args, **kwargs)
 
@@ -274,7 +275,7 @@ class Meta(type):
 
 
 def auto_resize(target, value):
-    if not HW.auto_resize.enabled or not isinstance(target, Sfix):
+    if not HW.auto_resize.enabled or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
         return value
 
     left = target.left if target.left is not None else value.left
@@ -285,6 +286,7 @@ def auto_resize(target, value):
 
 
 class PyhaList(UserList):
+
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, seq, type):
         super().__init__(seq)
@@ -305,9 +307,14 @@ class PyhaList(UserList):
                 if self.type.right is None:
                     self.type.right = y.right
 
-            self._next[i] = y
+            if RegisterBehaviour.is_enabled():
+                self._next[i] = y
+            else:
+                self.data[i] = y
 
     def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
         if hasattr(self.type, '_pyha_update_self'):
             # object already knows how to handle registers
             for x in self.data:
@@ -353,7 +360,6 @@ class SfixList(list):
 
 
 class HW(with_metaclass(Meta)):
-    """ For metaclass inheritance """
 
     class auto_resize:
         enabled = 0
@@ -368,16 +374,22 @@ class HW(with_metaclass(Meta)):
             assert HW.auto_resize.enabled >= 0
 
     class implicit_next:
-        enabled = 0
+        ref_count = 0
+        enabled = False
+        force_disable = False
 
         def __enter__(self):
-            HW.implicit_next.enabled += 1
-            shit.implicit_next_enabled = HW.implicit_next.enabled
+            HW.implicit_next.ref_count += 1
+            self._set_state()
 
         def __exit__(self, type, value, traceback):
-            HW.implicit_next.enabled -= 1
+            HW.implicit_next.ref_count -= 1
+            assert HW.implicit_next.ref_count >= 0
+            self._set_state()
+
+        def _set_state(self):
+            HW.implicit_next.enabled = False if HW.implicit_next.force_disable else HW.implicit_next.ref_count
             shit.implicit_next_enabled = HW.implicit_next.enabled
-            assert HW.implicit_next.enabled >= 0
 
     # def is_local_object(self):
     #     """ Object is created locally, because these are enabled only during the function calls """
@@ -397,6 +409,8 @@ class HW(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
         # update atoms
         self.__dict__.update(self._next)
 
@@ -414,7 +428,7 @@ class HW(with_metaclass(Meta)):
             target = getattr(self._pyha_initial_self, name)
             value = auto_resize(target, value)
 
-        if not HW.implicit_next.enabled:
+        if not RegisterBehaviour.is_enabled():
             self.__dict__[name] = value
             return
 

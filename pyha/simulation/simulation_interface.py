@@ -10,6 +10,8 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
@@ -78,15 +80,14 @@ def type_conversions(func):
             args = list(args)
             for i, arg in enumerate(args):
                 if isinstance(arg[0], float):
-                    self.logger.info(f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
+                    self.logger.info(
+                        f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
                 elif isinstance(arg[0], complex):
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
                     args[i] = [t(x) for x in arg]
-
-
 
         ret = func(self, *args, **kwargs)
 
@@ -147,8 +148,7 @@ class Simulation:
         if not hasattr(self.model, 'main') and self.simulation_type in (SIM_HW_MODEL, SIM_RTL, SIM_GATE):
             raise NoModelError('Your model has no "main" function')
 
-        if not hasattr(self.model, 'model_main') and self.simulation_type is SIM_MODEL:
-            raise NoModelError('Trying to run "SIM_MODEL" simulation but your model has no "model_main" function!')
+        self.main_as_model = not hasattr(self.model, 'model_main') and self.simulation_type is SIM_MODEL
 
         # save ht HW model for conversion
         if self.simulation_type == SIM_HW_MODEL:
@@ -159,23 +159,13 @@ class Simulation:
         self.model = Simulation.hw_instances[self.model.__class__.__name__]
         self.sim = SimProvider(Path(self.dir_path), self.model, self.simulation_type)
         return self.sim.main()
-        # conv = Conversion(self.model)
-        # quartus = None
-        # if self.simulation_type is SIM_GATE:
-        #     make_quartus_project(Path(self.tmpdir.name), conv)
-        # return CocotbAuto(Path(self.tmpdir.name), conv)
 
     @type_conversions
     @in_out_transpose
     @flush_pipeline
     def hw_simulation(self, *args):
         if self.simulation_type == SIM_HW_MODEL:
-            # reset registers, in order to match COCOTB RTL simulation behaviour
-            self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
-            ret = []
-            for x in args:
-                ret.append(self.model.main(*x))
-                self.model._pyha_update_self()
+            ret = self.run_hw_model(args)
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
             ret = self.cocosim.run(*args)
         else:
@@ -184,14 +174,27 @@ class Simulation:
         self.pure_output = ret
         return ret
 
+    def run_hw_model(self, args):
+        # reset registers, in order to match COCOTB RTL simulation behaviour
+        self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
+        ret = []
+        for x in args:
+            ret.append(self.model.main(*x))
+            self.model._pyha_update_self()
+        return ret
+
+    @type_conversions
+    @in_out_transpose
+    def as_model(self, *args):
+        ret = self.run_hw_model(args)
+        self.pure_output = ret
+        return ret
+
     def main(self, *args) -> np.array:
         self.logger.info(f'Running {self.simulation_type} simulation!')
-        # test if user provided legal 'input_types'
-        # if self.simulation_type is not SIM_MODEL or self.input_types is not None:  # it is legal to not pass input_types if SIM_MODEL
-        #     if self.input_types is None or (len(args) != len(self.input_types)):
-        #         raise InputTypesError('Your "Simulation(input_types=X)" does not match arguements to "main" function!')
 
-        # test that there are no Sfix arguments
+        # fixme: remove this during type refactoring
+        #  test that there are no Sfix arguments
         for x in args:
             if type(x) is list:
                 if type(x[0]) is Sfix:
@@ -202,6 +205,13 @@ class Simulation:
             self.cocosim = self.prepare_hw_simulation()
 
         if self.simulation_type == SIM_MODEL:
+
+            if self.main_as_model:
+                self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
+                with RegisterBehaviour.force_disable():
+                    with Sfix._float_mode:
+                        return self.as_model(*args)
+
             r = self.model.model_main(*args)
 
             if r == []:
@@ -258,7 +268,8 @@ def assert_hwmodel_rtl_match(model, *x, types=None):
     np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
 
-def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None, skip_first=0):
+def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+                          skip_first=0):
     """
     Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
 
@@ -274,7 +285,8 @@ def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rto
     plt.show()
 
 
-def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2**-17)*4, dir_path=None, skip_first=0):
+def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2 ** -17) * 4, dir_path=None,
+                     skip_first=0):
     """
     Run bunch of simulations and assert that they match outputs.
 
@@ -322,7 +334,8 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             print(f'Expected \t Actual \t ATOL \t\t\t RTOL')
             print(f'---------------------------------------------------')
             # abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-            for i, (expect, actual) in enumerate(zip(np.array(expected)[skip_first:].flat, np.array(hw_y)[skip_first:len(expected)].flat)):
+            for i, (expect, actual) in enumerate(
+                    zip(np.array(expected)[skip_first:].flat, np.array(hw_y)[skip_first:len(expected)].flat)):
                 if not isclose(expect, actual, rel_tol=rtol, abs_tol=atol):
                     a = abs(expect - actual)
                     r = rtol * max(abs(expect), abs(actual))
@@ -369,10 +382,9 @@ def sim_rules(simulations, model):
                            [SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                            [SIM_HW_MODEL, SIM_GATE]]
 
-    if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
-        simulations.remove(SIM_MODEL)
-        logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
-
+    # if not hasattr(model, 'model_main') and SIM_MODEL in simulations:
+    #     simulations.remove(SIM_MODEL)
+    #     logging.getLogger(__name__).warning('Skipping MODEL simulation, because there is no "model_main" function!')
 
     if skipping_model_simulations() and SIM_MODEL in simulations:
         simulations.remove(SIM_MODEL)
