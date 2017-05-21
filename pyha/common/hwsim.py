@@ -170,7 +170,7 @@ class PyhaFunc:
         self.TraceManager.remove_profile()
 
         self.TraceManager.last_call_locals.pop('self')
-        self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -275,7 +275,7 @@ class Meta(type):
 
 
 def auto_resize(target, value):
-    if not HW.auto_resize.enabled or not isinstance(target, Sfix):
+    if not HW.auto_resize.enabled or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
         return value
 
     left = target.left if target.left is not None else value.left

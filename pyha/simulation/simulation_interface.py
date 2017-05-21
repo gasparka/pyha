@@ -186,7 +186,8 @@ class Simulation:
     @in_out_transpose
     def test(self, *args):
         with RegisterBehaviour.force_disable():
-            ret = self.run_hw_model(args)
+            with Sfix._float_mode:
+                ret = self.run_hw_model(args)
 
         self.pure_output = ret
         return ret

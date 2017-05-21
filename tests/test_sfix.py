@@ -2,7 +2,7 @@ from decimal import *
 
 import numpy as np
 import pytest
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, fixed_wrap, resize
 
 getcontext().prec = 128
 
@@ -420,5 +420,55 @@ def test_shift_none():
     assert b.val == 0.5
     assert b.left == None
     assert b.right == None
+
+
+class TestFloatMode:
+    def test_no_saturation(self):
+        with Sfix._float_mode:
+            f = Sfix(-1.5, 0, -8)
+            assert f.val == -1.5
+            assert f.left == 0
+            assert f.right == -8
+
+    def test_no_wrap(self):
+        with Sfix._float_mode:
+            f = Sfix(-1.5, 0, -8, overflow_style=fixed_wrap)
+            assert f.val == -1.5
+            assert f.left == 0
+            assert f.right == -8
+
+    def test_no_quantization(self):
+        with Sfix._float_mode:
+            f = Sfix(0.12345678, 0, -2)
+            assert f.val == 0.12345678
+            assert f.left == 0
+            assert f.right == -2
+
+    def test_resize_no_effect(self):
+        with Sfix._float_mode:
+            f = Sfix(0.12345678, 0, -20)
+            b = resize(f, 0, -2)
+            assert b.val == 0.12345678
+            assert b.left == 0
+            assert b.right == -2
+
+    def test_shift_right(self):
+        with Sfix._float_mode:
+            f = Sfix(0.12345678, 0, -2)
+            b = f >> 1
+            assert b.val == 0.12345678 * 2
+            assert b.left == 0
+            assert b.right == -2
+
+    def test_shift_left(self):
+        with Sfix._float_mode:
+            f = Sfix(0.12345678, 0, -2)
+            b = f << 1
+            assert b.val == 0.12345678 / 2
+            assert b.left == 0
+            assert b.right == -2
+
+
+
 
 
