@@ -456,7 +456,7 @@ class TestFloatMode:
         with Sfix._float_mode:
             f = Sfix(0.12345678, 0, -2)
             b = f >> 1
-            assert b.val == 0.12345678 * 2
+            assert b.val == 0.12345678 / 2
             assert b.left == 0
             assert b.right == -2
 
@@ -464,7 +464,7 @@ class TestFloatMode:
         with Sfix._float_mode:
             f = Sfix(0.12345678, 0, -2)
             b = f << 1
-            assert b.val == 0.12345678 / 2
+            assert b.val == 0.12345678 * 2
             assert b.left == 0
             assert b.right == -2
 

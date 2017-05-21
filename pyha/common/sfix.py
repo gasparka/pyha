@@ -411,7 +411,7 @@ class Sfix:
 
     def __rshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
-            o = np.ldexp(self.val, other)
+            o = np.ldexp(self.val, -other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o >> other) * 2 ** self.right
@@ -422,7 +422,7 @@ class Sfix:
 
     def __lshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
-            o = np.ldexp(self.val, -other)
+            o = np.ldexp(self.val, other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o << other) * 2 ** self.right
