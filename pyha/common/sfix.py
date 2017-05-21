@@ -353,54 +353,73 @@ class Sfix:
             right = type.right
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
-
-    @staticmethod
-    def max(a, b):
-        if a is None and b is None:
-            return 0
-
-        if a is None:
-            return b
-        if b is None:
-            return a
-
-        return max(a, b)
-
-    @staticmethod
-    def min(a, b):
-        if a is None and b is None:
-            return 0
-
-        if a is None:
-            return b
-        if b is None:
-            return a
-
-        return min(a, b)
+    def _size_add(self, other):
+        """ Size rules for add/sub operation. Handles the 'None'(lazy) cases. """
+        if self.left is None and other.left is None:
+            left = None
+        elif self.left is None:
+            left = other.left + 1
+        elif other.left is None:
+            left = self.left + 1
+        else:
+            left = max(self.left, other.left) + 1
+        if self.right is None and other.right is None:
+            right = None
+        elif self.right is None:
+            right = other.right
+        elif other.right is None:
+            right = self.right
+        else:
+            right = min(self.right, other.right)
+        return left, right
 
     def __add__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
+        left, right = self._size_add(other)
+
         return Sfix(self.val + other.val,
-                    self.max(self.left, other.left) + 1,
-                    self.min(self.right, other.right),
+                    left,
+                    right,
                     init_only=True)
 
     def __sub__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
+
+        left, right = self._size_add(other)
+
         return Sfix(self.val - other.val,
-                    self.max(self.left, other.left) + 1,
-                    self.min(self.right, other.right),
+                    left,
+                    right,
                     init_only=True)
 
     def __mul__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
+
+        if self.left is None and other.left is None:
+            left = None
+        elif self.left is None:
+            left = other.left + 1
+        elif other.left is None:
+            left = self.left + 1
+        else:
+            left = self.left + other.left + 1
+
+        if self.right is None and other.right is None:
+            right = None
+        elif self.right is None:
+            right = other.right
+        elif other.right is None:
+            right = self.right
+        else:
+            right = self.right + other.right
+
         return Sfix(self.val * other.val,
-                    self.left + (other.left or 0) + 1,
-                    self.right + (other.right or 0),
+                    left,
+                    right,
                     init_only=True)
 
     def sign_bit(self):
@@ -437,15 +456,12 @@ class Sfix:
                     self.right,
                     init_only=True)
 
-    # TODO: add tests
     def __lt__(self, other):
         return bool(self.val < other)
 
-    # TODO: add tests
     def __gt__(self, other):
         return bool(self.val > other)
 
-    # TODO: add tests
     def __neg__(self):
         left = None if self.left is None else self.left + 1
         return Sfix(-self.val,
@@ -453,12 +469,8 @@ class Sfix:
                     self.right,
                     init_only=True)
 
-    # TODO: add tests
     def __len__(self):
-        assert self.left >= 0
         return -self.right + self.left + 1
-
-
 
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)

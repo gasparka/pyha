@@ -63,15 +63,6 @@ def test_add():
     assert c.right == -18
 
 
-def test_add_none():
-    a = Sfix(0.123, None, None)
-    b = Sfix(-0.223, 0, -18)
-    c = a + b
-    assert float(c) == float(a) + float(b)
-    assert c.left == 1
-    assert c.right == -18
-
-
 def test_sub():
     a = Sfix(0.223, 0, -8)
     b = Sfix(0.013, 0, -18)
@@ -79,15 +70,6 @@ def test_sub():
     assert float(c) == float(a) - float(b)
     assert c.left == 1
     assert c.right == -18
-
-
-def test_sub_none():
-    a = Sfix(0.223, 0, -8)
-    b = Sfix(0.013, None, None)
-    c = a - b
-    assert float(c) == float(a) - float(b)
-    assert c.left == 1
-    assert c.right == -8
 
 
 def test_sub_overlow():
@@ -397,29 +379,99 @@ def test_to_stdlogic():
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
 
 
-def test_shift_none():
-    """ Shift operator but bounds are None, can happen for Lazy code """
+def test_neg():
+    a = Sfix(0.223, 0, -8)
+    b = -a
+    assert b.val == -0.22265625
+    assert b.left == 1
+    assert b.right == -8
 
-    a = Sfix(2.0)
-    b = a >> 1
-    assert b.val == 4.0
-    assert b.left == None
-    assert b.right == None
 
-    b = a >> 2
-    assert b.val == 8.0
-    assert b.left == None
-    assert b.right == None
+def test_len():
+    a = Sfix(0.223, 0, -8)
+    assert len(a) == 9
 
-    b = a << 1
-    assert b.val == 1.0
-    assert b.left == None
-    assert b.right == None
+    a = Sfix(0.223, 2, -8)
+    assert len(a) == 11
 
-    b = a << 2
-    assert b.val == 0.5
-    assert b.left == None
-    assert b.right == None
+    a = Sfix(0.223, -2, -8)
+    assert len(a) == 7
+
+    a = Sfix(0.223, 8, 3)
+    assert len(a) == 6
+
+
+def test_gt():
+    a = Sfix(0.223, 0, -8)
+    assert a > 0.1
+    assert not a > 0.3
+
+
+def test_lt():
+    a = Sfix(0.223, 0, -8)
+    assert not a < 0.1
+    assert a < 0.3
+
+
+class TestLazy:
+    def test_add_none(self):
+        a = Sfix(0.123, None, None)
+        b = Sfix(-0.223, 0, -18)
+        c = a + b
+        assert float(c) == float(a) + float(b)
+        assert c.left == 1
+        assert c.right == -18
+
+    def test_sub_none(self):
+        a = Sfix(0.223, 0, -8)
+        b = Sfix(0.013, None, None)
+        c = a - b
+        assert float(c) == float(a) - float(b)
+        assert c.left == 1
+        assert c.right == -8
+
+    def test_neg(self):
+        a = Sfix(0.223, 0, None)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == 1
+        assert b.right == None
+
+        a = Sfix(0.223, None, None)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == None
+        assert b.right == None
+
+        a = Sfix(0.223, None, -5)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == None
+        assert b.right == -5
+
+    def test_shift(self):
+        """ Shift operator but bounds are None, can happen for Lazy code """
+
+        a = Sfix(2.0)
+        b = a >> 1
+        assert b.val == 1.0
+        assert b.left == None
+        assert b.right == None
+
+        b = a >> 2
+        assert b.val == 0.5
+        assert b.left == None
+        assert b.right == None
+
+        b = a << 1
+        assert b.val == 4.0
+        assert b.left == None
+        assert b.right == None
+
+        b = a << 2
+        assert b.val == 8.0
+        assert b.left == None
+        assert b.right == None
 
 
 class TestFloatMode:
@@ -467,8 +519,3 @@ class TestFloatMode:
             assert b.val == 0.12345678 * 2
             assert b.left == 0
             assert b.right == -2
-
-
-
-
-
