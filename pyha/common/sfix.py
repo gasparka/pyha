@@ -382,22 +382,48 @@ class Sfix:
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
+        left = None
+        right = None
+        if self.left is not None and other.left is not None:
+            left = max(self.left, other.left) + 1
+
+        if self.right is not None and other.right is not None:
+            right = min(self.right, other.right)
+
         return Sfix(self.val + other.val,
-                    self.max(self.left, other.left) + 1,
-                    self.min(self.right, other.right),
+                    left,
+                    right,
                     init_only=True)
 
     def __sub__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
+
+        left = None
+        right = None
+        if self.left is not None and other.left is not None:
+            left = max(self.left, other.left) + 1
+
+        if self.right is not None and other.right is not None:
+            right = min(self.right, other.right)
+
         return Sfix(self.val - other.val,
-                    self.max(self.left, other.left) + 1,
-                    self.min(self.right, other.right),
+                    left,
+                    right,
                     init_only=True)
 
     def __mul__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
+
+        left = None
+        right = None
+        if self.left is not None and other.left is not None:
+            left = self.left + other.left + 1
+
+        if self.right is not None and other.right is not None:
+            right = self.right + other.right
+
         return Sfix(self.val * other.val,
                     self.left + (other.left or 0) + 1,
                     self.right + (other.right or 0),
