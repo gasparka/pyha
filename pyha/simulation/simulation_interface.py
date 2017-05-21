@@ -183,12 +183,10 @@ class Simulation:
             self.model._pyha_update_self()
         return ret
 
+    @type_conversions
     @in_out_transpose
-    def test(self, *args):
-        with RegisterBehaviour.force_disable():
-            with Sfix._float_mode:
-                ret = self.run_hw_model(args)
-
+    def as_model(self, *args):
+        ret = self.run_hw_model(args)
         self.pure_output = ret
         return ret
 
@@ -210,7 +208,9 @@ class Simulation:
 
             if self.main_as_model:
                 self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
-                return self.test(*args)
+                with RegisterBehaviour.force_disable():
+                    with Sfix._float_mode:
+                        return self.as_model(*args)
 
             r = self.model.model_main(*args)
 
