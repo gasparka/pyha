@@ -198,7 +198,7 @@ class TestMultiIntSfixEnumBooleanCFix:
             [0.5 - 0.25j] * 8
         ]
 
-        assert_sim_match(self.dut, expected, x)
+        assert_sim_match(self.dut, expected, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestFloat:

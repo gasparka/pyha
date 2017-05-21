@@ -175,7 +175,7 @@ class TestRegister:
         x = [0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expected = [0.5 + 1.2j, 0.5 + 0.1j, 0.5 - 0.09j, -0.5 + 0.1j, 0.14 + 0.1j]
 
-        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-12)], rtol=1e-3)
+        assert_sim_match(self.dut, expected, x, types=[ComplexSfix(left=1, right=-12)], rtol=1e-3, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 # class TestShiftReg:
@@ -349,14 +349,14 @@ class TestRegisterIQ:
         inputs = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
         expect = [0.5 + 0.1j, 0.5 - 0.09j, +0.5 + 0.1j, 0.14 + 0.1j, 0.5 + 0.89j]
 
-        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_comp_reg_simulate2(self):
         # -real made cocotb code fail
         inputs = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
         expect = [-0.5 - 0.1j, -0.5 + 0.1j, +0.5 - 0.1j]
 
-        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3)
+        assert_sim_match(self.dut, expect, inputs, types=[ComplexSfix(left=1, right=-18)], rtol=1e-3, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestComplexReturn:
@@ -429,7 +429,7 @@ class TestComplexReturn:
                          expected, *x,
                          types=[Sfix(left=0, right=-18), Sfix(left=0, right=-18), Sfix(left=0, right=-32),
                                 Sfix(left=0, right=-32)],
-                         rtol=1e-3)
+                         rtol=1e-3, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestList:
