@@ -63,15 +63,6 @@ def test_add():
     assert c.right == -18
 
 
-def test_add_none():
-    a = Sfix(0.123, None, None)
-    b = Sfix(-0.223, 0, -18)
-    c = a + b
-    assert float(c) == float(a) + float(b)
-    assert c.left == 1
-    assert c.right == -18
-
-
 def test_sub():
     a = Sfix(0.223, 0, -8)
     b = Sfix(0.013, 0, -18)
@@ -79,15 +70,6 @@ def test_sub():
     assert float(c) == float(a) - float(b)
     assert c.left == 1
     assert c.right == -18
-
-
-def test_sub_none():
-    a = Sfix(0.223, 0, -8)
-    b = Sfix(0.013, None, None)
-    c = a - b
-    assert float(c) == float(a) - float(b)
-    assert c.left == 1
-    assert c.right == -8
 
 
 def test_sub_overlow():
@@ -397,29 +379,46 @@ def test_to_stdlogic():
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
 
 
-def test_shift_none():
-    """ Shift operator but bounds are None, can happen for Lazy code """
+class TestLazy:
+    def test_add_none(self):
+        a = Sfix(0.123, None, None)
+        b = Sfix(-0.223, 0, -18)
+        c = a + b
+        assert float(c) == float(a) + float(b)
+        assert c.left == 1
+        assert c.right == -18
 
-    a = Sfix(2.0)
-    b = a >> 1
-    assert b.val == 4.0
-    assert b.left == None
-    assert b.right == None
+    def test_sub_none(self):
+        a = Sfix(0.223, 0, -8)
+        b = Sfix(0.013, None, None)
+        c = a - b
+        assert float(c) == float(a) - float(b)
+        assert c.left == 1
+        assert c.right == -8
 
-    b = a >> 2
-    assert b.val == 8.0
-    assert b.left == None
-    assert b.right == None
+    def test_shift(self):
+        """ Shift operator but bounds are None, can happen for Lazy code """
 
-    b = a << 1
-    assert b.val == 1.0
-    assert b.left == None
-    assert b.right == None
+        a = Sfix(2.0)
+        b = a >> 1
+        assert b.val == 1.0
+        assert b.left == None
+        assert b.right == None
 
-    b = a << 2
-    assert b.val == 0.5
-    assert b.left == None
-    assert b.right == None
+        b = a >> 2
+        assert b.val == 0.5
+        assert b.left == None
+        assert b.right == None
+
+        b = a << 1
+        assert b.val == 4.0
+        assert b.left == None
+        assert b.right == None
+
+        b = a << 2
+        assert b.val == 8.0
+        assert b.left == None
+        assert b.right == None
 
 
 class TestFloatMode:
@@ -467,8 +466,3 @@ class TestFloatMode:
             assert b.val == 0.12345678 * 2
             assert b.left == 0
             assert b.right == -2
-
-
-
-
-

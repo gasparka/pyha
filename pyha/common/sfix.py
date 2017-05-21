@@ -353,41 +353,26 @@ class Sfix:
             right = type.right
         return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
-
-    @staticmethod
-    def max(a, b):
-        if a is None and b is None:
-            return 0
-
-        if a is None:
-            return b
-        if b is None:
-            return a
-
-        return max(a, b)
-
-    @staticmethod
-    def min(a, b):
-        if a is None and b is None:
-            return 0
-
-        if a is None:
-            return b
-        if b is None:
-            return a
-
-        return min(a, b)
-
     def __add__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
-        left = None
-        right = None
-        if self.left is not None and other.left is not None:
+        if self.left is None and other.left is None:
+            left = None
+        elif self.left is None:
+            left = other.left + 1
+        elif other.left is None:
+            left = self.left + 1
+        else:
             left = max(self.left, other.left) + 1
 
-        if self.right is not None and other.right is not None:
+        if self.right is None and other.right is None:
+            right = None
+        elif self.right is None:
+            right = other.right
+        elif other.right is None:
+            right = self.right
+        else:
             right = min(self.right, other.right)
 
         return Sfix(self.val + other.val,
@@ -399,12 +384,22 @@ class Sfix:
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
-        left = None
-        right = None
-        if self.left is not None and other.left is not None:
+        if self.left is None and other.left is None:
+            left = None
+        elif self.left is None:
+            left = other.left + 1
+        elif other.left is None:
+            left = self.left + 1
+        else:
             left = max(self.left, other.left) + 1
 
-        if self.right is not None and other.right is not None:
+        if self.right is None and other.right is None:
+            right = None
+        elif self.right is None:
+            right = other.right
+        elif other.right is None:
+            right = self.right
+        else:
             right = min(self.right, other.right)
 
         return Sfix(self.val - other.val,
@@ -416,17 +411,27 @@ class Sfix:
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
 
-        left = None
-        right = None
-        if self.left is not None and other.left is not None:
+        if self.left is None and other.left is None:
+            left = None
+        elif self.left is None:
+            left = other.left + 1
+        elif other.left is None:
+            left = self.left + 1
+        else:
             left = self.left + other.left + 1
 
-        if self.right is not None and other.right is not None:
+        if self.right is None and other.right is None:
+            right = None
+        elif self.right is None:
+            right = other.right
+        elif other.right is None:
+            right = self.right
+        else:
             right = self.right + other.right
 
         return Sfix(self.val * other.val,
-                    self.left + (other.left or 0) + 1,
-                    self.right + (other.right or 0),
+                    left,
+                    right,
                     init_only=True)
 
     def sign_bit(self):
