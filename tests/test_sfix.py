@@ -379,6 +379,40 @@ def test_to_stdlogic():
     assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
 
 
+def test_neg():
+    a = Sfix(0.223, 0, -8)
+    b = -a
+    assert b.val == -0.22265625
+    assert b.left == 1
+    assert b.right == -8
+
+
+def test_len():
+    a = Sfix(0.223, 0, -8)
+    assert len(a) == 9
+
+    a = Sfix(0.223, 2, -8)
+    assert len(a) == 11
+
+    a = Sfix(0.223, -2, -8)
+    assert len(a) == 7
+
+    a = Sfix(0.223, 8, 3)
+    assert len(a) == 6
+
+
+def test_gt():
+    a = Sfix(0.223, 0, -8)
+    assert a > 0.1
+    assert not a > 0.3
+
+
+def test_lt():
+    a = Sfix(0.223, 0, -8)
+    assert not a < 0.1
+    assert a < 0.3
+
+
 class TestLazy:
     def test_add_none(self):
         a = Sfix(0.123, None, None)
@@ -395,6 +429,25 @@ class TestLazy:
         assert float(c) == float(a) - float(b)
         assert c.left == 1
         assert c.right == -8
+
+    def test_neg(self):
+        a = Sfix(0.223, 0, None)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == 1
+        assert b.right == None
+
+        a = Sfix(0.223, None, None)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == None
+        assert b.right == None
+
+        a = Sfix(0.223, None, -5)
+        b = -a
+        assert b.val == -0.223
+        assert b.left == None
+        assert b.right == -5
 
     def test_shift(self):
         """ Shift operator but bounds are None, can happen for Lazy code """
