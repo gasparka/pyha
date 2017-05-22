@@ -473,6 +473,15 @@ class ForNodeConv(NodeConv):
             if range_pattern is not None:
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
+                    # todo: handle many more cases
+                    len = parse('len({})', two_args[1].strip())
+                    if len is not None:
+                        return f"{two_args[0].strip()} to ({len[0]}'length) - 1"
+
+                    len = parse('len({}){}', two_args[1].strip())
+                    if len is not None:
+                        return f"{two_args[0].strip()} to ({len[0]}'length{len[1]}) - 1"
+
                     return f'{two_args[0].strip()} to ({two_args[1].strip()}) - 1'
                 else:
                     len = parse('len({}){}', range_pattern[0])

@@ -1365,6 +1365,32 @@ def test_for_from_to_variables_whitespaces(converter):
     assert expect == str(conv)
 
 
+def test_for_range_len(converter):
+    code = textwrap.dedent("""\
+            for i in range(1, len(self.shr)):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in 1 to (self.shr'length) - 1 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_for_range_len_sub(converter):
+    code = textwrap.dedent("""\
+            for i in range(1, len(self.shr)-1):
+                pass""")
+
+    expect = textwrap.dedent("""\
+            for i in 1 to (self.shr'length - 1) - 1 loop
+
+            end loop;""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_for_body(converter):
     code = textwrap.dedent("""\
             for i in range(len(a)):
@@ -1589,4 +1615,3 @@ def test_hexanode(converter):
 
     conv = converter(code)
     assert expect == str(conv)
-
