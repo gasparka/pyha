@@ -6,13 +6,11 @@ from enum import Enum
 
 import numpy as np
 
-from pyha.common import shit
 from pyha.common.const import Const
-from pyha.common.context_managers import RegisterBehaviour
+from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
-from pyha.common.shit import implicit_next_enabled, auto_resize_enabled
 
 """
 Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
@@ -187,7 +185,7 @@ class PyhaFunc:
 
         # # CALL IS HERE!
         with RegisterBehaviour.enable():
-            with HW.auto_resize():
+            with AutoResize.enable():
                 ret = self.call_with_locals_discovery(*args, **kwargs)
 
         # fixme: ComplexSfix related hack, can remove later
@@ -274,13 +272,15 @@ class Meta(type):
         return ret
 
 
+
 def auto_resize(target, value):
-    if not HW.auto_resize.enabled or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
+    if not AutoResize.is_enabled() or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
         return value
 
     left = target.left if target.left is not None else value.left
     right = target.right if target.right is not None else value.right
 
+    target._was_auto_resized = True
     return resize(value, left, right, round_style=target.round_style,
                   overflow_style=target.overflow_style)
 
@@ -361,40 +361,6 @@ class SfixList(list):
 
 class HW(with_metaclass(Meta)):
 
-    class auto_resize:
-        enabled = 0
-
-        def __enter__(self):
-            HW.auto_resize.enabled += 1
-            shit.auto_resize_enabled = HW.auto_resize.enabled
-
-        def __exit__(self, type, value, traceback):
-            HW.auto_resize.enabled -= 1
-            shit.auto_resize_enabled = HW.auto_resize.enabled
-            assert HW.auto_resize.enabled >= 0
-
-    class implicit_next:
-        ref_count = 0
-        enabled = False
-        force_disable = False
-
-        def __enter__(self):
-            HW.implicit_next.ref_count += 1
-            self._set_state()
-
-        def __exit__(self, type, value, traceback):
-            HW.implicit_next.ref_count -= 1
-            assert HW.implicit_next.ref_count >= 0
-            self._set_state()
-
-        def _set_state(self):
-            HW.implicit_next.enabled = False if HW.implicit_next.force_disable else HW.implicit_next.ref_count
-            shit.implicit_next_enabled = HW.implicit_next.enabled
-
-    # def is_local_object(self):
-    #     """ Object is created locally, because these are enabled only during the function calls """
-    #     return HW.implicit_next.enabled or HW.auto_resize.enabled
-
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -424,7 +390,7 @@ class HW(with_metaclass(Meta)):
         this is only enabled for 'main' function, that simulates hardware.
         """
 
-        if HW.auto_resize.enabled:
+        if AutoResize.is_enabled():
             target = getattr(self._pyha_initial_self, name)
             value = auto_resize(target, value)
 

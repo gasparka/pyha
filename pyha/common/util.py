@@ -78,6 +78,7 @@ def hex_to_bitstr(hstr):
 def hex_to_bool_list(hstr):
     return [bool(int(x)) for x in hex_to_bitstr(hstr)]
 
+
 def int_to_bool_list(hstr):
     return [bool(int(x)) for x in hex_to_bitstr(hstr)]
 
@@ -99,8 +100,10 @@ def bools_to_hex(bl):
     bitstr = bools_to_bitstr(bl)
     return hex(int(bitstr, 2))
 
+
 def bools_to_bitstr(bl):
     return ''.join(str(int(x)) for x in bl)
+
 
 def test_bools_to_hex():
     assert bools_to_hex([True, True, True, True]) == '0xf'
@@ -117,14 +120,13 @@ def plot_freqz(b):
     plt.title('Digital filter frequency response')
     ax1 = fig.add_subplot(111)
 
-
-    plt.plot(w, 20 * np.log10(abs(h)), 'b')
+    plt.plot(w / np.pi / 2, 20 * np.log10(abs(h)), 'b')
     plt.ylabel('Amplitude [dB]', color='b')
-    plt.xlabel('Frequency [rad/sample]')
+    plt.xlabel('Frequency')
 
     ax2 = ax1.twinx()
     angles = np.unwrap(np.angle(h))
-    plt.plot(w, angles, 'g')
+    plt.plot(w / np.pi / 2, angles, 'g')
     plt.ylabel('Angle (radians)', color='g')
     plt.grid()
     plt.axis('tight')
@@ -134,35 +136,35 @@ def plot_freqz(b):
 
 
 
-# # https://se.mathworks.com/matlabcentral/newsreader/view_thread/154499
-# from scipy.fftpack import fft, fftshift
-#
-#
-# def estimate_frequency_phase_response(input, output):
-#     sum_h = None
-#     H1 = np.array([0 + 0 * 1j] * len(input[0]))
-#     for i, o in zip(input, output):
-#         I = fft(i)
-#         O = fft(o)
-#         new_h = I * O / I ** 2
-#         new_h /= len(input)  # average
-#         H1 += new_h
-#
-#     H1 = fftshift(H1)
-#     magnitude = 20 * np.log10(abs(H1))
-#     phase = np.angle(H1) * 180 / np.pi
-#
-#     return magnitude, phase
-#
-#
-# u = [np.random.uniform(-1, 1, 1024 * 2) for _ in range(1024)]
-# av = CascadeAverage(9, 2)
-# y = [av.abstract2(x) for x in u]
-# # y = [x for x in u]
-# mag, phase = estimate_frequency_phase_response(u, y)
-#
-# plt.plot(mag)
-# plt.show()
-#
-# plt.plot(phase)
-# plt.show()
+    # # https://se.mathworks.com/matlabcentral/newsreader/view_thread/154499
+    # from scipy.fftpack import fft, fftshift
+    #
+    #
+    # def estimate_frequency_phase_response(input, output):
+    #     sum_h = None
+    #     H1 = np.array([0 + 0 * 1j] * len(input[0]))
+    #     for i, o in zip(input, output):
+    #         I = fft(i)
+    #         O = fft(o)
+    #         new_h = I * O / I ** 2
+    #         new_h /= len(input)  # average
+    #         H1 += new_h
+    #
+    #     H1 = fftshift(H1)
+    #     magnitude = 20 * np.log10(abs(H1))
+    #     phase = np.angle(H1) * 180 / np.pi
+    #
+    #     return magnitude, phase
+    #
+    #
+    # u = [np.random.uniform(-1, 1, 1024 * 2) for _ in range(1024)]
+    # av = CascadeAverage(9, 2)
+    # y = [av.abstract2(x) for x in u]
+    # # y = [x for x in u]
+    # mag, phase = estimate_frequency_phase_response(u, y)
+    #
+    # plt.plot(mag)
+    # plt.show()
+    #
+    # plt.plot(phase)
+    # plt.show()

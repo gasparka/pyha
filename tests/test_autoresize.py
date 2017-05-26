@@ -1,3 +1,4 @@
+from pyha.common.context_managers import AutoResize
 from pyha.common.hwsim import HW, SfixList, PyhaList
 from pyha.common.sfix import Sfix, fixed_saturate, fixed_round, fixed_truncate, fixed_wrap, ComplexSfix
 from pyha.conversion.conversion import get_conversion_datamodel
@@ -75,7 +76,7 @@ class TestSfixList:
     def test_sfixlist_operation(self):
         a = [Sfix(0.1, 1, -27)] * 2
         b = SfixList(a, Sfix(0, 0, -4))
-        with HW.auto_resize():
+        with AutoResize.enable():
             b[0] = a[0]
 
         assert b[0].left == 0
@@ -97,7 +98,7 @@ class TestSfixList:
     def test_basic(self):
         dut = self.A1(fixed_saturate, fixed_round)
 
-        with HW.auto_resize():
+        with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
 
             assert dut.a._next[0].left == 0
@@ -228,11 +229,10 @@ class TestLazySfix:
             self.c = a
             return self.a, self.b, self.c
 
-
     def test_basic(self):
         dut = self.A3()
 
-        with HW.auto_resize():
+        with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
 
             assert dut._next['a'].left == 2
@@ -272,7 +272,7 @@ class TestLazySfixList:
 
     def test_basic(self):
         dut = self.A4()
-        with HW.auto_resize():
+        with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
 
             assert dut.a._next[0].left == 2
@@ -379,7 +379,7 @@ class TestAssignConstant:
     def test_basic(self):
         dut = self.A6()
 
-        with HW.auto_resize():
+        with AutoResize.enable():
             dut.main(0)
 
             assert dut._next['a'].left == 0
@@ -405,6 +405,47 @@ class TestAssignConstant:
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
+
+class TestLocalsSfix:
+    class A7(HW):
+        def main(self, arg):
+            b = Sfix(0.5, 0, -17)
+            c = Sfix(0.1, 5, -12)
+            a = b
+            b = c
+            c = a
+
+            return arg, a, b, c
+
+    def test_sim(self):
+        x = [0.1, 0.2]
+
+        dut = self.A7()
+        assert_sim_match(dut, None, x,
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
+
+
+class TestLocalsComplexSfix:
+    class A8(HW):
+        def main(self, arg):
+            b = arg
+            b.real = Sfix(0.1, 0, -25)
+            assert b.real.right == -25
+            b.imag = arg.real
+
+            c = ComplexSfix(arg.real, arg.real)
+            c.imag = Sfix(0.1, 5, -25)
+            assert c.imag.right == -25
+            assert c.imag.left == 5
+
+            return arg
+
+    def test_sim(self):
+        x = [0.1 + 0.2j, 0.2 + 0.1j]
+
+        dut = self.A8()
+        assert_sim_match(dut, None, x,
+                         simulations=[SIM_HW_MODEL])
 
 
 

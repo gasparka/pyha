@@ -87,7 +87,8 @@ def type_conversions(func):
                 elif isinstance(arg[0], complex):
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
-                    args[i] = [t(x) for x in arg]
+                    args[i] = [t(x, is_local=True) for x in arg]
+
 
         ret = func(self, *args, **kwargs)
 

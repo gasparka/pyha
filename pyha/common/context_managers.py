@@ -33,15 +33,18 @@ class RegisterBehaviour:
     def is_force_disabled():
         return RegisterBehaviour._force_disable.enabled
 
-# class AutoResize:
-#     """ Controls if assignments to Sfix registers should be resized """
-#     _enable = ContextManagerRefCounted()
-#     _force_disable = ContextManagerRefCounted()
-#
-#
-#
-#     @property
-#     def enabled(self):
-#         return False if RegisterBehaviour._force_disable.enabled else RegisterBehaviour._enable.enabled
+
+class AutoResize:
+        """ This controls the sfix automatic resize feature"""
+        _enable = ContextManagerRefCounted()
+
+        @staticmethod
+        def enable():
+            return AutoResize._enable
+
+        @staticmethod
+        def is_enabled():
+            return AutoResize._enable.enabled
+
 
 

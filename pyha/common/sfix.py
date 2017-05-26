@@ -4,8 +4,7 @@ import textwrap
 import numpy as np
 from copy import deepcopy
 
-from pyha.common import shit
-from pyha.common.context_managers import RegisterBehaviour, ContextManagerRefCounted
+from pyha.common.context_managers import RegisterBehaviour, ContextManagerRefCounted, AutoResize
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,9 +44,9 @@ class ComplexSfix:
     """
 
     def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
-                 round_style=fixed_round):
+                 round_style=fixed_round, is_local=False):
 
-        self.is_local = shit.implicit_next_enabled or shit.auto_resize_enabled
+        self.is_local = is_local or (RegisterBehaviour.is_enabled() or AutoResize.is_enabled())
         self.overflow_style = overflow_style
         self.round_style = round_style
         if type(val) is Sfix and type(left) is Sfix:
@@ -59,7 +58,6 @@ class ComplexSfix:
             self.real = Sfix(val.real, left, right, overflow_style, round_style)
             self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
 
-        self.is_local = shit.implicit_next_enabled or shit.auto_resize_enabled
         self._next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
 
     def _pyha_update_self(self):
@@ -80,7 +78,7 @@ class ComplexSfix:
             self.__dict__[name] = value
             return
 
-        if shit.auto_resize_enabled:
+        if AutoResize.is_enabled():
             target = getattr(self, name)
             from pyha.common.hwsim import auto_resize
             value = auto_resize(target, value)
@@ -110,11 +108,11 @@ class ComplexSfix:
             return self.__dict__ == other.__dict__
         return False
 
-    def __call__(self, x):
-        return ComplexSfix(x, self.left, self.right)
+    def __call__(self, x, **kwargs):
+        return ComplexSfix(x, self.left, self.right, **kwargs)
 
     def __str__(self):
-        return f'{self.real.val:.2f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.2f}j [{self.left}:{self.right}]'
+        return f'{self.real.val:.5f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.5f}j [{self.left}:{self.right}]'
 
     def __repr__(self):
         return str(self)
