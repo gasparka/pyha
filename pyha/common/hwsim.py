@@ -86,8 +86,10 @@ class PyhaFunc:
         @classmethod
         def tracer(cls, frame, event, arg):
             # Note: this runs for ALL returns, only the LAST frame is valid info
-            if event == 'return':
-                cls.last_call_locals = frame.f_locals.copy()
+            if event != 'return':
+                return
+
+            cls.last_call_locals = frame.f_locals
 
         @classmethod
         def set_profile(cls):
@@ -147,16 +149,6 @@ class PyhaFunc:
                     if len(old_value) != len(value):
                         raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
 
-    def forbid_assign_to_self(self, new, old):
-        """ User should only assign to self.next.X, any assign to
-            'self.X' is a bug and this decorator tests for that """
-
-        for key, value in new.items():
-            if key == 'next' or isinstance(value, (np.ndarray, np.generic)):
-                continue
-
-            if value != old[key]:
-                raise AssignToSelf(self.class_name, key)
 
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
