@@ -64,7 +64,7 @@ class ComplexSfix:
         if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
-        self.__dict__.update(deepcopy(self._next))
+        self.__dict__.update(self._next)
         pass
 
     def __setattr__(self, name, value):

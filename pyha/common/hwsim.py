@@ -12,15 +12,12 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 
-"""
-Purpose: Make python class simulatable as hardware, mainly provide 'register' behaviour
-"""
 
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
-PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', 'next', '_pyha_submodules', '_pyha_instance_id', '_delay')
+PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
 default_sfix = Sfix(0, 0, -17)
 default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
@@ -253,6 +250,11 @@ class Meta(type):
                 continue
             ret._next[k] = deepcopy(v)
 
+        ret._pyha_updateable = []
+        for k, v in ret.__dict__.items():
+            if hasattr(v, '_pyha_update_self'):
+                ret._pyha_updateable.append(v)
+
         # save the initial self values - all registers and initial values will be derived from these values!
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
@@ -379,10 +381,9 @@ class HW(with_metaclass(Meta)):
         # update atoms
         self.__dict__.update(self._next)
 
-        # update all childs that have '_pyha_update_self()'
-        for x in self.__dict__.values():
-            with suppress(AttributeError):
-                x._pyha_update_self()
+        # update all childs
+        for x in self._pyha_updateable:
+            x._pyha_update_self()
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
