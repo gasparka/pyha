@@ -407,20 +407,37 @@ class TestAssignConstant:
 
 
 class TestLocalsSfix:
-    class A7(HW):
-        def main(self, arg):
-            b = Sfix(0.5, 0, -17)
-            c = Sfix(0.1, 5, -12)
-            a = b
-            b = c
-            c = a
 
-            return arg, a, b, c
+    def test_no_resize(self):
+        class A7B(HW):
+            def main(self, arg):
+                b = Sfix(0.5, 0, -17)
+                b = Sfix(0.5, 5, -5)
+                assert b.left == 5
+                assert b.right == -5
 
-    def test_sim(self):
+                return arg
         x = [0.1, 0.2]
 
-        dut = self.A7()
+        dut = A7B()
+        assert_sim_match(dut, None, x,
+                         simulations=[SIM_HW_MODEL])
+
+
+    def test_sim(self):
+
+        class A7(HW):
+            def main(self, arg):
+                b = Sfix(0.5, 0, -17)
+                c = Sfix(0.1, 5, -12)
+                a = b
+                b = c
+                c = a
+
+                return arg, a, b, c
+        x = [0.1, 0.2]
+
+        dut = A7()
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
