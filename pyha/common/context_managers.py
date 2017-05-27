@@ -1,7 +1,4 @@
-from contextlib import AbstractContextManager
-
-
-class ContextManagerRefCounted(AbstractContextManager):
+class ContextManagerRefCounted:
     def __init__(self):
         self.enabled = 0
 

@@ -1,9 +1,5 @@
 import collections
-
 import numpy as np
-import scipy
-from pyha.common.hwsim import HW
-from scipy import signal
 
 
 def escape_for_vhdl(x: str) -> str:
@@ -54,6 +50,7 @@ def load_gnuradio_file(file: str):
 def resample_gnuradio(file: str, ratio: float):
     """ ratio is current_fs / desired_fs """
     f = load_gnuradio_file(file)
+    from scipy import signal
     resampled = signal.resample(f, len(f) * ratio)
     return resampled
 
@@ -114,6 +111,7 @@ def test_bools_to_hex():
 
 def plot_freqz(b):
     import matplotlib.pyplot as plt
+    from scipy import signal
     w, h = signal.freqz(b)
 
     fig = plt.figure()

@@ -1,6 +1,6 @@
 import sys
 from collections import UserList
-from contextlib import suppress, AbstractContextManager
+from contextlib import suppress
 from copy import deepcopy, copy
 from enum import Enum
 
@@ -187,9 +187,9 @@ class PyhaFunc:
         with RegisterBehaviour.enable():
             with AutoResize.enable():
                 ret = self.call_with_locals_discovery(*args, **kwargs)
-
+                # ret = self.func(*args, **kwargs)
         # fixme: ComplexSfix related hack, can remove later
-        ret = deepcopy(ret)
+        ret = copy(ret)
         self.last_return = ret
 
         real_self._outputs.append(ret)
@@ -280,7 +280,6 @@ def auto_resize(target, value):
     left = target.left if target.left is not None else value.left
     right = target.right if target.right is not None else value.right
 
-    target._was_auto_resized = True
     return resize(value, left, right, round_style=target.round_style,
                   overflow_style=target.overflow_style)
 
