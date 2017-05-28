@@ -4,7 +4,8 @@ import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, debug_assert_sim_match, SIM_GATE, \
-    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match
+    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match, \
+    plot_assert_sim_match
 
 
 def assert_exact_match(model, types, *x):
@@ -230,3 +231,28 @@ def test_int_operations():
 
     x = np.random.randint(-2 ** 30, 2 ** 30, 2 ** 14)
     assert_exact_match_gate(T15(), [int], x)
+
+
+def test_real_precison_bug():
+    """ This shows how RTL simulation can differ from HWSIM, because we should use integer math in Sfix class??"""
+    pytest.xfail('Not solved yet')
+    class Bug(HW):
+        def main(self, c):
+            m = resize(c.real * c.real * c.real, 0, -17, round_style=fixed_truncate)
+            return m
+
+    import numpy as np
+    from numpy.random import rand
+
+    n = 128
+    inp = np.array([0]*n, dtype=np.complex)
+    inp.real = rand(n) * 2 - 1
+    inp.imag = rand(n) * 2 - 1
+
+    # inp = np.array([0.1 + 0.2j] * 16)
+
+    inp *= 0.01
+
+    dut = Bug()
+    plot_assert_sim_match(dut, None, inp, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyhacores/playground')
+    assert 0
