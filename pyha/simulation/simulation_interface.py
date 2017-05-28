@@ -84,7 +84,7 @@ def type_conversions(func):
                         f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
-                elif isinstance(arg[0], complex):
+                elif isinstance(arg[0], (complex, np.complex64)):
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
                     args[i] = [t(x, is_local=True) for x in arg]

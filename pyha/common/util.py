@@ -44,6 +44,7 @@ def tabber(str):
 
 
 def load_gnuradio_file(file: str):
+    import scipy
     return scipy.fromfile(open(file), dtype=scipy.complex64)
 
 
