@@ -7,7 +7,7 @@ pyha
 .. image:: https://img.shields.io/pypi/v/pyha.svg
         :target: https://pypi.python.org/pypi/pyha
 
-.. image:: https://img.shields.io/travis/petspats/pyha.svg
+.. image:: https://img.shields.io/travis/gasparka/pyha.svg
         :target: https://travis-ci.org/gasparka/pyha
 
 .. image:: https://readthedocs.org/projects/pyha/badge/?version=develop
