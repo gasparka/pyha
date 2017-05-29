@@ -14,8 +14,8 @@ pyha
     :target: http://pyha.readthedocs.io/en/develop/?badge=develop
     :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/petspats/pyha/shield.svg
-     :target: https://pyup.io/repos/github/petspats/pyha/
+.. image:: https://pyup.io/repos/github/gasparka/pyha/shield.svg
+     :target: https://pyup.io/repos/github/gasparka/pyha/
      :alt: Updates
 
 .. image:: https://coveralls.io/repos/github/petspats/pyha/badge.svg?branch=develop
