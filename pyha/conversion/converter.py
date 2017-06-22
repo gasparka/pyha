@@ -4,18 +4,19 @@ import textwrap
 from contextlib import suppress
 from enum import Enum
 
-import pyha
 from parse import parse
+from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
+
+import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import ComplexSfix
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, escape_for_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,17 +26,6 @@ class ExceptionReturnFunctionCall(Exception):
     def __init__(self, red_node: Node):
         message = f'Trying to return something that is not an variable!\nLine: {red_node}'
         super().__init__(message)
-
-
-# class ExceptionUnknownReturnVariable(Exception):
-#     def __init__(self, datamodel: DataModel, red_node: Node):
-#         message = textwrap.dedent("""\
-#         Did not find returned variable in datamodel:
-#         Line: {}
-#         Datamodel:
-#             {}
-#         """).format(red_node, datamodel)
-#         super().__init__(message)de
 
 
 def file_header():
@@ -67,12 +57,8 @@ class NodeConv:
                         continue
                     self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
-        # FIXME: possible bug, need to process strings?
         for x in red_node._str_keys:
             self.__dict__[x] = red_node.__dict__[x]
-
-    # def __iter__(self):
-    #     return iter(self.nodes)
 
     def __str__(self):
         return str(self.red_node)
@@ -319,8 +305,6 @@ class PassNodeConv(NodeConv):
 class CallNodeConv(NodeConv):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
-        if str(self.red_node.parent) == 'make_self(self_reg, self)':
-            return base + ';'  # fixes some random bug
 
         is_assign = self.red_node.parent_find('assign')
         if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
@@ -330,14 +314,11 @@ class CallNodeConv(NodeConv):
 
 class CallArgumentNodeConv(NodeConv):
     def __str__(self):
-        # transform keyword arguments
-        # change = to =>
+        # transform keyword arguments, = to =>
         if self.target is not None:
             return f'{self.target}=>{self.value}'
 
         return str(self.value)
-
-    pass
 
 
 class IntNodeConv(NodeConv):
@@ -437,7 +418,6 @@ class SliceNodeConv(GetitemNodeConv):
             upper = f"{self.get_index_target()}'high"
         else:
             # vhdl includes upper limit, subtract one to get same behaviour as in python
-            # upper = int(str(self.upper)) - 1
             upper = f'({self.upper})-1'
 
         if self.is_negative_indexing(self.upper):
