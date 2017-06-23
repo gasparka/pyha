@@ -14,13 +14,9 @@ from pyha.conversion.top_generator import TopGenerator
 
 
 def get_objects_rednode(obj):
-    source_path = inspect.getsourcefile(type(obj))
-    source = open(source_path).read()
-    red_list = RedBaron(source)('class', name=obj.__class__.__name__)
-    if len(red_list) != 1:
-        raise MultipleNodesError('Found {} definitions of "{}" class'.
-                                 format(len(red_list), obj.__class__.__name__))
-
+    source = inspect.getsourcelines(type(obj))[0]
+    source_str = textwrap.dedent(''.join(source))
+    red_list = RedBaron(source_str)
     return red_list[0]
 
 

@@ -148,7 +148,7 @@ class VHDLType:
 
     @classmethod
     def get_self(cls):
-        return cls._datamodel.obj._pyha_get_self()
+        # return cls._datamodel.obj._pyha_get_self()
         if cls._datamodel is None:
             return []
         ret = []

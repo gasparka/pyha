@@ -379,7 +379,6 @@ class HW(with_metaclass(Meta)):
 
         return ret
 
-
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -404,6 +403,7 @@ class HW(with_metaclass(Meta)):
             x._pyha_update_self()
 
     def __setattr__(self, name, value):
+        # todo: alos implements imlicit next
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
