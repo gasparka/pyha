@@ -352,7 +352,33 @@ class SfixList(list):
         #     pass
 
 
+class IntConverter:
+    def __init__(self, var_name, current, initial):
+        self.var_name = var_name
+        self.initial = initial
+        self.current = current
+
+
 class HW(with_metaclass(Meta)):
+
+    def _pyha_get_self(self):
+        def filter_junk(x):
+            return {k:v for k,v in x.items() if not k.startswith('_')}
+
+        current_vars = filter_junk(vars(self))
+        initial_vars = filter_junk(vars(self._pyha_initial_self))
+
+        # convert to conversion classes
+        ret = []
+        for name, current_val, initial_val in zip(current_vars.keys(), current_vars.values(), initial_vars.values()):
+            converter = None
+            if type(current_val) == int:
+                converter = IntConverter(name, current_val, initial_val)
+
+            ret.append(converter)
+
+        return ret
+
 
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """

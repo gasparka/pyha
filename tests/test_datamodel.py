@@ -656,3 +656,13 @@ class TestLocals:
 
         result = extract_locals(dut)
         assert result == expect
+
+
+class TestHW:
+    def test__pyha_get_self(self):
+        class T0(HW):
+            def __init__(self):
+                self.i = 0
+
+        dut = T0()
+        ret = dut._pyha_get_self()

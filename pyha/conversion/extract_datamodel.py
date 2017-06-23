@@ -52,9 +52,7 @@ def extract_locals(obj):
     ret = {}
     class_name = type(obj).__name__
     for method in dir(obj):
-        if method in SKIP_FUNCTIONS:  continue
         call = getattr(obj, method)
-        # if hasattr(call, 'knows_locals'):
         if isinstance(call, PyhaFunc):
             if call.calls == 0:
                 raise FunctionNotSimulated(class_name, call.func.__name__)

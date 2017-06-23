@@ -478,7 +478,6 @@ class ForNodeConv(NodeConv):
 
 
 class ClassNodeConv(NodeConv):
-    """ This relies heavily on datamodel """
 
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
