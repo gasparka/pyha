@@ -6,6 +6,10 @@ from pyha.conversion.conversion import Conversion, MultipleNodesError, get_objec
 from pyha.simulation.simulation_interface import assert_sim_match
 
 
+class T:
+    pass
+
+
 @pytest.fixture
 def dut():
     class Dummy(HW):
@@ -22,6 +26,69 @@ def dut():
 def test_get_objects_rednode(dut):
     red = get_objects_rednode(dut.obj)
     assert red.name == 'Dummy'
+
+
+def test_get_objects_rednode_global():
+    red = get_objects_rednode(T())
+    assert red.name == 'T'
+
+
+def test_get_objects_rednode_local():
+    class T0:
+        def b(self):
+            pass
+
+    red = get_objects_rednode(T0())
+    assert red.dumps() == 'class T0:\n    def b(self):\n        pass\n'
+
+
+def test_get_objects_rednode_local2():
+    class T0:
+        def a(self):
+            pass
+
+    red = get_objects_rednode(T0())
+    assert red.dumps() == 'class T0:\n    def a(self):\n        pass\n'
+
+
+def test_get_objects_rednode_local_two():
+    class Dummy(HW):
+        def main(self, a):
+            return a
+
+    class Dummy2(HW):
+        def main(self, a):
+            return a
+
+    red = get_objects_rednode(Dummy())
+    assert red.name == 'Dummy'
+
+    red = get_objects_rednode(Dummy2())
+    assert red.name == 'Dummy2'
+
+
+def test_get_objects_rednode_selective():
+    pytest.xfail('Will not work, since locals cannot be walked')
+
+    def f0():
+        class T0:
+            def b(self):
+                pass
+
+        return T0()
+
+    def f1():
+        class T0:
+            def a(self):
+                pass
+
+        return T0()
+
+    red = get_objects_rednode(f0())
+    assert red.dumps() == 'class T0:\n    def b(self):\n        pass\n'
+
+    red = get_objects_rednode(f1())
+    assert red.dumps() == 'class T0:\n    def a(self):\n        pass\n'
 
 
 def test_write_vhdl_files(dut, tmpdir):

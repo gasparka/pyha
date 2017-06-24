@@ -2,6 +2,7 @@ import inspect
 import textwrap
 from pathlib import Path
 from typing import List
+from unittest.mock import MagicMock, patch
 
 from redbaron import RedBaron
 
@@ -14,9 +15,28 @@ from pyha.conversion.top_generator import TopGenerator
 
 
 def get_objects_rednode(obj):
-    source = inspect.getsourcelines(type(obj))[0]
-    source_str = textwrap.dedent(''.join(source))
-    red_list = RedBaron(source_str)
+    """
+    Returns the RedBaron node for the class instance.
+    This mocks the inspect module to improve the code search resolution (in general inspect finds all the classes from file that match the name and just returns the first)
+
+    """
+
+    # walk til the first 'locals'
+    # Example __qualname__: 'TestClassNodeConv.test_get_datamodel.<locals>.T'
+    parent = inspect.getmodule(obj)
+    for name in obj.__class__.__qualname__.split('.'):
+        if name == '<locals>':
+            break
+        parent = getattr(parent, name)
+
+    # get sourcecode of the parent
+    parent_code = inspect.getsourcelines(parent)[0]
+
+    # monkeypatch the inspect module to use 'parent code' as input for searching the class code (else it searches full file)
+    with patch('inspect.linecache.getlines', MagicMock(return_value=parent_code)):
+        source = textwrap.dedent(inspect.getsource(obj.__class__))
+
+    red_list = RedBaron(source)
     return red_list[0]
 
 
