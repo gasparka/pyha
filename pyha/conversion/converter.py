@@ -482,6 +482,7 @@ class ClassNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
+        self.obj = VHDLType._datamodel.obj
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):
@@ -620,25 +621,42 @@ class ClassNodeConv(NodeConv):
 
         return template.format(**sockets)
 
-    def get_datamodel(self):
-        template = textwrap.dedent("""\
+    def build_data_structs(self):
+
+        variables = [f'{x.name}: {x._pyha_type()};' for x in self.obj._pyha_get_conversion_vars()]
+        variables = '\n'.join(tabber(x) for x in variables)
+        constants = ''
+        template = textwrap.dedent(f"""\
             type next_t is record
-            {DATA}
+            {variables}
             end record;
 
             type self_t is record
-            {CONSTANTS}
-            {DATA}
+            {constants}
+            {variables}
                 \\next\\: next_t;
             end record;""")
-        sockets = {'DATA': '', 'CONSTANTS': ''}
-        sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
-        const = VHDLType.get_constants()
-        if len(const):
-            sockets['CONSTANTS'] = '    -- constants\n'
-            sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
-            sockets['CONSTANTS'] += '\n'
-        return template.format(**sockets)
+
+        return template
+
+        # template = textwrap.dedent("""\
+        #     type next_t is record
+        #     {DATA}
+        #     end record;
+        #
+        #     type self_t is record
+        #     {CONSTANTS}
+        #     {DATA}
+        #         \\next\\: next_t;
+        #     end record;""")
+        # sockets = {'DATA': '', 'CONSTANTS': ''}
+        # sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
+        # const = VHDLType.get_constants()
+        # if len(const):
+        #     sockets['CONSTANTS'] = '    -- constants\n'
+        #     sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
+        #     sockets['CONSTANTS'] += '\n'
+        # return template.format(**sockets)
 
     def get_typedefs(self):
         typedefs = []
@@ -700,7 +718,7 @@ class ClassNodeConv(NodeConv):
         sockets['NAME'] = self.get_name()
         sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
-        sockets['SELF_T'] = tabber(self.get_datamodel())
+        sockets['SELF_T'] = tabber(self.build_data_structs())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 

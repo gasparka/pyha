@@ -52,7 +52,7 @@ class TestBasic:
         assert expect == self.conv.conv.get_typedefs()
 
     def test_vhdl_datamodel(self):
-        data_conversion = self.conv.conv.get_datamodel()
+        data_conversion = self.conv.conv.build_data_structs()
         expect = textwrap.dedent("""\
                     type next_t is record
                         sublist: A_0_list_t(0 to 1);

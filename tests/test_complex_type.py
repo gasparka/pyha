@@ -112,7 +112,7 @@ class TestRegister:
                     reg: complex_sfix1_12;
                     \\next\\: next_t;
                 end record;""")
-        dm = conv.get_datamodel()
+        dm = conv.build_data_structs()
         assert expect == dm
 
     def test_conversion_reset(self):

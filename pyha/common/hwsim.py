@@ -11,13 +11,12 @@ from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
-
-
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
-PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
+PYHA_VARIABLES = (
+    '_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
 default_sfix = Sfix(0, 0, -17)
 default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
@@ -149,7 +148,6 @@ class PyhaFunc:
                     if len(old_value) != len(value):
                         raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
 
-
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
         self.TraceManager.set_profile()
@@ -266,7 +264,6 @@ class Meta(type):
         return ret
 
 
-
 def auto_resize(target, value):
     if not AutoResize.is_enabled() or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
         return value
@@ -279,7 +276,6 @@ def auto_resize(target, value):
 
 
 class PyhaList(UserList):
-
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, seq, type):
         super().__init__(seq)
@@ -314,7 +310,6 @@ class PyhaList(UserList):
                 x._pyha_update_self()
         else:
             self.data = self._next[:]
-
 
 
 class SfixList(list):
@@ -352,18 +347,41 @@ class SfixList(list):
         #     pass
 
 
-class IntConverter:
+class VHDLConverter:
     def __init__(self, var_name, current, initial):
-        self.var_name = var_name
+        self.name = var_name
         self.initial = initial
         self.current = current
 
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def _pyha_type(self):
+        raise NotImplemented()
+
+
+class PyhaInt(VHDLConverter):
+    def _pyha_type(self):
+        return 'integer'
+
+
+class PyhaBool(VHDLConverter):
+    def _pyha_type(self):
+        return 'boolean'
+
+
+class PyhaSfix(VHDLConverter):
+    def _pyha_type(self):
+        return 'boolean'
+
 
 class HW(with_metaclass(Meta)):
-
-    def _pyha_get_self(self):
+    def _pyha_get_conversion_vars(self):
         def filter_junk(x):
-            return {k:v for k,v in x.items() if not k.startswith('_')}
+            return {k: v for k, v in x.items()
+                    if not k.startswith('_') and not isinstance(v, PyhaFunc)}
 
         current_vars = filter_junk(vars(self))
         initial_vars = filter_junk(vars(self._pyha_initial_self))
@@ -373,7 +391,9 @@ class HW(with_metaclass(Meta)):
         for name, current_val, initial_val in zip(current_vars.keys(), current_vars.values(), initial_vars.values()):
             converter = None
             if type(current_val) == int:
-                converter = IntConverter(name, current_val, initial_val)
+                converter = PyhaInt(name, current_val, initial_val)
+            elif type(current_val) == bool:
+                converter = PyhaBool(name, current_val, initial_val)
 
             ret.append(converter)
 
@@ -423,4 +443,3 @@ class HW(with_metaclass(Meta)):
             return
 
         self._next[name] = value
-

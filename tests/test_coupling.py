@@ -718,7 +718,7 @@ def test_class_datamodel(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
+    conv = conv.build_data_structs()
     assert expect == str(conv)
 
 
@@ -777,7 +777,7 @@ def test_class_datamodel_submodule(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
+    assert expect == str(conv.build_data_structs())
 
     expect = textwrap.dedent("""\
         procedure \\_pyha_reset_self\\(self: inout self_t) is
@@ -875,7 +875,7 @@ def test_datamodel_list_int(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
+    assert expect == str(conv.build_data_structs())
 
     expect = textwrap.dedent("""\
         procedure \\_pyha_reset_self\\(self: inout self_t) is
@@ -908,7 +908,7 @@ def test_datamodel_list_boolean(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
+    assert expect == str(conv.build_data_structs())
 
     expect = textwrap.dedent("""\
         procedure \\_pyha_reset_self\\(self: inout self_t) is
@@ -941,7 +941,7 @@ def test_list_sfix(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    assert expect == str(conv.get_datamodel())
+    assert expect == str(conv.build_data_structs())
 
     expect = textwrap.dedent("""\
         procedure \\_pyha_reset_self\\(self: inout self_t) is
@@ -985,7 +985,7 @@ def test_class_datamodel(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
+    conv = conv.build_data_structs()
     assert expect == str(conv)
 
 
@@ -1013,7 +1013,7 @@ def test_class_datamodel_reserved_name(converter):
             end record;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_datamodel()
+    conv = conv.build_data_structs()
     assert expect == str(conv)
 
 

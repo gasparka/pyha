@@ -48,7 +48,7 @@ def test_vhdl_datamodel(t0):
                 mode: TestEnum;
                 \\next\\: next_t;
             end record;""")
-    dm = conv.get_datamodel()
+    dm = conv.build_data_structs()
     assert expect == dm
 
 

@@ -117,7 +117,7 @@ def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
 
 
 class VHDLType:
-    """ This merges converter and datamodel code. Converter provides a variable,
+    """ This merges converter and datamodel code. VHDLConverter provides a variable,
     datamodel provides a type, this finds a type fof variable"""
 
     _datamodel = None

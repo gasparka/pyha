@@ -76,7 +76,7 @@ class TestSingleInt:
                     much_dummy_very_wow: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -172,7 +172,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -236,7 +236,7 @@ class TestFloat:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -297,7 +297,7 @@ class TestLists:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
