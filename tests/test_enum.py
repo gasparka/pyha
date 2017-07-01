@@ -35,23 +35,6 @@ def test_datamodel(t0):
     assert datamodel.self_data['mode'] == TestEnum.ENUM1
 
 
-def test_vhdl_datamodel(t0):
-    conv = get_conversion(t0)
-
-    expect = textwrap.dedent("""\
-            type next_t is record
-                mode: TestEnum;
-            end record;
-
-            type self_t is record
-
-                mode: TestEnum;
-                \\next\\: next_t;
-            end record;""")
-    dm = conv.build_data_structs()
-    assert expect == dm
-
-
 def test_vhdl_enum_define(t0):
     conv = get_conversion(t0)
     expect = ['type TestEnum is (ENUM0,ENUM1,ENUM2,ENUM3);']

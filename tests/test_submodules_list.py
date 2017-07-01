@@ -51,23 +51,6 @@ class TestBasic:
         expect = ['type A_0_list_t is array (natural range <>) of A_0.self_t;']
         assert expect == self.conv.conv.get_typedefs()
 
-    def test_vhdl_datamodel(self):
-        data_conversion = self.conv.conv.build_data_structs()
-        expect = textwrap.dedent("""\
-                    type next_t is record
-                        sublist: A_0_list_t(0 to 1);
-                    end record;
-
-                    type self_t is record
-                        -- constants
-                        \_delay\: integer;
-
-                        sublist: A_0_list_t(0 to 1);
-                        \\next\\: next_t;
-                    end record;""")
-
-        assert expect == data_conversion
-
     def test_vhdl_reset(self):
         data_conversion = self.conv.conv.get_reset_self()
         expect = textwrap.dedent("""\

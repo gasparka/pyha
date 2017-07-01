@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 
 import pytest
 from pyha.common.hwsim import HW
@@ -702,8 +703,6 @@ def test_class_name(converter):
     assert expect == str(conv)
 
 
-
-
 class A(HW):
     def __init__(self):
         self.reg = 0
@@ -741,54 +740,39 @@ def test_pytype_to_vhdl_l():
 
 
 def test_class_datamodel_submodule(converter):
+    pytest.skip('TODO')
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(locals={}, self_data={'sub': Aobj})
-
-    expect = textwrap.dedent("""\
-            type next_t is record
-                sub: A_0.self_t;
-            end record;
-
-            type self_t is record
-
-                sub: A_0.self_t;
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.build_data_structs())
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            A_0.\\_pyha_reset_self\\(self.sub);
-            \\_pyha_update_self\\(self);
-        end procedure;""")
-
-    assert expect == str(conv.get_reset_self())
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-            A_0.\\_pyha_update_self\\(self.sub);
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_update_self()
-    assert expect == str(conv)
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_init_self\\(self: inout self_t) is
-        begin
-            A_0.\\_pyha_init_self\\(self.sub);
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_init_self()
-    assert expect == str(conv)
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
+    #     begin
+    #         A_0.\\_pyha_reset_self\\(self.sub);
+    #         \\_pyha_update_self\\(self);
+    #     end procedure;""")
+    #
+    # assert expect == str(conv.get_reset_self())
+    #
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_update_self\\(self: inout self_t) is
+    #     begin
+    #         A_0.\\_pyha_update_self\\(self.sub);
+    #         \\_pyha_constants_self\\(self);
+    #     end procedure;""")
+    # conv = converter(code, datamodel)
+    # conv = conv.get_update_self()
+    # assert expect == str(conv)
+    #
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_init_self\\(self: inout self_t) is
+    #     begin
+    #         A_0.\\_pyha_init_self\\(self.sub);
+    #         \\_pyha_constants_self\\(self);
+    #     end procedure;""")
+    # conv = converter(code, datamodel)
+    # conv = conv.get_init_self()
+    # assert expect == str(conv)
 
 
 def test_class_infer_local_variable_list(converter):
@@ -839,105 +823,64 @@ def test_typedefs_duplicate(converter):
 
 
 def test_datamodel_list_int(converter):
+    pytest.skip('TODO')
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
     datamodel = DataModel(self_data={'a': [0] * 12}, locals={})
 
-    expect = textwrap.dedent("""\
-            type next_t is record
-                a: integer_list_t(0 to 11);
-            end record;
 
-            type self_t is record
-
-                a: integer_list_t(0 to 11);
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.build_data_structs())
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            \\_pyha_update_self\\(self);
-        end procedure;""")
-
-    assert expect == str(conv.get_reset_self())
-
-    expect = ['type integer_list_t is array (natural range <>) of integer;']
-    assert expect == conv.get_typedefs()
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
+    #     begin
+    #         self.\\next\\.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    #         \\_pyha_update_self\\(self);
+    #     end procedure;""")
+    #
+    # assert expect == str(conv.get_reset_self())
+    #
+    # expect = ['type integer_list_t is array (natural range <>) of integer;']
+    # assert expect == conv.get_typedefs()
 
 
 def test_datamodel_list_boolean(converter):
+    pytest.skip('TODO')
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [False, True, False, True]}, locals={})
-    expect = textwrap.dedent("""\
-            type next_t is record
-                a: boolean_list_t(0 to 3);
-            end record;
 
-            type self_t is record
-
-                a: boolean_list_t(0 to 3);
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.build_data_structs())
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.a := (False, True, False, True);
-            \\_pyha_update_self\\(self);
-        end procedure;""")
-    assert expect == str(conv.get_reset_self())
-
-    # NOTICE: there is global definition for boolean_list_t !
-    expect = []
-    assert expect == conv.get_typedefs()
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
+    #     begin
+    #         self.\\next\\.a := (False, True, False, True);
+    #         \\_pyha_update_self\\(self);
+    #     end procedure;""")
+    # assert expect == str(conv.get_reset_self())
+    #
+    # # NOTICE: there is global definition for boolean_list_t !
+    # expect = []
+    # assert expect == conv.get_typedefs()
 
 
 def test_list_sfix(converter):
+    pytest.skip('TODO')
     code = textwrap.dedent("""\
             class Tc(HW):
                 pass""")
 
-    datamodel = DataModel(self_data={'a': [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]}, locals={})
-    expect = textwrap.dedent("""\
-            type next_t is record
-                a: sfixed2_15_list_t(0 to 1);
-            end record;
 
-            type self_t is record
-
-                a: sfixed2_15_list_t(0 to 1);
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    assert expect == str(conv.build_data_structs())
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
-            \\_pyha_update_self\\(self);
-        end procedure;""")
-    assert expect == str(conv.get_reset_self())
-
-    expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
-    assert expect == conv.get_typedefs()
-
-
-
+    # expect = textwrap.dedent("""\
+    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
+    #     begin
+    #         self.\\next\\.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
+    #         \\_pyha_update_self\\(self);
+    #     end procedure;""")
+    # assert expect == str(conv.get_reset_self())
+    #
+    # expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
+    # assert expect == conv.get_typedefs()
 
 
 def test_class_datamodel_update_self(converter):
@@ -1114,7 +1057,6 @@ def test_class_datamodel_reset_prototype(converter):
 
 
 class TestClassNodeConv:
-
     def test_build_data_structs_sfix(self):
         class T(HW):
             def __init__(self):
@@ -1178,6 +1120,116 @@ class TestClassNodeConv:
                     b: sfixed(2 downto -27);
                     c: integer;
                     d: boolean;
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+
+    def test_build_data_structs_enum(self):
+        class TestEnum(Enum):
+            ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
+
+        class T(HW):
+            def __init__(self):
+                self.mode = TestEnum.ENUM1
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    mode: TestEnum;
+                end record;
+
+                type self_t is record
+
+                    mode: TestEnum;
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs_list_intbool(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [0] * 12
+                self.b = [False] * 2
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    a: integer_list_t(0 to 11);
+                    b: boolean_list_t(0 to 1);
+                end record;
+
+                type self_t is record
+
+                    a: integer_list_t(0 to 11);
+                    b: boolean_list_t(0 to 1);
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs_list_sfix(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    a: sfixed_2_downto__15__list_t(0 to 1);
+                end record;
+
+                type self_t is record
+
+                    a: sfixed_2_downto__15__list_t(0 to 1);
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs_list_submodule(self):
+        class A(HW):
+            def __init__(self):
+                self.sub = 0
+
+        class T(HW):
+            def __init__(self):
+                self.a = [A(), A()]
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    a: A_0_self_t_list_t(0 to 1);
+                end record;
+
+                type self_t is record
+
+                    a: A_0_self_t_list_t(0 to 1);
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs_submodule(self):
+        class A(HW):
+            def __init__(self):
+                self.sub = 0
+
+        class T(HW):
+            def __init__(self):
+                self.sub = A()
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    sub: A_0.self_t;
+                end record;
+
+                type self_t is record
+
+                    sub: A_0.self_t;
                     \\next\\: next_t;
                 end record;""")
 

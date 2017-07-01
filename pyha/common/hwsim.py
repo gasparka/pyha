@@ -231,7 +231,7 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, list):
-                ret.__dict__[k] = PyhaList(v, deepcopy(v[0]))
+                ret.__dict__[k] = PyhaList(v, type=deepcopy(v[0]), name=k)
 
         # make ._next variable that holds 'next' state for elements that dont know how to update themself
         ret._next = {}
@@ -277,43 +277,6 @@ def auto_resize(target, value):
                   overflow_style=target.overflow_style)
 
 
-class PyhaList(UserList):
-    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    def __init__(self, seq, type):
-        super().__init__(seq)
-        self.type = type
-        self._next = deepcopy(seq)
-
-    def __setitem__(self, i, y):
-        if hasattr(self.type, '_pyha_update_self'):
-            # object already knows how to handle registers
-            self[i] = y
-        else:
-            if isinstance(self.type, Sfix):
-                y = auto_resize(self.type, y)
-
-                if self.type.left is None:
-                    self.type.left = y.left
-
-                if self.type.right is None:
-                    self.type.right = y.right
-
-            if RegisterBehaviour.is_enabled():
-                self._next[i] = y
-            else:
-                self.data[i] = y
-
-    def _pyha_update_self(self):
-        if RegisterBehaviour.is_force_disabled():
-            return
-        if hasattr(self.type, '_pyha_update_self'):
-            # object already knows how to handle registers
-            for x in self.data:
-                x._pyha_update_self()
-        else:
-            self.data = self._next[:]
-
-
 class SfixList(list):
     """ On assign to element resize the value """
 
@@ -347,6 +310,58 @@ class SfixList(list):
         #
         # def __radd__(self, other):
         #     pass
+
+
+class PyhaList(UserList):
+    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
+    # TODO: DONT LIKE THAT SIM AND CONV FUNCT IN SAME CLASS
+    def __init__(self, data, type, name):
+        super().__init__(data)
+        self.type = type
+        self._next = deepcopy(data)
+
+        self.name = name
+        self.current = self.data
+        self.initial = deepcopy(data)
+        self.elem_type = None  # this is filled in later
+
+    def __setitem__(self, i, y):
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            self[i] = y
+        else:
+            if isinstance(self.type, Sfix):
+                y = auto_resize(self.type, y)
+
+                if self.type.left is None:
+                    self.type.left = y.left
+
+                if self.type.right is None:
+                    self.type.right = y.right
+
+            if RegisterBehaviour.is_enabled():
+                self._next[i] = y
+            else:
+                self.data[i] = y
+
+    def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            for x in self.data:
+                x._pyha_update_self()
+        else:
+            self.data = self._next[:]
+
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
+
+    def _pyha_type(self):
+        elem_type = self.elem_type._pyha_type()
+        # some type may contain illegal chars for name..replace them
+        elem_type = elem_type.replace('(', '_').replace(')', '_').replace(' ', '_').replace('-', '_').replace('.', '_')
+        return f'{elem_type}_list_t(0 to {len(self.data) - 1})'
 
 
 class PyhaInt:
@@ -403,9 +418,39 @@ class PyhaSfix:
         return f'sfixed({self.current.left} downto {self.current.right})'
 
 
-# class PyhaSfix(VHDLConverter):
-#     def _pyha_type(self):
-#         return 'boolean'
+class PyhaModule:
+    def __init__(self, var_name, current, initial):
+        self.name = var_name
+        self.initial = initial
+        self.current = current
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
+
+    def _pyha_type(self):
+        return escape_for_vhdl(f'{type(self.current).__name__}_{self.current._pyha_instance_id}.self_t')
+
+class PyhaEnum:
+    def __init__(self, var_name, current, initial):
+        self.name = var_name
+        self.initial = initial
+        self.current = current
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
+
+    def _pyha_type(self):
+        return type(self.current).__name__
 
 
 class HW(with_metaclass(Meta)):
@@ -417,18 +462,28 @@ class HW(with_metaclass(Meta)):
         current_vars = filter_junk(vars(self))
         initial_vars = filter_junk(vars(self._pyha_initial_self))
 
-        # convert to conversion classes
-        ret = []
-        for name, current_val, initial_val in zip(current_vars.keys(), current_vars.values(), initial_vars.values()):
-            converter = None
+        def pyha_type(name, current_val, initial_val=None):
             if type(current_val) == int:
-                converter = PyhaInt(name, current_val, initial_val)
+                return PyhaInt(name, current_val, initial_val)
             elif type(current_val) == bool:
-                converter = PyhaBool(name, current_val, initial_val)
+                return PyhaBool(name, current_val, initial_val)
             elif type(current_val) == Sfix:
-                converter = PyhaSfix(name, current_val, initial_val)
+                return PyhaSfix(name, current_val, initial_val)
+            elif type(current_val) == PyhaList:
+                # lists are already converted to PyhaList in the meta class due to the need of __setattr__ overload in python simulation
+                # fill in the elem_type so that PyhaList knows what it is dealing with
+                current_val.elem_type = pyha_type('list_element_name_dont_use', current_val.current[0],
+                                                  current_val.initial[0])
+                return current_val
+            elif isinstance(current_val, HW):
+                return PyhaModule(name, current_val, initial_val)
+            elif isinstance(current_val, Enum):
+                return PyhaEnum(name, current_val, initial_val)
+            assert 0
 
-            ret.append(converter)
+        # convert to conversion classes
+        ret = [pyha_type(name, current_val, initial_val) for name, current_val, initial_val in
+               zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
 
         return ret
 
