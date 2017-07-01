@@ -44,22 +44,3 @@ class TestHW:
         assert ret == expect
 
 
-class TestClassNodeConv:
-    def test_build_data_structs(self):
-        class T(HW):
-            def __init__(self):
-                self.c = 25
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    c: integer;
-                end record;
-
-                type self_t is record
-                
-                    c: integer;
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)

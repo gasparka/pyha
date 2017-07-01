@@ -482,7 +482,11 @@ class ClassNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
-        self.obj = VHDLType._datamodel.obj
+        # todo: remove me after refactorings
+        try:
+            self.obj = VHDLType._datamodel.obj
+        except AttributeError:
+            self.obj = None
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):
@@ -623,19 +627,19 @@ class ClassNodeConv(NodeConv):
 
     def build_data_structs(self):
 
-        variables = [f'{x.name}: {x._pyha_type()};' for x in self.obj._pyha_get_conversion_vars()]
+        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.obj._pyha_get_conversion_vars()]
         variables = '\n'.join(tabber(x) for x in variables)
         constants = ''
-        template = textwrap.dedent(f"""\
-            type next_t is record
-            {variables}
-            end record;
+        template = f"""\
+type next_t is record
+{variables}
+end record;
 
-            type self_t is record
-            {constants}
-            {variables}
-                \\next\\: next_t;
-            end record;""")
+type self_t is record
+{constants}
+{variables}
+    \\next\\: next_t;
+end record;"""
 
         return template
 

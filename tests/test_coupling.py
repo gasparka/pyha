@@ -3,6 +3,7 @@ import textwrap
 import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
+from pyha.conversion.conversion import get_conversion
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
 from pyha.conversion.extract_datamodel import DataModel
@@ -701,25 +702,6 @@ def test_class_name(converter):
     assert expect == str(conv)
 
 
-def test_class_datamodel(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
-    expect = textwrap.dedent("""\
-            type next_t is record
-                a: sfixed(0 downto -27);
-            end record;
-
-            type self_t is record
-                a: sfixed(0 downto -27);
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    conv = conv.build_data_structs()
-    assert expect == str(conv)
 
 
 class A(HW):
@@ -955,66 +937,7 @@ def test_list_sfix(converter):
     assert expect == conv.get_typedefs()
 
 
-def test_class_datamodel(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
 
-    datamodel = DataModel(locals={}, self_data={
-        'a': Sfix(1.0, 0, -27),
-        'b': Sfix(4.0, 2, -27),
-        'c': 25,
-        'd': False
-    })
-
-    expect = textwrap.dedent("""\
-            type next_t is record
-                a: sfixed(0 downto -27);
-                b: sfixed(2 downto -27);
-                c: integer;
-                d: boolean;
-            end record;
-
-            type self_t is record
-
-                a: sfixed(0 downto -27);
-                b: sfixed(2 downto -27);
-                c: integer;
-                d: boolean;
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    conv = conv.build_data_structs()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'out': Sfix(1.0, 0, -27),
-        'new': False,
-    })
-
-    expect = textwrap.dedent("""\
-            type next_t is record
-                \\out\\: sfixed(0 downto -27);
-                \\new\\: boolean;
-            end record;
-
-            type self_t is record
-
-                \\out\\: sfixed(0 downto -27);
-                \\new\\: boolean;
-                \\next\\: next_t;
-            end record;""")
-
-    conv = converter(code, datamodel)
-    conv = conv.build_data_structs()
-    assert expect == str(conv)
 
 
 def test_class_datamodel_update_self(converter):
@@ -1188,3 +1111,75 @@ def test_class_datamodel_reset_prototype(converter):
     conv = converter(code)
     conv = conv.get_reset_self_prototype()
     assert expect == str(conv)
+
+
+class TestClassNodeConv:
+
+    def test_build_data_structs_sfix(self):
+        class T(HW):
+            def __init__(self):
+                self.a = Sfix(1.0, 0, -27)
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    a: sfixed(0 downto -27);
+                end record;
+
+                type self_t is record
+                
+                    a: sfixed(0 downto -27);
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs_reserved_name(self):
+        class T(HW):
+            def __init__(self):
+                self.out = Sfix(1.0, 0, -27)
+                self.new = False
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    \\out\\: sfixed(0 downto -27);
+                    \\new\\: boolean;
+                end record;
+
+                type self_t is record
+
+                    \\out\\: sfixed(0 downto -27);
+                    \\new\\: boolean;
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)
+
+    def test_build_data_structs(self):
+        class T(HW):
+            def __init__(self):
+                self.a = Sfix(1.0, 0, -27)
+                self.b = Sfix(4.0, 2, -27)
+                self.c = 25
+                self.d = True
+
+        expect = textwrap.dedent("""\
+                type next_t is record
+                    a: sfixed(0 downto -27);
+                    b: sfixed(2 downto -27);
+                    c: integer;
+                    d: boolean;
+                end record;
+
+                type self_t is record
+
+                    a: sfixed(0 downto -27);
+                    b: sfixed(2 downto -27);
+                    c: integer;
+                    d: boolean;
+                    \\next\\: next_t;
+                end record;""")
+
+        c = get_conversion(T()).build_data_structs()
+        assert expect == str(c)

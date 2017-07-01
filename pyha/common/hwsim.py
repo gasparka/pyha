@@ -12,6 +12,8 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
+from pyha.common.util import escape_for_vhdl
+
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
@@ -347,7 +349,7 @@ class SfixList(list):
         #     pass
 
 
-class VHDLConverter:
+class PyhaInt:
     def __init__(self, var_name, current, initial):
         self.name = var_name
         self.initial = initial
@@ -358,23 +360,52 @@ class VHDLConverter:
             return self.__dict__ == other.__dict__
         return False
 
-    def _pyha_type(self):
-        raise NotImplemented()
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
 
-
-class PyhaInt(VHDLConverter):
     def _pyha_type(self):
         return 'integer'
 
 
-class PyhaBool(VHDLConverter):
+class PyhaBool:
+    def __init__(self, var_name, current, initial):
+        self.name = var_name
+        self.initial = initial
+        self.current = current
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
+
     def _pyha_type(self):
         return 'boolean'
 
 
-class PyhaSfix(VHDLConverter):
+class PyhaSfix:
+    def __init__(self, var_name, current, initial):
+        self.name = var_name
+        self.initial = initial
+        self.current = current
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def _pyha_name(self):
+        return escape_for_vhdl(self.name)
+
     def _pyha_type(self):
-        return 'boolean'
+        return f'sfixed({self.current.left} downto {self.current.right})'
+
+
+# class PyhaSfix(VHDLConverter):
+#     def _pyha_type(self):
+#         return 'boolean'
 
 
 class HW(with_metaclass(Meta)):
@@ -394,6 +425,8 @@ class HW(with_metaclass(Meta)):
                 converter = PyhaInt(name, current_val, initial_val)
             elif type(current_val) == bool:
                 converter = PyhaBool(name, current_val, initial_val)
+            elif type(current_val) == Sfix:
+                converter = PyhaSfix(name, current_val, initial_val)
 
             ret.append(converter)
 
