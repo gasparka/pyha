@@ -1178,12 +1178,12 @@ class TestClassNodeConv:
 
         expect = textwrap.dedent("""\
                 type next_t is record
-                    a: sfixed_2_downto__15__list_t(0 to 1);
+                    a: sfixed2downto_15_list_t(0 to 1);
                 end record;
 
                 type self_t is record
 
-                    a: sfixed_2_downto__15__list_t(0 to 1);
+                    a: sfixed2downto_15_list_t(0 to 1);
                     \\next\\: next_t;
                 end record;""")
 

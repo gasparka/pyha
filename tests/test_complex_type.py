@@ -86,7 +86,7 @@ class TestRegister:
     def test_delay(self):
         next = ComplexSfix(1 + 1j, 1, -12)
         self.dut.main(ComplexSfix(1 + 1j, 1, -12))
-        assert self.dut._next['reg'] == next
+        assert self.dut._pyha_next['reg'] == next
         assert self.dut.reg != next
 
     # def test_reg_self_consistensy(self):
@@ -323,24 +323,24 @@ class TestRegisterIQ:
 
     def test_comp_reg_delay(self):
         next = ComplexSfix(1 + 1j, 1, -18)
-        assert id(self.dut.reg.real) != id(self.dut.reg._next['real'])
-        assert id(self.dut.reg.imag) != id(self.dut.reg._next['imag'])
+        assert id(self.dut.reg.real) != id(self.dut.reg._pyha_next['real'])
+        assert id(self.dut.reg.imag) != id(self.dut.reg._pyha_next['imag'])
 
         self.dut.main(next)
 
-        assert id(self.dut.reg.real) != id(self.dut.reg._next['real'])
-        assert id(self.dut.reg.imag) != id(self.dut.reg._next['imag'])
+        assert id(self.dut.reg.real) != id(self.dut.reg._pyha_next['real'])
+        assert id(self.dut.reg.imag) != id(self.dut.reg._pyha_next['imag'])
 
         self.dut._pyha_update_self()
 
-        # assert id(self.dut.reg.real) != id(self.dut.reg._next['real'])
-        # assert id(self.dut.reg.imag) != id(self.dut.reg._next['imag'])
+        # assert id(self.dut.reg.real) != id(self.dut.reg._pyha_next['real'])
+        # assert id(self.dut.reg.imag) != id(self.dut.reg._pyha_next['imag'])
 
         next = ComplexSfix(2 + 2j, 1, -18)
         self.dut.main(next)
 
-        assert self.dut.reg._next['real'].val == next.real.val
-        assert self.dut.reg._next['imag'].val == next.imag.val
+        assert self.dut.reg._pyha_next['real'].val == next.real.val
+        assert self.dut.reg._pyha_next['imag'].val == next.imag.val
 
         assert self.dut.reg.real != next.real
         assert self.dut.reg.imag != next.imag

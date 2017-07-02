@@ -12,8 +12,6 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
-from pyha.common.util import escape_reserved_vhdl
-
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
@@ -78,7 +76,6 @@ def deepish_copy(org):
     return out
 
 
-
 class PyhaFunc:
     class TraceManager:
         """ Enables nested functions calls, thanks to ref counting """
@@ -127,7 +124,7 @@ class PyhaFunc:
         self.TraceManager.set_profile()
         res = self.func(*args, **kwargs)
 
-        sys.setprofile(None) # without this things get fucked up
+        sys.setprofile(None)  # without this things get fucked up
         self.TraceManager.remove_profile()
 
         # TODO: why remove self?
@@ -155,7 +152,7 @@ class PyhaFunc:
         ret = deepcopy(ret)
         self.last_return = ret
 
-        real_self._outputs.append(ret)
+        real_self._pyha_outputs.append(ret)
         return ret
 
 
@@ -207,14 +204,14 @@ class Meta(type):
             if isinstance(v, list):
                 ret.__dict__[k] = PyhaList(v, type=deepcopy(v[0]), name=k)
 
-        # make ._next variable that holds 'next' state for elements that dont know how to update themself
-        ret._next = {}
+        # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+        ret._pyha_next = {}
         for k, v in ret.__dict__.items():
             if k in ['__dict__', '_next', '_pyha_constants', '_pyha_instance_id']:
                 continue
             if hasattr(v, '_pyha_update_self'):
                 continue
-            ret._next[k] = deepcopy(v)
+            ret._pyha_next[k] = deepcopy(v)
 
         ret._pyha_updateable = []
         for k, v in ret.__dict__.items():
@@ -225,7 +222,7 @@ class Meta(type):
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
-        ret._outputs = []
+        ret._pyha_outputs = []
 
         # decorate all methods -> for locals discovery
         for method_str in dir(ret):
@@ -252,6 +249,7 @@ def auto_resize(target, value):
 
 
 class SfixList(list):
+    # TODO: remove this!, should be PyhaList
     """ On assign to element resize the value """
 
     def __init__(self, seq, type):
@@ -288,11 +286,10 @@ class SfixList(list):
 
 class PyhaList(UserList):
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    # TODO: DONT LIKE THAT SIM AND CONV FUNCT IN SAME CLASS
     def __init__(self, data, type, name):
         super().__init__(data)
         self.type = type
-        self._next = deepcopy(data)
+        self._pyha_next = deepcopy(data)
 
         self.name = name
         self.current = self.data
@@ -314,7 +311,7 @@ class PyhaList(UserList):
                     self.type.right = y.right
 
             if RegisterBehaviour.is_enabled():
-                self._next[i] = y
+                self._pyha_next[i] = y
             else:
                 self.data[i] = y
 
@@ -326,144 +323,10 @@ class PyhaList(UserList):
             for x in self.data:
                 x._pyha_update_self()
         else:
-            self.data = self._next[:]
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        elem_type = self.elem_type._pyha_type()
-        # some type may contain illegal chars for name..replace them
-        elem_type = elem_type.replace('(', '_').replace(')', '_').replace(' ', '_').replace('-', '_').replace('.', '_')
-        return f'{elem_type}_list_t(0 to {len(self.data) - 1})'
-
-
-class PyhaInt:
-    def __init__(self, var_name, current, initial):
-        self.name = var_name
-        self.initial = initial
-        self.current = current
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        return 'integer'
-
-
-class PyhaBool:
-    def __init__(self, var_name, current, initial):
-        self.name = var_name
-        self.initial = initial
-        self.current = current
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        return 'boolean'
-
-
-class PyhaSfix:
-    def __init__(self, var_name, current, initial):
-        self.name = var_name
-        self.initial = initial
-        self.current = current
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        return f'sfixed({self.current.left} downto {self.current.right})'
-
-
-class PyhaModule:
-    def __init__(self, var_name, current, initial):
-        self.name = var_name
-        self.initial = initial
-        self.current = current
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        return escape_reserved_vhdl(f'{type(self.current).__name__}_{self.current._pyha_instance_id}.self_t')
-
-class PyhaEnum:
-    def __init__(self, var_name, current, initial):
-        self.name = var_name
-        self.initial = initial
-        self.current = current
-
-    def __eq__(self, other):
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def _pyha_name(self):
-        return escape_reserved_vhdl(self.name)
-
-    def _pyha_type(self):
-        return type(self.current).__name__
+            self.data = self._pyha_next[:]
 
 
 class HW(with_metaclass(Meta)):
-    def _pyha_get_conversion_vars(self):
-        def filter_junk(x):
-            return {k: v for k, v in x.items()
-                    if not k.startswith('_') and not isinstance(v, PyhaFunc)}
-
-        current_vars = filter_junk(vars(self))
-        initial_vars = filter_junk(vars(self._pyha_initial_self))
-
-        def pyha_type(name, current_val, initial_val=None):
-            if type(current_val) == int:
-                return PyhaInt(name, current_val, initial_val)
-            elif type(current_val) == bool:
-                return PyhaBool(name, current_val, initial_val)
-            elif type(current_val) == Sfix:
-                return PyhaSfix(name, current_val, initial_val)
-            elif type(current_val) == PyhaList:
-                # lists are already converted to PyhaList in the meta class due to the need of __setattr__ overload in python simulation
-                # fill in the elem_type so that PyhaList knows what it is dealing with
-                current_val.elem_type = pyha_type('list_element_name_dont_use', current_val.current[0],
-                                                  current_val.initial[0])
-                return current_val
-            elif isinstance(current_val, HW):
-                return PyhaModule(name, current_val, initial_val)
-            elif isinstance(current_val, Enum):
-                return PyhaEnum(name, current_val, initial_val)
-            assert 0
-
-        # convert to conversion classes
-        ret = [pyha_type(name, current_val, initial_val) for name, current_val, initial_val in
-               zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
-
-        if ret == []:
-            ret = [PyhaInt('much_dummy_very_wow', 0, 0)]
-
-        return ret
-
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -481,7 +344,7 @@ class HW(with_metaclass(Meta)):
         if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
-        self.__dict__.update(self._next)
+        self.__dict__.update(self._pyha_next)
 
         # update all childs
         for x in self._pyha_updateable:
@@ -504,7 +367,7 @@ class HW(with_metaclass(Meta)):
         if isinstance(value, list):
             # example: self.i = [i] + self.i[:-1]
             assert isinstance(self.__dict__[name], PyhaList)
-            self.__dict__[name]._next = value
+            self.__dict__[name]._pyha_next = value
             return
 
-        self._next[name] = value
+        self._pyha_next[name] = value

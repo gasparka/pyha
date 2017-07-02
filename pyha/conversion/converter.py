@@ -14,7 +14,8 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import ComplexSfix
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber, escape_reserved_vhdl
+from pyha.common.util import get_iterable, tabber
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
 
@@ -627,7 +628,7 @@ class ClassNodeConv(NodeConv):
 
     def build_data_structs(self):
 
-        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.obj._pyha_get_conversion_vars()]
+        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in get_conversion_vars(self.obj)]
         variables = '\n'.join(tabber(x) for x in variables)
         constants = ''
         template = f"""\

@@ -3,7 +3,7 @@ from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.common.util import escape_reserved_vhdl
+from pyha.conversion.conversion_types import escape_reserved_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
