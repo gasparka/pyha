@@ -294,7 +294,7 @@ class TestRegisterIQ:
         class A4(HW):
             def __init__(self):
                 self.reg = ComplexSfix(0 + 0j, 1, -18)
-                self._delay = 1
+                self.DELAY = 1
 
             def main(self, x0):
                 self.reg.real = x0.real
@@ -437,7 +437,7 @@ class TestList:
         class A6(HW):
             def __init__(self):
                 self.reg = [ComplexSfix(0 + 0j, 0, -18)] * 4
-                self._delay = 1
+                self.DELAY = 1
 
             def main(self, b):
                 return self.reg[-1]

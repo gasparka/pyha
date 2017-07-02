@@ -10,7 +10,7 @@ class TestLaxySfixReg:
         class LazySfixReg(HW):
             def __init__(self):
                 self.a = Sfix()
-                self._delay = 1
+                self.DELAY = 1
 
             def main(self, new_value):
                 self.a = new_value

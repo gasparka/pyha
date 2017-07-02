@@ -119,7 +119,7 @@ def test_convert_submodule():
     class B(HW):
         def __init__(self):
             self.sub = Aa()
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             ret = self.sub.main(a)

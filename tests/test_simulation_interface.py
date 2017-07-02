@@ -245,7 +245,7 @@ def test_sequential_single():
     class SeqSingle_HW(HW):
         def __init__(self):
             self.sfix_reg = Sfix(0.0, 2, -8)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, in_sfix):
             self.sfix_reg = in_sfix - 1.0
@@ -267,7 +267,7 @@ def test_sequential_single_delay2():
         def __init__(self):
             self.sfix_reg = Sfix(0.0, 2, -8)
             self.sfix_reg2 = Sfix(0.0, 2, -8)
-            self._delay = 2
+            self.DELAY = 2
 
         def main(self, in_sfix):
             self.sfix_reg = in_sfix - 1.0
@@ -289,7 +289,7 @@ def test_sequential_multi():
             self.int_reg = 0
             self.bool_reg = False
             self.sfix_reg = Sfix(0.0, 2, -8)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, in_int, in_bool, in_sfix):
             self.int_reg = in_int * 2
@@ -313,7 +313,7 @@ def test_hw_sim_resets():
     class Rst_Hw(HW):
         def __init__(self):
             self.sfix_reg = Sfix(0.5, 0, -18)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, in_sfix):
             self.sfix_reg = in_sfix

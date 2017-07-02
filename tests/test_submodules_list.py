@@ -23,7 +23,7 @@ class TestBasic:
         class B(HW):
             def __init__(self):
                 self.sublist = [A(), A()]
-                self._delay = 1
+                self.DELAY = 1
 
             def main(self, a, b):
                 r0 = self.sublist[0].main(a)
@@ -193,7 +193,7 @@ def test_for():
     class B4(HW):
         def __init__(self):
             self.sublist = [A4(i) for i in range(4)]
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, x):
             outs = [0, 0, 0, 0]

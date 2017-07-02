@@ -10,7 +10,7 @@ class Demo(HW):
 
         # constants
         self.coef_f = Sfix(coef, 0, -17)
-        self._delay = 1
+        self.DELAY = 1
 
 
 

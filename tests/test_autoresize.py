@@ -11,7 +11,7 @@ class TestSfix:
         def __init__(self, overflow_style, round_style):
             self.a = Sfix(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = a
@@ -66,7 +66,7 @@ class TestSfixList:
                            overflow_style=overflow_style,
                            round_style=round_style)] * 2
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a[0] = a
@@ -159,7 +159,7 @@ class TestComplex:
     class A2(HW):
         def __init__(self, overflow_style, round_style):
             self.a = ComplexSfix(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a.real = a
@@ -221,7 +221,7 @@ class TestLazySfix:
             self.b = Sfix(left=1)
             self.c = Sfix(right=-4)
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = a
@@ -262,7 +262,7 @@ class TestLazySfixList:
             self.b = [Sfix(left=1)] * 2
             self.c = [Sfix(right=-4)] * 2
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a[0] = a
@@ -323,7 +323,7 @@ class TestLazyComplexSfix:
             self.b = ComplexSfix(left=1)
             self.c = ComplexSfix(right=-4)
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a.real = a
@@ -366,7 +366,7 @@ class TestAssignConstant:
             self.b = Sfix(0, 2, -17)
 
             self.c = ComplexSfix(0, 0, -17)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = 0.123
@@ -475,7 +475,7 @@ class TestLocalsComplexSfix:
         #         def __init__(self):
         #             self.a = [Sfix(0, 0, -4)] * 2
         #
-        #             self._delay = 1
+        #             self.DELAY = 1
         #
         #         def main(self, a):
         #             self.a = self.a[:-1] + [a]
