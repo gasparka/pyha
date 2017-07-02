@@ -12,7 +12,7 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
-from pyha.common.util import escape_for_vhdl
+from pyha.common.util import escape_reserved_vhdl
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
@@ -156,7 +156,10 @@ class PyhaFunc:
         res = self.func(*args, **kwargs)
         self.TraceManager.remove_profile()
 
-        self.TraceManager.last_call_locals.pop('self')
+        try:
+            self.TraceManager.last_call_locals.pop('self')
+        except:
+            pass
         # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
@@ -355,7 +358,7 @@ class PyhaList(UserList):
             self.data = self._next[:]
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
         elem_type = self.elem_type._pyha_type()
@@ -376,7 +379,7 @@ class PyhaInt:
         return False
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
         return 'integer'
@@ -394,7 +397,7 @@ class PyhaBool:
         return False
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
         return 'boolean'
@@ -412,7 +415,7 @@ class PyhaSfix:
         return False
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
         return f'sfixed({self.current.left} downto {self.current.right})'
@@ -430,10 +433,10 @@ class PyhaModule:
         return False
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
-        return escape_for_vhdl(f'{type(self.current).__name__}_{self.current._pyha_instance_id}.self_t')
+        return escape_reserved_vhdl(f'{type(self.current).__name__}_{self.current._pyha_instance_id}.self_t')
 
 class PyhaEnum:
     def __init__(self, var_name, current, initial):
@@ -447,7 +450,7 @@ class PyhaEnum:
         return False
 
     def _pyha_name(self):
-        return escape_for_vhdl(self.name)
+        return escape_reserved_vhdl(self.name)
 
     def _pyha_type(self):
         return type(self.current).__name__

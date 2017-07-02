@@ -2,7 +2,7 @@ import collections
 import numpy as np
 
 
-def escape_for_vhdl(x: str) -> str:
+def escape_reserved_vhdl(x: str) -> str:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
                            'array', 'assert', 'attribute', 'begin', 'block', 'body',
                            'buffer', 'bus', 'case', 'component', 'configuration',

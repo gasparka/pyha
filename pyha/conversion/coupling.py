@@ -3,7 +3,7 @@ from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.common.util import escape_for_vhdl
+from pyha.common.util import escape_reserved_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -64,7 +64,7 @@ def reset_maker(self_data, recursion_depth=0):
     for var_name, var_value in self_data.items():
         if var_name == 'next':
             continue
-        var_name = escape_for_vhdl(var_name)
+        var_name = escape_reserved_vhdl(var_name)
 
         if isinstance(var_value, (Sfix, ComplexSfix)):
             lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.vhdl_reset()};')
@@ -113,7 +113,7 @@ def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
         id = variable._pyha_instance_id
-    return escape_for_vhdl(f'{name}_{id}')
+    return escape_reserved_vhdl(f'{name}_{id}')
 
 
 class VHDLType:
@@ -215,7 +215,7 @@ class VHDLType:
         self.port_direction = port_direction
         self.variable = None
         if tuple_init is not None:
-            self.name = escape_for_vhdl(tuple_init[0])
+            self.name = escape_reserved_vhdl(tuple_init[0])
             self.variable = tuple_init[1]
             self.var_type = pytype_to_vhdl(self.variable)
             # self.var_typedef = self.deduce_typedef(tuple_init[1])
@@ -227,7 +227,7 @@ class VHDLType:
             self.name = name
         else:
             assert isinstance(name, str)
-            self.name = escape_for_vhdl(name)
+            self.name = escape_reserved_vhdl(name)
 
         if str(name) == 'self':
             self.var_type = 'self_t'

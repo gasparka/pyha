@@ -14,7 +14,7 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import ComplexSfix
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber, escape_for_vhdl
+from pyha.common.util import get_iterable, tabber, escape_reserved_vhdl
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
 
@@ -66,7 +66,7 @@ class NodeConv:
 
 class NameNodeConv(NodeConv):
     def __str__(self):
-        return escape_for_vhdl(self.red_node.value)
+        return escape_reserved_vhdl(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
@@ -189,7 +189,7 @@ class ElifNodeConv(NodeConv):
 class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
-        self.name = escape_for_vhdl(self.name)
+        self.name = escape_reserved_vhdl(self.name)
 
         # collect multiline comment
         self.multiline_comment = ''
@@ -212,7 +212,7 @@ class DefNodeConv(NodeConv):
             return []
 
         def get_type(i: int, red):
-            name = escape_for_vhdl('ret_' + str(i))
+            name = escape_reserved_vhdl('ret_' + str(i))
             return VHDLType(name, port_direction='out', red_node=red)
 
         # atomtrailers return len() > 1 for one return element
@@ -241,9 +241,9 @@ class DefNodeConv(NodeConv):
                 continue
             getitem = x.value.getitem
             if getitem is not None:
-                variables.append(VHDLVariable(escape_for_vhdl(str(getitem.previous)), red_node=x.value))
+                variables.append(VHDLVariable(escape_reserved_vhdl(str(getitem.previous)), red_node=x.value))
             else:
-                variables.append(VHDLVariable(escape_for_vhdl(str(x.value)), red_node=x.value))
+                variables.append(VHDLVariable(escape_reserved_vhdl(str(x.value)), red_node=x.value))
 
         remove_duplicates = {str(x.name): x for x in variables}
         variables = remove_duplicates.values()
