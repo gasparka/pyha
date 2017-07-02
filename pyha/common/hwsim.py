@@ -78,6 +78,7 @@ def deepish_copy(org):
     return out
 
 
+
 class PyhaFunc:
     class TraceManager:
         """ Enables nested functions calls, thanks to ref counting """
@@ -100,7 +101,6 @@ class PyhaFunc:
         @classmethod
         def remove_profile(cls):
             cls.refcount -= 1
-            assert cls.refcount >= 0
             sys.setprofile(None)
 
         @classmethod
@@ -122,45 +122,16 @@ class PyhaFunc:
 
         self.is_main = self.function_name == 'main'
 
-    def dict_types_consistent_check(self, new, old):
-        """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-        for key, value in new.items():
-            if key in old:
-                old_value = old[key]
-                if isinstance(value, (Sfix, ComplexSfix)):
-                    if value.left != old_value.left or value.right != old_value.right:
-                        if old_value.left == 0 and old_value.right == 0:
-                            # sfix lazy init
-                            continue
-                        elif value.right == 0 and value.left == 0:
-                            # sfix lazy init, can happen for pipelines
-                            continue
-                        elif value.val == old_value.init_val:
-                            # this is a shady condition, it helps against sfix values propagating trough pipelines, but may also mask valid errors
-                            # HERE is reason why sometimes consistency check fails!
-                            continue
-                        elif old_value.val == old_value.init_val:
-                            # shady shady stuff, helps if initival junk value is resized..
-                            continue
-
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-                elif type(value) != type(old_value):
-                    raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-                elif isinstance(value, list):
-                    if len(old_value) != len(value):
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
         self.TraceManager.set_profile()
         res = self.func(*args, **kwargs)
+
+        sys.setprofile(None) # without this things get fucked up
         self.TraceManager.remove_profile()
 
-        try:
-            self.TraceManager.last_call_locals.pop('self')
-        except:
-            pass
-        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
+        # TODO: why remove self?
+        self.TraceManager.last_call_locals.pop('self')
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -487,6 +458,9 @@ class HW(with_metaclass(Meta)):
         # convert to conversion classes
         ret = [pyha_type(name, current_val, initial_val) for name, current_val, initial_val in
                zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
+
+        if ret == []:
+            ret = [PyhaInt('much_dummy_very_wow', 0, 0)]
 
         return ret
 
