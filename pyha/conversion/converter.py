@@ -630,53 +630,20 @@ class ClassNodeConv(NodeConv):
 
         variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in get_conversion_vars(self.obj)]
         variables = '\n'.join(tabber(x) for x in variables)
-        constants = ''
         template = f"""\
 type next_t is record
 {variables}
 end record;
 
 type self_t is record
-{constants}
 {variables}
     \\next\\: next_t;
 end record;"""
 
         return template
 
-        # template = textwrap.dedent("""\
-        #     type next_t is record
-        #     {DATA}
-        #     end record;
-        #
-        #     type self_t is record
-        #     {CONSTANTS}
-        #     {DATA}
-        #         \\next\\: next_t;
-        #     end record;""")
-        # sockets = {'DATA': '', 'CONSTANTS': ''}
-        # sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
-        # const = VHDLType.get_constants()
-        # if len(const):
-        #     sockets['CONSTANTS'] = '    -- constants\n'
-        #     sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
-        #     sockets['CONSTANTS'] += '\n'
-        # return template.format(**sockets)
-
     def get_typedefs(self):
-        typedefs = []
-        for val in VHDLType.get_typedef_vars():
-            assert type(val) is list
-            name = pytype_to_vhdl(val)
-            name = name[:name.find('(')]  # cut array size
-
-            type_name = pytype_to_vhdl(val[0])
-            if isinstance(val[0], HW):
-                type_name += '.self_t'
-            new_tp = f'type {name} is array (natural range <>) of {type_name};'
-            if new_tp not in typedefs:
-                typedefs.append(new_tp)
-
+        typedefs = [x._pyha_typedef() for x in get_conversion_vars(self.obj) if x._pyha_typedef() is not None]
         return typedefs
 
     def get_enumdefs(self):

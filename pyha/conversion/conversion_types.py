@@ -37,13 +37,13 @@ class BaseVHDLType:
             return self.__dict__ == other.__dict__
         return False
 
-    def _pyha_name(self):
+    def _pyha_name(self) -> str:
         return escape_reserved_vhdl(self.name)
 
-    def _pyha_type(self):
+    def _pyha_type(self) -> str:
         raise NotImplementedError()
 
-    def _pyha_typedef(self):
+    def _pyha_typedef(self) -> str:
         raise NotImplementedError()
 
 
@@ -52,7 +52,7 @@ class VHDLList(BaseVHDLType):
         super().__init__(var_name, current, initial)
 
         self.elem_type = conv_class('list_element_name_dont_use', self.current[0],
-                                              self.initial[0])
+                                    self.initial[0])
 
     def _pyha_type(self):
         elem_type = self.elem_type._pyha_type()
@@ -61,7 +61,9 @@ class VHDLList(BaseVHDLType):
         return f'{elem_type}_list_t(0 to {len(self.current) - 1})'
 
     def _pyha_typedef(self):
-        return f'type {self._pyha_name()} is array (natural range <>) of {self.elem_type._pyha_type()};'
+        t = self._pyha_type()
+        t_name = t[:t.find('(')]  # cut out the (x to x) part
+        return f'type {t_name} is array (natural range <>) of {self.elem_type._pyha_type()};'
 
 
 class VHDLInt(BaseVHDLType):
@@ -119,6 +121,7 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLEnum(name, current_val, initial_val)
     assert 0
 
+
 def get_conversion_vars(obj: HW) -> List[BaseVHDLType]:
     def filter_junk(x):
         return {k: v for k, v in x.items()
@@ -127,7 +130,6 @@ def get_conversion_vars(obj: HW) -> List[BaseVHDLType]:
 
     current_vars = filter_junk(vars(obj))
     initial_vars = filter_junk(vars(obj._pyha_initial_self))
-
 
     # convert to conversion classes
     ret = [conv_class(name, current_val, initial_val) for name, current_val, initial_val in
