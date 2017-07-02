@@ -1058,179 +1058,52 @@ def test_class_datamodel_reset_prototype(converter):
 
 
 class TestClassNodeConv:
-    def test_build_data_structs_sfix(self):
-        class T(HW):
-            def __init__(self):
-                self.a = Sfix(1.0, 0, -27)
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: sfixed(0 downto -27);
-                end record;
-
-                type self_t is record
-                
-                    a: sfixed(0 downto -27);
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-    def test_build_data_structs_reserved_name(self):
-        class T(HW):
-            def __init__(self):
-                self.out = Sfix(1.0, 0, -27)
-                self.new = False
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    \\out\\: sfixed(0 downto -27);
-                    \\new\\: boolean;
-                end record;
-
-                type self_t is record
-
-                    \\out\\: sfixed(0 downto -27);
-                    \\new\\: boolean;
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
     def test_build_data_structs(self):
-        class T(HW):
+        class A(HW):
             def __init__(self):
-                self.a = Sfix(1.0, 0, -27)
-                self.b = Sfix(4.0, 2, -27)
-                self.c = 25
-                self.d = True
+                self.sub = 0
 
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: sfixed(0 downto -27);
-                    b: sfixed(2 downto -27);
-                    c: integer;
-                    d: boolean;
-                end record;
-
-                type self_t is record
-
-                    a: sfixed(0 downto -27);
-                    b: sfixed(2 downto -27);
-                    c: integer;
-                    d: boolean;
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-
-    def test_build_data_structs_enum(self):
         class TestEnum(Enum):
             ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
         class T(HW):
             def __init__(self):
+                self.a = Sfix(1.0, 0, -27)
+                self.out = Sfix(1.0, 0, -27) # reserved name
+                self.c = 25
+                self.d = True
                 self.mode = TestEnum.ENUM1
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    mode: TestEnum;
-                end record;
-
-                type self_t is record
-
-                    mode: TestEnum;
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-    def test_build_data_structs_list_intbool(self):
-        class T(HW):
-            def __init__(self):
-                self.a = [0] * 12
-                self.b = [False] * 2
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: integer_list_t(0 to 11);
-                    b: boolean_list_t(0 to 1);
-                end record;
-
-                type self_t is record
-
-                    a: integer_list_t(0 to 11);
-                    b: boolean_list_t(0 to 1);
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-    def test_build_data_structs_list_sfix(self):
-        class T(HW):
-            def __init__(self):
-                self.a = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: sfixed2downto_15_list_t(0 to 1);
-                end record;
-
-                type self_t is record
-
-                    a: sfixed2downto_15_list_t(0 to 1);
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-    def test_build_data_structs_list_submodule(self):
-        class A(HW):
-            def __init__(self):
-                self.sub = 0
-
-        class T(HW):
-            def __init__(self):
-                self.a = [A(), A()]
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: A_0_self_t_list_t(0 to 1);
-                end record;
-
-                type self_t is record
-
-                    a: A_0_self_t_list_t(0 to 1);
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
-    def test_build_data_structs_submodule(self):
-        class A(HW):
-            def __init__(self):
-                self.sub = 0
-
-        class T(HW):
-            def __init__(self):
+                self.al = [0] * 12
+                self.bl = [False] * 2
+                self.cl = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
                 self.sub = A()
+                self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
                 type next_t is record
+                    a: sfixed(0 downto -27);
+                    \\out\\: sfixed(0 downto -27);
+                    c: integer;
+                    d: boolean;
+                    mode: TestEnum;
+                    al: integer_list_t(0 to 11);
+                    bl: boolean_list_t(0 to 1);
+                    cl: sfixed2downto_15_list_t(0 to 1);
                     sub: A_0.self_t;
+                    subl: A_0_self_t_list_t(0 to 1);
                 end record;
 
                 type self_t is record
-
+                    a: sfixed(0 downto -27);
+                    \\out\\: sfixed(0 downto -27);
+                    c: integer;
+                    d: boolean;
+                    mode: TestEnum;
+                    al: integer_list_t(0 to 11);
+                    bl: boolean_list_t(0 to 1);
+                    cl: sfixed2downto_15_list_t(0 to 1);
                     sub: A_0.self_t;
+                    subl: A_0_self_t_list_t(0 to 1);
                     \\next\\: next_t;
                 end record;""")
 

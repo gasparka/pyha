@@ -185,8 +185,8 @@ class Meta(type):
                 dict[k] = v.value
 
         # turn '_delay' into constant
-        if '_delay' in dict:
-            dict['_pyha_constants']['_delay'] = dict['_delay']
+        if 'DELAY' in dict:
+            dict['_pyha_constants']['DELAY'] = dict['DELAY']
 
         return dict
 
