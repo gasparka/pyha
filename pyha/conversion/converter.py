@@ -479,7 +479,6 @@ class ForNodeConv(NodeConv):
 
 
 class ClassNodeConv(NodeConv):
-
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
@@ -642,9 +641,10 @@ end record;"""
 
         return template
 
-    def get_typedefs(self):
+    def build_typedefs(self):
         typedefs = [x._pyha_typedef() for x in get_conversion_vars(self.obj) if x._pyha_typedef() is not None]
-        return typedefs
+        typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
+        return '\n'.join(typedefs)
 
     def get_enumdefs(self):
         vals = []
@@ -689,7 +689,7 @@ end record;"""
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.get_name()
         sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
-        sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
+        sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_headers())
@@ -876,7 +876,7 @@ class ImplicitNext:
                     loc -= 1
 
                 # fixme: ComplexSfix ralated hack
-                if str(x[len(x)-1]) in ('real', 'imag'):
+                if str(x[len(x) - 1]) in ('real', 'imag'):
                     loc -= 1
                 x.insert(loc, 'next')
 

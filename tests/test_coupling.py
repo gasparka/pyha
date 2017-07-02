@@ -805,22 +805,7 @@ def test_class_infer_local_variable_list(converter):
 
     conv = converter(code, datamodel)
     expect = ['type integer_list_t is array (natural range <>) of integer;']
-    assert expect == conv.get_typedefs()
-
-
-def test_typedefs_duplicate(converter):
-    code = textwrap.dedent("""\
-        class Tc(HW):
-            def a():
-                l = [1, 2, 3, 4]""")
-
-    datamodel = DataModel(self_data={'b': [1, 2]}, locals={'a': {
-        'l': [1, 2, 3, 4],
-    }})
-
-    conv = converter(code, datamodel)
-    expect = ['type integer_list_t is array (natural range <>) of integer;']
-    assert expect == conv.get_typedefs()
+    assert expect == conv.build_typedefs()
 
 
 def test_datamodel_list_int(converter):
@@ -1109,3 +1094,26 @@ class TestClassNodeConv:
 
         c = get_conversion(T()).build_data_structs()
         assert expect == str(c)
+
+    def test_build_typedefs(self):
+        class A(HW):
+            def __init__(self):
+                self.sub = 0
+
+        class T(HW):
+            def __init__(self):
+                self.al = [0] * 12
+                self.al2 = [0] * 12 # duplicate list
+                self.bl = [False] * 2
+                self.cl = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
+                self.subl = [A()] * 2
+
+        expect = textwrap.dedent("""\
+            type integer_list_t is array (natural range <>) of integer;
+            type boolean_list_t is array (natural range <>) of boolean;
+            type sfixed2downto_15_list_t is array (natural range <>) of sfixed(2 downto -15);
+            type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;""")
+
+        c = get_conversion(T()).build_typedefs()
+        assert expect == str(c)
+

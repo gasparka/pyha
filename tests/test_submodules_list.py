@@ -49,7 +49,7 @@ class TestBasic:
         assert 'sublist' in self.datamodel.self_data
 
         expect = ['type A_0_list_t is array (natural range <>) of A_0.self_t;']
-        assert expect == self.conv.conv.get_typedefs()
+        assert expect == self.conv.conv.build_typedefs()
 
     def test_vhdl_reset(self):
         data_conversion = self.conv.conv.get_reset_self()
