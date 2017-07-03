@@ -30,7 +30,7 @@ class TestBasic:
 
     def test_headers(self):
         expect = textwrap.dedent("""\
-            procedure \_pyha_init_self\(self: inout self_t);
+            procedure \_pyha_init\(self: inout self_t);
 
             procedure \_pyha_constants_self\(self: inout self_t);
 
@@ -87,7 +87,7 @@ class TestBasic:
                     \\next\\: next_t;
                 end record;
 
-                procedure \_pyha_init_self\(self: inout self_t);
+                procedure \_pyha_init\(self: inout self_t);
 
                 procedure \_pyha_constants_self\(self: inout self_t);
 

@@ -954,32 +954,6 @@ def test_class_datamodel_update_self2(converter):
     assert expect == str(conv)
 
 
-def test_class_datamodel_init_self(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                    pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'a': Sfix(1.0, 2, -27),
-        'b': Sfix(4.0, 6, -27),
-        'c': 25,
-        'd': False
-    })
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_init_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.a := self.a;
-            self.\\next\\.b := self.b;
-            self.\\next\\.c := self.c;
-            self.\\next\\.d := self.d;
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.get_init_self()
-    assert expect == str(conv)
-
-
 def test_class_datamodel_reset(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -1054,7 +1028,7 @@ class TestClassNodeConv:
         class T(HW):
             def __init__(self):
                 self.a = Sfix(1.0, 0, -27)
-                self.out = Sfix(1.0, 0, -27) # reserved name
+                self.out = Sfix(1.0, 0, -27)  # reserved name
                 self.c = 25
                 self.d = True
                 self.mode = TestEnum.ENUM1
@@ -1103,7 +1077,7 @@ class TestClassNodeConv:
         class T(HW):
             def __init__(self):
                 self.al = [0] * 12
-                self.al2 = [0] * 12 # duplicate list
+                self.al2 = [0] * 12  # duplicate list
                 self.bl = [False] * 2
                 self.cl = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
                 self.subl = [A()] * 2
@@ -1117,3 +1091,36 @@ class TestClassNodeConv:
         c = get_conversion(T()).build_typedefs()
         assert expect == str(c)
 
+    def test_build_init_prototype(self):
+        class T(HW):
+            pass
+
+        expect = 'procedure \\_pyha_init\\(self: inout self_t);'
+        c = get_conversion(T()).build_init_prototype()
+        assert expect == str(c)
+
+    def test_build_init(self):
+        class A(HW):
+            def __init__(self):
+                self.sub = 0
+
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.al = [0, 0]
+                self.sub = A()
+                self.subl = [self.sub] * 2
+
+        expect = textwrap.dedent("""\
+            procedure \\_pyha_init\\(self: inout self_t) is
+            begin
+                self.\\next\\.a := self.a;
+                self.\\next\\.al := self.al;
+                A_0.\\_pyha_init\\(self.sub);
+                A_0.\\_pyha_init\\(self.subl(0));
+                A_0.\\_pyha_init\\(self.subl(1));
+                \\_pyha_constants_self\\(self);
+            end procedure;""")
+
+        c = get_conversion(T()).build_init()
+        assert expect == str(c)

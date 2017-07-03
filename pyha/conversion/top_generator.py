@@ -209,7 +209,7 @@ class TopGenerator:
                 {INPUT_TYPE_CONVERSIONS}
 
                         --call the main entry
-                        {DUT_NAME}.\\_pyha_init_self\\(self_var);
+                        {DUT_NAME}.\\_pyha_init\\(self_var);
                         {DUT_NAME}.main(self_var, {CALL_ARGUMENTS});
 
                         --convert normal types to slv

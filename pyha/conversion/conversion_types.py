@@ -40,6 +40,9 @@ class BaseVHDLType:
     def _pyha_name(self) -> str:
         return escape_reserved_vhdl(self.name)
 
+    def _pyha_init(self) -> str:
+        return f'self.\\next\\.{self.name} := self.{self.name};'
+
     def _pyha_type(self) -> str:
         raise NotImplementedError()
 
@@ -64,6 +67,15 @@ class VHDLList(BaseVHDLType):
         t = self._pyha_type()
         t_name = t[:t.find('(')]  # cut out the (x to x) part
         return f'type {t_name} is array (natural range <>) of {self.elem_type._pyha_type()};'
+
+    def _pyha_init(self):
+        if isinstance(self.current[0], HW):
+            # for list of submodules call '_pyha_init' for each item
+            inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_init\\(self.{self.name}({i}));'
+                 for i in range(len(self.current))]
+            return '\n'.join(inits)
+        else:
+            return super()._pyha_init()
 
 
 class VHDLInt(BaseVHDLType):
@@ -91,11 +103,17 @@ class VHDLSfix(BaseVHDLType):
 
 
 class VHDLModule(BaseVHDLType):
+    def _pyha_module_name(self):
+        return f'{type(self.current).__name__}_{self.current._pyha_instance_id}'
+
     def _pyha_type(self):
-        return f'{type(self.current).__name__}_{self.current._pyha_instance_id}.self_t'
+        return f'{self._pyha_module_name()}.self_t'
 
     def _pyha_typedef(self):
         pass
+
+    def _pyha_init(self) -> str:
+        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self.name});'
 
 
 class VHDLEnum(BaseVHDLType):

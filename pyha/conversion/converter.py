@@ -552,33 +552,21 @@ class ClassNodeConv(NodeConv):
 
         return template.format(**sockets)
 
-    def get_init_self_prototype(self):
-        return 'procedure \\_pyha_init_self\\(self: inout self_t);'
+    def build_init_prototype(self):
+        return 'procedure \\_pyha_init\\(self: inout self_t);'
 
-    def get_init_self(self):
-        template = textwrap.dedent("""\
-        procedure \\_pyha_init_self\\(self: inout self_t) is
-        begin
-        {DATA}
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
+    def build_init(self):
 
-        sockets = {'DATA': ''}
-        lines = []
-        for x in VHDLType.get_self():
-            var_name = x.name
-            var_value = x.variable
-            if isinstance(var_value, HW):
-                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_init_self\\(self.{var_name});')
-            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-                for i in range(len(var_value)):
-                    lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_init_self\\(self.{var_name}({i}));')
-            else:
-                lines.append(f'self.\\next\\.{var_name} := self.{var_name};')
+        init = [x._pyha_init() for x in get_conversion_vars(self.obj)]
+        init = '\n'.join(tabber(x) for x in init)
+        template = f"""\
+procedure \\_pyha_init\\(self: inout self_t) is
+begin
+{init}
+    \\_pyha_constants_self\\(self);
+end procedure;"""
 
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
-
-        return template.format(**sockets)
+        return template
 
     def get_constants_self_prototype(self):
         return 'procedure \\_pyha_constants_self\\(self: inout self_t);'
@@ -662,7 +650,7 @@ end record;"""
         return VHDLType.get_self_vhdl_name()
 
     def get_headers(self):
-        ret = self.get_init_self_prototype() + '\n\n'
+        ret = self.build_init_prototype() + '\n\n'
         ret += self.get_constants_self_prototype() + '\n\n'
         ret += self.get_reset_self_prototype() + '\n\n'
         ret += self.get_update_self_prototype() + '\n\n'
@@ -713,7 +701,7 @@ end record;"""
         sockets = {}
         sockets['NAME'] = self.get_name()
 
-        sockets['INIT_SELF'] = tabber(self.get_init_self())
+        sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
         sockets['RESET_SELF'] = tabber(self.get_reset_self())
         sockets['UPDATE_SELF'] = tabber(self.get_update_self())
