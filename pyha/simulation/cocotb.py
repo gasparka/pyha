@@ -56,10 +56,9 @@ class CocotbAuto(object):
         self.default_assignments()
 
     def default_assignments(self):
-        # self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
-        # this line is called 'i hate cocotb'
-        # ill throw my computer out of the window counter: 6
+        # ill throw my computer out of the window counter: 7
+        self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
         self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
 
         self.environment['SIM_BUILD'] = self.sim_folder

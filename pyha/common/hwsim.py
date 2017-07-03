@@ -207,7 +207,7 @@ class Meta(type):
         # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
         ret._pyha_next = {}
         for k, v in ret.__dict__.items():
-            if k in ['__dict__', '_next', '_pyha_constants', '_pyha_instance_id']:
+            if k == '__dict__' or k.startswith('_pyha'):
                 continue
             if hasattr(v, '_pyha_update_self'):
                 continue

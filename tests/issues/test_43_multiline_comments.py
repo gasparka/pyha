@@ -83,7 +83,6 @@ class TestBasic:
                 end record;
 
                 type self_t is record
-
                     much_dummy_very_wow: integer;
                     \\next\\: next_t;
                 end record;
