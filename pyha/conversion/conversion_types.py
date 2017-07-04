@@ -75,12 +75,21 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_init(self):
         if isinstance(self.current[0], HW):
-            # for list of submodules call '_pyha_init' for each item
+            # for list of submodules call for each item
             inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()}({i}));'
                      for i in range(len(self.current))]
             return '\n'.join(inits)
         else:
             return super()._pyha_init()
+
+    def _pyha_update_registers(self):
+        if isinstance(self.current[0], HW):
+            # for list of submodules call for each item
+            inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()}({i}));'
+                     for i in range(len(self.current))]
+            return '\n'.join(inits)
+        else:
+            return super()._pyha_update_registers()
 
 
 class VHDLInt(BaseVHDLType):
@@ -106,7 +115,10 @@ class VHDLModule(BaseVHDLType):
         return f'{self._pyha_module_name()}.self_t'
 
     def _pyha_init(self) -> str:
-        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self._name});'
+        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()});'
+
+    def _pyha_update_registers(self):
+        return f'{self._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()});'
 
 
 class VHDLEnum(BaseVHDLType):

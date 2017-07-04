@@ -19,42 +19,37 @@ class TestBaseVHDLType:
 
 
 class TestVHDLList:
-    def test_pyha_type(self):
-        d = [0, 1, 2]
-        dut = VHDLList('name', d, d)
-        expect = 'integer_list_t(0 to 2)'
-        assert dut._pyha_type() == expect
-
-    def test_pyha_type_sfix(self):
+    def setup(self):
         d = [Sfix(0, 1, -2)] * 2
-        dut = VHDLList('name', d, d)
-        expect = 'sfixed1downto_2_list_t(0 to 1)'
-        assert dut._pyha_type() == expect
+        self.dut = VHDLList('out', d, d)
 
-    def test_pyha_typedef_sfix(self):
-        d = [Sfix(0, 1, -2)] * 2
-        dut = VHDLList('name', d, d)
-        expect = 'type sfixed1downto_2_list_t is array (natural range <>) of sfixed(1 downto -2);'
-        assert dut._pyha_typedef() == expect
-
-    def test_pyha_init(self):
-        d = [Sfix(0, 1, -2)] * 2
-        dut = VHDLList('out', d, d)
-
-        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
-        assert expect == dut._pyha_init()
-
-    def test_pyha_init_submodules(self):
-        # special for submodules list
         class T(HW):
             pass
+        self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
 
-        d = [T()] * 2
-        dut = VHDLList('out', d, d)
+    def test_pyha_type_sfix(self):
+        expect = 'sfixed1downto_2_list_t(0 to 1)'
+        assert self.dut._pyha_type() == expect
+
+    def test_pyha_typedef(self):
+        expect = 'type sfixed1downto_2_list_t is array (natural range <>) of sfixed(1 downto -2);'
+        assert self.dut._pyha_typedef() == expect
+
+    def test_pyha_init(self):
+        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
+        assert expect == self.dut._pyha_init()
 
         expect = 'T_0.\\_pyha_init\\(self.\\out\\(0));\n' \
                  'T_0.\\_pyha_init\\(self.\\out\\(1));'
-        assert expect == dut._pyha_init()
+        assert expect == self.dut_sub._pyha_init()
+
+    def test_pyha_update_registers(self):
+        expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
+        assert expect == self.dut._pyha_update_registers()
+
+        expect = 'T_0.\\_pyha_update_registers\\(self.\\out\\(0));\n' \
+                 'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
+        assert expect == self.dut_sub._pyha_update_registers()
 
 
 class TestVHDLInt:
@@ -79,23 +74,22 @@ class TestVHDLSfix:
 
 
 class TestVHDLModule:
+    def setup(self):
+        class T(HW):
+            pass
+        self.dut = VHDLModule('name', T(), T())
 
     def test_pyha_type(self):
-        class T(HW):
-            pass
-
-        dut = VHDLModule('name', T(), T())
         expect = 'T_0.self_t'
-        assert dut._pyha_type() == expect
+        assert self.dut._pyha_type() == expect
 
     def test_pyha_init(self):
-        class T(HW):
-            pass
-
-        dut = VHDLModule('name', T(), T())
         expect = 'T_0.\\_pyha_init\\(self.name);'
-        assert dut._pyha_init() == expect
+        assert self.dut._pyha_init() == expect
 
+    def test_pyha_update_registers(self):
+        expect = 'T_0.\\_pyha_update_registers\\(self.name);'
+        assert self.dut._pyha_update_registers() == expect
 
 
 class TestVHDLEnum:

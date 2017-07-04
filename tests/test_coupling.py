@@ -765,7 +765,6 @@ def test_class_datamodel_submodule(converter):
     # assert expect == str(conv)
 
 
-
 def test_class_infer_local_variable_list(converter):
     pytest.skip('TODO, local list typedef')
     code = textwrap.dedent("""\
@@ -860,91 +859,6 @@ def test_list_sfix(converter):
     # assert expect == conv.get_typedefs()
 
 
-def test_class_datamodel_update_self(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-            self.a := self.\\next\\.a;
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-
-    conv = converter(code, datamodel)
-    conv = conv.build_update_registers()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_update_self_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'out': Sfix(1.0, 0, -27),
-        'new': False,
-    })
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-            self.\\out\\ := self.\\next\\.\\out\\;
-            self.\\new\\ := self.\\next\\.\\new\\;
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.build_update_registers()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_update_self_ignore_next(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27), 'next': {'a': None}})
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-            self.a := self.\\next\\.a;
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.build_update_registers()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_update_self2(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                    pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'a': Sfix(1.0, 2, -27),
-        'b': Sfix(4.0, 6, -27),
-        'c': 25,
-        'd': False
-    })
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-            self.a := self.\\next\\.a;
-            self.b := self.\\next\\.b;
-            self.c := self.\\next\\.c;
-            self.d := self.\\next\\.d;
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.build_update_registers()
-    assert expect == str(conv)
-
-
 def test_class_datamodel_reset(converter):
     code = textwrap.dedent("""\
             class Tc(HW):
@@ -964,7 +878,7 @@ def test_class_datamodel_reset(converter):
             self.\\next\\.b := Sfix(4.0, 6, -27);
             self.\\next\\.c := 25;
             self.\\next\\.d := False;
-            \\_pyha_update_self\\(self);
+            \\_pyha_update_registers\\(self);
         end procedure;""")
 
     conv = converter(code, datamodel)
@@ -987,7 +901,7 @@ def test_class_datamodel_reset_reserved_name(converter):
         begin
             self.\\next\\.\\out\\ := Sfix(1.0, 0, -27);
             self.\\next\\.\\new\\ := False;
-            \\_pyha_update_self\\(self);
+            \\_pyha_update_registers\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
     conv = conv.get_reset_self()
@@ -1114,4 +1028,38 @@ class TestClassNodeConv:
             end procedure;""")
 
         c = get_conversion(T()).build_init()
+        assert expect == str(c)
+
+    def test_build_registers_prototype(self):
+        class T(HW):
+            pass
+
+        expect = 'procedure \\_pyha_update_registers\\(self: inout self_t);'
+        c = get_conversion(T()).build_update_registers_prototype()
+        assert expect == str(c)
+
+    def test_build_update_self(self):
+        class A(HW):
+            def __init__(self):
+                self.sub = 0
+
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.al = [0, 0]
+                self.sub = A()
+                self.subl = [self.sub] * 2
+
+        expect = textwrap.dedent("""\
+            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            begin
+                self.a := self.\\next\\.a;
+                self.al := self.\\next\\.al;
+                A_0.\\_pyha_update_registers\\(self.sub);
+                A_0.\\_pyha_update_registers\\(self.subl(0));
+                A_0.\\_pyha_update_registers\\(self.subl(1));
+                \\_pyha_constants_self\\(self);
+            end procedure;""")
+
+        c = get_conversion(T()).build_update_registers()
         assert expect == str(c)

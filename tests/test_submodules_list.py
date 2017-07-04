@@ -58,7 +58,7 @@ class TestBasic:
                 begin
                     self.sublist(0).\\next\\.reg := 0;
                     self.sublist(1).\\next\\.reg := 0;
-                    \\_pyha_update_self\\(self);
+                    \\_pyha_update_registers\\(self);
                 end procedure;""")
 
         assert expect == data_conversion

@@ -297,7 +297,7 @@ def test_simple_full(simple_obj):
                                 self <= self_var;
                             elsif rising_edge(clk) then
                                 if enable then
-                                    Simple_0.\_pyha_update_self\(self_var);
+                                    Simple_0.\_pyha_update_registers\(self_var);
                                     self <= self_var;
                                 end if;
                             end if;

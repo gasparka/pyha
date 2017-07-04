@@ -221,7 +221,7 @@ class TopGenerator:
                             self <= self_var;
                         elsif rising_edge(clk) then
                             if enable then
-                                {DUT_NAME}.\\_pyha_update_self\\(self_var);
+                                {DUT_NAME}.\\_pyha_update_registers\\(self_var);
                                 self <= self_var;
                             end if;
                         end if;

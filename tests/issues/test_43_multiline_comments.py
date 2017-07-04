@@ -36,7 +36,7 @@ class TestBasic:
 
             procedure \_pyha_reset_self\(self: inout self_t);
 
-            procedure \_pyha_update_self\(self: inout self_t);
+            procedure \_pyha_update_registers\(self: inout self_t);
 
             -- func
             -- doc
@@ -92,7 +92,7 @@ class TestBasic:
 
                 procedure \_pyha_reset_self\(self: inout self_t);
 
-                procedure \_pyha_update_self\(self: inout self_t);
+                procedure \_pyha_update_registers\(self: inout self_t);
 
                 -- func
                 -- doc
