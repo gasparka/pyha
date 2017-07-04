@@ -58,13 +58,20 @@ class TestVHDLModule:
 
 
 class TestVHDLEnum:
-    def test_pyha_type(self):
-        class T(Enum):
-            ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
+    class T(Enum):
+        ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
-        dut = VHDLEnum('name', T.ENUM0, T.ENUM0)
+    def test_pyha_type(self):
+
+        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM0)
         expect = 'T'
         assert dut._pyha_type() == expect
+
+    def test_pyha_typedef(self):
+        d = self.T.ENUM0
+        dut = VHDLEnum('name', d, d)
+        expect = 'type T is (ENUM0,ENUM1,ENUM2,ENUM3);'
+        assert dut._pyha_typedef() == expect
 
 
 def test_get_conversion_vars_int():

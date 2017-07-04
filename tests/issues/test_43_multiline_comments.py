@@ -77,7 +77,6 @@ class TestBasic:
             package B0_0 is
 
 
-
                 type next_t is record
                     much_dummy_very_wow: integer;
                 end record;

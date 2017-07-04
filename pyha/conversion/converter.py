@@ -634,18 +634,6 @@ end record;"""
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
-    def get_enumdefs(self):
-        vals = []
-        for val in VHDLType.get_enum_vars():
-            name = pytype_to_vhdl(val)
-
-            types = ','.join([x.name for x in type(val)])
-            new_tp = f'type {name} is ({types});'
-            if new_tp not in vals:
-                vals.append(new_tp)
-
-        return vals
-
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
@@ -665,7 +653,6 @@ end record;"""
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
-            {ENUMDEFS}
             {TYPEDEFS}
 
             {SELF_T}
@@ -676,7 +663,6 @@ end record;"""
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.get_name()
-        sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
         sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 

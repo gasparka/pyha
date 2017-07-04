@@ -195,15 +195,6 @@ class VHDLType:
         return vars
 
     @classmethod
-    def get_typedef_vars(cls):
-        """ Return all variables that require new type definition in VHDL, for example arrays"""
-        typedefs = cls._get_vars_by_type(list)
-
-        # ignore boolean arrays, there is global definition for that
-        typedefs = [x for x in typedefs if not isinstance(x[0], bool)]
-        return typedefs
-
-    @classmethod
     def get_enum_vars(cls):
         typedefs = cls._get_vars_by_type(Enum)
         return typedefs

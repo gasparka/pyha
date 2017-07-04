@@ -29,18 +29,9 @@ def t0():
     dut.main(2)
     return dut
 
-
 def test_datamodel(t0):
     datamodel = DataModel(t0)
     assert datamodel.self_data['mode'] == TestEnum.ENUM1
-
-
-def test_vhdl_enum_define(t0):
-    conv = get_conversion(t0)
-    expect = ['type TestEnum is (ENUM0,ENUM1,ENUM2,ENUM3);']
-    dm = conv.get_enumdefs()
-    assert expect == dm
-
 
 def test_vhdl_reset(t0):
     conv = get_conversion(t0)

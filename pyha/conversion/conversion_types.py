@@ -72,7 +72,7 @@ class VHDLList(BaseVHDLType):
         if isinstance(self.current[0], HW):
             # for list of submodules call '_pyha_init' for each item
             inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_init\\(self.{self.name}({i}));'
-                 for i in range(len(self.current))]
+                     for i in range(len(self.current))]
             return '\n'.join(inits)
         else:
             return super()._pyha_init()
@@ -117,11 +117,13 @@ class VHDLModule(BaseVHDLType):
 
 
 class VHDLEnum(BaseVHDLType):
-    def _pyha_typedef(self):
-        pass
-
     def _pyha_type(self):
         return type(self.current).__name__
+
+    def _pyha_typedef(self):
+        name = self._pyha_type()
+        types = ','.join([x.name for x in type(self.current)])
+        return f'type {name} is ({types});'
 
 
 def conv_class(name, current_val, initial_val=None):
