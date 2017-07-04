@@ -30,13 +30,13 @@ class TestBasic:
 
     def test_headers(self):
         expect = textwrap.dedent("""\
-            procedure \_pyha_init_self\(self: inout self_t);
+            procedure \_pyha_init\(self: inout self_t);
 
             procedure \_pyha_constants_self\(self: inout self_t);
 
             procedure \_pyha_reset_self\(self: inout self_t);
 
-            procedure \_pyha_update_self\(self: inout self_t);
+            procedure \_pyha_update_registers\(self: inout self_t);
 
             -- func
             -- doc
@@ -77,24 +77,22 @@ class TestBasic:
             package B0_0 is
 
 
-
                 type next_t is record
                     much_dummy_very_wow: integer;
                 end record;
 
                 type self_t is record
-
                     much_dummy_very_wow: integer;
                     \\next\\: next_t;
                 end record;
 
-                procedure \_pyha_init_self\(self: inout self_t);
+                procedure \_pyha_init\(self: inout self_t);
 
                 procedure \_pyha_constants_self\(self: inout self_t);
 
                 procedure \_pyha_reset_self\(self: inout self_t);
 
-                procedure \_pyha_update_self\(self: inout self_t);
+                procedure \_pyha_update_registers\(self: inout self_t);
 
                 -- func
                 -- doc

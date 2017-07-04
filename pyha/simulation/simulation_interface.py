@@ -37,7 +37,7 @@ def flush_pipeline(func):
     def flush_pipeline_wrap(self, *args, **kwargs):
         delay = 0
         with suppress(AttributeError):  # no get_delay()
-            delay = self.model._delay
+            delay = self.model.DELAY
         if delay == 0:
             return func(self, *args, **kwargs)
 

@@ -42,14 +42,14 @@ def test_next_init():
             self.a = 1
 
     dut = A()
-    assert dut.a == dut._next['a']
+    assert dut.a == dut._pyha_next['a']
 
     dut.a = 2
-    assert dut._next['a'] != dut.a
+    assert dut._pyha_next['a'] != dut.a
 
-    dut._next['a'] = 3
+    dut._pyha_next['a'] = 3
     assert dut.a == 2
-    assert dut._next['a'] == 3
+    assert dut._pyha_next['a'] == 3
 
 
 def test_next_filter():
@@ -71,7 +71,7 @@ def test_next_filter():
             self.f = [B(), B()]
 
     dut = A()
-    assert dut._next == {'a': 1, 'b': Sfix()}
+    assert dut._pyha_next == {'a': 1, 'b': Sfix()}
 
 
 def test_float_register():
@@ -250,8 +250,8 @@ def test_meta_deepcopy():
     end = time.time()
 
     assert end - start < 0.1
-    assert id(dut.l.a) != id(dut.l._next['a']) != id(dut.l.__dict__['_pyha_initial_self'].a)
-    assert id(dut.l.l.a) != id(dut.l.l._next['a']) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
+    assert id(dut.l.a) != id(dut.l._pyha_next['a']) != id(dut.l.__dict__['_pyha_initial_self'].a)
+    assert id(dut.l.l.a) != id(dut.l.l._pyha_next['a']) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
 
 
 def test_outputs():
@@ -264,7 +264,7 @@ def test_outputs():
     dut.main(2)
     dut.main(3)
     dut.main(4)
-    assert dut._outputs == [1, 2, 3, 4]
+    assert dut._pyha_outputs == [1, 2, 3, 4]
 
 
 def test_setattr_assign_self():
@@ -293,5 +293,5 @@ def test_setattr_resize():
     dut = A()
 
     dut.main(Sfix(0.1234, 0, -24))
-    assert dut._next['a'].left == 0
-    assert dut._next['a'].right == -2
+    assert dut._pyha_next['a'].left == 0
+    assert dut._pyha_next['a'].right == -2

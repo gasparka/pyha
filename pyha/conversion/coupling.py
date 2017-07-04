@@ -1,9 +1,10 @@
 # TODO: This file is 100% mess, only works thanks to unit tests
+# TODO: This file is 100% mess, only works thanks to unit tests
 from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.common.util import escape_for_vhdl
+from pyha.conversion.conversion_types import escape_reserved_vhdl
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import GetitemNode, DefNode, AssignmentNode, IntNode, NameNode, CallArgumentNode, BinaryOperatorNode
 from redbaron.nodes import DefArgumentNode, AtomtrailersNode
@@ -64,7 +65,7 @@ def reset_maker(self_data, recursion_depth=0):
     for var_name, var_value in self_data.items():
         if var_name == 'next':
             continue
-        var_name = escape_for_vhdl(var_name)
+        var_name = escape_reserved_vhdl(var_name)
 
         if isinstance(var_value, (Sfix, ComplexSfix)):
             lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.vhdl_reset()};')
@@ -113,11 +114,11 @@ def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
         id = variable._pyha_instance_id
-    return escape_for_vhdl(f'{name}_{id}')
+    return escape_reserved_vhdl(f'{name}_{id}')
 
 
 class VHDLType:
-    """ This merges converter and datamodel code. Converter provides a variable,
+    """ This merges converter and datamodel code. VHDLConverter provides a variable,
     datamodel provides a type, this finds a type fof variable"""
 
     _datamodel = None
@@ -135,32 +136,6 @@ class VHDLType:
         if cls._datamodel.obj is None:
             return 'unknown_name'
         return get_instance_vhdl_name(cls._datamodel.obj)
-
-    @classmethod
-    def get_constants(cls):
-        if cls._datamodel is None:
-            return []
-        ret = []
-        for k, v in cls._datamodel.constants.items():
-            t = VHDLType(tuple_init=(k, v))
-            ret.append(t)
-        return ret
-
-    @classmethod
-    def get_self(cls):
-        if cls._datamodel is None:
-            return []
-        ret = []
-        for k, v in cls._datamodel.self_data.items():
-            if k == 'next':
-                continue
-            t = VHDLType(tuple_init=(k, v))
-
-            # todo remove this hack
-            if isinstance(v, HW):
-                t.var_type += '.self_t'
-            ret.append(t)
-        return ret
 
     @classmethod
     def get_complex_vars(cls):
@@ -193,15 +168,6 @@ class VHDLType:
         return vars
 
     @classmethod
-    def get_typedef_vars(cls):
-        """ Return all variables that require new type definition in VHDL, for example arrays"""
-        typedefs = cls._get_vars_by_type(list)
-
-        # ignore boolean arrays, there is global definition for that
-        typedefs = [x for x in typedefs if not isinstance(x[0], bool)]
-        return typedefs
-
-    @classmethod
     def get_enum_vars(cls):
         typedefs = cls._get_vars_by_type(Enum)
         return typedefs
@@ -214,7 +180,7 @@ class VHDLType:
         self.port_direction = port_direction
         self.variable = None
         if tuple_init is not None:
-            self.name = escape_for_vhdl(tuple_init[0])
+            self.name = escape_reserved_vhdl(tuple_init[0])
             self.variable = tuple_init[1]
             self.var_type = pytype_to_vhdl(self.variable)
             # self.var_typedef = self.deduce_typedef(tuple_init[1])
@@ -226,7 +192,7 @@ class VHDLType:
             self.name = name
         else:
             assert isinstance(name, str)
-            self.name = escape_for_vhdl(name)
+            self.name = escape_reserved_vhdl(name)
 
         if str(name) == 'self':
             self.var_type = 'self_t'

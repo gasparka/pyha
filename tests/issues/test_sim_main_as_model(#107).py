@@ -9,7 +9,7 @@ class TestCounterInt:
     class T0(HW):
         def __init__(self):
             self.a = 0
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = a + 1
@@ -26,7 +26,7 @@ class TestIntList:
     class T0(HW):
         def __init__(self):
             self.a = [0, 0]
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = [a] + self.a[:-1]
@@ -43,7 +43,7 @@ class TestCounterSfix:
     class T0(HW):
         def __init__(self):
             self.a = Sfix(0.0, 0, -17)
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = self.a + 0.0123
@@ -60,7 +60,7 @@ class TestSfixList:
     class T0(HW):
         def __init__(self):
             self.a = [Sfix(0.0, 0, -17)] * 2
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, a):
             self.a = [a] + self.a[:-1]
