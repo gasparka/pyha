@@ -1,7 +1,12 @@
 redbaron==0.6.3
 six == 1.10.0
+<<<<<<< pyup-update-scipy-0.19.0-to-0.19.1
+numpy==1.12.1
+scipy==0.19.1
+=======
 numpy==1.13.0
 scipy==0.19.0
+>>>>>>> develop
 pytest==3.0.7
 parse==1.8.2
 sphinxcontrib-fulltoc==1.2.0
