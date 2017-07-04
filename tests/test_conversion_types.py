@@ -3,7 +3,19 @@ from enum import Enum
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion_types import get_conversion_vars, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
-    VHDLEnum
+    VHDLEnum, BaseVHDLType
+
+
+class TestBaseVHDLType:
+    def test_pyha_init(self):
+        dut = BaseVHDLType('out', 0, 0)
+        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
+        assert expect == dut._pyha_init()
+
+    def test_pyha_update_registers(self):
+        dut = BaseVHDLType('out', 0, 0)
+        expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
+        assert expect == dut._pyha_update_registers()
 
 
 class TestVHDLList:
@@ -24,6 +36,25 @@ class TestVHDLList:
         dut = VHDLList('name', d, d)
         expect = 'type sfixed1downto_2_list_t is array (natural range <>) of sfixed(1 downto -2);'
         assert dut._pyha_typedef() == expect
+
+    def test_pyha_init(self):
+        d = [Sfix(0, 1, -2)] * 2
+        dut = VHDLList('out', d, d)
+
+        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
+        assert expect == dut._pyha_init()
+
+    def test_pyha_init_submodules(self):
+        # special for submodules list
+        class T(HW):
+            pass
+
+        d = [T()] * 2
+        dut = VHDLList('out', d, d)
+
+        expect = 'T_0.\\_pyha_init\\(self.\\out\\(0));\n' \
+                 'T_0.\\_pyha_init\\(self.\\out\\(1));'
+        assert expect == dut._pyha_init()
 
 
 class TestVHDLInt:
@@ -48,6 +79,7 @@ class TestVHDLSfix:
 
 
 class TestVHDLModule:
+
     def test_pyha_type(self):
         class T(HW):
             pass
@@ -56,13 +88,21 @@ class TestVHDLModule:
         expect = 'T_0.self_t'
         assert dut._pyha_type() == expect
 
+    def test_pyha_init(self):
+        class T(HW):
+            pass
+
+        dut = VHDLModule('name', T(), T())
+        expect = 'T_0.\\_pyha_init\\(self.name);'
+        assert dut._pyha_init() == expect
+
+
 
 class TestVHDLEnum:
     class T(Enum):
         ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
     def test_pyha_type(self):
-
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM0)
         expect = 'T'
         assert dut._pyha_type() == expect

@@ -527,30 +527,34 @@ class ClassNodeConv(NodeConv):
     def get_update_self_prototype(self):
         return 'procedure \\_pyha_update_self\\(self: inout self_t);'
 
-    def get_update_self(self):
-        template = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-        {DATA}
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
+    def build_update_registers(self):
+        updates = [x._pyha_update_registers() for x in get_conversion_vars(self.obj)]
+        updates = '\n'.join(tabber(x) for x in updates)
+        template = f"""\
+procedure \\_pyha_update_self\\(self: inout self_t) is
+begin
+{updates}
+    \\_pyha_constants_self\\(self);
+end procedure;"""
 
-        sockets = {'DATA': ''}
-        lines = []
-        for x in VHDLType.get_self():
-            var_name = x.name
-            var_value = x.variable
-            if isinstance(var_value, HW):
-                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_update_self\\(self.{var_name});')
-            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-                for i in range(len(var_value)):
-                    lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_update_self\\(self.{var_name}({i}));')
-            else:
-                lines.append(f'self.{var_name} := self.\\next\\.{var_name};')
+        return template
 
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
-
-        return template.format(**sockets)
+        # sockets = {'DATA': ''}
+        # lines = []
+        # for x in VHDLType.get_self():
+        #     var_name = x.name
+        #     var_value = x.variable
+        #     if isinstance(var_value, HW):
+        #         lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_update_self\\(self.{var_name});')
+        #     elif isinstance(var_value, list) and isinstance(var_value[0], HW):
+        #         for i in range(len(var_value)):
+        #             lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_update_self\\(self.{var_name}({i}));')
+        #     else:
+        #         lines.append(f'self.{var_name} := self.\\next\\.{var_name};')
+        #
+        # sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
+        #
+        # return template.format(**sockets)
 
     def build_init_prototype(self):
         return 'procedure \\_pyha_init\\(self: inout self_t);'
@@ -690,7 +694,7 @@ end record;"""
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
         sockets['RESET_SELF'] = tabber(self.get_reset_self())
-        sockets['UPDATE_SELF'] = tabber(self.get_update_self())
+        sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)

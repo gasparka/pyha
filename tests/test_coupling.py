@@ -763,16 +763,7 @@ def test_class_datamodel_submodule(converter):
     # conv = converter(code, datamodel)
     # conv = conv.get_update_self()
     # assert expect == str(conv)
-    #
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_init_self\\(self: inout self_t) is
-    #     begin
-    #         A_0.\\_pyha_init_self\\(self.sub);
-    #         \\_pyha_constants_self\\(self);
-    #     end procedure;""")
-    # conv = converter(code, datamodel)
-    # conv = conv.get_init_self()
-    # assert expect == str(conv)
+
 
 
 def test_class_infer_local_variable_list(converter):
@@ -884,7 +875,7 @@ def test_class_datamodel_update_self(converter):
         end procedure;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_update_self()
+    conv = conv.build_update_registers()
     assert expect == str(conv)
 
 
@@ -906,7 +897,7 @@ def test_class_datamodel_update_self_reserved_name(converter):
             \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_update_self()
+    conv = conv.build_update_registers()
     assert expect == str(conv)
 
 
@@ -924,7 +915,7 @@ def test_class_datamodel_update_self_ignore_next(converter):
             \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_update_self()
+    conv = conv.build_update_registers()
     assert expect == str(conv)
 
 
@@ -950,7 +941,7 @@ def test_class_datamodel_update_self2(converter):
             \\_pyha_constants_self\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_update_self()
+    conv = conv.build_update_registers()
     assert expect == str(conv)
 
 

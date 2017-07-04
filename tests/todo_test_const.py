@@ -107,7 +107,7 @@ class TestSingleInt:
                 \\_pyha_constants_self\\(self);
             end procedure;""")
 
-        assert expect == str(self.conversion.get_update_self())
+        assert expect == str(self.conversion.build_update_registers())
 
     def test_simulate(self):
         x = [0] * 8

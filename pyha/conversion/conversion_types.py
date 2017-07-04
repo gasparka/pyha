@@ -28,7 +28,7 @@ def escape_reserved_vhdl(x: str) -> str:
 
 class BaseVHDLType:
     def __init__(self, var_name, current, initial):
-        self.name = var_name
+        self._name = var_name
         self.initial = initial
         self.current = current
 
@@ -38,16 +38,21 @@ class BaseVHDLType:
         return False
 
     def _pyha_name(self) -> str:
-        return escape_reserved_vhdl(self.name)
+        return escape_reserved_vhdl(self._name)
 
     def _pyha_init(self) -> str:
-        return f'self.\\next\\.{self.name} := self.{self.name};'
+        name = self._pyha_name()
+        return f'self.\\next\\.{name} := self.{name};'
 
     def _pyha_type(self) -> str:
         raise NotImplementedError()
 
     def _pyha_typedef(self) -> str:
-        raise NotImplementedError()
+        pass
+
+    def _pyha_update_registers(self):
+        name = self._pyha_name()
+        return f'self.{name} := self.\\next\\.{name};'
 
 
 class VHDLList(BaseVHDLType):
@@ -71,7 +76,7 @@ class VHDLList(BaseVHDLType):
     def _pyha_init(self):
         if isinstance(self.current[0], HW):
             # for list of submodules call '_pyha_init' for each item
-            inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_init\\(self.{self.name}({i}));'
+            inits = [f'{self.elem_type._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()}({i}));'
                      for i in range(len(self.current))]
             return '\n'.join(inits)
         else:
@@ -79,17 +84,11 @@ class VHDLList(BaseVHDLType):
 
 
 class VHDLInt(BaseVHDLType):
-    def _pyha_typedef(self):
-        pass
-
     def _pyha_type(self):
         return 'integer'
 
 
 class VHDLBool(BaseVHDLType):
-    def _pyha_typedef(self):
-        pass
-
     def _pyha_type(self):
         return 'boolean'
 
@@ -97,9 +96,6 @@ class VHDLBool(BaseVHDLType):
 class VHDLSfix(BaseVHDLType):
     def _pyha_type(self):
         return f'sfixed({self.current.left} downto {self.current.right})'
-
-    def _pyha_typedef(self):
-        pass
 
 
 class VHDLModule(BaseVHDLType):
@@ -109,11 +105,8 @@ class VHDLModule(BaseVHDLType):
     def _pyha_type(self):
         return f'{self._pyha_module_name()}.self_t'
 
-    def _pyha_typedef(self):
-        pass
-
     def _pyha_init(self) -> str:
-        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self.name});'
+        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self._name});'
 
 
 class VHDLEnum(BaseVHDLType):
