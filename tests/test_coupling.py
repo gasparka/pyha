@@ -655,33 +655,6 @@ def test_def_for_return(converter):
     conv = converter(code, datamodel)
     assert expect == str(conv)
 
-
-def test_datamodel_to_self_ignore_next():
-    datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27), 'next': {'lol': 'loom'}})
-    VHDLType.set_datamodel(datamodel)
-    s = VHDLType.get_self()
-    assert str(s) == '[a: sfixed(0 downto -27)]'
-
-
-def test_datamodel_to_self1():
-    datamodel = DataModel(locals={}, self_data={'a': Sfix(0.0, 0, -27)})
-    VHDLType.set_datamodel(datamodel)
-    s = VHDLType.get_self()
-    assert str(s) == '[a: sfixed(0 downto -27)]'
-
-
-def test_datamodel_to_self2():
-    datamodel = DataModel(locals={}, self_data={
-        'a': Sfix(1.0, 0, -27),
-        'b': Sfix(4.0, 2, -27),
-        'c': 25,
-        'd': False
-    })
-    VHDLType.set_datamodel(datamodel)
-    s = VHDLType.get_self()
-    assert str(s) == '[a: sfixed(0 downto -27), b: sfixed(2 downto -27), c: integer, d: boolean]'
-
-
 class Tc(HW):
     pass
 

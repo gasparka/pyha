@@ -138,33 +138,6 @@ class VHDLType:
         return get_instance_vhdl_name(cls._datamodel.obj)
 
     @classmethod
-    def get_constants(cls):
-        if cls._datamodel is None:
-            return []
-        ret = []
-        for k, v in cls._datamodel.constants.items():
-            t = VHDLType(tuple_init=(k, v))
-            ret.append(t)
-        return ret
-
-    @classmethod
-    def get_self(cls):
-        # return cls._datamodel.obj._pyha_get_self()
-        if cls._datamodel is None:
-            return []
-        ret = []
-        for k, v in cls._datamodel.self_data.items():
-            if k == 'next':
-                continue
-            t = VHDLType(tuple_init=(k, v))
-
-            # todo remove this hack
-            if isinstance(v, HW):
-                t.var_type += '.self_t'
-            ret.append(t)
-        return ret
-
-    @classmethod
     def get_complex_vars(cls):
         typedefs = cls._get_vars_by_type(ComplexSfix)
         return typedefs
