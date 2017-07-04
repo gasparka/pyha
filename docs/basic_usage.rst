@@ -215,15 +215,15 @@ It would output:
 .. image:: ../examples/basic_usage/basic_plot.png
 
 This is an standard hardware behaviour. Pyha provides special variable
-:code:`self._delay` that specifies the delay of the model, it is useful:
+:code:`self.DELAY` that specifies the delay of the model, it is useful:
 
 - Document the delay of your blocks
 - Upper level blocks can use it to define their own delay
 - Pyha simulations will adjust for the delay, so you can easily compare to your model.
 
-.. note:: Use :code:`self._delay` to match hardware delay against models
+.. note:: Use :code:`self.DELAY` to match hardware delay against models
 
-After setting the :code:`self._delay = 1` in the __init__, we get:
+After setting the :code:`self.DELAY = 1` in the __init__, we get:
 
 .. code-block:: python
 
@@ -270,7 +270,7 @@ Here is the final code that passes assertions:
             # uncomment this and quartus will optimize away multiplication (assuming coef=0.5)
             # self.coef_f = Const(Sfix(coef, 0, -17))
 
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, input):
             # this will also infer saturation logic

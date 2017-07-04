@@ -76,7 +76,7 @@ class TestSingleInt:
                     much_dummy_very_wow: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -107,7 +107,7 @@ class TestSingleInt:
                 \\_pyha_constants_self\\(self);
             end procedure;""")
 
-        assert expect == str(self.conversion.get_update_self())
+        assert expect == str(self.conversion.build_update_registers())
 
     def test_simulate(self):
         x = [0] * 8
@@ -172,7 +172,7 @@ class TestMultiIntSfixEnumBooleanCFix:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -236,7 +236,7 @@ class TestFloat:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):
@@ -262,6 +262,7 @@ class TestLists:
     def setup(self):
         class T3(HW):
             def __init__(self):
+                self.REG = 0
                 self.reg = 0
                 self.cfloat = Const([0.1, 0.2, 0.3, 0.4])
                 self.cint = Const([1, 2, 3, 4])
@@ -270,6 +271,7 @@ class TestLists:
                 self.ccfix = Const([ComplexSfix(0.25 + 0.5j, 0, -18)] * 4)
 
             def main(self, a):
+                self.REG = 1
                 b = self.csfix[0] * self.cfloat[3]
                 c = self.ccfix[0].real * self.cfloat[1]
                 return b, c
@@ -297,7 +299,7 @@ class TestLists:
                     reg: integer;
                     \\next\\: next_t;
                 end record;""")
-        dm = self.conversion.get_datamodel()
+        dm = self.conversion.build_data_structs()
         assert expect == dm
 
     def test_constants_self(self):

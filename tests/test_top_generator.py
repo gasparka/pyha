@@ -285,7 +285,7 @@ def test_simple_full(simple_obj):
                             var_in0 := to_integer(signed(in0));
 
                             --call the main entry
-                            Simple_0.\_pyha_init_self\(self_var);
+                            Simple_0.\_pyha_init\(self_var);
                             Simple_0.main(self_var, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
@@ -297,7 +297,7 @@ def test_simple_full(simple_obj):
                                 self <= self_var;
                             elsif rising_edge(clk) then
                                 if enable then
-                                    Simple_0.\_pyha_update_self\(self_var);
+                                    Simple_0.\_pyha_update_registers\(self_var);
                                     self <= self_var;
                                 end if;
                             end if;

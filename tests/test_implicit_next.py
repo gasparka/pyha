@@ -20,23 +20,23 @@ class TestBuiltins:
         dut._pyha_update_self()
 
         assert dut.i == 1
-        assert dut._next['i'] == 1
+        assert dut._pyha_next['i'] == 1
         assert dut.b == True
-        assert dut._next['b'] == True
+        assert dut._pyha_next['b'] == True
 
         dut.main(2, False)
 
         assert dut.i == 1
-        assert dut._next['i'] == 2
+        assert dut._pyha_next['i'] == 2
         assert dut.b == True
-        assert dut._next['b'] == False
+        assert dut._pyha_next['b'] == False
 
         dut._pyha_update_self()
 
         assert dut.i == 2
-        assert dut._next['i'] == 2
+        assert dut._pyha_next['i'] == 2
         assert dut.b == False
-        assert dut._next['b'] == False
+        assert dut._pyha_next['b'] == False
 
     def test_force_disable(self):
         with RegisterBehaviour.force_disable():
@@ -44,23 +44,23 @@ class TestBuiltins:
             dut._pyha_update_self()
 
             assert dut.i == 1
-            assert dut._next['i'] == 1
+            assert dut._pyha_next['i'] == 1
             assert dut.b == True
-            assert dut._next['b'] == True
+            assert dut._pyha_next['b'] == True
 
             dut.main(2, False)
 
             assert dut.i == 2
-            assert dut._next['i'] == 1
+            assert dut._pyha_next['i'] == 1
             assert dut.b == False
-            assert dut._next['b'] == True
+            assert dut._pyha_next['b'] == True
 
             dut._pyha_update_self()
 
             assert dut.i == 2
-            assert dut._next['i'] == 1
+            assert dut._pyha_next['i'] == 1
             assert dut.b == False
-            assert dut._next['b'] == True
+            assert dut._pyha_next['b'] == True
 
     def test_simulate(self):
         x = [[5, 2, 3], [False, True, False]]
@@ -89,25 +89,25 @@ class TestBuiltinsList:
         dut._pyha_update_self()
 
         assert dut.i == [1, 2, 3]
-        assert dut.i._next == [1, 2, 3]
-        assert not hasattr(dut._next, 'i')
+        assert dut.i._pyha_next == [1, 2, 3]
+        assert not hasattr(dut._pyha_next, 'i')
         assert dut.b == [True, False, True]
-        assert dut.b._next == [True, False, True]
-        assert not hasattr(dut._next, 'b')
+        assert dut.b._pyha_next == [True, False, True]
+        assert not hasattr(dut._pyha_next, 'b')
 
         dut.main(2, False)
 
         assert dut.i == [1, 2, 3]
-        assert dut.i._next == [2, 2, 3]
+        assert dut.i._pyha_next == [2, 2, 3]
         assert dut.b == [True, False, True]
-        assert dut.b._next == [False, True, False]
+        assert dut.b._pyha_next == [False, True, False]
 
         dut._pyha_update_self()
 
         assert dut.i == [2, 2, 3]
-        assert dut.i._next == [2, 2, 3]
+        assert dut.i._pyha_next == [2, 2, 3]
         assert dut.b == [False, True, False]
-        assert dut.b._next == [False, True, False]
+        assert dut.b._pyha_next == [False, True, False]
 
     def test_force_disable(self):
         with RegisterBehaviour.force_disable():
@@ -149,17 +149,17 @@ class TestSfix:
         dut._pyha_update_self()
 
         assert dut.i == Sfix(0.1, 0, -17)
-        assert dut._next['i'] == Sfix(0.1, 0, -17)
+        assert dut._pyha_next['i'] == Sfix(0.1, 0, -17)
 
         dut.main(Sfix(0.5, 0, -17))
 
         assert dut.i == Sfix(0.1, 0, -17)
-        assert dut._next['i'] == Sfix(0.5, 0, -17)
+        assert dut._pyha_next['i'] == Sfix(0.5, 0, -17)
 
         dut._pyha_update_self()
 
         assert dut.i == Sfix(0.5, 0, -17)
-        assert dut._next['i'] == Sfix(0.5, 0, -17)
+        assert dut._pyha_next['i'] == Sfix(0.5, 0, -17)
 
     def test_simulate(self):
         x = [0.1, 0.2, 0.3]
@@ -185,18 +185,18 @@ class TestSfixList:
 
         init = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
         assert dut.i == init
-        assert dut.i._next == init
-        assert not hasattr(dut._next, 'i')
+        assert dut.i._pyha_next == init
+        assert not hasattr(dut._pyha_next, 'i')
 
         dut.main(Sfix(0.5, 0, -17))
 
         assert dut.i == init
-        assert dut.i._next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
+        assert dut.i._pyha_next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
 
         dut._pyha_update_self()
 
         assert dut.i == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
-        assert dut.i._next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
+        assert dut.i._pyha_next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
 
     def test_simulate(self):
         x = [0.1, 0.2, 0.3]
@@ -233,27 +233,27 @@ class TestSubmodule:
         assert dut.i == 0
         assert dut.sub.i2 == 2
         assert dut.sub.i == 1
-        assert dut._next['i'] == 0
-        assert dut.sub._next['i'] == 1
-        assert dut.sub._next['i2'] == 2
+        assert dut._pyha_next['i'] == 0
+        assert dut.sub._pyha_next['i'] == 1
+        assert dut.sub._pyha_next['i2'] == 2
 
         dut.main(5)
 
         assert dut.i == 0
         assert dut.sub.i2 == 2
         assert dut.sub.i == 1
-        assert dut._next['i'] == 1
-        assert dut.sub._next['i'] == 5
-        assert dut.sub._next['i2'] == 5
+        assert dut._pyha_next['i'] == 1
+        assert dut.sub._pyha_next['i'] == 5
+        assert dut.sub._pyha_next['i2'] == 5
 
         dut._pyha_update_self()
 
         assert dut.i == 1
         assert dut.sub.i2 == 5
         assert dut.sub.i == 5
-        assert dut._next['i'] == 1
-        assert dut.sub._next['i'] == 5
-        assert dut.sub._next['i2'] == 5
+        assert dut._pyha_next['i'] == 1
+        assert dut.sub._pyha_next['i'] == 5
+        assert dut.sub._pyha_next['i2'] == 5
 
     def test_simulate(self):
         x = [1, 2, 3]
@@ -288,41 +288,41 @@ class TestSubmoduleList:
         dut._pyha_update_self()
 
         assert dut.i == 0
-        assert dut._next['i'] == 0
+        assert dut._pyha_next['i'] == 0
         assert dut.sub[0].i2 == 2
         assert dut.sub[0].i == 1
-        assert dut.sub[0]._next['i'] == 1
-        assert dut.sub[0]._next['i2'] == 2
+        assert dut.sub[0]._pyha_next['i'] == 1
+        assert dut.sub[0]._pyha_next['i2'] == 2
         assert dut.sub[1].i2 == 2
         assert dut.sub[1].i == 1
-        assert dut.sub[1]._next['i'] == 1
-        assert dut.sub[1]._next['i2'] == 2
+        assert dut.sub[1]._pyha_next['i'] == 1
+        assert dut.sub[1]._pyha_next['i2'] == 2
 
         dut.main(15)
 
         assert dut.i == 0
-        assert dut._next['i'] == 1
+        assert dut._pyha_next['i'] == 1
         assert dut.sub[0].i2 == 2
         assert dut.sub[0].i == 1
-        assert dut.sub[0]._next['i'] == 15
-        assert dut.sub[0]._next['i2'] == 15
+        assert dut.sub[0]._pyha_next['i'] == 15
+        assert dut.sub[0]._pyha_next['i2'] == 15
         assert dut.sub[1].i2 == 2
         assert dut.sub[1].i == 1
-        assert dut.sub[1]._next['i'] == 1
-        assert dut.sub[1]._next['i2'] == 15
+        assert dut.sub[1]._pyha_next['i'] == 1
+        assert dut.sub[1]._pyha_next['i2'] == 15
 
         dut._pyha_update_self()
 
         assert dut.i == 1
-        assert dut._next['i'] == 1
+        assert dut._pyha_next['i'] == 1
         assert dut.sub[0].i2 == 15
         assert dut.sub[0].i == 15
-        assert dut.sub[0]._next['i'] == 15
-        assert dut.sub[0]._next['i2'] == 15
+        assert dut.sub[0]._pyha_next['i'] == 15
+        assert dut.sub[0]._pyha_next['i2'] == 15
         assert dut.sub[1].i2 == 15
         assert dut.sub[1].i == 1
-        assert dut.sub[1]._next['i'] == 1
-        assert dut.sub[1]._next['i2'] == 15
+        assert dut.sub[1]._pyha_next['i'] == 1
+        assert dut.sub[1]._pyha_next['i2'] == 15
 
     def test_simulate(self):
         x = [1, 2, 3]

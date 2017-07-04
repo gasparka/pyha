@@ -359,12 +359,12 @@ class TestLocals:
         dut = A()
         dut.main(1)
         assert dut.a == 15
-        assert dut._next['a'] == 1
+        assert dut._pyha_next['a'] == 1
         dut._pyha_update_self()
 
         dut.main(2)
         assert dut.a == 1
-        assert dut._next['a'] == 2
+        assert dut._pyha_next['a'] == 2
         dut._pyha_update_self()
 
         result = extract_locals(dut)
@@ -656,3 +656,4 @@ class TestLocals:
 
         result = extract_locals(dut)
         assert result == expect
+

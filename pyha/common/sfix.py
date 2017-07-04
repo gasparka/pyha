@@ -58,13 +58,13 @@ class ComplexSfix:
             self.real = Sfix(val.real, left, right, overflow_style, round_style)
             self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
 
-        self._next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
+        self._pyha_next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
 
     def _pyha_update_self(self):
         if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
-        self.__dict__.update(self._next)
+        self.__dict__.update(self._pyha_next)
         pass
 
     def __setattr__(self, name, value):
@@ -87,7 +87,7 @@ class ComplexSfix:
             self.__dict__[name] = value
             return
 
-        self._next[name] = value
+        self._pyha_next[name] = value
 
     @property
     def left(self):

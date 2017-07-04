@@ -16,7 +16,7 @@ class Demo(HW):
         # constants
         self.coef_f = Sfix(coef, 0, -17)
 
-        self._delay = 1
+        self.DELAY = 1
 
     def multiply(self, input):
         """ Mulitply 'input' with self.coef """

@@ -14,7 +14,7 @@ class A0(HW):
         self.reg = Sfix(initial_value) # lazy sfix, bounds determined by simulation
 
         # how much does this block delay data flow?
-        self._delay = 1
+        self.DELAY = 1
 
     def main(self, new):
         self.next.reg = new
@@ -29,7 +29,7 @@ class A1(HW):
         self.reg = Sfix(0.98)  # lazy sfix, bounds determined by simulation
 
         # how much does this block delay data flow?
-        self._delay = self.submodule._delay + 1
+        self.DELAY = self.submodule.DELAY + 1
 
     def main(self, new):
         # call submodule
@@ -48,7 +48,7 @@ class A2(HW):
         self.sum = Sfix()
 
         # how much does this block delay data flow?
-        self._delay = self.sub_list[0]._delay
+        self.DELAY = self.sub_list[0].DELAY
 
     def main(self, new):
         # call submodules functions

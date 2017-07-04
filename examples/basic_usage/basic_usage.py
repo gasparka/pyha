@@ -18,7 +18,7 @@ class BigFir(HW):
         # uncomment this and quartus will optimize away multiplication (assuming coef=0.5)
         # self.coef_f = Const(Sfix(coef, 0, -17))
 
-        self._delay = 1
+        self.DELAY = 1
 
     def main(self, input):
         # this will also infer saturation logic
