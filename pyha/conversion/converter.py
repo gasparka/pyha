@@ -14,7 +14,8 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS, HW
 from pyha.common.sfix import ComplexSfix
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber, escape_for_vhdl
+from pyha.common.util import get_iterable, tabber
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars
 from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
 from pyha.conversion.coupling import get_instance_vhdl_name
 
@@ -66,7 +67,7 @@ class NodeConv:
 
 class NameNodeConv(NodeConv):
     def __str__(self):
-        return escape_for_vhdl(self.red_node.value)
+        return escape_reserved_vhdl(self.red_node.value)
 
 
 class AtomtrailersNodeConv(NodeConv):
@@ -189,7 +190,7 @@ class ElifNodeConv(NodeConv):
 class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
-        self.name = escape_for_vhdl(self.name)
+        self.name = escape_reserved_vhdl(self.name)
 
         # collect multiline comment
         self.multiline_comment = ''
@@ -212,7 +213,7 @@ class DefNodeConv(NodeConv):
             return []
 
         def get_type(i: int, red):
-            name = escape_for_vhdl('ret_' + str(i))
+            name = escape_reserved_vhdl('ret_' + str(i))
             return VHDLType(name, port_direction='out', red_node=red)
 
         # atomtrailers return len() > 1 for one return element
@@ -241,9 +242,9 @@ class DefNodeConv(NodeConv):
                 continue
             getitem = x.value.getitem
             if getitem is not None:
-                variables.append(VHDLVariable(escape_for_vhdl(str(getitem.previous)), red_node=x.value))
+                variables.append(VHDLVariable(escape_reserved_vhdl(str(getitem.previous)), red_node=x.value))
             else:
-                variables.append(VHDLVariable(escape_for_vhdl(str(x.value)), red_node=x.value))
+                variables.append(VHDLVariable(escape_reserved_vhdl(str(x.value)), red_node=x.value))
 
         remove_duplicates = {str(x.name): x for x in variables}
         variables = remove_duplicates.values()
@@ -478,11 +479,14 @@ class ForNodeConv(NodeConv):
 
 
 class ClassNodeConv(NodeConv):
-    """ This relies heavily on datamodel """
-
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
+        # todo: remove me after refactorings
+        try:
+            self.obj = VHDLType._datamodel.obj
+        except AttributeError:
+            self.obj = None
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):
@@ -511,7 +515,7 @@ class ClassNodeConv(NodeConv):
         procedure \\_pyha_reset_self\\(self: inout self_t) is
         begin
         {DATA}
-            \\_pyha_update_self\\(self);
+            \\_pyha_update_registers\\(self);
         end procedure;""")
 
         variables = VHDLType.get_reset()
@@ -520,61 +524,36 @@ class ClassNodeConv(NodeConv):
         sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
         return template.format(**sockets)
 
-    def get_update_self_prototype(self):
-        return 'procedure \\_pyha_update_self\\(self: inout self_t);'
+    def build_update_registers_prototype(self):
+        return 'procedure \\_pyha_update_registers\\(self: inout self_t);'
 
-    def get_update_self(self):
-        template = textwrap.dedent("""\
-        procedure \\_pyha_update_self\\(self: inout self_t) is
-        begin
-        {DATA}
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
+    def build_update_registers(self):
+        updates = [x._pyha_update_registers() for x in get_conversion_vars(self.obj)]
+        updates = '\n'.join(tabber(x) for x in updates)
+        template = f"""\
+procedure \\_pyha_update_registers\\(self: inout self_t) is
+begin
+{updates}
+    \\_pyha_constants_self\\(self);
+end procedure;"""
 
-        sockets = {'DATA': ''}
-        lines = []
-        for x in VHDLType.get_self():
-            var_name = x.name
-            var_value = x.variable
-            if isinstance(var_value, HW):
-                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_update_self\\(self.{var_name});')
-            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-                for i in range(len(var_value)):
-                    lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_update_self\\(self.{var_name}({i}));')
-            else:
-                lines.append(f'self.{var_name} := self.\\next\\.{var_name};')
+        return template
 
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
+    def build_init_prototype(self):
+        return 'procedure \\_pyha_init\\(self: inout self_t);'
 
-        return template.format(**sockets)
+    def build_init(self):
 
-    def get_init_self_prototype(self):
-        return 'procedure \\_pyha_init_self\\(self: inout self_t);'
+        init = [x._pyha_init() for x in get_conversion_vars(self.obj)]
+        init = '\n'.join(tabber(x) for x in init)
+        template = f"""\
+procedure \\_pyha_init\\(self: inout self_t) is
+begin
+{init}
+    \\_pyha_constants_self\\(self);
+end procedure;"""
 
-    def get_init_self(self):
-        template = textwrap.dedent("""\
-        procedure \\_pyha_init_self\\(self: inout self_t) is
-        begin
-        {DATA}
-            \\_pyha_constants_self\\(self);
-        end procedure;""")
-
-        sockets = {'DATA': ''}
-        lines = []
-        for x in VHDLType.get_self():
-            var_name = x.name
-            var_value = x.variable
-            if isinstance(var_value, HW):
-                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_init_self\\(self.{var_name});')
-            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-                for i in range(len(var_value)):
-                    lines.append(f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_init_self\\(self.{var_name}({i}));')
-            else:
-                lines.append(f'self.\\next\\.{var_name} := self.{var_name};')
-
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in lines))
-
-        return template.format(**sockets)
+        return template
 
     def get_constants_self_prototype(self):
         return 'procedure \\_pyha_constants_self\\(self: inout self_t);'
@@ -590,93 +569,66 @@ class ClassNodeConv(NodeConv):
         sockets = {'CONSTANTS': '', 'SUBMODULES': ''}
 
         # call constants self for each submodules, quartus wants this
-        lines = []
-        for x in VHDLType.get_self():
-            var_name = x.name
-            var_value = x.variable
-            if isinstance(var_value, HW):
-                lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_constants_self\\(self.{var_name});')
-            elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-                for i in range(len(var_value)):
-                    lines.append(
-                        f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_constants_self\\(self.{var_name}({i}));')
-
-        sockets['SUBMODULES'] += ('\n'.join(tabber(x) for x in lines))
-
-        const = VHDLType.get_constants()
-        if len(const):
-            const_str = []
-            for var in const:
-                value = var.variable
-                if isinstance(value, Enum):
-                    const_str += [f'self.{var.name} := {value.name};']
-                elif isinstance(value, (Sfix, ComplexSfix)):
-                    const_str += [f'self.{var.name} := {value.vhdl_reset()};']
-                elif isinstance(value, list):
-                    const_str += ['self.' + list_reset('', var.name, value)]
-                else:
-                    const_str += [f'self.{var.name} := {value};']
-
-            sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
+        # lines = []
+        # for x in VHDLType.get_self():
+        #     var_name = x.name
+        #     var_value = x.variable
+        #     if isinstance(var_value, HW):
+        #         lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_constants_self\\(self.{var_name});')
+        #     elif isinstance(var_value, list) and isinstance(var_value[0], HW):
+        #         for i in range(len(var_value)):
+        #             lines.append(
+        #                 f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_constants_self\\(self.{var_name}({i}));')
+        #
+        # sockets['SUBMODULES'] += ('\n'.join(tabber(x) for x in lines))
+        #
+        # const = VHDLType.get_constants()
+        # if len(const):
+        #     const_str = []
+        #     for var in const:
+        #         value = var.variable
+        #         if isinstance(value, Enum):
+        #             const_str += [f'self.{var.name} := {value.name};']
+        #         elif isinstance(value, (Sfix, ComplexSfix)):
+        #             const_str += [f'self.{var.name} := {value.vhdl_reset()};']
+        #         elif isinstance(value, list):
+        #             const_str += ['self.' + list_reset('', var.name, value)]
+        #         else:
+        #             const_str += [f'self.{var.name} := {value};']
+        #
+        #     sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
 
         return template.format(**sockets)
 
-    def get_datamodel(self):
-        template = textwrap.dedent("""\
-            type next_t is record
-            {DATA}
-            end record;
+    def build_data_structs(self):
 
-            type self_t is record
-            {CONSTANTS}
-            {DATA}
-                \\next\\: next_t;
-            end record;""")
-        sockets = {'DATA': '', 'CONSTANTS': ''}
-        sockets['DATA'] += ('\n'.join(tabber(str(x) + ';') for x in VHDLType.get_self()))
-        const = VHDLType.get_constants()
-        if len(const):
-            sockets['CONSTANTS'] = '    -- constants\n'
-            sockets['CONSTANTS'] += ('\n'.join(tabber(str(x) + ';') for x in const))
-            sockets['CONSTANTS'] += '\n'
-        return template.format(**sockets)
+        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in get_conversion_vars(self.obj)]
+        variables = '\n'.join(tabber(x) for x in variables)
+        template = f"""\
+type next_t is record
+{variables}
+end record;
 
-    def get_typedefs(self):
-        typedefs = []
-        for val in VHDLType.get_typedef_vars():
-            assert type(val) is list
-            name = pytype_to_vhdl(val)
-            name = name[:name.find('(')]  # cut array size
+type self_t is record
+{variables}
+    \\next\\: next_t;
+end record;"""
 
-            type_name = pytype_to_vhdl(val[0])
-            if isinstance(val[0], HW):
-                type_name += '.self_t'
-            new_tp = f'type {name} is array (natural range <>) of {type_name};'
-            if new_tp not in typedefs:
-                typedefs.append(new_tp)
+        return template
 
-        return typedefs
-
-    def get_enumdefs(self):
-        vals = []
-        for val in VHDLType.get_enum_vars():
-            name = pytype_to_vhdl(val)
-
-            types = ','.join([x.name for x in type(val)])
-            new_tp = f'type {name} is ({types});'
-            if new_tp not in vals:
-                vals.append(new_tp)
-
-        return vals
+    def build_typedefs(self):
+        typedefs = [x._pyha_typedef() for x in get_conversion_vars(self.obj) if x._pyha_typedef() is not None]
+        typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
+        return '\n'.join(typedefs)
 
     def get_name(self):
         return VHDLType.get_self_vhdl_name()
 
     def get_headers(self):
-        ret = self.get_init_self_prototype() + '\n\n'
+        ret = self.build_init_prototype() + '\n\n'
         ret += self.get_constants_self_prototype() + '\n\n'
         ret += self.get_reset_self_prototype() + '\n\n'
-        ret += self.get_update_self_prototype() + '\n\n'
+        ret += self.build_update_registers_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
@@ -688,7 +640,6 @@ class ClassNodeConv(NodeConv):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
-            {ENUMDEFS}
             {TYPEDEFS}
 
             {SELF_T}
@@ -699,9 +650,8 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.get_name()
-        sockets['ENUMDEFS'] = '\n'.join(tabber(x) for x in self.get_enumdefs())
-        sockets['TYPEDEFS'] = '\n'.join(tabber(x) for x in self.get_typedefs())
-        sockets['SELF_T'] = tabber(self.get_datamodel())
+        sockets['TYPEDEFS'] = tabber(self.build_typedefs())
+        sockets['SELF_T'] = tabber(self.build_data_structs())
 
         sockets['FUNC_HEADERS'] = tabber(self.get_headers())
 
@@ -724,10 +674,10 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['NAME'] = self.get_name()
 
-        sockets['INIT_SELF'] = tabber(self.get_init_self())
+        sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
         sockets['RESET_SELF'] = tabber(self.get_reset_self())
-        sockets['UPDATE_SELF'] = tabber(self.get_update_self())
+        sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
         return template.format(**sockets)
@@ -887,7 +837,7 @@ class ImplicitNext:
                     loc -= 1
 
                 # fixme: ComplexSfix ralated hack
-                if str(x[len(x)-1]) in ('real', 'imag'):
+                if str(x[len(x) - 1]) in ('real', 'imag'):
                     loc -= 1
                 x.insert(loc, 'next')
 

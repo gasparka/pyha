@@ -11,13 +11,12 @@ from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
-
-
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__
-PYHA_VARIABLES = ('_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
+PYHA_VARIABLES = (
+    '_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
 default_sfix = Sfix(0, 0, -17)
 default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
@@ -99,7 +98,6 @@ class PyhaFunc:
         @classmethod
         def remove_profile(cls):
             cls.refcount -= 1
-            assert cls.refcount >= 0
             sys.setprofile(None)
 
         @classmethod
@@ -121,43 +119,16 @@ class PyhaFunc:
 
         self.is_main = self.function_name == 'main'
 
-    def dict_types_consistent_check(self, new, old):
-        """ Check 'old' dict against 'new' dict for types, if not consistent raise """
-        for key, value in new.items():
-            if key in old:
-                old_value = old[key]
-                if isinstance(value, (Sfix, ComplexSfix)):
-                    if value.left != old_value.left or value.right != old_value.right:
-                        if old_value.left == 0 and old_value.right == 0:
-                            # sfix lazy init
-                            continue
-                        elif value.right == 0 and value.left == 0:
-                            # sfix lazy init, can happen for pipelines
-                            continue
-                        elif value.val == old_value.init_val:
-                            # this is a shady condition, it helps against sfix values propagating trough pipelines, but may also mask valid errors
-                            # HERE is reason why sometimes consistency check fails!
-                            continue
-                        elif old_value.val == old_value.init_val:
-                            # shady shady stuff, helps if initival junk value is resized..
-                            continue
-
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-                elif type(value) != type(old_value):
-                    raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-                elif isinstance(value, list):
-                    if len(old_value) != len(value):
-                        raise TypeNotConsistent(self.class_name, self.function_name, key, old, new)
-
-
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
         self.TraceManager.set_profile()
         res = self.func(*args, **kwargs)
+
+        sys.setprofile(None)  # without this things get fucked up
         self.TraceManager.remove_profile()
 
+        # TODO: why remove self?
         self.TraceManager.last_call_locals.pop('self')
-        # self.dict_types_consistent_check(self.TraceManager.last_call_locals, self.locals)
 
         self.locals.update(self.TraceManager.last_call_locals)
 
@@ -181,7 +152,7 @@ class PyhaFunc:
         ret = deepcopy(ret)
         self.last_return = ret
 
-        real_self._outputs.append(ret)
+        real_self._pyha_outputs.append(ret)
         return ret
 
 
@@ -214,8 +185,8 @@ class Meta(type):
                 dict[k] = v.value
 
         # turn '_delay' into constant
-        if '_delay' in dict:
-            dict['_pyha_constants']['_delay'] = dict['_delay']
+        if 'DELAY' in dict:
+            dict['_pyha_constants']['DELAY'] = dict['DELAY']
 
         return dict
 
@@ -231,16 +202,16 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, list):
-                ret.__dict__[k] = PyhaList(v, deepcopy(v[0]))
+                ret.__dict__[k] = PyhaList(v, type=deepcopy(v[0]), name=k)
 
-        # make ._next variable that holds 'next' state for elements that dont know how to update themself
-        ret._next = {}
+        # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+        ret._pyha_next = {}
         for k, v in ret.__dict__.items():
-            if k in ['__dict__', '_next', '_pyha_constants', '_pyha_instance_id']:
+            if k == '__dict__' or k.startswith('_pyha'):
                 continue
             if hasattr(v, '_pyha_update_self'):
                 continue
-            ret._next[k] = deepcopy(v)
+            ret._pyha_next[k] = deepcopy(v)
 
         ret._pyha_updateable = []
         for k, v in ret.__dict__.items():
@@ -251,7 +222,7 @@ class Meta(type):
         ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
         # every call to 'main' will append returned values here
-        ret._outputs = []
+        ret._pyha_outputs = []
 
         # decorate all methods -> for locals discovery
         for method_str in dir(ret):
@@ -266,7 +237,6 @@ class Meta(type):
         return ret
 
 
-
 def auto_resize(target, value):
     if not AutoResize.is_enabled() or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
         return value
@@ -278,46 +248,8 @@ def auto_resize(target, value):
                   overflow_style=target.overflow_style)
 
 
-class PyhaList(UserList):
-
-    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    def __init__(self, seq, type):
-        super().__init__(seq)
-        self.type = type
-        self._next = deepcopy(seq)
-
-    def __setitem__(self, i, y):
-        if hasattr(self.type, '_pyha_update_self'):
-            # object already knows how to handle registers
-            self[i] = y
-        else:
-            if isinstance(self.type, Sfix):
-                y = auto_resize(self.type, y)
-
-                if self.type.left is None:
-                    self.type.left = y.left
-
-                if self.type.right is None:
-                    self.type.right = y.right
-
-            if RegisterBehaviour.is_enabled():
-                self._next[i] = y
-            else:
-                self.data[i] = y
-
-    def _pyha_update_self(self):
-        if RegisterBehaviour.is_force_disabled():
-            return
-        if hasattr(self.type, '_pyha_update_self'):
-            # object already knows how to handle registers
-            for x in self.data:
-                x._pyha_update_self()
-        else:
-            self.data = self._next[:]
-
-
-
 class SfixList(list):
+    # TODO: remove this!, should be PyhaList
     """ On assign to element resize the value """
 
     def __init__(self, seq, type):
@@ -352,8 +284,49 @@ class SfixList(list):
         #     pass
 
 
-class HW(with_metaclass(Meta)):
+class PyhaList(UserList):
+    # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
+    def __init__(self, data, type, name):
+        super().__init__(data)
+        self.type = type
+        self._pyha_next = deepcopy(data)
 
+        self.name = name
+        self.current = self.data
+        self.initial = deepcopy(data)
+        self.elem_type = None  # this is filled in later
+
+    def __setitem__(self, i, y):
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            self[i] = y
+        else:
+            if isinstance(self.type, Sfix):
+                y = auto_resize(self.type, y)
+
+                if self.type.left is None:
+                    self.type.left = y.left
+
+                if self.type.right is None:
+                    self.type.right = y.right
+
+            if RegisterBehaviour.is_enabled():
+                self._pyha_next[i] = y
+            else:
+                self.data[i] = y
+
+    def _pyha_update_self(self):
+        if RegisterBehaviour.is_force_disabled():
+            return
+        if hasattr(self.type, '_pyha_update_self'):
+            # object already knows how to handle registers
+            for x in self.data:
+                x._pyha_update_self()
+        else:
+            self.data = self._pyha_next[:]
+
+
+class HW(with_metaclass(Meta)):
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
@@ -371,13 +344,14 @@ class HW(with_metaclass(Meta)):
         if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
-        self.__dict__.update(self._next)
+        self.__dict__.update(self._pyha_next)
 
         # update all childs
         for x in self._pyha_updateable:
             x._pyha_update_self()
 
     def __setattr__(self, name, value):
+        # todo: alos implements imlicit next
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
         """
@@ -393,8 +367,7 @@ class HW(with_metaclass(Meta)):
         if isinstance(value, list):
             # example: self.i = [i] + self.i[:-1]
             assert isinstance(self.__dict__[name], PyhaList)
-            self.__dict__[name]._next = value
+            self.__dict__[name]._pyha_next = value
             return
 
-        self._next[name] = value
-
+        self._pyha_next[name] = value

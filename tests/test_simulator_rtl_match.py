@@ -146,7 +146,7 @@ def test_sfix_wrapper(left, right):
     class T9(HW):
         def __init__(self):
             self.phase_acc = Sfix()
-            self._delay = 1
+            self.DELAY = 1
 
         def main(self, phase_inc):
             self.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
