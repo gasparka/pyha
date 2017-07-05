@@ -17,6 +17,11 @@ class TestBaseVHDLType:
         expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
         assert expect == dut._pyha_update_registers()
 
+    def test_pyha_reset(self):
+        dut = BaseVHDLType('out', 0, 0)
+        expect = 'self.\\next\\.\\out\\ := 0;'
+        assert expect == dut._pyha_reset()
+
 
 class TestVHDLList:
     def setup(self):
@@ -25,6 +30,7 @@ class TestVHDLList:
 
         class T(HW):
             pass
+
         self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
 
     def test_pyha_type_sfix(self):
@@ -51,6 +57,14 @@ class TestVHDLList:
                  'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
         assert expect == self.dut_sub._pyha_update_registers()
 
+    def test_pyha_reset(self):
+        expect = 'self.\\next\\.\\out\\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2))'
+        assert expect == self.dut._pyha_reset()
+
+        # expect = 'T_0.\\_pyha_update_registers\\(self.\\out\\(0));\n' \
+        #          'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
+        # assert expect == self.dut_sub._pyha_update_registers()
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
@@ -72,11 +86,21 @@ class TestVHDLSfix:
         expect = 'sfixed(1 downto -17)'
         assert dut._pyha_type() == expect
 
+    def test_pyha_reset_value(self):
+        dut = VHDLSfix('name', Sfix(0, 1, -17), initial=Sfix(0.3, 1, -17))
+        expect = 'Sfix(0.3, 1, -17)'
+        assert dut._pyha_reset_value() == expect
+
+        dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))
+        expect = 'Sfix(0.3, 2, -8)'
+        assert dut._pyha_reset_value() == expect
+
 
 class TestVHDLModule:
     def setup(self):
         class T(HW):
             pass
+
         self.dut = VHDLModule('name', T(), T())
 
     def test_pyha_type(self):
@@ -90,6 +114,10 @@ class TestVHDLModule:
     def test_pyha_update_registers(self):
         expect = 'T_0.\\_pyha_update_registers\\(self.name);'
         assert self.dut._pyha_update_registers() == expect
+
+    def test_pyha_reset(self):
+        expect = 'T_0.\\_pyha_reset\\(self.name);'
+        assert self.dut._pyha_reset() == expect
 
 
 class TestVHDLEnum:
@@ -106,6 +134,16 @@ class TestVHDLEnum:
         dut = VHDLEnum('name', d, d)
         expect = 'type T is (ENUM0,ENUM1,ENUM2,ENUM3);'
         assert dut._pyha_typedef() == expect
+
+    def test_pyha_reset_value(self):
+        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
+        expect = 'ENUM1'
+        assert dut._pyha_reset_value() == expect
+
+    def test_pyha_reset(self):
+        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
+        expect = 'self.\\next\\.name := ENUM1;'
+        assert dut._pyha_reset() == expect
 
 
 def test_get_conversion_vars_int():

@@ -476,9 +476,6 @@ class Sfix:
     def to_stdlogic(self):
         return f'std_logic_vector({self.left + abs(self.right)} downto 0)'
 
-    def vhdl_reset(self):
-        return f'Sfix({self.init_val}, {self.left}, {self.right})'
-
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
     """
