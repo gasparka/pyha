@@ -61,9 +61,24 @@ class TestVHDLList:
         expect = 'self.\\next\\.\\out\\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2))'
         assert expect == self.dut._pyha_reset()
 
-        # expect = 'T_0.\\_pyha_update_registers\\(self.\\out\\(0));\n' \
-        #          'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
-        # assert expect == self.dut_sub._pyha_update_registers()
+    def test_pyha_reset_submodules(self):
+        class C2(HW):
+            def __init__(self):
+                self.regor = False
+
+        class A2(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C2()
+
+        sublist = [A2(2), A2(128)]
+        s = VHDLList('sublist', sublist, sublist)
+
+        expect = 'self.sublist(0).\\next\\.reg := 2;\n' \
+                 'self.sublist(0).submodule.\\next\\.regor := False;\n' \
+                 'self.sublist(1).\\next\\.reg := 128;\n' \
+                 'self.sublist(1).submodule.\\next\\.regor := False;\n'
+        assert expect == s._pyha_reset()
 
 
 class TestVHDLInt:
@@ -118,6 +133,39 @@ class TestVHDLModule:
     def test_pyha_reset(self):
         expect = 'T_0.\\_pyha_reset\\(self.name);'
         assert self.dut._pyha_reset() == expect
+
+    def test_pyha_reset_recursive(self):
+        class Label(HW):
+            def __init__(self):
+                self.register = Sfix(0.563, 0, -18)
+
+        class C3(HW):
+            def __init__(self):
+                self.nested_list = [Label(), Label()]
+                self.regor = False
+
+        class A3(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C3()
+
+        class B3(HW):
+            def __init__(self):
+                self.ror = 554
+                self.sublist = [A3(2), A3(128)]
+
+
+        dut = VHDLModule('-', B3(), B3())
+        expect = 'self.\\next\\.\\ror\\ := 554\n;'\
+            'self.sublist(0).\\next\\.reg := 2\n;'\
+            'self.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
+            'self.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
+            'self.sublist(0).submodule.\\next\\.regor := False\n;'\
+            'self.sublist(1).\\next\\.reg := 128\n;'\
+            'self.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
+            'self.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
+            'self.sublist(1).submodule.\\next\\.regor := False\n;'
+        assert dut._pyha_reset() == expect
 
 
 class TestVHDLEnum:

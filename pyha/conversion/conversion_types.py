@@ -57,9 +57,10 @@ class BaseVHDLType:
     def _pyha_reset_value(self):
         return self.initial
 
-    def _pyha_reset(self) -> str:
+    def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        return f'self.\\next\\.{name} := {self._pyha_reset_value()};'
+        tail = '' if prefix == 'self' else '\n'  # if recrsive, this is leaf node -> end with \n
+        return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};{tail}'
 
 
 class VHDLList(BaseVHDLType):
@@ -67,6 +68,7 @@ class VHDLList(BaseVHDLType):
         super().__init__(var_name, current, initial)
 
         self.elems = [conv_class('-', c, i) for c, i in zip(self.current, self.initial)]
+        self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
 
     def _pyha_type(self):
         elem_type = self.elems[0]._pyha_type()
@@ -80,27 +82,32 @@ class VHDLList(BaseVHDLType):
         return f'type {t_name} is array (natural range <>) of {self.elems[0]._pyha_type()};'
 
     def _pyha_init(self):
-        if isinstance(self.current[0], HW):
-            # for list of submodules call for each item
-            inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()}({i}));'
-                     for i in range(len(self.current))]
-            return '\n'.join(inits)
-        else:
+        if self.not_submodules_list:
             return super()._pyha_init()
 
+        inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()}({i}));'
+                 for i in range(len(self.current))]
+        return '\n'.join(inits)
+
     def _pyha_update_registers(self):
-        if isinstance(self.current[0], HW):
-            # for list of submodules call for each item
-            inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()}({i}));'
-                     for i in range(len(self.current))]
-            return '\n'.join(inits)
-        else:
+        if self.not_submodules_list:
             return super()._pyha_update_registers()
 
-    def _pyha_reset(self) -> str:
+        inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()}({i}));'
+                 for i in range(len(self.current))]
+        return '\n'.join(inits)
+
+    def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        data = ', '.join(x._pyha_reset_value() for x in self.elems)
-        return f'self.\\next\\.{name} := ({data})'
+        if self.not_submodules_list:
+            data = ', '.join(x._pyha_reset_value() for x in self.elems)
+            return f'self.\\next\\.{name} := ({data})'
+
+        ret = ''
+        for i, sub in enumerate(self.elems):
+            tmp_prefix = f'{prefix}.{name}({i})'
+            ret += sub._pyha_reset(tmp_prefix)  # recursive
+        return ret
 
 
 class VHDLInt(BaseVHDLType):
@@ -122,6 +129,11 @@ class VHDLSfix(BaseVHDLType):
 
 
 class VHDLModule(BaseVHDLType):
+    def __init__(self, var_name, current, initial):
+        super().__init__(var_name, current, initial)
+
+        self.elems = get_conversion_vars(self.current)
+
     def _pyha_module_name(self):
         return f'{type(self.current).__name__}_{self.current._pyha_instance_id}'
 
@@ -134,8 +146,19 @@ class VHDLModule(BaseVHDLType):
     def _pyha_update_registers(self):
         return f'{self._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()});'
 
-    def _pyha_reset(self):
-        return f'{self._pyha_module_name()}.\\_pyha_reset\\(self.{self._pyha_name()});'
+    def _pyha_reset(self, prefix='self'):
+        if prefix == 'self':
+            return f'{self._pyha_module_name()}.\\_pyha_reset\\(self.{self._pyha_name()});'
+
+        # this is the case where submodule list needs full tree of resets, calling
+        # 'pyha_reset' wont work as lists have only VHDL model for first element
+        ret = ''
+        for i, sub in enumerate(self.elems):
+            tmp_prefix = prefix
+            if self._name != '-':
+                tmp_prefix = f'{prefix}.{self._pyha_name()}'
+            ret += sub._pyha_reset(tmp_prefix)  # recursive
+        return ret
 
 
 class VHDLEnum(BaseVHDLType):
