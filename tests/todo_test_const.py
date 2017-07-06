@@ -97,7 +97,7 @@ class TestSingleInt:
                 \\_pyha_update_self\\(self);
             end procedure;""")
 
-        assert expect == str(self.conversion.get_reset_self())
+        assert expect == str(self.conversion.build_reset())
 
     def test_update_self(self):
         expect = textwrap.dedent("""\

@@ -58,9 +58,14 @@ class TestVHDLList:
         assert expect == self.dut_sub._pyha_update_registers()
 
     def test_pyha_reset(self):
-        expect = 'self.\out\(0).\\next\\.- := Sfix(0.0, 1, -2);\n' \
-                 'self.\out\(1).\\next\\.- := Sfix(0.0, 1, -2);\n'
+        expect = 'self.\\next\\.\out\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2));\n'
         assert expect == self.dut._pyha_reset()
+
+    def test_pyha_reset_ints(self):
+        d = [1, 2]
+        dut = VHDLList('out', d, d)
+        expect = 'self.\\next\\.\out\ := (1, 2);\n'
+        assert expect == dut._pyha_reset()
 
     def test_pyha_reset_submodules(self):
         class C2(HW):

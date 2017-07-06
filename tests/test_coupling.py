@@ -655,6 +655,7 @@ def test_def_for_return(converter):
     conv = converter(code, datamodel)
     assert expect == str(conv)
 
+
 class Tc(HW):
     pass
 
@@ -855,7 +856,7 @@ def test_class_datamodel_reset(converter):
         end procedure;""")
 
     conv = converter(code, datamodel)
-    conv = conv.get_reset_self()
+    conv = conv.build_reset()
     assert expect == str(conv)
 
 
@@ -877,7 +878,7 @@ def test_class_datamodel_reset_reserved_name(converter):
             \\_pyha_update_registers\\(self);
         end procedure;""")
     conv = converter(code, datamodel)
-    conv = conv.get_reset_self()
+    conv = conv.build_reset()
     assert expect == str(conv)
 
 
@@ -890,7 +891,7 @@ def test_class_datamodel_reset_prototype(converter):
         procedure \\_pyha_reset_self\\(self: inout self_t);""")
 
     conv = converter(code)
-    conv = conv.get_reset_self_prototype()
+    conv = conv.build_reset_prototype()
     assert expect == str(conv)
 
 
@@ -1035,4 +1036,30 @@ class TestClassNodeConv:
             end procedure;""")
 
         c = get_conversion(T()).build_update_registers()
+        assert expect == str(c)
+
+    def test_build_reset(self):
+        class A(HW):
+            def __init__(self):
+                self.r = 123
+
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.al = [0, 1]
+                self.sub = A()
+                self.subl = [self.sub] * 2
+
+        expect = textwrap.dedent("""\
+            procedure \\_pyha_reset\\(self: inout self_t) is
+            begin
+                self.\\next\\.a := 0;
+                self.\\next\\.al := (0, 1);
+                self.sub.\\next\\.r := 123;
+                self.subl(0).\\next\\.r := 123;
+                self.subl(1).\\next\\.r := 123;
+                \\_pyha_constants_self\\(self);
+            end procedure;""")
+
+        c = get_conversion(T()).build_reset()
         assert expect == str(c)

@@ -52,7 +52,7 @@ class TestBasic:
         assert expect == self.conv.conv.build_typedefs()
 
     def test_vhdl_reset(self):
-        data_conversion = self.conv.conv.get_reset_self()
+        data_conversion = self.conv.conv.build_reset()
         expect = textwrap.dedent("""\
                 procedure \\_pyha_reset_self\\(self: inout self_t) is
                 begin

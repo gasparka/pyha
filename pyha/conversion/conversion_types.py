@@ -99,6 +99,10 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
+        if self.not_submodules_list:
+            data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
+            return f'self.\\next\\.{name} := ({data});\n'
+
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = f'{prefix}.{name}({i})'

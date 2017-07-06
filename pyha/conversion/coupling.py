@@ -59,57 +59,6 @@ def bounds_to_str(var):
     return left, right
 
 
-# def reset_maker(self_data, recursion_depth=0):
-#     lines = []
-#     prefix = 'self' if recursion_depth == 0 else ''
-#     for var_name, var_value in self_data.items():
-#         if var_name == 'next':
-#             continue
-#         var_name = escape_reserved_vhdl(var_name)
-#
-#         # if isinstance(var_value, (Sfix, ComplexSfix)):
-#         #     lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.vhdl_reset()};')
-#
-#         # elif isinstance(var_value, (Enum)):
-#         #     lines.append(f'{prefix}.\\next\\.{var_name} := {var_value.name};')
-#
-#         # list of submodules
-#         elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-#             for i, x in enumerate(var_value):
-#                 dm = DataModel(x, skip_locals=True)
-#                 resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-#                 vars = [f'{prefix}.{var_name}({i}){x}' for x in resets]
-#                 lines.extend(vars)
-#
-#         # # some other list
-#         # elif isinstance(var_value, list):
-#         #     lines.append(f'{prefix}.\\next\\.' + list_reset('', var_name, var_value))
-#
-#         # submodule
-#         elif isinstance(var_value, HW):
-#             # if recursion_depth == 0:
-#             #     lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_reset_self\\(self.{var_name});')
-#             # else:
-#                 # submodule of lists of submodules
-#                 dm = DataModel(var_value)
-#                 resets = reset_maker(dm.self_data, recursion_depth + 1)  # recursion here
-#                 vars = [f'{prefix}.{var_name}{x}' for x in resets]
-#                 lines.extend(vars)
-#         # else:
-#         #     lines.append(f'{prefix}.\\next\\.{var_name} := {var_value};')
-#
-#     return lines
-
-
-# def list_reset(prefix, key, value):
-#     if isinstance(value[0], (Sfix, ComplexSfix)):
-#         lstr = '(' + ', '.join(x.vhdl_reset() for x in value) + ')'
-#     else:
-#         lstr = '(' + ', '.join(str(x) for x in value) + ')'
-#     tmp = f'{prefix + key} := {lstr};'
-#     return tmp
-
-
 def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
     if variable is not None:
         name = type(variable).__name__
