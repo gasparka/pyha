@@ -72,8 +72,7 @@ class TestRegistersInt:
         inputs = [1, 2, 3, 4]
         expect = [123, 1, 2, 3]
 
-        assert_sim_match(self.dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground')
+        assert_sim_match(self.dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 
