@@ -125,7 +125,7 @@ class TestRegister:
                     \\_pyha_update_self\\(self);
                 end procedure;""")
 
-        assert expect == str(conv.get_reset_self())
+        assert expect == str(conv.build_reset())
 
     def test_conversion_top_entity(self):
         res = TopGenerator(self.dut)

@@ -17,6 +17,11 @@ class TestBaseVHDLType:
         expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
         assert expect == dut._pyha_update_registers()
 
+    def test_pyha_reset(self):
+        dut = BaseVHDLType('out', 0, 0)
+        expect = 'self.\\next\\.\\out\\ := 0;'
+        assert expect == dut._pyha_reset()
+
 
 class TestVHDLList:
     def setup(self):
@@ -25,6 +30,7 @@ class TestVHDLList:
 
         class T(HW):
             pass
+
         self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
 
     def test_pyha_type_sfix(self):
@@ -51,6 +57,35 @@ class TestVHDLList:
                  'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
         assert expect == self.dut_sub._pyha_update_registers()
 
+    def test_pyha_reset(self):
+        expect = 'self.\\next\\.\out\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2));\n'
+        assert expect == self.dut._pyha_reset()
+
+    def test_pyha_reset_ints(self):
+        d = [1, 2]
+        dut = VHDLList('out', d, d)
+        expect = 'self.\\next\\.\out\ := (1, 2);\n'
+        assert expect == dut._pyha_reset()
+
+    def test_pyha_reset_submodules(self):
+        class C2(HW):
+            def __init__(self):
+                self.regor = False
+
+        class A2(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C2()
+
+        sublist = [A2(2), A2(128)]
+        s = VHDLList('sublist', sublist, sublist)
+
+        expect = 'self.sublist(0).\\next\\.reg := 2;\n' \
+                 'self.sublist(0).submodule.\\next\\.regor := False;\n' \
+                 'self.sublist(1).\\next\\.reg := 128;\n' \
+                 'self.sublist(1).submodule.\\next\\.regor := False;\n'
+        assert expect == s._pyha_reset()
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
@@ -72,11 +107,22 @@ class TestVHDLSfix:
         expect = 'sfixed(1 downto -17)'
         assert dut._pyha_type() == expect
 
+    def test_pyha_reset_value(self):
+        dut = VHDLSfix('name', Sfix(0, 1, -17), initial=Sfix(0.3, 1, -17))
+        expect = 'Sfix(0.3, 1, -17)'
+        assert dut._pyha_reset_value() == expect
+
+        dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))
+        expect = 'Sfix(0.3, 2, -8)'
+        assert dut._pyha_reset_value() == expect
+
 
 class TestVHDLModule:
     def setup(self):
         class T(HW):
-            pass
+            self.a = 0
+            self.b = Sfix(0, 0, -17)
+
         self.dut = VHDLModule('name', T(), T())
 
     def test_pyha_type(self):
@@ -90,6 +136,68 @@ class TestVHDLModule:
     def test_pyha_update_registers(self):
         expect = 'T_0.\\_pyha_update_registers\\(self.name);'
         assert self.dut._pyha_update_registers() == expect
+
+    def test_pyha_reset(self):
+        expect = 'self.name.\\next\\.much_dummy_very_wow := 0;\n'
+        assert self.dut._pyha_reset() == expect
+
+    def test_pyha_reset_recursive(self):
+        class Label(HW):
+            def __init__(self):
+                self.register = Sfix(0.563, 0, -18)
+
+        class C3(HW):
+            def __init__(self):
+                self.nested_list = [Label(), Label()]
+                self.regor = False
+
+        class A3(HW):
+            def __init__(self, reg_init):
+                self.reg = reg_init
+                self.submodule = C3()
+
+        class B3(HW):
+            def __init__(self):
+                self.ror = 554
+                self.sublist = [A3(2), A3(128)]
+
+        dut = VHDLModule('name', B3(), B3())
+        expect = 'self.name.\\next\\.\\ror\\ := 554;\n' \
+                 'self.name.sublist(0).\\next\\.reg := 2;\n' \
+                 'self.name.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.\\next\\.regor := False;\n' \
+                 'self.name.sublist(1).\\next\\.reg := 128;\n' \
+                 'self.name.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.\\next\\.regor := False;\n'
+        assert dut._pyha_reset() == expect
+
+    def test_pyha_reset_lazy_sfix(self):
+        """ Test that lazy Sfix values will take correct bound after 'main' execution"""
+        class A4(HW):
+            def __init__(self):
+                self.a = [Sfix()] * 2
+                self.b = [Sfix(left=1)] * 2
+                self.c = [Sfix(right=-4)] * 2
+
+            def main(self, a):
+                self.a[0] = a
+                self.b[0] = a
+                self.c[0] = a
+                return self.a[0], self.b[0], self.c[0]
+
+        dut = A4()
+        dut.main(Sfix(0.1, 0, -17))
+        dut._pyha_update_self()
+
+        dut = VHDLModule('name', dut, dut)
+
+        expect = 'self.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n'\
+            'self.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n'\
+            'self.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
+
+        assert expect == dut._pyha_reset()
 
 
 class TestVHDLEnum:
@@ -106,6 +214,16 @@ class TestVHDLEnum:
         dut = VHDLEnum('name', d, d)
         expect = 'type T is (ENUM0,ENUM1,ENUM2,ENUM3);'
         assert dut._pyha_typedef() == expect
+
+    def test_pyha_reset_value(self):
+        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
+        expect = 'ENUM1'
+        assert dut._pyha_reset_value() == expect
+
+    def test_pyha_reset(self):
+        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
+        expect = 'self.\\next\\.name := ENUM1;'
+        assert dut._pyha_reset() == expect
 
 
 def test_get_conversion_vars_int():

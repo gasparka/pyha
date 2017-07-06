@@ -2,7 +2,6 @@ import datetime
 import logging
 import textwrap
 from contextlib import suppress
-from enum import Enum
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
@@ -11,13 +10,11 @@ from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
 import pyha
-from pyha.common.hwsim import SKIP_FUNCTIONS, HW
-from pyha.common.sfix import ComplexSfix
+from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber
 from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars
-from pyha.conversion.coupling import VHDLType, VHDLVariable, pytype_to_vhdl, list_reset
-from pyha.conversion.coupling import get_instance_vhdl_name
+from pyha.conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -507,22 +504,19 @@ class ClassNodeConv(NodeConv):
                 use work.PyhaUtil.all;
                 use work.all;""")
 
-    def get_reset_self_prototype(self):
-        return 'procedure \\_pyha_reset_self\\(self: inout self_t);'
+    def build_reset_prototype(self):
+        return 'procedure \\_pyha_reset\\(self: inout self_t);'
 
-    def get_reset_self(self):
-        template = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-        {DATA}
-            \\_pyha_update_registers\\(self);
-        end procedure;""")
-
-        variables = VHDLType.get_reset()
-
-        sockets = {'DATA': ''}
-        sockets['DATA'] += ('\n'.join(tabber(x) for x in variables))
-        return template.format(**sockets)
+    def build_reset(self):
+        resets = [x._pyha_reset() for x in get_conversion_vars(self.obj)]
+        resets = '\n'.join(tabber(x) for x in resets)
+        template = f"""\
+procedure \\_pyha_reset\\(self: inout self_t) is
+begin
+{resets}
+    \\_pyha_update_registers\\(self);
+end procedure;"""
+        return template
 
     def build_update_registers_prototype(self):
         return 'procedure \\_pyha_update_registers\\(self: inout self_t);'
@@ -627,7 +621,7 @@ end record;"""
     def get_headers(self):
         ret = self.build_init_prototype() + '\n\n'
         ret += self.get_constants_self_prototype() + '\n\n'
-        ret += self.get_reset_self_prototype() + '\n\n'
+        ret += self.build_reset_prototype() + '\n\n'
         ret += self.build_update_registers_prototype() + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
@@ -676,7 +670,7 @@ end record;"""
 
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
-        sockets['RESET_SELF'] = tabber(self.get_reset_self())
+        sockets['RESET_SELF'] = tabber(self.build_reset())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
