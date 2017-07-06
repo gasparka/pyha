@@ -202,7 +202,7 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, list):
-                ret.__dict__[k] = PyhaList(v, type=deepcopy(v[0]), name=k)
+                ret.__dict__[k] = PyhaList(v)
 
         # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
         ret._pyha_next = {}
@@ -286,29 +286,28 @@ class SfixList(list):
 
 class PyhaList(UserList):
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    def __init__(self, data, type, name):
+    def __init__(self, data):
         super().__init__(data)
-        self.type = type
         self._pyha_next = deepcopy(data)
 
-        self.name = name
-        self.current = self.data
-        self.initial = deepcopy(data)
-        self.elem_type = None  # this is filled in later
-
     def __setitem__(self, i, y):
-        if hasattr(self.type, '_pyha_update_self'):
+        if hasattr(self.data[0], '_pyha_update_self'):
             # object already knows how to handle registers
             self[i] = y
         else:
-            if isinstance(self.type, Sfix):
-                y = auto_resize(self.type, y)
+            if isinstance(self.data[0], Sfix):
+                y = auto_resize(self.data[0], y)
 
-                if self.type.left is None:
-                    self.type.left = y.left
+                # lazy bounds feature, if bounds is None, take the bound from assgned value
+                if self.data[0].left is None:
+                    for x, xn in zip(self.data, self._pyha_next):
+                        x.left = y.left
+                        xn.left = y.left
 
-                if self.type.right is None:
-                    self.type.right = y.right
+                if self.data[0].right is None:
+                    for x, xn in zip(self.data, self._pyha_next):
+                        x.right = y.right
+                        xn.right = y.right
 
             if RegisterBehaviour.is_enabled():
                 self._pyha_next[i] = y
@@ -318,7 +317,7 @@ class PyhaList(UserList):
     def _pyha_update_self(self):
         if RegisterBehaviour.is_force_disabled():
             return
-        if hasattr(self.type, '_pyha_update_self'):
+        if hasattr(self.data[0], '_pyha_update_self'):
             # object already knows how to handle registers
             for x in self.data:
                 x._pyha_update_self()

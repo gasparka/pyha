@@ -173,6 +173,32 @@ class TestVHDLModule:
                  'self.name.sublist(1).submodule.\\next\\.regor := False;\n'
         assert dut._pyha_reset() == expect
 
+    def test_pyha_reset_lazy_sfix(self):
+        """ Test that lazy Sfix values will take correct bound after 'main' execution"""
+        class A4(HW):
+            def __init__(self):
+                self.a = [Sfix()] * 2
+                self.b = [Sfix(left=1)] * 2
+                self.c = [Sfix(right=-4)] * 2
+
+            def main(self, a):
+                self.a[0] = a
+                self.b[0] = a
+                self.c[0] = a
+                return self.a[0], self.b[0], self.c[0]
+
+        dut = A4()
+        dut.main(Sfix(0.1, 0, -17))
+        dut._pyha_update_self()
+
+        dut = VHDLModule('name', dut, dut)
+
+        expect = 'self.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n'\
+            'self.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n'\
+            'self.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
+
+        assert expect == dut._pyha_reset()
+
 
 class TestVHDLEnum:
     class T(Enum):

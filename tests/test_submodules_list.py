@@ -6,7 +6,6 @@ from pyha.common.const import Const
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import get_conversion_datamodel, Conversion
-from pyha.conversion.coupling import reset_maker
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_GATE, SIM_RTL, SIM_HW_MODEL
 
 
