@@ -832,69 +832,6 @@ def test_list_sfix(converter):
     # expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
     # assert expect == conv.get_typedefs()
 
-
-def test_class_datamodel_reset(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'a': Sfix(1.0, 2, -27),
-        'b': Sfix(4.0, 6, -27),
-        'c': 25,
-        'd': False,
-        'next': {'lol': 'loom'}
-    })
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.a := Sfix(1.0, 2, -27);
-            self.\\next\\.b := Sfix(4.0, 6, -27);
-            self.\\next\\.c := 25;
-            self.\\next\\.d := False;
-            \\_pyha_update_registers\\(self);
-        end procedure;""")
-
-    conv = converter(code, datamodel)
-    conv = conv.build_reset()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_reset_reserved_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(locals={}, self_data={
-        'out': Sfix(1.0, 0, -27),
-        'new': False,
-    })
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t) is
-        begin
-            self.\\next\\.\\out\\ := Sfix(1.0, 0, -27);
-            self.\\next\\.\\new\\ := False;
-            \\_pyha_update_registers\\(self);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    conv = conv.build_reset()
-    assert expect == str(conv)
-
-
-def test_class_datamodel_reset_prototype(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                    pass""")
-
-    expect = textwrap.dedent("""\
-        procedure \\_pyha_reset_self\\(self: inout self_t);""")
-
-    conv = converter(code)
-    conv = conv.build_reset_prototype()
-    assert expect == str(conv)
-
-
 class TestClassNodeConv:
     def test_build_data_structs(self):
         class A(HW):
@@ -1036,6 +973,14 @@ class TestClassNodeConv:
             end procedure;""")
 
         c = get_conversion(T()).build_update_registers()
+        assert expect == str(c)
+
+    def test_build_reset_prototype(self):
+        class T(HW):
+            pass
+
+        expect = 'procedure \\_pyha_reset\\(self: inout self_t);'
+        c = get_conversion(T()).build_reset_prototype()
         assert expect == str(c)
 
     def test_build_reset(self):

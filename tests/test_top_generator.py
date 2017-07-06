@@ -264,7 +264,7 @@ def test_simple_full(simple_obj):
                         function init_regs return Simple_0.self_t is
                             variable self: Simple_0.self_t;
                         begin
-                              Simple_0.\_pyha_reset_self\(self);
+                              Simple_0.\_pyha_reset\(self);
                               return self;
                         end function;
 
@@ -293,7 +293,7 @@ def test_simple_full(simple_obj):
 
 
                             if (not rst_n) then
-                                Simple_0.\_pyha_reset_self\(self_var);
+                                Simple_0.\_pyha_reset\(self_var);
                                 self <= self_var;
                             elsif rising_edge(clk) then
                                 if enable then

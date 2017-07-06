@@ -50,24 +50,6 @@ class TestBasic:
         expect = 'type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;'
         assert expect == self.conv.conv.build_typedefs()
 
-    def test_vhdl_reset(self):
-        data_conversion = self.conv.conv.build_reset()
-        expect = textwrap.dedent("""\
-                procedure \\_pyha_reset_self\\(self: inout self_t) is
-                begin
-                    self.sublist(0).\\next\\.reg := 0;
-                    self.sublist(1).\\next\\.reg := 0;
-                    \\_pyha_update_registers\\(self);
-                end procedure;""")
-
-        assert expect == data_conversion
-
-    def test_reset_maker(self):
-        expect = ['self.sublist(0).\\next\\.reg := 0;',
-                  'self.sublist(1).\\next\\.reg := 0;']
-        ret = reset_maker(self.datamodel.self_data)
-
-        assert expect == ret
 
     def test_sim(self):
         x = [range(16), range(16)]
@@ -124,60 +106,6 @@ class TestDeepSubmodules:
         assert len(datamodel.self_data) == 2
         assert 'reg' in datamodel.self_data
         assert 'submodule' in datamodel.self_data
-
-    def test_reset(self):
-        conv, datamodel = get_conversion_datamodel(self.dut)
-
-        expect = [
-            'self.sublist(0).\\next\\.reg := 2;',
-            'self.sublist(0).submodule.\\next\\.regor := False;',
-            'self.sublist(1).\\next\\.reg := 128;',
-            'self.sublist(1).submodule.\\next\\.regor := False;']
-        ret = reset_maker(datamodel.self_data)
-
-        assert expect == ret
-
-
-class TestDeepDeepSubmodules:
-    def setup_class(self):
-        class Label(HW):
-            def __init__(self):
-                self.register = Sfix(0.563, 0, -18)
-
-        class C3(HW):
-            def __init__(self):
-                self.nested_list = [Label(), Label()]
-                self.regor = False
-
-        class A3(HW):
-            def __init__(self, reg_init):
-                self.reg = reg_init
-                self.submodule = C3()
-
-        class B3(HW):
-            def __init__(self):
-                self.ror = 554
-                self.sublist = [A3(2), A3(128)]
-
-        self.dut = B3()
-
-    def test_reset(self):
-        conv, datamodel = get_conversion_datamodel(self.dut)
-
-        expect = [
-            'self.\\next\\.\\ror\\ := 554;',
-            'self.sublist(0).\\next\\.reg := 2;',
-            'self.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
-            'self.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
-            'self.sublist(0).submodule.\\next\\.regor := False;',
-            'self.sublist(1).\\next\\.reg := 128;',
-            'self.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
-            'self.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);',
-            'self.sublist(1).submodule.\\next\\.regor := False;',
-        ]
-        ret = reset_maker(datamodel.self_data)
-
-        assert expect == ret
 
 
 def test_for():

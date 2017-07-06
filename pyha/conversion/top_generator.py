@@ -188,7 +188,7 @@ class TopGenerator:
                     function init_regs return {DUT_NAME}.self_t is
                         variable self: {DUT_NAME}.self_t;
                     begin
-                          {DUT_NAME}.\_pyha_reset_self\(self);
+                          {DUT_NAME}.\_pyha_reset\(self);
                           return self;
                     end function;
 
@@ -217,7 +217,7 @@ class TopGenerator:
 
 
                         if (not rst_n) then
-                            {DUT_NAME}.\\_pyha_reset_self\\(self_var);
+                            {DUT_NAME}.\\_pyha_reset\\(self_var);
                             self <= self_var;
                         elsif rising_edge(clk) then
                             if enable then

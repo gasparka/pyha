@@ -3,7 +3,6 @@ import pytest
 from pyha.common.context_managers import AutoResize
 from pyha.common.hwsim import HW, SfixList, PyhaList
 from pyha.common.sfix import Sfix, fixed_saturate, fixed_round, fixed_truncate, fixed_wrap, ComplexSfix
-from pyha.conversion.conversion import get_conversion_datamodel
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
