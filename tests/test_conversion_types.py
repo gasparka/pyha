@@ -58,7 +58,8 @@ class TestVHDLList:
         assert expect == self.dut_sub._pyha_update_registers()
 
     def test_pyha_reset(self):
-        expect = 'self.\\next\\.\\out\\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2))'
+        expect = 'self.\out\(0).\\next\\.- := Sfix(0.0, 1, -2);\n' \
+                 'self.\out\(1).\\next\\.- := Sfix(0.0, 1, -2);\n'
         assert expect == self.dut._pyha_reset()
 
     def test_pyha_reset_submodules(self):
@@ -114,7 +115,8 @@ class TestVHDLSfix:
 class TestVHDLModule:
     def setup(self):
         class T(HW):
-            pass
+            self.a = 0
+            self.b = Sfix(0, 0, -17)
 
         self.dut = VHDLModule('name', T(), T())
 
@@ -131,7 +133,7 @@ class TestVHDLModule:
         assert self.dut._pyha_update_registers() == expect
 
     def test_pyha_reset(self):
-        expect = 'T_0.\\_pyha_reset\\(self.name);'
+        expect = 'self.name.\\next\\.much_dummy_very_wow := 0;\n'
         assert self.dut._pyha_reset() == expect
 
     def test_pyha_reset_recursive(self):
@@ -154,17 +156,16 @@ class TestVHDLModule:
                 self.ror = 554
                 self.sublist = [A3(2), A3(128)]
 
-
-        dut = VHDLModule('-', B3(), B3())
-        expect = 'self.\\next\\.\\ror\\ := 554\n;'\
-            'self.sublist(0).\\next\\.reg := 2\n;'\
-            'self.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
-            'self.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
-            'self.sublist(0).submodule.\\next\\.regor := False\n;'\
-            'self.sublist(1).\\next\\.reg := 128\n;'\
-            'self.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
-            'self.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18)\n;'\
-            'self.sublist(1).submodule.\\next\\.regor := False\n;'
+        dut = VHDLModule('name', B3(), B3())
+        expect = 'self.name.\\next\\.\\ror\\ := 554;\n' \
+                 'self.name.sublist(0).\\next\\.reg := 2;\n' \
+                 'self.name.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.\\next\\.regor := False;\n' \
+                 'self.name.sublist(1).\\next\\.reg := 128;\n' \
+                 'self.name.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.\\next\\.regor := False;\n'
         assert dut._pyha_reset() == expect
 
 

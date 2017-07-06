@@ -59,7 +59,7 @@ class BaseVHDLType:
 
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        tail = '' if prefix == 'self' else '\n'  # if recrsive, this is leaf node -> end with \n
+        tail = '' if prefix == 'self' else '\n'  # if recursive, this is leaf node -> end with \n
         return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};{tail}'
 
 
@@ -99,10 +99,6 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        if self.not_submodules_list:
-            data = ', '.join(x._pyha_reset_value() for x in self.elems)
-            return f'self.\\next\\.{name} := ({data})'
-
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = f'{prefix}.{name}({i})'
@@ -147,11 +143,6 @@ class VHDLModule(BaseVHDLType):
         return f'{self._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()});'
 
     def _pyha_reset(self, prefix='self'):
-        if prefix == 'self':
-            return f'{self._pyha_module_name()}.\\_pyha_reset\\(self.{self._pyha_name()});'
-
-        # this is the case where submodule list needs full tree of resets, calling
-        # 'pyha_reset' wont work as lists have only VHDL model for first element
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
