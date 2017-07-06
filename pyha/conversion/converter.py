@@ -514,7 +514,7 @@ class ClassNodeConv(NodeConv):
 procedure \\_pyha_reset\\(self: inout self_t) is
 begin
 {resets}
-    \\_pyha_constants_self\\(self);
+    \\_pyha_update_registers\\(self);
 end procedure;"""
         return template
 

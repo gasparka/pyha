@@ -1003,7 +1003,7 @@ class TestClassNodeConv:
                 self.sub.\\next\\.r := 123;
                 self.subl(0).\\next\\.r := 123;
                 self.subl(1).\\next\\.r := 123;
-                \\_pyha_constants_self\\(self);
+                \\_pyha_update_registers\\(self);
             end procedure;""")
 
         c = get_conversion(T()).build_reset()
