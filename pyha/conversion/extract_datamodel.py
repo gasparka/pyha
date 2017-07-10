@@ -76,7 +76,7 @@ class DataModel:
         else:
             dm = extract_datamodel(obj)
 
-            constants = obj._pyha_constants
+            constants = []
 
             # remove constants from self data
             dm_clean = {k: v for k, v in dm.items() if k not in constants}

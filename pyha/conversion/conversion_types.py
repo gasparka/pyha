@@ -62,6 +62,22 @@ class BaseVHDLType:
         tail = '' if prefix == 'self' else '\n'  # if recursive, this is leaf node -> end with \n
         return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};{tail}'
 
+    def _pyha_reset_constants(self) -> str:
+        r = self._pyha_reset()
+
+        ret = []
+        # filter out CONSTANTS (some name is fully uppercase)
+        for line in r.splitlines():
+            line_target = line[:line.find(':=')]
+            for part in line_target.split('.'):
+                part = part[:part.find('(')]  # cut out array indexing
+                if part[0] == '\\':
+                    part = part[1:-1]  # cut out VHDL escaping
+                if part.isupper():
+                    ret.append(line.replace('.\\next\\', ''))
+
+        return '\n'.join(ret)
+
 
 class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial):
@@ -101,7 +117,7 @@ class VHDLList(BaseVHDLType):
         name = self._pyha_name()
         if self.not_submodules_list:
             data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
-            return f'self.\\next\\.{name} := ({data});\n'
+            return f'{prefix}.\\next\\.{name} := ({data});\n'
 
         ret = ''
         for i, sub in enumerate(self.elems):
