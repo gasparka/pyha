@@ -24,7 +24,7 @@ def tabber(str):
 
 
 def formatter(xl):
-    return '\n'.join(tabber(x) for x in xl)
+    return '\n'.join(tabber(x) for x in xl if x != '')
 
 def load_gnuradio_file(file: str):
     import scipy

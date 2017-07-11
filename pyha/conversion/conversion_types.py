@@ -70,7 +70,8 @@ class BaseVHDLType:
         for line in r.splitlines():
             line_target = line[:line.find(':=')]
             for part in line_target.split('.'):
-                part = part[:part.find('(')]  # cut out array indexing
+                if part.find('(') != -1:  # cut out array indexing
+                    part = part[:part.find('(')]
                 if part[0] == '\\':
                     part = part[1:-1]  # cut out VHDL escaping
                 if part.isupper():

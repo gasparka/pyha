@@ -136,24 +136,3 @@ def test_for():
     expected = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     assert_sim_match(dut, expected, x)
-
-
-def test_const_illegal():
-    class A5(HW):
-        def __init__(self, reg_init):
-            self.reg = Const(reg_init)
-
-        def main(self, x):
-            return x
-
-    with pytest.raises(Exception):
-        class B5(HW):
-            def __init__(self):
-                self.sublist = [A5(i) for i in range(4)]
-
-            def main(self, x):
-                return x
-
-        dut = B5()
-        dut.main(0)
-        dut.main(1)

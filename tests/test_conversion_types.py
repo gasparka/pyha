@@ -217,16 +217,18 @@ class TestVHDLModule:
                 self.REGISTER = 3
                 self.ARR = [4, 5]
                 self.arrr = [4, 5]
-                self.subarr = [A(), A()]
+                self.m = A()
+                self.out = [A(), A()]
 
         dut = VHDLModule('name', T(), T())
 
         expect = 'self.name.A := 0;\n' \
                  'self.name.\\REGISTER\\ := 3;\n' \
                  'self.name.ARR := (4, 5);\n' \
-                 'self.name.subarr(0).REG := 1;\n' \
-                 'self.name.subarr(1).REG := 1;' \
- \
+                 'self.name.m.REG := 1;\n' \
+                 'self.name.\\out\\(0).REG := 1;\n' \
+                 'self.name.\\out\\(1).REG := 1;'
+
         assert dut._pyha_reset_constants() == expect
 
 

@@ -514,69 +514,63 @@ class ClassNodeConv(NodeConv):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        return template.format(DATA=formatter([x._pyha_reset() for x in self.conv_vars]))
+        data = [x._pyha_reset() for x in self.conv_vars]
+        return template.format(DATA=formatter(data))
 
-    def build_reset_constants_prototype(self):
-        return 'procedure \\_pyha_reset_constants\\(self: inout self_t);'
+    def build_reset_constants(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            begin
+            {DATA}
+            end procedure;""")
 
-    def build_reset_constants(self):
-        resets = [x._pyha_reset_constants() for x in get_conversion_vars(self.obj)]
-        resets = '\n'.join(tabber(x) for x in resets)
-        template = f"""\
-procedure \\_pyha_reset_constants\\(self: inout self_t) is
-begin
-{resets}
-end procedure;"""
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_reset_constants() for x in self.conv_vars]
+        return template.format(DATA=formatter(data))
 
-        return template
+    def build_update_registers(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            begin
+            {DATA}
+                \\_pyha_reset_constants\\(self);
+            end procedure;""")
 
-    def build_update_registers_prototype(self):
-        return 'procedure \\_pyha_update_registers\\(self: inout self_t);'
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_update_registers() for x in self.conv_vars]
+        return template.format(DATA=formatter(data))
 
-    def build_update_registers(self):
-        updates = [x._pyha_update_registers() for x in get_conversion_vars(self.obj)]
-        updates = '\n'.join(tabber(x) for x in updates)
-        template = f"""\
-procedure \\_pyha_update_registers\\(self: inout self_t) is
-begin
-{updates}
-    \\_pyha_constants_self\\(self);
-end procedure;"""
+    def build_init(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_init\\(self: inout self_t) is
+            begin
+            {DATA}
+                \\_pyha_reset_constants\\(self);
+            end procedure;""")
 
-        return template
-
-    def build_init_prototype(self):
-        return 'procedure \\_pyha_init\\(self: inout self_t);'
-
-    def build_init(self):
-        init = [x._pyha_init() for x in get_conversion_vars(self.obj)]
-        init = '\n'.join(tabber(x) for x in init)
-        template = f"""\
-procedure \\_pyha_init\\(self: inout self_t) is
-begin
-{init}
-    \\_pyha_constants_self\\(self);
-end procedure;"""
-
-        return template
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_init() for x in self.conv_vars]
+        return template.format(DATA=formatter(data))
 
     def build_data_structs(self):
-        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in get_conversion_vars(self.obj)]
-        variables = '\n'.join(tabber(x) for x in variables)
-        template = f"""\
-type next_t is record
-{variables}
-end record;
+        template = textwrap.dedent("""\
+            type next_t is record
+            {DATA}
+            end record;
+            
+            type self_t is record
+            {DATA}
+                \\next\\: next_t;
+            end record;""")
 
-type self_t is record
-{variables}
-    \\next\\: next_t;
-end record;"""
-
-        return template
+        data = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.conv_vars]
+        return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
-        typedefs = [x._pyha_typedef() for x in get_conversion_vars(self.obj) if x._pyha_typedef() is not None]
+        typedefs = [x._pyha_typedef() for x in self.conv_vars if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
@@ -584,10 +578,10 @@ end record;"""
         return VHDLType.get_self_vhdl_name()
 
     def get_headers(self):
-        ret = self.build_init_prototype() + '\n\n'
-        ret += self.build_reset_constants_prototype() + '\n\n'
-        ret += self.build_reset_prototype() + '\n\n'
-        ret += self.build_update_registers_prototype() + '\n\n'
+        ret = self.build_init(prototype_only=True) + '\n\n'
+        ret += self.build_reset_constants(prototype_only=True) + '\n\n'
+        ret += self.build_reset(prototype_only=True) + '\n\n'
+        ret += self.build_update_registers(prototype_only=True) + '\n\n'
         ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
         return ret
 
