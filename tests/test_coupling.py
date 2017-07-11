@@ -713,32 +713,6 @@ def test_pytype_to_vhdl_l():
     assert ret == 'A_0'
 
 
-def test_class_datamodel_submodule(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
-    #     begin
-    #         A_0.\\_pyha_reset_self\\(self.sub);
-    #         \\_pyha_update_self\\(self);
-    #     end procedure;""")
-    #
-    # assert expect == str(conv.get_reset_self())
-    #
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_update_self\\(self: inout self_t) is
-    #     begin
-    #         A_0.\\_pyha_update_self\\(self.sub);
-    #         \\_pyha_constants_self\\(self);
-    #     end procedure;""")
-    # conv = converter(code, datamodel)
-    # conv = conv.get_update_self()
-    # assert expect == str(conv)
-
-
 def test_class_infer_local_variable_list(converter):
     pytest.skip('TODO, local list typedef')
     code = textwrap.dedent("""\
@@ -771,66 +745,6 @@ def test_class_infer_local_variable_list(converter):
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.build_typedefs()
 
-
-def test_datamodel_list_int(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(self_data={'a': [0] * 12}, locals={})
-
-
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
-    #     begin
-    #         self.\\next\\.a := (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-    #         \\_pyha_update_self\\(self);
-    #     end procedure;""")
-    #
-    # assert expect == str(conv.get_reset_self())
-    #
-    # expect = ['type integer_list_t is array (natural range <>) of integer;']
-    # assert expect == conv.get_typedefs()
-
-
-def test_datamodel_list_boolean(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
-    #     begin
-    #         self.\\next\\.a := (False, True, False, True);
-    #         \\_pyha_update_self\\(self);
-    #     end procedure;""")
-    # assert expect == str(conv.get_reset_self())
-    #
-    # # NOTICE: there is global definition for boolean_list_t !
-    # expect = []
-    # assert expect == conv.get_typedefs()
-
-
-def test_list_sfix(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-
-    # expect = textwrap.dedent("""\
-    #     procedure \\_pyha_reset_self\\(self: inout self_t) is
-    #     begin
-    #         self.\\next\\.a := (Sfix(0.1, 2, -15), Sfix(1.5, 2, -15));
-    #         \\_pyha_update_self\\(self);
-    #     end procedure;""")
-    # assert expect == str(conv.get_reset_self())
-    #
-    # expect = ['type sfixed2_15_list_t is array (natural range <>) of sfixed(2 downto -15);']
-    # assert expect == conv.get_typedefs()
 
 class TestClassNodeConv:
     def test_build_data_structs(self):
