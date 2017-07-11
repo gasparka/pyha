@@ -23,6 +23,9 @@ def tabber(str):
     return '\n'.join([f'{TAB}{x}' if x != '' else x for x in str.splitlines()])
 
 
+def formatter(xl):
+    return '\n'.join(tabber(x) for x in xl)
+
 def load_gnuradio_file(file: str):
     import scipy
     return scipy.fromfile(open(file), dtype=scipy.complex64)

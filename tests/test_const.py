@@ -87,7 +87,7 @@ class TestSingleInt:
 
             end procedure;""")
 
-        assert expect == str(self.conversion.get_constants_self())
+        assert expect == str(self.conversion.build_reset_constants())
 
     def test_reset_self(self):
         expect = textwrap.dedent("""\
@@ -187,7 +187,7 @@ class TestMultiIntSfixEnumBooleanCFix:
 
             end procedure;""")
 
-        assert expect == str(self.conversion.get_constants_self())
+        assert expect == str(self.conversion.build_reset_constants())
 
     def test_simulate(self):
         x = [0] * 8
@@ -247,7 +247,7 @@ class TestFloat:
 
             end procedure;""")
 
-        assert expect == str(self.conversion.get_constants_self())
+        assert expect == str(self.conversion.build_reset_constants())
 
     def test_simulate(self):
         # back there constants were not part of the register variable, so float constants did work
@@ -314,7 +314,7 @@ class TestLists:
 
             end procedure;""")
 
-        assert expect == str(self.conversion.get_constants_self())
+        assert expect == str(self.conversion.build_reset_constants())
 
     def test_complex_types(self):
         expect = textwrap.dedent("""\

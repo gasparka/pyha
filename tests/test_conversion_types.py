@@ -146,23 +146,6 @@ class TestVHDLModule:
                  'self.name.\\next\\.b := Sfix(0.0, 0, -17);\n'
         assert self.dut._pyha_reset() == expect
 
-    def test_pyha_reset_constants(self):
-        class T(HW):
-            def __init__(self):
-                self.A = 0
-                self.c = 2
-                self.REGISTER = 3
-                self.ARR = [4, 5]
-                self.arrr = [4, 5]
-
-        dut = VHDLModule('name', T(), T())
-
-        expect = 'self.name.A := 0;\n' \
-                 'self.name.\\REGISTER\\ := 3;\n' \
-                 'self.name.ARR := (4, 5);'
-
-        assert dut._pyha_reset_constants() == expect
-
     def test_pyha_reset_recursive(self):
         class Label(HW):
             def __init__(self):
@@ -216,11 +199,35 @@ class TestVHDLModule:
 
         dut = VHDLModule('name', dut, dut)
 
-        expect = 'self.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n' \
-                 'self.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n' \
-                 'self.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
+        expect = 'self.name.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n' \
+                 'self.name.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n' \
+                 'self.name.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
 
         assert expect == dut._pyha_reset()
+
+    def test_pyha_reset_constants(self):
+        class A(HW):
+            def __init__(self):
+                self.REG = 1
+
+        class T(HW):
+            def __init__(self):
+                self.A = 0
+                self.c = 2
+                self.REGISTER = 3
+                self.ARR = [4, 5]
+                self.arrr = [4, 5]
+                self.subarr = [A(), A()]
+
+        dut = VHDLModule('name', T(), T())
+
+        expect = 'self.name.A := 0;\n' \
+                 'self.name.\\REGISTER\\ := 3;\n' \
+                 'self.name.ARR := (4, 5);\n' \
+                 'self.name.subarr(0).REG := 1;\n' \
+                 'self.name.subarr(1).REG := 1;' \
+ \
+        assert dut._pyha_reset_constants() == expect
 
 
 class TestVHDLEnum:

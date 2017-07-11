@@ -975,14 +975,6 @@ class TestClassNodeConv:
         c = get_conversion(T()).build_update_registers()
         assert expect == str(c)
 
-    def test_build_reset_prototype(self):
-        class T(HW):
-            pass
-
-        expect = 'procedure \\_pyha_reset\\(self: inout self_t);'
-        c = get_conversion(T()).build_reset_prototype()
-        assert expect == str(c)
-
     def test_build_reset(self):
         class A(HW):
             def __init__(self):
@@ -1006,5 +998,11 @@ class TestClassNodeConv:
                 \\_pyha_update_registers\\(self);
             end procedure;""")
 
-        c = get_conversion(T()).build_reset()
-        assert expect == str(c)
+        dut = get_conversion(T())
+        assert expect == str(dut.build_reset())
+
+        expect = 'procedure \\_pyha_reset\\(self: inout self_t);'
+        assert expect == str(dut.build_reset(prototype_only=True))
+
+    def test_build_reset_constants(self):
+        pass
