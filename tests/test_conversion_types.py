@@ -19,7 +19,7 @@ class TestBaseVHDLType:
 
     def test_pyha_reset(self):
         dut = BaseVHDLType('out', 0, 0)
-        expect = 'self.\\next\\.\\out\\ := 0;'
+        expect = 'self.\\next\\.\\out\\ := 0;\n'
         assert expect == dut._pyha_reset()
 
 
@@ -66,6 +66,9 @@ class TestVHDLList:
         dut = VHDLList('out', d, d)
         expect = 'self.\\next\\.\out\ := (1, 2);\n'
         assert expect == dut._pyha_reset()
+
+        expect = 'self.dummy.\\next\\.\out\ := (1, 2);\n'
+        assert expect == dut._pyha_reset('self.dummy')
 
     def test_pyha_reset_submodules(self):
         class C2(HW):
@@ -120,8 +123,9 @@ class TestVHDLSfix:
 class TestVHDLModule:
     def setup(self):
         class T(HW):
-            self.a = 0
-            self.b = Sfix(0, 0, -17)
+            def __init__(self):
+                self.a = 0
+                self.b = Sfix(0, 0, -17)
 
         self.dut = VHDLModule('name', T(), T())
 
@@ -138,7 +142,8 @@ class TestVHDLModule:
         assert self.dut._pyha_update_registers() == expect
 
     def test_pyha_reset(self):
-        expect = 'self.name.\\next\\.much_dummy_very_wow := 0;\n'
+        expect = 'self.name.\\next\\.a := 0;\n' \
+                 'self.name.\\next\\.b := Sfix(0.0, 0, -17);\n'
         assert self.dut._pyha_reset() == expect
 
     def test_pyha_reset_recursive(self):
@@ -175,6 +180,7 @@ class TestVHDLModule:
 
     def test_pyha_reset_lazy_sfix(self):
         """ Test that lazy Sfix values will take correct bound after 'main' execution"""
+
         class A4(HW):
             def __init__(self):
                 self.a = [Sfix()] * 2
@@ -193,11 +199,37 @@ class TestVHDLModule:
 
         dut = VHDLModule('name', dut, dut)
 
-        expect = 'self.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n'\
-            'self.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n'\
-            'self.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
+        expect = 'self.name.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n' \
+                 'self.name.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n' \
+                 'self.name.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
 
         assert expect == dut._pyha_reset()
+
+    def test_pyha_reset_constants(self):
+        class A(HW):
+            def __init__(self):
+                self.REG = 1
+
+        class T(HW):
+            def __init__(self):
+                self.A = 0
+                self.c = 2
+                self.REGISTER = 3
+                self.ARR = [4, 5]
+                self.arrr = [4, 5]
+                self.m = A()
+                self.out = [A(), A()]
+
+        dut = VHDLModule('name', T(), T())
+
+        expect = 'self.name.A := 0;\n' \
+                 'self.name.\\REGISTER\\ := 3;\n' \
+                 'self.name.ARR := (4, 5);\n' \
+                 'self.name.m.REG := 1;\n' \
+                 'self.name.\\out\\(0).REG := 1;\n' \
+                 'self.name.\\out\\(1).REG := 1;'
+
+        assert dut._pyha_reset_constants() == expect
 
 
 class TestVHDLEnum:
@@ -222,7 +254,7 @@ class TestVHDLEnum:
 
     def test_pyha_reset(self):
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
-        expect = 'self.\\next\\.name := ENUM1;'
+        expect = 'self.\\next\\.name := ENUM1;\n'
         assert dut._pyha_reset() == expect
 
 

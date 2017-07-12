@@ -12,8 +12,8 @@ from redbaron.nodes import AtomtrailersNode
 import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber
-from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars
+from pyha.common.util import get_iterable, tabber, formatter
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule
 from pyha.conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
@@ -481,16 +481,16 @@ class ClassNodeConv(NodeConv):
 
         # todo: remove me after refactorings
         try:
-            self.obj = VHDLType._datamodel.obj
+            self.data = VHDLModule('-', VHDLType._datamodel.obj)
         except AttributeError:
-            self.obj = None
+            self.conv_vars = []
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-    def get_imports(self):
+    def build_imports(self):
         return textwrap.dedent("""\
             library ieee;
                 use ieee.std_logic_1164.all;
@@ -504,133 +504,81 @@ class ClassNodeConv(NodeConv):
                 use work.PyhaUtil.all;
                 use work.all;""")
 
-    def build_reset_prototype(self):
-        return 'procedure \\_pyha_reset\\(self: inout self_t);'
-
-    def build_reset(self):
-        resets = [x._pyha_reset() for x in get_conversion_vars(self.obj)]
-        resets = '\n'.join(tabber(x) for x in resets)
-        template = f"""\
-procedure \\_pyha_reset\\(self: inout self_t) is
-begin
-{resets}
-    \\_pyha_update_registers\\(self);
-end procedure;"""
-        return template
-
-    def build_update_registers_prototype(self):
-        return 'procedure \\_pyha_update_registers\\(self: inout self_t);'
-
-    def build_update_registers(self):
-        updates = [x._pyha_update_registers() for x in get_conversion_vars(self.obj)]
-        updates = '\n'.join(tabber(x) for x in updates)
-        template = f"""\
-procedure \\_pyha_update_registers\\(self: inout self_t) is
-begin
-{updates}
-    \\_pyha_constants_self\\(self);
-end procedure;"""
-
-        return template
-
-    def build_init_prototype(self):
-        return 'procedure \\_pyha_init\\(self: inout self_t);'
-
-    def build_init(self):
-
-        init = [x._pyha_init() for x in get_conversion_vars(self.obj)]
-        init = '\n'.join(tabber(x) for x in init)
-        template = f"""\
-procedure \\_pyha_init\\(self: inout self_t) is
-begin
-{init}
-    \\_pyha_constants_self\\(self);
-end procedure;"""
-
-        return template
-
-    def get_constants_self_prototype(self):
-        return 'procedure \\_pyha_constants_self\\(self: inout self_t);'
-
-    def get_constants_self(self):
+    def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
-        procedure \\_pyha_constants_self\\(self: inout self_t) is
-        begin
-        {CONSTANTS}
-        {SUBMODULES}
-        end procedure;""")
+            procedure \\_pyha_reset\\(self: inout self_t) is
+            begin
+            {DATA}
+                \\_pyha_update_registers\\(self);
+            end procedure;""")
 
-        sockets = {'CONSTANTS': '', 'SUBMODULES': ''}
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_reset() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
 
-        # call constants self for each submodules, quartus wants this
-        # lines = []
-        # for x in VHDLType.get_self():
-        #     var_name = x.name
-        #     var_value = x.variable
-        #     if isinstance(var_value, HW):
-        #         lines.append(f'{get_instance_vhdl_name(var_value)}.\\_pyha_constants_self\\(self.{var_name});')
-        #     elif isinstance(var_value, list) and isinstance(var_value[0], HW):
-        #         for i in range(len(var_value)):
-        #             lines.append(
-        #                 f'{get_instance_vhdl_name(var_value[0])}.\\_pyha_constants_self\\(self.{var_name}({i}));')
-        #
-        # sockets['SUBMODULES'] += ('\n'.join(tabber(x) for x in lines))
-        #
-        # const = VHDLType.get_constants()
-        # if len(const):
-        #     const_str = []
-        #     for var in const:
-        #         value = var.variable
-        #         if isinstance(value, Enum):
-        #             const_str += [f'self.{var.name} := {value.name};']
-        #         elif isinstance(value, (Sfix, ComplexSfix)):
-        #             const_str += [f'self.{var.name} := {value.vhdl_reset()};']
-        #         elif isinstance(value, list):
-        #             const_str += ['self.' + list_reset('', var.name, value)]
-        #         else:
-        #             const_str += [f'self.{var.name} := {value};']
-        #
-        #     sockets['CONSTANTS'] += ('\n'.join(tabber(x) for x in const_str))
+    def build_reset_constants(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            begin
+            {DATA}
+            end procedure;""")
 
-        return template.format(**sockets)
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_reset_constants() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
+
+    def build_update_registers(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            begin
+            {DATA}
+                \\_pyha_reset_constants\\(self);
+            end procedure;""")
+
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_update_registers() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
+
+    def build_init(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_init\\(self: inout self_t) is
+            begin
+            {DATA}
+                \\_pyha_reset_constants\\(self);
+            end procedure;""")
+
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_init() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
 
     def build_data_structs(self):
+        template = textwrap.dedent("""\
+            type next_t is record
+            {DATA}
+            end record;
+            
+            type self_t is record
+            {DATA}
+                \\next\\: next_t;
+            end record;""")
 
-        variables = [f'{x._pyha_name()}: {x._pyha_type()};' for x in get_conversion_vars(self.obj)]
-        variables = '\n'.join(tabber(x) for x in variables)
-        template = f"""\
-type next_t is record
-{variables}
-end record;
-
-type self_t is record
-{variables}
-    \\next\\: next_t;
-end record;"""
-
-        return template
+        data = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.data.elems]
+        return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
-        typedefs = [x._pyha_typedef() for x in get_conversion_vars(self.obj) if x._pyha_typedef() is not None]
+        typedefs = [x._pyha_typedef() for x in self.data.elems if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
-    def get_name(self):
-        return VHDLType.get_self_vhdl_name()
-
-    def get_headers(self):
-        ret = self.build_init_prototype() + '\n\n'
-        ret += self.get_constants_self_prototype() + '\n\n'
-        ret += self.build_reset_prototype() + '\n\n'
-        ret += self.build_update_registers_prototype() + '\n\n'
-        ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
-        return ret
-
-    def get_function(self, name):
+    def build_function_by_name(self, name):
         f = [x for x in self.value if str(x.name) == name]
         return str(f[0])
 
-    def get_package_header(self):
+    def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
@@ -643,15 +591,20 @@ end record;"""
 
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
-        sockets['NAME'] = self.get_name()
+        sockets['NAME'] = self.data._pyha_module_name()
         sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
-        sockets['FUNC_HEADERS'] = tabber(self.get_headers())
+        proto = self.build_init(prototype_only=True) + '\n\n'
+        proto += self.build_reset_constants(prototype_only=True) + '\n\n'
+        proto += self.build_reset(prototype_only=True) + '\n\n'
+        proto += self.build_update_registers(prototype_only=True) + '\n\n'
+        proto += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
 
-    def get_package_body(self):
+    def build_package_body(self):
         template = textwrap.dedent("""\
             package body {NAME} is
             {INIT_SELF}
@@ -666,10 +619,10 @@ end record;"""
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = self.get_name()
+        sockets['NAME'] = self.data._pyha_module_name()
 
         sockets['INIT_SELF'] = tabber(self.build_init())
-        sockets['CONSTANT_SELF'] = tabber(self.get_constants_self())
+        sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
@@ -688,9 +641,9 @@ end record;"""
 
         sockets = {}
         sockets['FILE_HEADER'] = file_header()
-        sockets['IMPORTS'] = self.get_imports()
-        sockets['PACKAGE_HEADER'] = self.get_package_header()
-        sockets['PACKAGE_BODY'] = self.get_package_body()
+        sockets['IMPORTS'] = self.build_imports()
+        sockets['PACKAGE_HEADER'] = self.build_package_header()
+        sockets['PACKAGE_BODY'] = self.build_package_body()
         return template.format(**sockets)
 
 

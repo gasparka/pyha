@@ -77,19 +77,10 @@ class VHDLType:
         cls._datamodel = dm
 
     @classmethod
-    def get_reset(cls):
-        return reset_maker(cls._datamodel.self_data)
-
-    @classmethod
     def get_self_vhdl_name(cls):
         if cls._datamodel.obj is None:
             return 'unknown_name'
         return get_instance_vhdl_name(cls._datamodel.obj)
-
-    @classmethod
-    def get_complex_vars(cls):
-        typedefs = cls._get_vars_by_type(ComplexSfix)
-        return typedefs
 
     @classmethod
     def _get_vars_by_type(cls, find_type):
@@ -106,9 +97,6 @@ class VHDLType:
 
         # from self.data
         vars.extend(scan_arr(cls._datamodel.self_data.values(), find_type))
-
-        # from constants
-        vars.extend(scan_arr(cls._datamodel.constants.values(), find_type))
 
         # from locals
         for func in cls._datamodel.locals.values():

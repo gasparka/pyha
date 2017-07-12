@@ -162,40 +162,9 @@ class Meta(type):
     """
     instance_count = 0
 
-    def validate_datamodel(cls, dict):
-        # TODO: not required actually?
-        # if list of submodules, make sure all 'constants' are the same
-        for x in dict.values():
-            if isinstance(x, list) and isinstance(x[0], HW):
-                ref = x[0]._pyha_constants
-                for listi in x:
-                    di = listi._pyha_constants
-                    if di != ref:
-                        raise Exception(
-                            f'List of submodules: {x}\n but constants are not equal!\n\nTry to remove Const() keyword.')
-
-    def handle_constants(cls, dict):
-        """ Go over dict and find all the constants. Remove the Const() wrapper
-        and insert to _pyha_constants."""
-
-        dict['_pyha_constants'] = {}
-        for k, v in dict.items():
-            if isinstance(v, Const):
-                dict['_pyha_constants'][k] = v.value
-                dict[k] = v.value
-
-        # turn '_delay' into constant
-        if 'DELAY' in dict:
-            dict['_pyha_constants']['DELAY'] = dict['DELAY']
-
-        return dict
-
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
-
-        ret.__dict__ = cls.handle_constants(ret.__dict__)
-        cls.validate_datamodel(ret.__dict__)
 
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1

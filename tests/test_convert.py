@@ -1471,7 +1471,7 @@ def test_class_importlibs(converter):
                 use work.all;""")
 
     conv = converter(code)
-    conv = conv.get_imports()
+    conv = conv.build_imports()
     assert expect == str(conv)
 
 
