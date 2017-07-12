@@ -19,7 +19,7 @@ class TestBaseVHDLType:
 
     def test_pyha_reset(self):
         dut = BaseVHDLType('out', 0, 0)
-        expect = 'self.\\next\\.\\out\\ := 0;'
+        expect = 'self.\\next\\.\\out\\ := 0;\n'
         assert expect == dut._pyha_reset()
 
 
@@ -254,7 +254,7 @@ class TestVHDLEnum:
 
     def test_pyha_reset(self):
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
-        expect = 'self.\\next\\.name := ENUM1;'
+        expect = 'self.\\next\\.name := ENUM1;\n'
         assert dut._pyha_reset() == expect
 
 

@@ -79,7 +79,7 @@ class Conversion:
         if not is_child:
             self.top_vhdl = TopGenerator(obj)
             Conversion.complex_types = []
-        Conversion.complex_types.append(VHDLType.get_complex_vars())
+        # Conversion.complex_types.append(VHDLType.get_complex_vars())
 
         # recursively convert all child modules
         self.childs = []

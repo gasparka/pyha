@@ -663,20 +663,6 @@ class Tc(HW):
 Tcobj = Tc()
 
 
-def test_class_name(converter):
-    code = textwrap.dedent("""\
-            class Tc(HW):
-                pass""")
-
-    datamodel = DataModel(obj=Tcobj, locals={}, self_data={'a': Sfix(0.0, 0, -27)})
-    expect = textwrap.dedent("""\
-            Tc_0""")
-
-    conv = converter(code, datamodel)
-    conv = conv.get_name()
-    assert expect == str(conv)
-
-
 class A(HW):
     def __init__(self):
         self.reg = 0

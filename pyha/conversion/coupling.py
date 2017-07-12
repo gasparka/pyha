@@ -83,11 +83,6 @@ class VHDLType:
         return get_instance_vhdl_name(cls._datamodel.obj)
 
     @classmethod
-    def get_complex_vars(cls):
-        typedefs = cls._get_vars_by_type(ComplexSfix)
-        return typedefs
-
-    @classmethod
     def _get_vars_by_type(cls, find_type):
         def scan_arr(arr, find_type):
             ret = []

@@ -44,7 +44,7 @@ class TestBasic:
 
             -- very useless function
             procedure func2(self:inout self_t);""")
-        dm = self.conversion.get_headers()
+        dm = self.conversion.build_prototypes()
         assert expect == dm
 
     def test_main(self):
@@ -59,7 +59,7 @@ class TestBasic:
                 return;
             end procedure;""")
 
-        dm = self.conversion.get_function('main')
+        dm = self.conversion.build_function_by_name('main')
         assert expect == dm
 
     def test_class_multiline_comment(self):
@@ -102,5 +102,5 @@ class TestBasic:
                 procedure func2(self:inout self_t);
             end package;""")
 
-        conv = self.conversion.get_package_header()
+        conv = self.conversion.build_package_header()
         assert expect == conv

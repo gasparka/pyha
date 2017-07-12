@@ -13,7 +13,7 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule
 from pyha.conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
@@ -481,7 +481,7 @@ class ClassNodeConv(NodeConv):
 
         # todo: remove me after refactorings
         try:
-            self.conv_vars = get_conversion_vars(VHDLType._datamodel.obj)
+            self.data = VHDLModule('-', VHDLType._datamodel.obj)
         except AttributeError:
             self.conv_vars = []
         # collect multiline comment
@@ -490,7 +490,7 @@ class ClassNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
-    def get_imports(self):
+    def build_imports(self):
         return textwrap.dedent("""\
             library ieee;
                 use ieee.std_logic_1164.all;
@@ -514,7 +514,7 @@ class ClassNodeConv(NodeConv):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_reset() for x in self.conv_vars]
+        data = [x._pyha_reset() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_reset_constants(self, prototype_only=False):
@@ -526,7 +526,7 @@ class ClassNodeConv(NodeConv):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_reset_constants() for x in self.conv_vars]
+        data = [x._pyha_reset_constants() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_update_registers(self, prototype_only=False):
@@ -539,7 +539,7 @@ class ClassNodeConv(NodeConv):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_update_registers() for x in self.conv_vars]
+        data = [x._pyha_update_registers() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_init(self, prototype_only=False):
@@ -552,7 +552,7 @@ class ClassNodeConv(NodeConv):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_init() for x in self.conv_vars]
+        data = [x._pyha_init() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_data_structs(self):
@@ -566,30 +566,19 @@ class ClassNodeConv(NodeConv):
                 \\next\\: next_t;
             end record;""")
 
-        data = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.conv_vars]
+        data = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
-        typedefs = [x._pyha_typedef() for x in self.conv_vars if x._pyha_typedef() is not None]
+        typedefs = [x._pyha_typedef() for x in self.data.elems if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
-    def get_name(self):
-        return VHDLType.get_self_vhdl_name()
-
-    def get_headers(self):
-        ret = self.build_init(prototype_only=True) + '\n\n'
-        ret += self.build_reset_constants(prototype_only=True) + '\n\n'
-        ret += self.build_reset(prototype_only=True) + '\n\n'
-        ret += self.build_update_registers(prototype_only=True) + '\n\n'
-        ret += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
-        return ret
-
-    def get_function(self, name):
+    def build_function_by_name(self, name):
         f = [x for x in self.value if str(x.name) == name]
         return str(f[0])
 
-    def get_package_header(self):
+    def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
@@ -602,15 +591,20 @@ class ClassNodeConv(NodeConv):
 
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
-        sockets['NAME'] = self.get_name()
+        sockets['NAME'] = self.data._pyha_module_name()
         sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
-        sockets['FUNC_HEADERS'] = tabber(self.get_headers())
+        proto = self.build_init(prototype_only=True) + '\n\n'
+        proto += self.build_reset_constants(prototype_only=True) + '\n\n'
+        proto += self.build_reset(prototype_only=True) + '\n\n'
+        proto += self.build_update_registers(prototype_only=True) + '\n\n'
+        proto += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
 
-    def get_package_body(self):
+    def build_package_body(self):
         template = textwrap.dedent("""\
             package body {NAME} is
             {INIT_SELF}
@@ -625,7 +619,7 @@ class ClassNodeConv(NodeConv):
             end package body;""")
 
         sockets = {}
-        sockets['NAME'] = self.get_name()
+        sockets['NAME'] = self.data._pyha_module_name()
 
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
@@ -647,9 +641,9 @@ class ClassNodeConv(NodeConv):
 
         sockets = {}
         sockets['FILE_HEADER'] = file_header()
-        sockets['IMPORTS'] = self.get_imports()
-        sockets['PACKAGE_HEADER'] = self.get_package_header()
-        sockets['PACKAGE_BODY'] = self.get_package_body()
+        sockets['IMPORTS'] = self.build_imports()
+        sockets['PACKAGE_HEADER'] = self.build_package_header()
+        sockets['PACKAGE_BODY'] = self.build_package_body()
         return template.format(**sockets)
 
 

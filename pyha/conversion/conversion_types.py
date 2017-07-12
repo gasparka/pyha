@@ -59,8 +59,7 @@ class BaseVHDLType:
 
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        tail = '' if prefix == 'self' else '\n'  # if recursive, this is leaf node -> end with \n
-        return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};{tail}'
+        return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};\n'
 
     def _pyha_reset_constants(self) -> str:
         r = self._pyha_reset()
@@ -146,7 +145,8 @@ class VHDLSfix(BaseVHDLType):
 
 
 class VHDLModule(BaseVHDLType):
-    def __init__(self, var_name, current, initial):
+    def __init__(self, var_name, current, initial=None):
+        initial = initial or current._pyha_initial_self
         super().__init__(var_name, current, initial)
 
         self.elems = get_conversion_vars(self.current)
