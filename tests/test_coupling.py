@@ -807,7 +807,6 @@ class TestClassNodeConv:
         c = get_conversion(T()).build_typedefs()
         assert expect == str(c)
 
-
     def test_build_init(self):
         class A(HW):
             def __init__(self):
@@ -915,3 +914,70 @@ class TestClassNodeConv:
 
         expect = 'procedure \\_pyha_reset_constants\\(self: inout self_t);'
         assert expect == str(dut.build_reset_constants(prototype_only=True))
+
+    def test_multiline_comments(self):
+        class B0(HW):
+            """ class
+            doc """
+
+            def main(self, a):
+                """ func
+                doc
+                """
+                # normal doc
+                return a
+
+            def func2(self):
+                """ very useless function """
+                pass
+
+        dut = B0()
+        dut.main(0)
+        dut.func2()
+        dut = get_conversion(dut)
+
+        expect = textwrap.dedent("""\
+            -- func
+            -- doc
+            procedure main(self:inout self_t; a: integer; ret_0:out integer) is
+
+            begin
+                -- normal doc
+                ret_0 := a;
+                return;
+            end procedure;""")
+
+        assert expect == dut.build_function_by_name('main')
+
+        expect = textwrap.dedent("""\
+            -- class
+            -- doc
+            package B0_0 is
+
+
+                type next_t is record
+                    much_dummy_very_wow: integer;
+                end record;
+
+                type self_t is record
+                    much_dummy_very_wow: integer;
+                    \\next\\: next_t;
+                end record;
+
+                procedure \_pyha_init\(self: inout self_t);
+
+                procedure \_pyha_reset_constants\(self: inout self_t);
+
+                procedure \_pyha_reset\(self: inout self_t);
+
+                procedure \_pyha_update_registers\(self: inout self_t);
+
+                -- func
+                -- doc
+                procedure main(self:inout self_t; a: integer; ret_0:out integer);
+
+                -- very useless function
+                procedure func2(self:inout self_t);
+            end package;""")
+
+        assert expect == dut.build_package_header()
