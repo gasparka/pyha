@@ -187,6 +187,13 @@ class ElifNodeConv(NodeConv):
 class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
+
+        # todo: remove me after refactorings
+        try:
+            self.data = getattr(VHDLType._datamodel.obj, self.name)
+        except AttributeError:
+            self.data = None
+
         self.name = escape_reserved_vhdl(self.name)
 
         # collect multiline comment
@@ -202,8 +209,14 @@ class DefNodeConv(NodeConv):
         self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
+
+    def build_arguments(self):
+        self.data.last_args
+        pass
+
     def infer_return_arguments(self):
         # TODO: could use datamodel to get this info..
+        # return []
         try:
             rets = self.red_node('return')[0]
         except IndexError:
@@ -483,7 +496,7 @@ class ClassNodeConv(NodeConv):
         try:
             self.data = VHDLModule('-', VHDLType._datamodel.obj)
         except AttributeError:
-            self.conv_vars = []
+            self.data = None
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):

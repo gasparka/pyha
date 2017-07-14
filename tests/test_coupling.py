@@ -732,6 +732,28 @@ def test_class_infer_local_variable_list(converter):
     assert expect == conv.build_typedefs()
 
 
+class TestDefNodeConv:
+    def test_typed_def_argument_return_local(self):
+        class T(HW):
+            def a(self):
+                return 1
+
+        dut = T()
+        dut.a()
+
+        expect = textwrap.dedent("""\
+
+            procedure a(self:inout self_t; ret_0:out boolean) is
+
+            begin
+                ret_0 := 1;
+                return;
+            end procedure;""")
+
+        conv = get_conversion(dut)
+        assert expect == str(conv.build_function_by_name('a'))
+
+
 class TestClassNodeConv:
     def test_build_data_structs(self):
         class A(HW):
