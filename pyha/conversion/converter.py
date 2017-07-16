@@ -5,7 +5,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -13,7 +13,7 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule, conv_class
 from pyha.conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
@@ -206,31 +206,23 @@ class DefNodeConv(NodeConv):
         if isinstance(self.value[-1], EndlNodeConv):
             del self.value[-1]
 
-        self.arguments.extend(self.infer_return_arguments())
         self.variables = self.infer_variables()
 
-
     def build_arguments(self):
-        self.data.last_args
-        pass
+        # function arguments
+        argnames = inspect.getfullargspec(self.data.func).args
+        argvals = [self.data.func.__self__] + list(self.data.last_args)
+        args = [conv_class(name, val, val) for name, val in zip(argnames, argvals)]
+        args = [f'{x._pyha_name()}:inout {x._pyha_type()}' for x in args]
 
-    def infer_return_arguments(self):
-        # TODO: could use datamodel to get this info..
-        # return []
-        try:
-            rets = self.red_node('return')[0]
-        except IndexError:
-            return []
+        # function returns -> need to add as 'out' arguments in VHDL
+        rets = []
+        if self.data.last_return is not None:
+            rets = [conv_class(f'ret_{i}', val, val)
+                   for i, val in enumerate(get_iterable(self.data.last_return))]
+            rets = [f'{x._pyha_name()}:inout {x._pyha_type()}' for x in rets]
 
-        def get_type(i: int, red):
-            name = escape_reserved_vhdl('ret_' + str(i))
-            return VHDLType(name, port_direction='out', red_node=red)
-
-        # atomtrailers return len() > 1 for one return element
-        if isinstance(rets.value, AtomtrailersNode) or len(rets.value) == 1:
-            return [get_type(0, rets.value)]
-
-        return [get_type(i, x) for i, x in enumerate(rets.value)]
+        return '; '.join(args + rets)
 
     def infer_variables(self):
         # TODO: could use datamodel to get this info..
@@ -263,26 +255,17 @@ class DefNodeConv(NodeConv):
         args = [str(x.target.name) for x in self.arguments]
         return [x for x in variables if str(x.name) not in args]
 
-    def get_prototype(self):
+    def build_function(self, prototype_only=False):
         template = textwrap.dedent("""\
-            {MULTILINE_COMMENT}
-            procedure {NAME}{ARGUMENTS};""")
-        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
-
-        sockets['ARGUMENTS'] = ''
-        if len(self.arguments):
-            sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
-
-        return template.format(**sockets)
-
-    def __str__(self):
-        template = textwrap.dedent("""\
-            {MULTILINE_COMMENT}
             procedure {NAME}{ARGUMENTS} is
+            {MULTILINE_COMMENT}
             {VARIABLES}
             begin
             {BODY}
             end procedure;""")
+
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
 
         sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
 
@@ -295,17 +278,19 @@ class DefNodeConv(NodeConv):
             sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
 
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+
+        if prototype_only:
+            return template.format(**sockets).splitlines()[0][:-3] + ';'
         return template.format(**sockets)
+
+    def __str__(self):
+        return self.build_function()
 
 
 class DefArgumentNodeConv(NodeConv):
-    def __init__(self, red_node, parent=None):
-        super().__init__(red_node, parent)
-        self.target = VHDLType(name=self.target, red_node=red_node, value=self.value)
-        self.name = self.target.name
-
-    def __str__(self):
-        return str(self.target)
+    # this node is not used. arguments are inferred from datamodel!
+    def __init__(self):
+        pass
 
 
 class PassNodeConv(NodeConv):
@@ -503,6 +488,10 @@ class ClassNodeConv(NodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
+    def get_function(self, name):
+        f = [x for x in self.value if str(x.name) == name]
+        return f[0]
+
     def build_imports(self):
         return textwrap.dedent("""\
             library ieee;
@@ -587,10 +576,6 @@ class ClassNodeConv(NodeConv):
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
-    def build_function_by_name(self, name):
-        f = [x for x in self.value if str(x.name) == name]
-        return str(f[0])
-
     def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
@@ -612,7 +597,7 @@ class ClassNodeConv(NodeConv):
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
-        proto += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        proto += '\n\n'.join(x.build_prototype() for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)

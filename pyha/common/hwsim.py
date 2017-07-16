@@ -13,6 +13,7 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
+from pyha.common.util import get_iterable
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
@@ -137,17 +138,6 @@ class PyhaFunc:
         # in case nested call, restore the tracer function
         self.TraceManager.restore_profile()
         return res
-
-    def get_arguments(self):
-        from pyha.conversion.conversion_types import conv_class
-        argnames = inspect.getfullargspec(self.func)
-        ret = [conv_class(name, val, val)
-               for name, val in zip(argnames.args,  [self.func.__self__] + list(self.last_args))]
-        return ret
-
-    # def get_returns(self):
-    #     ret = [conv_class('-', last_ret, last_ret) for last_ret in self.last_return]
-    #     return ret
 
     def __call__(self, *args, **kwargs):
 

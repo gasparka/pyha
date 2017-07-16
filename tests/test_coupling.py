@@ -3,7 +3,7 @@ from enum import Enum
 
 import pytest
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, resize
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
@@ -733,25 +733,41 @@ def test_class_infer_local_variable_list(converter):
 
 
 class TestDefNodeConv:
-    def test_typed_def_argument_return_local(self):
+    def setup(self):
         class T(HW):
-            def a(self):
-                return 1
+            def a(self, i, b, f):
+                return 1, 1 < 2, resize(f, 0, -17)
 
-        dut = T()
-        dut.a()
+        self.dut = T()
+        self.dut.a(1, False, Sfix(0.5, 1, -2))
 
-        expect = textwrap.dedent("""\
+    def test_build_arguments(self):
+        expect = 'self:inout T_0.self_t; ' \
+                 'i:inout integer; ' \
+                 'b:inout boolean; ' \
+                 'f:inout sfixed(1 downto -2); ' \
+                 'ret_0:inout integer; ' \
+                 'ret_1:inout boolean; ' \
+                 'ret_2:inout sfixed(0 downto -17)'
 
-            procedure a(self:inout self_t; ret_0:out boolean) is
+        conv = get_conversion(self.dut)
+        func = conv.get_function('a')
+        assert expect == func.build_arguments()
 
-            begin
-                ret_0 := 1;
-                return;
-            end procedure;""")
+    def test_build_function(self):
+        expect = 'self:inout T_0.self_t; ' \
+                 'i:inout integer; ' \
+                 'b:inout boolean; ' \
+                 'f:inout sfixed(1 downto -2); ' \
+                 'ret_0:inout integer; ' \
+                 'ret_1:inout boolean; ' \
+                 'ret_2:inout sfixed(0 downto -17)'
 
-        conv = get_conversion(dut)
-        assert expect == str(conv.build_function_by_name('a'))
+        conv = get_conversion(self.dut)
+        func = conv.get_function('a')
+        assert expect == func.build_function()
+
+
 
 
 class TestClassNodeConv:

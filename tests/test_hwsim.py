@@ -296,16 +296,3 @@ def test_setattr_resize():
     dut.main(Sfix(0.1234, 0, -24))
     assert dut._pyha_next['a'].left == 0
     assert dut._pyha_next['a'].right == -2
-
-
-class TestPyhaFunc:
-    def test_get_arguments(self):
-        class T(HW):
-            def main(self, a):
-                pass
-
-        dut = T()
-        dut.main(1)
-
-        args = dut.main.get_arguments()
-        assert args == [VHDLModule('self', dut, dut), VHDLInt('a', 1, 1)]
