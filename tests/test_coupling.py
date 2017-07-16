@@ -755,13 +755,16 @@ class TestDefNodeConv:
         assert expect == func.build_arguments()
 
     def test_build_function(self):
-        expect = 'self:inout T_0.self_t; ' \
-                 'i:inout integer; ' \
-                 'b:inout boolean; ' \
-                 'f:inout sfixed(1 downto -2); ' \
-                 'ret_0:inout integer; ' \
-                 'ret_1:inout boolean; ' \
-                 'ret_2:inout sfixed(0 downto -17)'
+        expect = textwrap.dedent("""\
+            procedure a(self:inout T_0.self_t; i:inout integer; b:inout boolean; f:inout sfixed(1 downto -2); ret_0:inout integer; ret_1:inout boolean; ret_2:inout sfixed(0 downto -17)) is
+
+            
+            begin
+                ret_0 := 1;
+                ret_1 := 1 < 2;
+                ret_2 := resize(f, 0, -17);
+                return;
+            end procedure;""")
 
         conv = get_conversion(self.dut)
         func = conv.get_function('a')
