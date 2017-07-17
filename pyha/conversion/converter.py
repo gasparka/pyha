@@ -201,7 +201,7 @@ class DefNodeConv(NodeConv):
             del self.value[-1]
 
         self.arguments = self.build_arguments()
-        self.variables = self.infer_variables()
+        self.variables = self.build_variables()
 
     def build_arguments(self):
         # function arguments
@@ -219,37 +219,14 @@ class DefNodeConv(NodeConv):
 
         return '; '.join(args + rets)
 
-    def infer_variables(self):
-        # TODO: could use datamodel to get this info..
-        assigns = self.red_node.value('assign')
+    def build_variables(self):
+        argnames = inspect.getfullargspec(self.data.func).args
+        variables = [conv_class(name, val, val)
+                     for name, val in self.data.locals.items()
+                     if name not in argnames]
 
-        variables = []
-        for x in assigns:
-            if isinstance(x.target, NameNode):
-                variables.append(VHDLVariable(NameNodeConv(red_node=x.target), red_node=x))
-            elif isinstance(x.target, TupleNode):
-                for node in x.target:
-                    # variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
-                    variables.append(VHDLVariable(str(node), red_node=node))
-
-        call_args = self.red_node.value('call_argument')
-        call_args = [x for x in call_args if str(x)[:4] == 'ret_']
-        for x in call_args:
-            if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
-                continue
-            getitem = x.value.getitem
-            if getitem is not None:
-                variables.append(VHDLVariable(escape_reserved_vhdl(str(getitem.previous)), red_node=x.value))
-            else:
-                variables.append(VHDLVariable(escape_reserved_vhdl(str(x.value)), red_node=x.value))
-
-        remove_duplicates = {str(x.name): x for x in variables}
-        variables = remove_duplicates.values()
-
-        return []
-        # remove variables that are actually arguments
-        # args = [str(x.target.name) for x in self.arguments]
-        return [x for x in variables if str(x.name) not in args]
+        variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables]
+        return '\n'.join(variables)
 
     def build_function(self, prototype_only=False):
         template = textwrap.dedent("""\
@@ -265,7 +242,7 @@ class DefNodeConv(NodeConv):
                    'MULTILINE_COMMENT': self.multiline_comment,
                    'ARGUMENTS': args}
 
-        sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
+        sockets['VARIABLES'] = tabber(self.variables)
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
 
         if prototype_only:
