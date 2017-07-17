@@ -99,15 +99,6 @@ def test_class_infer_local_variable_list(converter):
 
 
 class TestDefNodeConv:
-    def setup(self):
-        class T(HW):
-            def a(self, i, b, f):
-                return 1, 1 < 2, resize(f, 0, -17)
-
-        self.dut = T()
-        self.dut.a(1, False, Sfix(0.5, 1, -2))
-
-
     def test_build_arguments(self):
         class T(HW):
             def __init__(self):
@@ -156,19 +147,30 @@ class TestDefNodeConv:
         assert expect == func.build_variables()
 
     def test_build_function(self):
+        class T(HW):
+            def out(self, i):
+                if i:
+                    return 1
+                return 2
+
+        dut = T()
+        dut.out(1)
+
         expect = textwrap.dedent("""\
-            procedure a(self:inout T_0.self_t; i:inout integer; b:inout boolean; f:inout sfixed(1 downto -2); ret_0:inout integer; ret_1:inout boolean; ret_2:inout sfixed(0 downto -17)) is
+            procedure \\out\\(self:inout T_0.self_t; i:inout integer; ret_0:inout integer) is
 
             
             begin
-                ret_0 := 1;
-                ret_1 := 1 < 2;
-                ret_2 := resize(f, 0, -17);
+                if i then
+                    ret_0 := 1;
+                    return;
+                end if;
+                ret_0 := 2;
                 return;
             end procedure;""")
 
-        conv = get_conversion(self.dut)
-        func = conv.get_function('a')
+        conv = get_conversion(dut)
+        func = conv.get_function('\\out\\')
         assert expect == func.build_function()
 
 
@@ -360,34 +362,33 @@ class TestClassNodeConv:
             """ class
             doc """
 
-            def main(self, a):
+            def main(self):
                 """ func
                 doc
                 """
                 # normal doc
-                return a
+                pass
 
             def func2(self):
                 """ very useless function """
                 pass
 
         dut = B0()
-        dut.main(0)
+        dut.main()
         dut.func2()
         dut = get_conversion(dut)
 
         expect = textwrap.dedent("""\
+            procedure main(self:inout B0_0.self_t) is
             -- func
             -- doc
-            procedure main(self:inout self_t; a: integer; ret_0:out integer) is
 
             begin
                 -- normal doc
-                ret_0 := a;
-                return;
+
             end procedure;""")
 
-        assert expect == dut.build_function_by_name('main')
+        assert expect == str(dut.get_function('main'))
 
         expect = textwrap.dedent("""\
             -- class
@@ -412,12 +413,9 @@ class TestClassNodeConv:
 
                 procedure \_pyha_update_registers\(self: inout self_t);
 
-                -- func
-                -- doc
-                procedure main(self:inout self_t; a: integer; ret_0:out integer);
+                procedure main(self:inout B0_0.self_t);
 
-                -- very useless function
-                procedure func2(self:inout self_t);
+                procedure func2(self:inout B0_0.self_t);
             end package;""")
 
         assert expect == dut.build_package_header()

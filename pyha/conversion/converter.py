@@ -455,6 +455,7 @@ class ClassNodeConv(NodeConv):
 
     def get_function(self, name):
         f = [x for x in self.value if str(x.name) == name]
+        assert len(f)
         return f[0]
 
     def build_imports(self):
@@ -562,7 +563,7 @@ class ClassNodeConv(NodeConv):
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
-        proto += '\n\n'.join(x.build_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
