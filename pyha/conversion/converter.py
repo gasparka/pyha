@@ -118,7 +118,7 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         # test if we are dealing with array appending ([a] + b)
         if self.value == '+':
             if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
-                self.value = '&'
+                return f'{self.first} & {self.second}'
         elif self.value == '//':
             return f'integer({self.first} / {self.second})'
         elif self.value == '>>':

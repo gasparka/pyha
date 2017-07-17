@@ -75,8 +75,6 @@ class TestRegistersInt:
         assert_sim_match(self.dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
-
-
 class TestShiftRegisters:
     def setup(self):
         class ShiftReg(HW):
@@ -105,3 +103,22 @@ class TestShiftRegisters:
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
         assert_sim_match(self.dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+
+class TestShiftRegistersSimple:
+    def setup(self):
+        class ShiftReg(HW):
+            def __init__(self):
+                self.shr_int = [1, 2, 3, 4]
+
+            def main(self, new_int):
+                self.shr_int = [new_int] + self.shr_int[:-1]
+                return self.shr_int[-1]
+
+        self.dut = ShiftReg()
+
+    def test_basic(self):
+        inputs = [0, -1, -2, -3, -4, -5]
+        expect = [4, 3, 2, 1, 0, -1]
+
+        assert_sim_match(self.dut, expect, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
