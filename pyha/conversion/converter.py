@@ -205,17 +205,17 @@ class DefNodeConv(NodeConv):
 
     def build_arguments(self):
         # function arguments
-        argnames = inspect.getfullargspec(self.data.func).args
-        argvals = [self.data.func.__self__] + list(self.data.last_args)
+        argnames = inspect.getfullargspec(self.data.func).args[1:] # skip the first 'self'
+        argvals = list(self.data.last_args)
         args = [conv_class(name, val, val) for name, val in zip(argnames, argvals)]
-        args = [f'{x._pyha_name()}:inout {x._pyha_type()}' for x in args]
+        args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
 
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
         if self.data.last_return is not None:
             rets = [conv_class(f'ret_{i}', val, val)
                     for i, val in enumerate(get_iterable(self.data.last_return))]
-            rets = [f'{x._pyha_name()}:inout {x._pyha_type()}' for x in rets]
+            rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
         return '; '.join(args + rets)
 
@@ -474,7 +474,7 @@ class ClassNodeConv(NodeConv):
 
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self: inout self_t) is
+            procedure \\_pyha_reset\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_update_registers\\(self);
@@ -487,7 +487,7 @@ class ClassNodeConv(NodeConv):
 
     def build_reset_constants(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            procedure \\_pyha_reset_constants\\(self:inout self_t) is
             begin
             {DATA}
             end procedure;""")
@@ -499,7 +499,7 @@ class ClassNodeConv(NodeConv):
 
     def build_update_registers(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            procedure \\_pyha_update_registers\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_reset_constants\\(self);
@@ -512,7 +512,7 @@ class ClassNodeConv(NodeConv):
 
     def build_init(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self: inout self_t) is
+            procedure \\_pyha_init\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_reset_constants\\(self);

@@ -110,17 +110,17 @@ class TestDefNodeConv:
         dut = T()
         dut.a(1, False, Sfix(0.5, 1, -2), [1, 2])
 
-        expect = 'self:inout T_0.self_t; ' \
-                 'i:inout integer; ' \
-                 'b:inout boolean; ' \
-                 'f:inout sfixed(1 downto -2); ' \
-                 'l:inout integer_list_t(0 to 1); ' \
-                 'ret_0:inout integer; ' \
-                 'ret_1:inout boolean; ' \
-                 'ret_2:inout sfixed(0 downto -17); ' \
-                 'ret_3:inout sfixed(0 downto -5); ' \
-                 'ret_4:inout integer; ' \
-                 'ret_5:inout integer'
+        expect = 'self:inout self_t; ' \
+                 'i: integer; ' \
+                 'b: boolean; ' \
+                 'f: sfixed(1 downto -2); ' \
+                 'l: integer_list_t(0 to 1); ' \
+                 'ret_0:out integer; ' \
+                 'ret_1:out boolean; ' \
+                 'ret_2:out sfixed(0 downto -17); ' \
+                 'ret_3:out sfixed(0 downto -5); ' \
+                 'ret_4:out integer; ' \
+                 'ret_5:out integer'
 
         conv = get_conversion(dut)
         func = conv.get_function('a')
@@ -157,7 +157,7 @@ class TestDefNodeConv:
         dut.out(1)
 
         expect = textwrap.dedent("""\
-            procedure \\out\\(self:inout T_0.self_t; i:inout integer; ret_0:inout integer) is
+            procedure \\out\\(self:inout self_t; i: integer; ret_0:out integer) is
 
             
             begin
@@ -262,7 +262,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self: inout self_t) is
+            procedure \\_pyha_init\\(self:inout self_t) is
             begin
                 self.\\next\\.a := self.a;
                 self.\\next\\.al := self.al;
@@ -275,7 +275,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_init())
 
-        expect = 'procedure \\_pyha_init\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_init\\(self:inout self_t);'
         assert expect == str(dut.build_init(prototype_only=True))
 
     def test_build_update_self(self):
@@ -291,7 +291,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            procedure \\_pyha_update_registers\\(self:inout self_t) is
             begin
                 self.a := self.\\next\\.a;
                 self.al := self.\\next\\.al;
@@ -304,7 +304,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_update_registers())
 
-        expect = 'procedure \\_pyha_update_registers\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_update_registers\\(self:inout self_t);'
         assert expect == str(dut.build_update_registers(prototype_only=True))
 
     def test_build_reset(self):
@@ -320,7 +320,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self: inout self_t) is
+            procedure \\_pyha_reset\\(self:inout self_t) is
             begin
                 self.\\next\\.a := 0;
                 self.\\next\\.al := (0, 1);
@@ -333,7 +333,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_reset())
 
-        expect = 'procedure \\_pyha_reset\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_reset\\(self:inout self_t);'
         assert expect == str(dut.build_reset(prototype_only=True))
 
     def test_build_reset_constants(self):
@@ -345,7 +345,7 @@ class TestClassNodeConv:
                 self.AL = [0, 1]
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            procedure \\_pyha_reset_constants\\(self:inout self_t) is
             begin
                 self.A := 0;
                 self.AL := (0, 1);
@@ -354,7 +354,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_reset_constants())
 
-        expect = 'procedure \\_pyha_reset_constants\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_reset_constants\\(self:inout self_t);'
         assert expect == str(dut.build_reset_constants(prototype_only=True))
 
     def test_multiline_comments(self):
@@ -379,7 +379,7 @@ class TestClassNodeConv:
         dut = get_conversion(dut)
 
         expect = textwrap.dedent("""\
-            procedure main(self:inout B0_0.self_t) is
+            procedure main(self:inout self_t) is
             -- func
             -- doc
 
@@ -405,17 +405,17 @@ class TestClassNodeConv:
                     \\next\\: next_t;
                 end record;
 
-                procedure \_pyha_init\(self: inout self_t);
+                procedure \_pyha_init\(self:inout self_t);
 
-                procedure \_pyha_reset_constants\(self: inout self_t);
+                procedure \_pyha_reset_constants\(self:inout self_t);
 
-                procedure \_pyha_reset\(self: inout self_t);
+                procedure \_pyha_reset\(self:inout self_t);
 
-                procedure \_pyha_update_registers\(self: inout self_t);
+                procedure \_pyha_update_registers\(self:inout self_t);
 
-                procedure main(self:inout B0_0.self_t);
+                procedure main(self:inout self_t);
 
-                procedure func2(self:inout B0_0.self_t);
+                procedure func2(self:inout self_t);
             end package;""")
 
         assert expect == dut.build_package_header()
