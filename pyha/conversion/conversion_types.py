@@ -199,6 +199,8 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLModule(name, current_val, initial_val)
     elif isinstance(current_val, Enum):
         return VHDLEnum(name, current_val, initial_val)
+    elif isinstance(current_val, list): # this may happen for local variables or arguments
+        return conv_class(name, PyhaList(current_val), PyhaList(initial_val))
     assert 0
 
 

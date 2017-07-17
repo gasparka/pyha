@@ -5,7 +5,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
@@ -13,17 +13,11 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule
+from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule, conv_class
 from pyha.conversion.coupling import VHDLType, VHDLVariable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-class ExceptionReturnFunctionCall(Exception):
-    def __init__(self, red_node: Node):
-        message = f'Trying to return something that is not an variable!\nLine: {red_node}'
-        super().__init__(message)
 
 
 def file_header():
@@ -102,15 +96,15 @@ class AssignmentNodeConv(NodeConv):
 
 class ReturnNodeConv(NodeConv):
     def __str__(self):
-        for x in get_iterable(self.value):
-            if isinstance(x, AtomtrailersNodeConv) and x.is_function_call():
-                raise ExceptionReturnFunctionCall(self.red_node)
-            elif not isinstance(x, (NameNodeConv, AtomtrailersNodeConv, IntNodeConv)):
-                raise ExceptionReturnFunctionCall(self.red_node)
+        ret = []
+        for i, value in enumerate(get_iterable(self.value)):
+            line = f'ret_{i} := {value}'
+            if line[-1] != ';':
+                line += ';'
+            ret.append(line)
 
-        str_ret = [f'ret_{i} := {ret};' for i, ret in enumerate(get_iterable(self.value))]
-        str_ret += ['return;']
-        return '\n'.join(str_ret)
+        ret += ['return;']
+        return '\n'.join(ret)
 
 
 class ComparisonNodeConv(NodeConv):
@@ -124,7 +118,7 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         # test if we are dealing with array appending ([a] + b)
         if self.value == '+':
             if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
-                self.value = '&'
+                return f'{self.first} & {self.second}'
         elif self.value == '//':
             return f'integer({self.first} / {self.second})'
         elif self.value == '>>':
@@ -187,6 +181,13 @@ class ElifNodeConv(NodeConv):
 class DefNodeConv(NodeConv):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
+
+        # todo: remove me after refactorings
+        try:
+            self.data = getattr(VHDLType._datamodel.obj, self.name)
+        except AttributeError:
+            self.data = None
+
         self.name = escape_reserved_vhdl(self.name)
 
         # collect multiline comment
@@ -199,100 +200,62 @@ class DefNodeConv(NodeConv):
         if isinstance(self.value[-1], EndlNodeConv):
             del self.value[-1]
 
-        self.arguments.extend(self.infer_return_arguments())
-        self.variables = self.infer_variables()
+        self.arguments = self.build_arguments()
+        self.variables = self.build_variables()
 
-    def infer_return_arguments(self):
-        # TODO: could use datamodel to get this info..
-        try:
-            rets = self.red_node('return')[0]
-        except IndexError:
-            return []
+    def build_arguments(self):
+        # function arguments
+        argnames = inspect.getfullargspec(self.data.func).args[1:] # skip the first 'self'
+        argvals = list(self.data.last_args)
+        args = [conv_class(name, val, val) for name, val in zip(argnames, argvals)]
+        args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
 
-        def get_type(i: int, red):
-            name = escape_reserved_vhdl('ret_' + str(i))
-            return VHDLType(name, port_direction='out', red_node=red)
+        # function returns -> need to add as 'out' arguments in VHDL
+        rets = []
+        if self.data.last_return is not None:
+            rets = [conv_class(f'ret_{i}', val, val)
+                    for i, val in enumerate(get_iterable(self.data.last_return))]
+            rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
-        # atomtrailers return len() > 1 for one return element
-        if isinstance(rets.value, AtomtrailersNode) or len(rets.value) == 1:
-            return [get_type(0, rets.value)]
+        return '; '.join(args + rets)
 
-        return [get_type(i, x) for i, x in enumerate(rets.value)]
+    def build_variables(self):
+        argnames = inspect.getfullargspec(self.data.func).args
+        variables = [conv_class(name, val, val)
+                     for name, val in self.data.locals.items()
+                     if name not in argnames]
 
-    def infer_variables(self):
-        # TODO: could use datamodel to get this info..
-        assigns = self.red_node.value('assign')
+        variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables]
+        return '\n'.join(variables)
 
-        variables = []
-        for x in assigns:
-            if isinstance(x.target, NameNode):
-                variables.append(VHDLVariable(NameNodeConv(red_node=x.target), red_node=x))
-            elif isinstance(x.target, TupleNode):
-                for node in x.target:
-                    # variables.append(VHDLVariable(NameNodeConv(red_node=node), red_node=x))
-                    variables.append(VHDLVariable(str(node), red_node=node))
-
-        call_args = self.red_node.value('call_argument')
-        call_args = [x for x in call_args if str(x)[:4] == 'ret_']
-        for x in call_args:
-            if isinstance(x.value, AtomtrailersNode) and str(x.value[0]) == 'self':
-                continue
-            getitem = x.value.getitem
-            if getitem is not None:
-                variables.append(VHDLVariable(escape_reserved_vhdl(str(getitem.previous)), red_node=x.value))
-            else:
-                variables.append(VHDLVariable(escape_reserved_vhdl(str(x.value)), red_node=x.value))
-
-        remove_duplicates = {str(x.name): x for x in variables}
-        variables = remove_duplicates.values()
-
-        # remove variables that are actually arguments
-        args = [str(x.target.name) for x in self.arguments]
-        return [x for x in variables if str(x.name) not in args]
-
-    def get_prototype(self):
+    def build_function(self, prototype_only=False):
         template = textwrap.dedent("""\
-            {MULTILINE_COMMENT}
-            procedure {NAME}{ARGUMENTS};""")
-        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
-
-        sockets['ARGUMENTS'] = ''
-        if len(self.arguments):
-            sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
-
-        return template.format(**sockets)
-
-    def __str__(self):
-        template = textwrap.dedent("""\
-            {MULTILINE_COMMENT}
             procedure {NAME}{ARGUMENTS} is
+            {MULTILINE_COMMENT}
             {VARIABLES}
             begin
             {BODY}
             end procedure;""")
 
-        sockets = {'NAME': self.name, 'MULTILINE_COMMENT': self.multiline_comment}
+        args = f'({self.arguments})' if len(self.arguments) > 2 else ''
+        sockets = {'NAME': self.name,
+                   'MULTILINE_COMMENT': self.multiline_comment,
+                   'ARGUMENTS': args}
 
-        sockets['ARGUMENTS'] = ''
-        if len(self.arguments):
-            sockets['ARGUMENTS'] = '(' + '; '.join(str(x) for x in self.arguments) + ')'
-
-        sockets['VARIABLES'] = ''
-        if len(self.variables):
-            sockets['VARIABLES'] = '\n'.join(tabber(str(x)) for x in self.variables)
-
+        sockets['VARIABLES'] = tabber(self.variables)
         sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+
+        if prototype_only:
+            return template.format(**sockets).splitlines()[0][:-3] + ';'
         return template.format(**sockets)
+
+    def __str__(self):
+        return self.build_function()
 
 
 class DefArgumentNodeConv(NodeConv):
-    def __init__(self, red_node, parent=None):
-        super().__init__(red_node, parent)
-        self.target = VHDLType(name=self.target, red_node=red_node, value=self.value)
-        self.name = self.target.name
-
-    def __str__(self):
-        return str(self.target)
+    # this node is not used. arguments are inferred from datamodel!
+    pass
 
 
 class PassNodeConv(NodeConv):
@@ -483,12 +446,17 @@ class ClassNodeConv(NodeConv):
         try:
             self.data = VHDLModule('-', VHDLType._datamodel.obj)
         except AttributeError:
-            self.conv_vars = []
+            self.data = None
         # collect multiline comment
         self.multiline_comment = ''
         if len(self.value) and isinstance(self.value[0], StringNodeConv):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
+
+    def get_function(self, name):
+        f = [x for x in self.value if str(x.name) == name]
+        assert len(f)
+        return f[0]
 
     def build_imports(self):
         return textwrap.dedent("""\
@@ -506,7 +474,7 @@ class ClassNodeConv(NodeConv):
 
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self: inout self_t) is
+            procedure \\_pyha_reset\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_update_registers\\(self);
@@ -519,7 +487,7 @@ class ClassNodeConv(NodeConv):
 
     def build_reset_constants(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            procedure \\_pyha_reset_constants\\(self:inout self_t) is
             begin
             {DATA}
             end procedure;""")
@@ -531,7 +499,7 @@ class ClassNodeConv(NodeConv):
 
     def build_update_registers(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            procedure \\_pyha_update_registers\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_reset_constants\\(self);
@@ -544,7 +512,7 @@ class ClassNodeConv(NodeConv):
 
     def build_init(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self: inout self_t) is
+            procedure \\_pyha_init\\(self:inout self_t) is
             begin
             {DATA}
                 \\_pyha_reset_constants\\(self);
@@ -574,10 +542,6 @@ class ClassNodeConv(NodeConv):
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 
-    def build_function_by_name(self, name):
-        f = [x for x in self.value if str(x.name) == name]
-        return str(f[0])
-
     def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
@@ -599,7 +563,7 @@ class ClassNodeConv(NodeConv):
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
-        proto += '\n\n'.join(x.get_prototype() for x in self.value if isinstance(x, DefNodeConv))
+        proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)

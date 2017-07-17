@@ -1,3 +1,4 @@
+import inspect
 import sys
 from collections import UserList
 from contextlib import suppress
@@ -12,6 +13,8 @@ from pyha.common.sfix import Sfix, ComplexSfix, resize
 from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
+from pyha.common.util import get_iterable
+
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
 # Pyha related variables in the object __dict__

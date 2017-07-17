@@ -3,7 +3,7 @@ from enum import Enum
 
 import pytest
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, resize
 from pyha.conversion.conversion import get_conversion
 from pyha.conversion.converter import convert
 from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
@@ -21,110 +21,8 @@ def converter():
     return Conv()
 
 
-def test_typed_def_argument(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer) is
-
-        begin
-
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_self(converter):
-    code = textwrap.dedent("""\
-        def a(self):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(self:inout self_t) is
-
-        begin
-
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_notlocal_raises0(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'rand': 123}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer) is
-
-        begin
-
-        end procedure;""")
-
-    with pytest.raises(KeyError):
-        conv = converter(code, datamodel)
-
-
-def test_typed_def_argument_notlocal_raises1(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'rand': 123}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer) is
-
-        begin
-
-        end procedure;""")
-    with pytest.raises(KeyError):
-        conv = converter(code, datamodel)
-
-
-def test_typed_def_argument_notlocal_raises2(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            pass""")
-
-    datamodel = DataModel(locals={}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer) is
-
-        begin
-
-        end procedure;""")
-    with pytest.raises(KeyError):
-        conv = converter(code, datamodel)
-
-
-def test_typed_def_argument_sfix(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'b': Sfix(0.5, 2, -12)}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: sfixed(2 downto -12)) is
-
-        begin
-
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
 def test_typed_argument_default_value(converter):
+    pytest.skip('wontfix?')
     code = textwrap.dedent("""\
         def a(b=c):
             pass""")
@@ -141,497 +39,8 @@ def test_typed_argument_default_value(converter):
     assert expect == str(conv)
 
 
-def test_typed_def_argument_multiple(converter):
-    code = textwrap.dedent("""\
-        def a(b, c, d):
-            pass""")
-
-    datamodel = DataModel(locals=
-    {'a': {
-        'b': 12,
-        'c': Sfix(0.5, 2, -12),
-        'd': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer; c: sfixed(2 downto -12); d: boolean) is
-
-        begin
-
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_local(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return b""")
-
-    datamodel = DataModel(locals={'a': {'b': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out boolean) is
-
-        begin
-            ret_0 := b;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_constant_int(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return 1""")
-
-    datamodel = DataModel(locals={'a': {}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out integer) is
-
-        begin
-            ret_0 := 1;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_constant_bool(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return False""")
-
-    datamodel = DataModel(locals={'a': {}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out boolean) is
-
-        begin
-            ret_0 := False;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_constant_sfix(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return Sfix(0.1, 0, -5)""")
-
-    datamodel = DataModel(locals={'a': {}}, self_data={})
-
-    # will not work because it was too hard to implement!
-    with pytest.raises(Exception):
-        converter(code, datamodel)
-
-
-def test_typed_def_argument_return_local_indexing(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return b[1]""")
-
-    datamodel = DataModel(locals={'a': {'b': [True, False]}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out boolean) is
-
-        begin
-            ret_0 := b(1);
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_local_notinlocal_raises(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return lol""")
-
-    datamodel = DataModel(locals={'a': {'b': True}}, self_data={})
-
-    with pytest.raises(KeyError):
-        conv = converter(code, datamodel)
-
-
-def test_typed_def_argument_return_self(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.b""")
-
-    datamodel = DataModel(locals={}, self_data={'b': True})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out boolean) is
-
-        begin
-            ret_0 := self.b;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_self_indexing(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.b[4]""")
-
-    datamodel = DataModel(locals={}, self_data={'b': [1, 2, 3, 4, 5]})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out integer) is
-
-        begin
-            ret_0 := self.b(4);
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_self_indexing_negative(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.b[-1]""")
-
-    datamodel = DataModel(locals={}, self_data={'b': [-1, -2]})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out integer) is
-
-        begin
-            ret_0 := self.b(self.b'length-1);
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_self_subindexing(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.l.b[4]""")
-
-    datamodel = DataModel(locals={}, self_data={'l': {
-        'b': [1, 2, 3, 4, 5]
-    }
-    })
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out integer) is
-
-        begin
-            ret_0 := self.l.b(4);
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_self_notinself_raises(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.lol""")
-
-    datamodel = DataModel(locals={}, self_data={'b': True})
-    with pytest.raises(KeyError):
-        conv = converter(code, datamodel)
-
-
-def test_typed_def_argument_return_self_nested(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.obj.b""")
-
-    datamodel = DataModel(locals={}, self_data={'obj': {'b': Sfix(0.0, 1, -1)}})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out sfixed(1 downto -1)) is
-
-        begin
-            ret_0 := self.obj.b;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_argument_return_multiple(converter):
-    code = textwrap.dedent("""\
-        def a():
-            return self.b, c, self.d""")
-    datamodel = DataModel(self_data={'b': Sfix(0.0, 1, -1), 'd': 12},
-                          locals={'a': {'c': True}})
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out sfixed(1 downto -1); ret_1:out boolean; ret_2:out integer) is
-
-        begin
-            ret_0 := self.b;
-            ret_1 := c;
-            ret_2 := self.d;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            c = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-            variable c: boolean;
-        begin
-            c := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_self_reject(converter):
-    # should not create variable
-    code = textwrap.dedent("""\
-        def a(b):
-            self.c = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': True})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-
-        begin
-            self.\\next\\.c := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_self_indexing(converter):
-    # should not create variable
-    code = textwrap.dedent("""\
-        def a(b):
-            self.c[0] = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-
-        begin
-            self.\\next\\.c(0) := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_selfnext_indexing(converter):
-    # should not create variable
-    code = textwrap.dedent("""\
-        def a(b):
-            self.c[0] = b""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-
-        begin
-            self.\\next\\.c(0) := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_selfnext_indexing_resize(converter):
-    # should not create variable
-    code = textwrap.dedent("""\
-        def a(b):
-            self.c[0] = resize(b, size_res=self.x[i])""")
-    datamodel = DataModel(locals={'a': {'b': True, 'c': True}}, self_data={'c': [True, False]})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-
-        begin
-            self.\\next\\.c(0) := resize(b, size_res=>self.x(i));
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_argument_reject(converter):
-    # no variable infered because assignment is to argument
-    code = textwrap.dedent("""\
-        def a(b):
-            b = l""")
-
-    datamodel = DataModel(locals={'a': {'b': 12}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer) is
-
-        begin
-            b := l;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_argument_reject_reserved(converter):
-    # no variable infered because assignment is to argument
-    code = textwrap.dedent("""\
-        def a(next):
-            next = l""")
-
-    datamodel = DataModel(locals={'a': {'next': 12}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(\\next\\: integer) is
-
-        begin
-            \\next\\ := l;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_sfix(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            next = Sfix(12, 5, 0)""")
-
-    datamodel = DataModel(locals={'a': {'next': Sfix(0, 5, 0), 'b': Sfix(0, 0, -5)}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: sfixed(0 downto -5)) is
-            variable \\next\\: sfixed(5 downto 0);
-        begin
-            \\next\\ := Sfix(12, 5, 0);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_return(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            return l""")
-
-    datamodel = DataModel(locals={'a': {'b': 1, 'l': 2}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: integer; ret_0:out integer) is
-
-        begin
-            ret_0 := l;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_dublicate(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            x = l
-            x = b""")
-    datamodel = DataModel(locals={'a': {'x': 1, 'b': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-            variable x: integer;
-        begin
-            x := l;
-            x := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_multiple(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            next = l
-            a = c
-            l = h""")
-
-    datamodel = DataModel(locals={'a': {
-        'next': 1,
-        'b': True,
-        'a': Sfix(0, 0, -2),
-        'l': True,
-    }}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-            variable \\next\\: integer;
-            variable a: sfixed(0 downto -2);
-            variable l: boolean;
-        begin
-            \\next\\ := l;
-            a := c;
-            l := h;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_complex(converter):
-    code = textwrap.dedent("""\
-        def a(self, a, b=next):
-            o = h
-            self.a = l
-            return a, self.b""")
-
-    datamodel = DataModel(locals={'a': {
-        'next': 1,
-        'b': True,
-        'a': Sfix(0, 0, -2),
-        'l': True,
-        'o': Sfix(12, 12, -12)
-    }},
-        self_data={'b': 12, 'a': True})
-
-    expect = textwrap.dedent("""\
-
-        procedure a(self:inout self_t; a: sfixed(0 downto -2); b: boolean:=\\next\\; ret_0:out sfixed(0 downto -2); ret_1:out integer) is
-            variable o: sfixed(12 downto -12);
-        begin
-            o := h;
-            self.\\next\\.a := l;
-            ret_0 := a;
-            ret_1 := self.b;
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_typed_def_infer_variable_dublicate2(converter):
-    code = textwrap.dedent("""\
-        def a(b):
-            x = l
-            x = b""")
-
-    datamodel = DataModel(locals={'a': {'x': 1, 'b': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean) is
-            variable x: integer;
-        begin
-            x := l;
-            x := b;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
 def test_def_for_return(converter):
+    pytest.skip('for test?')
     code = textwrap.dedent("""\
         def b():
             outs = [0, 0, 0, 0]
@@ -654,49 +63,6 @@ def test_def_for_return(converter):
         end procedure;""")
     conv = converter(code, datamodel)
     assert expect == str(conv)
-
-
-class Tc(HW):
-    pass
-
-
-Tcobj = Tc()
-
-
-class A(HW):
-    def __init__(self):
-        self.reg = 0
-
-    def main(self):
-        pass
-
-
-Aobj = A()
-
-
-class Register(HW):
-    def __init__(self):
-        self.reg = 0
-
-    def main(self):
-        pass
-
-
-def test_pytype_to_vhdl_l():
-    inp = [0, 1, 2, 3]
-    ret = pytype_to_vhdl(inp)
-
-    assert ret == 'integer_list_t(0 to 3)'
-    inp = [True, False]
-    ret = pytype_to_vhdl(inp)
-
-    assert ret == 'boolean_list_t(0 to 1)'
-    inp = [Sfix(0.2, 1, -2)] * 5
-    ret = pytype_to_vhdl(inp)
-
-    assert ret == 'sfixed1_2_list_t(0 to 4)'
-    ret = pytype_to_vhdl(Aobj)
-    assert ret == 'A_0'
 
 
 def test_class_infer_local_variable_list(converter):
@@ -730,6 +96,82 @@ def test_class_infer_local_variable_list(converter):
     conv = converter(code, datamodel)
     expect = ['type integer_list_t is array (natural range <>) of integer;']
     assert expect == conv.build_typedefs()
+
+
+class TestDefNodeConv:
+    def test_build_arguments(self):
+        class T(HW):
+            def __init__(self):
+                self.reg = 1
+
+            def a(self, i, b, f, l):
+                return 1, 1 < 2, resize(f, 0, -17), Sfix(0.1, 0, -5), l[0], self.reg
+
+        dut = T()
+        dut.a(1, False, Sfix(0.5, 1, -2), [1, 2])
+
+        expect = 'self:inout self_t; ' \
+                 'i: integer; ' \
+                 'b: boolean; ' \
+                 'f: sfixed(1 downto -2); ' \
+                 'l: integer_list_t(0 to 1); ' \
+                 'ret_0:out integer; ' \
+                 'ret_1:out boolean; ' \
+                 'ret_2:out sfixed(0 downto -17); ' \
+                 'ret_3:out sfixed(0 downto -5); ' \
+                 'ret_4:out integer; ' \
+                 'ret_5:out integer'
+
+        conv = get_conversion(dut)
+        func = conv.get_function('a')
+        assert expect == func.build_arguments()
+
+    def test_build_variables(self):
+        class T(HW):
+            def a(self, arg):
+                b = False
+                i = 1
+                i = 2
+                arg = 2
+                l = [1, 2]
+
+        dut = T()
+        dut.a(1)
+
+        expect = 'variable l: integer_list_t(0 to 1);\n' \
+                 'variable i: integer;\n' \
+                 'variable b: boolean;'
+
+        conv = get_conversion(dut)
+        func = conv.get_function('a')
+        assert expect == func.build_variables()
+
+    def test_build_function(self):
+        class T(HW):
+            def out(self, i):
+                if i:
+                    return 1
+                return 2
+
+        dut = T()
+        dut.out(1)
+
+        expect = textwrap.dedent("""\
+            procedure \\out\\(self:inout self_t; i: integer; ret_0:out integer) is
+
+            
+            begin
+                if i then
+                    ret_0 := 1;
+                    return;
+                end if;
+                ret_0 := 2;
+                return;
+            end procedure;""")
+
+        conv = get_conversion(dut)
+        func = conv.get_function('\\out\\')
+        assert expect == func.build_function()
 
 
 class TestClassNodeConv:
@@ -820,7 +262,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self: inout self_t) is
+            procedure \\_pyha_init\\(self:inout self_t) is
             begin
                 self.\\next\\.a := self.a;
                 self.\\next\\.al := self.al;
@@ -833,7 +275,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_init())
 
-        expect = 'procedure \\_pyha_init\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_init\\(self:inout self_t);'
         assert expect == str(dut.build_init(prototype_only=True))
 
     def test_build_update_self(self):
@@ -849,7 +291,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self: inout self_t) is
+            procedure \\_pyha_update_registers\\(self:inout self_t) is
             begin
                 self.a := self.\\next\\.a;
                 self.al := self.\\next\\.al;
@@ -862,7 +304,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_update_registers())
 
-        expect = 'procedure \\_pyha_update_registers\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_update_registers\\(self:inout self_t);'
         assert expect == str(dut.build_update_registers(prototype_only=True))
 
     def test_build_reset(self):
@@ -878,7 +320,7 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self: inout self_t) is
+            procedure \\_pyha_reset\\(self:inout self_t) is
             begin
                 self.\\next\\.a := 0;
                 self.\\next\\.al := (0, 1);
@@ -891,7 +333,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_reset())
 
-        expect = 'procedure \\_pyha_reset\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_reset\\(self:inout self_t);'
         assert expect == str(dut.build_reset(prototype_only=True))
 
     def test_build_reset_constants(self):
@@ -903,7 +345,7 @@ class TestClassNodeConv:
                 self.AL = [0, 1]
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self: inout self_t) is
+            procedure \\_pyha_reset_constants\\(self:inout self_t) is
             begin
                 self.A := 0;
                 self.AL := (0, 1);
@@ -912,7 +354,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_reset_constants())
 
-        expect = 'procedure \\_pyha_reset_constants\\(self: inout self_t);'
+        expect = 'procedure \\_pyha_reset_constants\\(self:inout self_t);'
         assert expect == str(dut.build_reset_constants(prototype_only=True))
 
     def test_multiline_comments(self):
@@ -920,34 +362,33 @@ class TestClassNodeConv:
             """ class
             doc """
 
-            def main(self, a):
+            def main(self):
                 """ func
                 doc
                 """
                 # normal doc
-                return a
+                pass
 
             def func2(self):
                 """ very useless function """
                 pass
 
         dut = B0()
-        dut.main(0)
+        dut.main()
         dut.func2()
         dut = get_conversion(dut)
 
         expect = textwrap.dedent("""\
+            procedure main(self:inout self_t) is
             -- func
             -- doc
-            procedure main(self:inout self_t; a: integer; ret_0:out integer) is
 
             begin
                 -- normal doc
-                ret_0 := a;
-                return;
+
             end procedure;""")
 
-        assert expect == dut.build_function_by_name('main')
+        assert expect == str(dut.get_function('main'))
 
         expect = textwrap.dedent("""\
             -- class
@@ -964,19 +405,16 @@ class TestClassNodeConv:
                     \\next\\: next_t;
                 end record;
 
-                procedure \_pyha_init\(self: inout self_t);
+                procedure \_pyha_init\(self:inout self_t);
 
-                procedure \_pyha_reset_constants\(self: inout self_t);
+                procedure \_pyha_reset_constants\(self:inout self_t);
 
-                procedure \_pyha_reset\(self: inout self_t);
+                procedure \_pyha_reset\(self:inout self_t);
 
-                procedure \_pyha_update_registers\(self: inout self_t);
+                procedure \_pyha_update_registers\(self:inout self_t);
 
-                -- func
-                -- doc
-                procedure main(self:inout self_t; a: integer; ret_0:out integer);
+                procedure main(self:inout self_t);
 
-                -- very useless function
                 procedure func2(self:inout self_t);
             end package;""")
 

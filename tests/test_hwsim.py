@@ -3,6 +3,7 @@ import time
 
 from pyha.common.hwsim import HW, Meta, PyhaFunc
 from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.conversion.conversion_types import VHDLInt, VHDLModule
 
 
 def test_metaclass_assigned():
