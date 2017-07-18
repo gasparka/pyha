@@ -3,8 +3,8 @@ from enum import Enum
 
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
+from pyha.conversion.conversion_types import VHDLModule
 from pyha.conversion.converter import file_header
-from pyha.conversion.coupling import pytype_to_vhdl, get_instance_vhdl_name
 
 
 class NotTrainedError(Exception):
@@ -147,7 +147,8 @@ class TopGenerator:
 
     def object_class_name(self) -> str:
         # make sure we escape reserved names
-        return get_instance_vhdl_name(self.simulated_object)
+        mod = VHDLModule('-', self.simulated_object)
+        return mod._pyha_module_name()
 
     def make_call_arguments(self) -> str:
 

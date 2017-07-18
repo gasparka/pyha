@@ -7,9 +7,8 @@ from unittest.mock import MagicMock, patch
 from redbaron import RedBaron
 
 from pyha.common.hwsim import HW, PyhaList
-from pyha.common.util import get_iterable
-from pyha.conversion.converter import convert, file_header
-from pyha.conversion.coupling import get_instance_vhdl_name
+from pyha.conversion.conversion_types import VHDLModule
+from pyha.conversion.converter import convert
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
@@ -93,7 +92,8 @@ class Conversion:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
         # paths.append(base_dir / '{}.vhd'.format(self.class_name))
-        fname = get_instance_vhdl_name(self.obj)
+        mod = VHDLModule('-', self.obj)
+        fname = mod._pyha_module_name()
         paths.append(base_dir / f'{fname}.vhd')
         with paths[-1].open('w') as f:
             f.write(str(self.vhdl_conversion))
