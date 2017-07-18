@@ -9,7 +9,7 @@ from redbaron import RedBaron
 from pyha.common.hwsim import HW, PyhaList
 from pyha.common.util import get_iterable
 from pyha.conversion.converter import convert, file_header
-from pyha.conversion.coupling import get_instance_vhdl_name, VHDLType
+from pyha.conversion.coupling import get_instance_vhdl_name
 from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
@@ -53,15 +53,6 @@ def get_conversion(obj):
 
 
 class Conversion:
-    """
-    input: stimulated object
-    outputs:
-        *comonent vhdl files
-        *top file
-        *top input types
-        *top output types
-    """
-
     def __init__(self, obj, is_child=False):
 
         self.is_child = is_child
@@ -72,7 +63,6 @@ class Conversion:
         self.vhdl_conversion = str(self.conv)
         if not is_child:
             self.top_vhdl = TopGenerator(obj)
-
 
         # recursively convert all child modules
         self.childs = []

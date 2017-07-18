@@ -35,10 +35,6 @@ class TestBasic:
         self.conv = Conversion(self.dut)
         _, self.datamodel = get_conversion_datamodel(self.dut)
 
-    def test_conversion_files(self):
-        paths = self.conv.write_vhdl_files(Path('/tmp/'))
-        names = [x.name for x in paths]
-        assert names[1:] == ['A_0.vhd', 'B_0.vhd', 'top.vhd']
 
     def test_datamodel_training(self):
         assert self.datamodel.self_data['sublist'][0].main.calls == 2

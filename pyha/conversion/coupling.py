@@ -3,7 +3,6 @@ from enum import Enum
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.conversion.conversion_types import escape_reserved_vhdl
-from pyha.conversion.extract_datamodel import DataModel
 
 
 def pytype_to_vhdl(var):
@@ -56,11 +55,3 @@ def get_instance_vhdl_name(variable=None, name: str = '', id: int = 0):
         name = type(variable).__name__
         id = variable._pyha_instance_id
     return escape_reserved_vhdl(f'{name}_{id}')
-
-
-class VHDLType:
-    _datamodel = None
-
-    @classmethod
-    def set_datamodel(cls, dm: DataModel):
-        cls._datamodel = dm

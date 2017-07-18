@@ -15,7 +15,6 @@ from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum
-from pyha.conversion.coupling import VHDLType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -185,7 +184,7 @@ class DefNodeConv(NodeConv):
 
         # todo: remove me after refactorings
         try:
-            self.data = getattr(VHDLType._datamodel.obj, self.name)
+            self.data = getattr(convert_obj, self.name)
         except AttributeError:
             self.data = None
 
@@ -447,7 +446,7 @@ class ClassNodeConv(NodeConv):
 
         # todo: remove me after refactorings
         try:
-            self.data = VHDLModule('-', VHDLType._datamodel.obj)
+            self.data = VHDLModule('-', convert_obj)
         except AttributeError:
             self.data = None
         # collect multiline comment
@@ -631,10 +630,21 @@ def red_to_conv_hub(red: Node, caller):
     return cls(red_node=red, parent=caller)
 
 
+convert_obj = None
+
+
+def set_convert_obj(obj):
+    global convert_obj
+    convert_obj = obj
+
+
 def convert(red: Node, caller=None, datamodel=None):
     from pyha.conversion.extract_datamodel import DataModel
     assert type(caller) is not DataModel
-    VHDLType.set_datamodel(datamodel)
+    try:
+        set_convert_obj(datamodel.obj)
+    except:
+        pass
 
     # delete __init__, not converting this
     with suppress(AttributeError):
@@ -647,7 +657,6 @@ def convert(red: Node, caller=None, datamodel=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
-
     if datamodel is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
@@ -714,7 +723,7 @@ class AutoResize:
         passed_nodes = []
         types = []
         for x in nodes:
-            t = super_getattr(VHDLType._datamodel.obj, str(x.target))
+            t = super_getattr(convert_obj, str(x.target))
             if isinstance(t, Sfix):
                 passed_nodes.append(x)
                 types.append(t)
@@ -814,7 +823,7 @@ class CallModifications:
 
             call_args.insert(0, prefix)
             if prefix.dumps() not in ['self', 'self.next']:
-                var = super_getattr(VHDLType._datamodel.obj, prefix.dumps())
+                var = super_getattr(convert_obj, prefix.dumps())
                 var = conv_class('-', var, var)
                 red_node.insert(0, var._pyha_module_name())
                 # v = VHDLType(str(prefix[-1]), red_node=prefix)
@@ -901,7 +910,7 @@ class EnumModifications:
     @staticmethod
     def apply(red_node):
 
-        data = VHDLModule('-', VHDLType._datamodel.obj)
+        data = VHDLModule('-', convert_obj)
         enums = [x for x in data.elems if isinstance(x, VHDLEnum)]
         for x in enums:
             type_name = x._pyha_type()

@@ -5,8 +5,7 @@ import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
-from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, convert
-from pyha.conversion.coupling import VHDLType
+from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, convert, set_convert_obj
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import RedBaron
 
@@ -569,7 +568,7 @@ class TestAutoResize:
         f = self.red_node.find('def', name='__init__')
         f.parent.remove(f)
         self.datamodel = DataModel(self.dut)
-        VHDLType.set_datamodel(self.datamodel)
+        set_convert_obj(self.dut)
 
     def test_find(self):
         """ Test all assignments that could be potential subjects, has no type info """
