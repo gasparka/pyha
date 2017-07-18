@@ -3,7 +3,7 @@ from enum import Enum
 
 from pyha.common.sfix import Sfix, ComplexSfix
 from pyha.common.util import tabber
-from pyha.conversion.conversion_types import VHDLModule
+from pyha.conversion.conversion_types import VHDLModule, conv_class
 from pyha.conversion.converter import file_header
 
 
@@ -34,53 +34,21 @@ class TopGenerator:
             raise NoOutputsError('Model has no outputs (main returns).')
 
     def get_object_args(self) -> list:
-        return list(self.simulated_object.main.last_args)
+        rets = [conv_class('-', val, val) for val in self.simulated_object.main.last_args]
+        return rets
 
     def get_object_kwargs(self) -> list:
-        return self.simulated_object.main.last_kwargs.items()
+        rets = [conv_class(key, val, val) for key, val in self.simulated_object.main.last_kwargs.items()]
+        return rets
 
     def get_object_inputs(self) -> list:
-        return self.get_object_args() + [x[1] for x in self.get_object_kwargs()]
+        return self.get_object_args() + self.get_object_kwargs()
 
     def get_object_return(self) -> list:
         rets = self.simulated_object.main.last_return
-        if isinstance(rets, tuple):
-            return list(rets)
-        elif rets is None:
-            return []
-        else:
-            return [rets]  # single value
+        rets = [conv_class('-', val, val) for val in rets]
+        return rets
 
-    def pyvar_to_stdlogic(self, var) -> str:
-        if type(var) == int:
-            return 'std_logic_vector(31 downto 0)'
-        elif type(var) == bool:
-            return 'std_logic'
-        elif type(var) in (Sfix, ComplexSfix):
-            return var.to_stdlogic()
-        elif isinstance(var, Enum):
-            return self.pyvar_to_stdlogic(var.value)
-        elif isinstance(var, list):
-            if isinstance(var[0], bool):
-                return f'std_logic_vector({len(var) - 1} downto 0)'
-        else:
-            assert 0
-
-    def vhdl_slv_to_normal(self, var, var_name) -> str:
-        if type(var) == int:
-            return f'to_integer(signed({var_name}))'
-        elif type(var) == bool:
-            return f'logic_to_bool({var_name})'
-        elif type(var) == Sfix:
-            return f'Sfix({var_name}, {var.left}, {var.right})'
-        elif type(var) == ComplexSfix:
-            size = int(var.bitwidth())
-            mid = size // 2
-            real = f'Sfix({var_name}({size - 1} downto {mid}), {var.left}, {var.right})'
-            imag = f'Sfix({var_name}({mid - 1} downto {0}), {var.left}, {var.right})'
-            return f'(real=>{real}, imag=>{imag})'
-        else:
-            assert 0
 
     def normal_to_slv(self, var, var_name) -> str:
         if type(var) == int:
@@ -100,15 +68,15 @@ class TopGenerator:
             assert 0
 
     def make_entity_inputs(self) -> str:
-        return '\n'.join(f'in{i}: in {self.pyvar_to_stdlogic(x)};'
+        return '\n'.join(f'in{i}: in {x._pyha_stdlogic_type()};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_entity_outputs(self) -> str:
-        return '\n'.join(f'out{i}: out {self.pyvar_to_stdlogic(x)};'
+        return '\n'.join(f'out{i}: out {x._pyha_stdlogic_type()};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_variables(self) -> str:
-        return '\n'.join(f'variable var_out{i}: {pytype_to_vhdl(x)};'
+        return '\n'.join(f'variable var_out{i}: {x._pyha_type()};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_type_conversions(self) -> str:
@@ -116,21 +84,12 @@ class TopGenerator:
                          for i, x in enumerate(self.get_object_return()))
 
     def make_input_variables(self) -> str:
-        return '\n'.join(f'variable var_in{i}: {pytype_to_vhdl(x)};'
+        return '\n'.join(f'variable var_in{i}: {x._pyha_type()};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_input_type_conversions(self) -> str:
-        return '\n'.join(f'var_in{i} := {self.vhdl_slv_to_normal(x, "in{}".format(i))};'
+        return '\n'.join(f'var_in{i} := {x._pyha_convert_from_stdlogic(f"in{i}")};'
                          for i, x in enumerate(self.get_object_inputs()))
-
-    def make_complex_types(self):
-        complex_vars = []
-        for x in self.get_object_inputs() + self.get_object_return():
-            if type(x) is ComplexSfix:
-                new = x.vhdl_type_define()
-                if new not in complex_vars:
-                    complex_vars.append(new)
-        return '\n'.join(x for x in complex_vars)
 
     def make_imports(self) -> str:
         return textwrap.dedent("""\

@@ -78,6 +78,11 @@ class BaseVHDLType:
 
         return '\n'.join(ret)
 
+    def _pyha_stdlogic_type(self) -> str:
+        raise NotImplementedError()
+
+    def _pyha_from_stdlogic(self) -> str:
+        raise NotImplementedError()
 
 class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial):
@@ -130,10 +135,22 @@ class VHDLInt(BaseVHDLType):
     def _pyha_type(self):
         return 'integer'
 
+    def _pyha_stdlogic_type(self) -> str:
+        return 'std_logic_vector(31 downto 0)'
+
+    def _pyha_convert_from_stdlogic(self, var_name) -> str:
+        return f'to_integer(signed({var_name}))'
+
 
 class VHDLBool(BaseVHDLType):
     def _pyha_type(self):
         return 'boolean'
+
+    def _pyha_stdlogic_type(self) -> str:
+        return 'std_logic'
+
+    def _pyha_convert_from_stdlogic(self, var_name) -> str:
+        return f'logic_to_bool({var_name})'
 
 
 class VHDLSfix(BaseVHDLType):
@@ -142,6 +159,12 @@ class VHDLSfix(BaseVHDLType):
 
     def _pyha_reset_value(self):
         return f'Sfix({self.initial.init_val}, {self.current.left}, {self.current.right})'
+
+    def _pyha_stdlogic_type(self) -> str:
+        return f'std_logic_vector({self.current.left + abs(self.current.right)} downto 0)'
+
+    def _pyha_convert_from_stdlogic(self, var_name) -> str:
+        return f'Sfix({var_name}, {self.current.left}, {self.current.right})'
 
 
 class VHDLModule(BaseVHDLType):
