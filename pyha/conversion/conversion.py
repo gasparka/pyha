@@ -52,10 +52,6 @@ def get_conversion(obj):
     return conv
 
 
-class MultipleNodesError(Exception):
-    pass
-
-
 class Conversion:
     """
     input: stimulated object
@@ -65,8 +61,6 @@ class Conversion:
         *top input types
         *top output types
     """
-    # collect all complex types in the design
-    complex_types = []
 
     def __init__(self, obj, is_child=False):
 
@@ -78,8 +72,7 @@ class Conversion:
         self.vhdl_conversion = str(self.conv)
         if not is_child:
             self.top_vhdl = TopGenerator(obj)
-            Conversion.complex_types = []
-        # Conversion.complex_types.append(VHDLType.get_complex_vars())
+
 
         # recursively convert all child modules
         self.childs = []
@@ -92,7 +85,6 @@ class Conversion:
                 self.childs.append(Conversion(x, is_child=True))
             else:
                 continue
-
 
     @property
     def inputs(self) -> List[object]:
@@ -122,52 +114,4 @@ class Conversion:
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
-            paths.insert(0, base_dir / 'complex_types.vhd')
-            with paths[0].open('w') as f:
-                f.write(self.make_vhdl_complex_types())
-
         return paths
-
-
-        # def get_objects_source_path(self, obj) -> str:
-        #     return inspect.getsourcefile(type(obj))
-
-    def make_vhdl_complex_types(self):
-        template_none = textwrap.dedent("""\
-            library ieee;
-                use ieee.fixed_pkg.all;
-
-            package ComplexTypes is
-            end package;
-            """)
-        import numpy as np
-        if len(np.array(self.complex_types).flatten()) == 0:
-            return template_none
-
-        template = textwrap.dedent("""\
-            {FILE_HEADER}
-            library ieee;
-                use ieee.fixed_pkg.all;
-
-            package ComplexTypes is
-            {TYPES}
-            end package;
-
-            package body ComplexTypes is
-            {FUNCTIONS}
-            end package body;
-            """)
-
-        types = []
-        functions = []
-        for x in self.complex_types:
-            for xx in get_iterable(x):
-                new_type = xx.vhdl_type_define()
-                new_function = xx.vhdl_init_function()
-                if new_type not in types:
-                    types.append(new_type)
-                    functions.append(new_function)
-
-        return template.format(FILE_HEADER=file_header(),
-                               TYPES='\n'.join(x for x in types),
-                               FUNCTIONS='\n'.join(x for x in functions))

@@ -2,9 +2,10 @@ import datetime
 import logging
 import textwrap
 from contextlib import suppress
+from enum import Enum
 
 from parse import parse
-from redbaron import NameNode, Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
     IntNode, UnitaryOperatorNode, GetitemNode, inspect
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
@@ -13,8 +14,8 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, get_conversion_vars, VHDLModule, conv_class
-from pyha.conversion.coupling import VHDLType, VHDLVariable
+from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum
+from pyha.conversion.coupling import VHDLType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -778,22 +779,6 @@ class ImplicitNext:
                 add_next(node.target)
 
 
-class EnumModifications:
-    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
-    VHDL does not allow  this, only ENUMVALUE must be written"""
-
-    @staticmethod
-    def apply(red_node):
-        enums = VHDLType.get_enum_vars()
-        for x in enums:
-            type_name = type(x).__name__
-            red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
-            for i, node in enumerate(red_names):
-                red_names[i].replace(node[1])
-
-        return red_node
-
-
 class CallModifications:
     @staticmethod
     def transform_prefix(red_node):
@@ -905,5 +890,23 @@ class ForModification:
         fors = red_node.find_all('for')
         for x in fors:
             modify_for(x)
+
+        return red_node
+
+
+class EnumModifications:
+    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
+    VHDL does not allow  this, only ENUMVALUE must be written"""
+
+    @staticmethod
+    def apply(red_node):
+
+        data = VHDLModule('-', VHDLType._datamodel.obj)
+        enums = [x for x in data.elems if isinstance(x, VHDLEnum)]
+        for x in enums:
+            type_name = x._pyha_type()
+            red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+            for i, node in enumerate(red_names):
+                red_names[i].replace(node[1])
 
         return red_node

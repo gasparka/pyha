@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from pyha.common.hwsim import HW
-from pyha.conversion.conversion import Conversion, MultipleNodesError, get_objects_rednode
+from pyha.conversion.conversion import Conversion, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match
 
 
