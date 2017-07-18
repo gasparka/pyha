@@ -29,21 +29,10 @@ def t0():
     dut.main(2)
     return dut
 
+
 def test_datamodel(t0):
     datamodel = DataModel(t0)
     assert datamodel.self_data['mode'] == TestEnum.ENUM1
-
-# def test_vhdl_reset(t0):
-#     conv = get_conversion(t0)
-#
-#     expect = textwrap.dedent("""\
-#         procedure \\_pyha_reset_self\\(self: inout self_t) is
-#         begin
-#             self.\\next\\.mode := ENUM1;
-#             \\_pyha_update_\\(self);
-#         end procedure;""")
-#
-#     assert expect == str(conv.get_reset_self())
 
 
 def test_simulate(t0):

@@ -59,6 +59,7 @@ def extract_locals(obj):
 
             for key, val in call.locals.items():
                 if not is_convertible(val):
+                    continue
                     raise VariableNotConvertible(class_name, call.func.__name__, key, val)
 
             ret[call.func.__name__] = call.locals

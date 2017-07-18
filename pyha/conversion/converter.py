@@ -205,7 +205,7 @@ class DefNodeConv(NodeConv):
 
     def build_arguments(self):
         # function arguments
-        argnames = inspect.getfullargspec(self.data.func).args[1:] # skip the first 'self'
+        argnames = inspect.getfullargspec(self.data.func).args[1:]  # skip the first 'self'
         argvals = list(self.data.last_args)
         args = [conv_class(name, val, val) for name, val in zip(argnames, argvals)]
         args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
@@ -228,6 +228,9 @@ class DefNodeConv(NodeConv):
         variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables]
         return '\n'.join(variables)
 
+    def build_body(self):
+        return '\n'.join(str(x) for x in self.value)
+
     def build_function(self, prototype_only=False):
         template = textwrap.dedent("""\
             procedure {NAME}{ARGUMENTS} is
@@ -240,10 +243,9 @@ class DefNodeConv(NodeConv):
         args = f'({self.arguments})' if len(self.arguments) > 2 else ''
         sockets = {'NAME': self.name,
                    'MULTILINE_COMMENT': self.multiline_comment,
-                   'ARGUMENTS': args}
-
-        sockets['VARIABLES'] = tabber(self.variables)
-        sockets['BODY'] = '\n'.join(tabber(str(x)) for x in self.value)
+                   'ARGUMENTS': args,
+                   'VARIABLES': tabber(self.variables),
+                   'BODY': tabber(self.build_body())}
 
         if prototype_only:
             return template.format(**sockets).splitlines()[0][:-3] + ';'
@@ -643,12 +645,13 @@ def convert(red: Node, caller=None, datamodel=None):
         f = red.find('def', name='model_main')
         f.parent.remove(f)
 
+    # run RedBaron based conversions before parsing
+
     if datamodel is not None:
-        red = redbaron_enum_to_vhdl(red)
+        red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
-    red = redbaron_pyfor_to_vhdl(red)
-    red = redbaron_pycall_returns_to_vhdl(red)
-    red = redbaron_pycall_to_vhdl(red)
+    red = ForModification.apply(red)
+    red = CallModifications.apply(red)
     if datamodel is not None:
         AutoResize.apply(red)
 
@@ -663,6 +666,20 @@ def convert(red: Node, caller=None, datamodel=None):
 #####################################################################
 #####################################################################
 #####################################################################
+
+
+def super_getattr(obj, attr):
+    for part in attr.split('.'):
+        if part == 'self' or part == 'next':
+            continue
+        if part.find('[') != -1:  # is array indexing
+            part = part[:part.find('[')]
+            obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
+        else:
+            obj = getattr(obj, part)
+
+    return obj
+
 
 class AutoResize:
     """ Auto resize on Sfix assignments
@@ -696,7 +713,7 @@ class AutoResize:
         passed_nodes = []
         types = []
         for x in nodes:
-            t = VHDLType.walk_self_data(x.target)
+            t = super_getattr(VHDLType._datamodel.obj, str(x.target))
             if isinstance(t, Sfix):
                 passed_nodes.append(x)
                 types.append(t)
@@ -761,118 +778,132 @@ class ImplicitNext:
                 add_next(node.target)
 
 
-def redbaron_enum_to_vhdl(red_node):
+class EnumModifications:
     """ In python Enums must be referenced by type: EnumType.ENUMVALUE
     VHDL does not allow  this, only ENUMVALUE must be written"""
-    enums = VHDLType.get_enum_vars()
-    for x in enums:
-        type_name = type(x).__name__
-        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
-        for i, node in enumerate(red_names):
-            red_names[i].replace(node[1])
 
-    return red_node
+    @staticmethod
+    def apply(red_node):
+        enums = VHDLType.get_enum_vars()
+        for x in enums:
+            type_name = type(x).__name__
+            red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+            for i, node in enumerate(red_names):
+                red_names[i].replace(node[1])
 
-
-def redbaron_pycall_to_vhdl(red_node):
-    """
-    Main work is to add 'self' argument to function call
-    self.d(a) -> d(self, a)
-
-    If function owner is not exactly 'self' then 'unknown_type' is prepended.
-    self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
-
-    self.d(a) -> d(self, a)
-    self.next.d(a) -> d(self.next, a)
-    local.d() -> type.d(local)
-    self.local.d() -> type.d(self.local)
-
-    """
-
-    def modify_call(red_node):
-        call_args = red_node.find('call')
-        i = call_args.previous.index_on_parent
-        if i == 0:
-            return red_node  # input is something like a()
-
-        if isinstance(red_node.parent, AssertNode):
-            return red_node
-        prefix = red_node.copy()
-        del prefix[i:]
-        del red_node[:i]
-
-        # this happens when 'redbaron_pyfor_to_vhdl' does some node replacements
-        if isinstance(prefix.value, DotProxyList) and len(prefix) == 1:
-            prefix = prefix[0]
-
-        call_args.insert(0, prefix)
-        if prefix.dumps() not in ['self', 'self.next']:
-            v = VHDLType(str(prefix[-1]), red_node=prefix)
-            red_node.insert(0, v.var_type)
-
-    atoms = red_node.find_all('atomtrailers')
-    for i, x in enumerate(atoms):
-        if x.call is not None:
-            modify_call(x)
-
-    return red_node
-
-
-def redbaron_pycall_returns_to_vhdl(red_node):
-    """
-    Convert function calls, that return into variable into VHDL format.
-    b = self.a(a) ->
-        self.a(a, ret_0=b)
-
-    self.next.b[0], self.next.b[1] = self.a(self.a) ->
-        self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])
-
-    """
-
-    def modify_call(x: AssignmentNode):
-        try:
-            if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
-                if str(x.value[0][0]) != 'self':  # this is some shit that happnes after 'for' transforms
-                    return x
-        except:
-            return x
-
-        call = x.call
-        if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
-            call.append(str(x.target))
-            call.value[-1].target = 'ret_0'
-        else:
-            for j, argx in enumerate(x.target):
-                call.append(str(argx))
-                call.value[-1].target = f'ret_{j}'
-        return x.value
-
-    assigns = red_node.find_all('assign')
-    for x in assigns:
-        if x.call is not None:
-            new = modify_call(x.copy())
-            x.replace(new)
-    return red_node
-
-
-def redbaron_pyfor_to_vhdl(red_node):
-    def modify_for(red_node):
-        # if for range contains call to 'range' -> skip
-        with suppress(Exception):
-            if red_node.target('call')[0].previous.value == 'range':
-                return red_node
-
-        frange = red_node.target
-        ite = red_node.iterator
-
-        red_node(ite.__class__.__name__, value=ite.value) \
-            .map(lambda x: x.replace(f'{frange}[_i_]'))
-
-        red_node.iterator = '_i_'
         return red_node
 
-    fors = red_node.find_all('for')
-    for x in fors:
-        modify_for(x)
 
-    return red_node
+class CallModifications:
+    @staticmethod
+    def transform_prefix(red_node):
+        """
+        Main work is to add 'self' argument to function call
+        self.d(a) -> d(self, a)
+
+        If function owner is not exactly 'self' then 'unknown_type' is prepended.
+        self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+
+        self.d(a) -> d(self, a)
+        self.next.d(a) -> d(self.next, a)
+        local.d() -> type.d(local)
+        self.local.d() -> type.d(self.local)
+
+        """
+
+        def modify_call(red_node):
+            call_args = red_node.find('call')
+            i = call_args.previous.index_on_parent
+            if i == 0:
+                return red_node  # input is something like a()
+
+            if isinstance(red_node.parent, AssertNode):
+                return red_node
+            prefix = red_node.copy()
+            del prefix[i:]
+            del red_node[:i]
+
+            # this happens when 'redbaron_pyfor_to_vhdl' does some node replacements
+            if isinstance(prefix.value, DotProxyList) and len(prefix) == 1:
+                prefix = prefix[0]
+
+            call_args.insert(0, prefix)
+            if prefix.dumps() not in ['self', 'self.next']:
+                var = super_getattr(VHDLType._datamodel.obj, prefix.dumps())
+                var = conv_class('-', var, var)
+                red_node.insert(0, var._pyha_module_name())
+                # v = VHDLType(str(prefix[-1]), red_node=prefix)
+                # red_node.insert(0, v.var_type)
+
+        atoms = red_node.find_all('atomtrailers')
+        for i, x in enumerate(atoms):
+            if x.call is not None:
+                modify_call(x)
+
+        return red_node
+
+    @staticmethod
+    def transform_returns(red_node):
+        """
+        Convert function calls, that return into variable into VHDL format.
+        b = self.a(a) ->
+            self.a(a, ret_0=b)
+
+        self.next.b[0], self.next.b[1] = self.a(self.a) ->
+            self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])
+
+        """
+
+        def modify_call(x: AssignmentNode):
+            try:
+                if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
+                    if str(x.value[0][0]) != 'self':  # this is some shit that happnes after 'for' transforms
+                        return x
+            except:
+                return x
+
+            call = x.call
+            if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
+                call.append(str(x.target))
+                call.value[-1].target = 'ret_0'
+            else:
+                for j, argx in enumerate(x.target):
+                    call.append(str(argx))
+                    call.value[-1].target = f'ret_{j}'
+            return x.value
+
+        assigns = red_node.find_all('assign')
+        for x in assigns:
+            if x.call is not None:
+                new = modify_call(x.copy())
+                x.replace(new)
+        return red_node
+
+    @staticmethod
+    def apply(red_node):
+        red_node = CallModifications.transform_returns(red_node)
+        red_node = CallModifications.transform_prefix(red_node)
+        return red_node
+
+
+class ForModification:
+    @staticmethod
+    def apply(red_node):
+        def modify_for(red_node):
+            # if for range contains call to 'range' -> skip
+            with suppress(Exception):
+                if red_node.target('call')[0].previous.value == 'range':
+                    return red_node
+
+            ite = red_node.iterator
+            red_node(ite.__class__.__name__, value=ite.value) \
+                .map(lambda x: x.replace(f'{red_node.target}[_i_]'))
+
+            red_node.iterator = '_i_'
+            return red_node
+
+        fors = red_node.find_all('for')
+        for x in fors:
+            modify_for(x)
+
+        return red_node

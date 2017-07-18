@@ -3,12 +3,13 @@ from enum import Enum
 
 import pytest
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, resize
-from pyha.conversion.conversion import get_conversion
-from pyha.conversion.converter import convert
-from pyha.conversion.coupling import VHDLType, pytype_to_vhdl
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix, resize
+from pyha.conversion.conversion import get_objects_rednode, get_conversion
+from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, convert
+from pyha.conversion.coupling import VHDLType
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import RedBaron
+
 
 
 @pytest.fixture
@@ -385,7 +386,6 @@ class TestClassNodeConv:
 
             begin
                 -- normal doc
-
             end procedure;""")
 
         assert expect == str(dut.get_function('main'))
@@ -419,3 +419,271 @@ class TestClassNodeConv:
             end package;""")
 
         assert expect == dut.build_package_header()
+
+
+class TestForModification:
+    def test_for(self):
+        code = textwrap.dedent("""\
+                for x in arr:
+                    x.main()""")
+        expect = textwrap.dedent("""\
+                for _i_ in arr:
+                    arr[_i_].main()
+                    """)
+
+        y = ForModification.apply(RedBaron(code)[0])
+        assert expect == y.dumps()
+
+    def test_for_self(self):
+        class T(HW):
+            def __init__(self):
+                self.arr = [1, 2, 3]
+
+            def a(self):
+                for x in self.arr:
+                    a = x
+
+        dut = T()
+        dut.a()
+        expect = textwrap.dedent("""\
+                for \\_i_\\ in self.arr'range loop
+                    a := self.arr(\\_i_\\);
+                end loop;""")
+
+        conv = get_conversion(dut)
+        func = conv.get_function('a')
+        assert expect == func.build_body()
+
+
+class EnumType(Enum):
+    ENUMVALUE = 0
+
+
+class TestEnumModifications:
+    def test_basic(self):
+        class T(HW):
+            def __init__(self):
+                self.r = EnumType.ENUMVALUE
+
+            def a(self):
+                self.r = EnumType.ENUMVALUE
+                r = EnumType.ENUMVALUE
+                if r == EnumType.ENUMVALUE:
+                    pass
+
+        dut = T()
+        dut.a()
+
+        expect = \
+            'self.\\next\\.r := ENUMVALUE;\n' \
+            'r := ENUMVALUE;\n' \
+            'if r = ENUMVALUE then\n' \
+            '\n' \
+            'end if;'
+        conv = get_conversion(dut)
+        func = conv.get_function('a')
+        assert expect == func.build_body()
+
+
+class TestCallModifications:
+    def test_convert_call(self):
+        class Sub(HW):
+            def f(self):
+                return False
+
+        class T(HW):
+            def __init__(self):
+                self.sub = Sub()
+                self.r = False
+                self.arr = [1, 2]
+
+            def b(self, x):
+                return 1
+
+            def multi(self, x):
+                return 1, 2
+
+            def a(self, x):
+                self.b(x)
+                self.sub.f()
+                loc = self.b(x)
+                self.r = self.sub.f()
+                f = resize(Sfix(1, 1, -15), 0, -15)
+                self.arr[0], self.arr[1] = self.multi(x)
+
+        dut = T()
+        dut.a(1)
+
+        expect = 'b(self, x);\n' \
+                 'Sub_0.f(self.sub);\n' \
+                 'b(self, x, ret_0=>loc);\n' \
+                 'Sub_0.f(self.sub, ret_0=>self.\\next\\.r);\n' \
+                 'f := resize(Sfix(1, 1, -15), 0, -15);\n' \
+                 'multi(self, x, ret_0=>self.\\next\\.arr(0), ret_1=>self.\\next\\.arr(1));'
+        conv = get_conversion(dut)
+        func = conv.get_function('a')
+        assert expect == func.build_body()
+
+
+class TestAutoResize:
+    def setup_class(self):
+        class T1(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.sfix_reg = Sfix(0.1, 2, -19, round_style=fixed_truncate)
+
+        class T0(HW):
+            def __init__(self):
+                self.int_reg = 0
+                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style=fixed_wrap)
+                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
+                self.submod_reg = T1()
+
+                self.sfix_list = [Sfix()] * 2
+                self.int_list = [0] * 2
+
+                self.submod_list = [T1(), T1()]
+
+            def main(self, a):
+                # not subjects to resize conversion
+                # some may be rejected due to type
+                self.int_reg = a
+                self.complex_reg = ComplexSfix(0.45 + 0.88j)
+                b = self.sfix_reg
+                self.submod_reg.int_reg = a
+                self.int_list[0] = a
+                self.submod_list[1].int_reg = a
+                c = self.submod_list[1].sfix_reg
+
+                # subjects
+                self.sfix_reg = a
+                self.submod_reg.sfix_reg = a
+                self.sfix_list[0] = a
+                self.submod_list[1].sfix_reg = a
+                self.complex_reg.real = a
+                self.complex_reg.imag = a
+
+        self.dut = T0()
+        self.dut.main(Sfix(0))
+        self.red_node = get_objects_rednode(self.dut)
+        f = self.red_node.find('def', name='__init__')
+        f.parent.remove(f)
+        self.datamodel = DataModel(self.dut)
+        VHDLType.set_datamodel(self.datamodel)
+
+    def test_find(self):
+        """ Test all assignments that could be potential subjects, has no type info """
+        expect = [
+            'self.int_reg = a',
+            'self.complex_reg = ComplexSfix(0.45 + 0.88j)',
+            'self.submod_reg.int_reg = a',
+            'self.int_list[0] = a',
+            'self.submod_list[1].int_reg = a',
+            'self.sfix_reg = a',
+            'self.submod_reg.sfix_reg = a',
+            'self.sfix_list[0] = a',
+            'self.submod_list[1].sfix_reg = a',
+            'self.complex_reg.real = a',
+            'self.complex_reg.imag = a']
+
+        out = [str(x) for x in AutoResize.find(self.red_node)]
+        assert out == expect
+
+    def test_filter(self):
+        """ Subjects shall be of Sfix type """
+        expect_nodes = ['self.sfix_reg = a',
+                        'self.submod_reg.sfix_reg = a',
+                        'self.sfix_list[0] = a',
+                        'self.submod_list[1].sfix_reg = a',
+                        'self.complex_reg.real = a',
+                        'self.complex_reg.imag = a'
+                        ]
+
+        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(0, overflow_style=fixed_saturate, round_style=fixed_round),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
+                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
+
+        nodes = AutoResize.find(self.red_node)
+        passed_nodes, passed_types = AutoResize.filter(nodes)
+
+        assert expect_nodes == [str(x) for x in passed_nodes]
+        assert expect_types == passed_types
+
+    def test_apply(self):
+        expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.submod_reg.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
+                        'self.submod_list[1].sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
+                        'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
+                        'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
+                        ]
+
+        nodes = AutoResize.apply(self.red_node)
+        assert expect_nodes == [str(x) for x in nodes]
+
+
+    # todo:
+    # * auto resize on function calls that return to self.next ??
+    # * what if is already resized??
+
+
+
+class TestImplicitNext:
+    def test_basic(self):
+        code = 'self.a = 1'
+        expect = 'self.next.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_list(self):
+        code = 'self.a[i] = 1'
+        expect = 'self.next.a[i] = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_submod(self):
+        code = 'self.submod.a = 1'
+        expect = 'self.submod.next.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_submod_list(self):
+        code = 'self.submod.a[i].b = 1'
+        expect = 'self.submod.a[i].next.b = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_call(self):
+        code = 'self.a = self.call()'
+        expect = 'self.next.a = self.call()'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_call_multi_return(self):
+        code = 'self.a, self.b[i], local = self.call()'
+        expect = 'self.next.a, self.next.b[i], local = self.call()'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
+
+    def test_non_target(self):
+        code = 'b.self.a = 1'
+        expect = 'b.self.a = 1'
+
+        red = RedBaron(code)
+        ImplicitNext.apply(red)
+        assert red.dumps() == expect
