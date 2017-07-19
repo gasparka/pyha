@@ -121,18 +121,16 @@ def test_return_self_arrayelem(converter):
     assert str(conv) == 'ret_0 := self.a(2);\nreturn;'
 
 
-def test_return_call_raises(converter):
-    pytest.skip('TODO')
+def test_return_call(converter):
     code = 'return a()'
-
     conv = converter(code)
+    assert str(conv) == 'ret_0 := a();\nreturn;'
 
 
-def test_return_expression_raises(converter):
-    pytest.skip('TODO')
+def test_return_expression(converter):
     code = 'return a < b'
-
     conv = converter(code)
+    assert str(conv) == 'ret_0 := a < b;\nreturn;'
 
 
 def test_comp_greater(converter):
@@ -446,190 +444,6 @@ def test_call_semicolon_for(converter):
 
     conv = converter(code)
     assert expect == str(conv)
-
-
-def test_call_semicolon_multi(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-        def a():
-            a()
-            o = a()
-            if a():
-                a()
-                for x in range(len(a)):
-                    a()
-            else:
-                a()
-""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable o: unknown_type;
-        begin
-            a();
-            o := a();
-            if a() then
-                a();
-                for x in a'range loop
-                    a();
-                end loop;
-            else
-                a();
-            end if;
-        end procedure;""")
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                self.d()""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-
-        begin
-            d(self);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self_return(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d(a)""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable b: unknown_type;
-        begin
-            d(self, a, ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_return_to_self(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                self.b = self.d(a)""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-
-        begin
-            d(self, a, ret_0=>self.b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_return_to_return(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d(a)
-                return b""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a(ret_0:out unknown_type) is
-            variable b: unknown_type;
-        begin
-            d(self, a, ret_0=>b);
-            ret_0 := b;
-            return;
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self_return_no_args(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d()""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable b: unknown_type;
-        begin
-            d(self, ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self_keyword(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b = self.d(a=self.b)""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable b: unknown_type;
-        begin
-            d(self, a=>self.b, ret_0=>b);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self_return_two(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b, c = self.d()""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable b: unknown_type;
-            variable c: unknown_type;
-        begin
-            d(self, ret_0=>b, ret_1=>c);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
-
-def test_call_self_return_two_arguments(converter):
-    pytest.skip('TODO')
-    code = textwrap.dedent("""\
-            def a():
-                b, c = self.d(loll, loom)""")
-
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable b: unknown_type;
-            variable c: unknown_type;
-        begin
-            d(self, loll, loom, ret_0=>b, ret_1=>c);
-        end procedure;""")
-
-    conv = converter(code)
-    assert expect == str(conv)
-
 
 def test_indexing(converter):
     code = textwrap.dedent("""\

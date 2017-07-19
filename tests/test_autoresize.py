@@ -394,7 +394,7 @@ class TestAssignConstant:
             assert dut.c._pyha_next['imag'].val == -0.55999755859375
 
     def test_sim(self):
-        pytest.skip('TODO: constant')
+        pytest.skip('TODO: ComplexSFIX')
         x = [1, 2]
 
         dut = self.A6()

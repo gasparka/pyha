@@ -1,101 +1,12 @@
 import textwrap
 from enum import Enum
 
-import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, convert, set_convert_obj
 from pyha.conversion.extract_datamodel import DataModel
 from redbaron import RedBaron
-
-
-
-@pytest.fixture
-def converter():
-    class Conv:
-        def __call__(self, code, datamodel=None):
-            red = RedBaron(code)
-            return convert(red[0], self, datamodel)
-
-    return Conv()
-
-
-def test_typed_argument_default_value(converter):
-    pytest.skip('wontfix?')
-    code = textwrap.dedent("""\
-        def a(b=c):
-            pass""")
-
-    datamodel = DataModel(locals={'a': {'b': True}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure a(b: boolean:=c) is
-
-        begin
-
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_def_for_return(converter):
-    pytest.skip('for test?')
-    code = textwrap.dedent("""\
-        def b():
-            outs = [0, 0, 0, 0]
-            for i in range(len(list)):
-                outs[i] = list[i]
-            return outs[0]""")
-
-    datamodel = DataModel(locals={'b': {'outs': [0, 0, 0, 0]}}, self_data={})
-    expect = textwrap.dedent("""\
-
-        procedure b(ret_0:out integer) is
-            variable outs: integer_list_t(0 to 3);
-        begin
-            outs := (0, 0, 0, 0);
-            for i in list'range loop
-                outs(i) := list(i);
-            end loop;
-            ret_0 := outs(0);
-            return;
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-
-def test_class_infer_local_variable_list(converter):
-    pytest.skip('TODO, local list typedef')
-    code = textwrap.dedent("""\
-            def a():
-                l = [1, 2, 3, 4]""")
-
-    datamodel = DataModel(self_data={}, locals={'a': {
-        'l': [1, 2, 3, 4],
-    }})
-    expect = textwrap.dedent("""\
-
-        procedure a is
-            variable l: integer_list_t(0 to 3);
-        begin
-            l := (1, 2, 3, 4);
-        end procedure;""")
-    conv = converter(code, datamodel)
-    assert expect == str(conv)
-
-    code = textwrap.dedent("""\
-        class Tc(HW):
-            def a():
-                l = [1, 2, 3, 4]""")
-
-    datamodel = DataModel(self_data={}, locals={'a': {
-        'l': [1, 2, 3, 4],
-    }})
-
-    conv = converter(code, datamodel)
-    expect = ['type integer_list_t is array (natural range <>) of integer;']
-    assert expect == conv.build_typedefs()
 
 
 class TestDefNodeConv:
@@ -624,10 +535,9 @@ class TestAutoResize:
         assert expect_nodes == [str(x) for x in nodes]
 
 
-    # todo:
-    # * auto resize on function calls that return to self.next ??
-    # * what if is already resized??
-
+        # todo:
+        # * auto resize on function calls that return to self.next ??
+        # * what if is already resized??
 
 
 class TestImplicitNext:
