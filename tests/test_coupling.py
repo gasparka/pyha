@@ -1,12 +1,12 @@
 import textwrap
 from enum import Enum
 
+from redbaron import RedBaron
+
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
-from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, convert, set_convert_obj
-from pyha.conversion.extract_datamodel import DataModel
-from redbaron import RedBaron
+from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
 
 
 class TestDefNodeConv:
@@ -485,7 +485,6 @@ class TestAutoResize:
         self.red_node = get_objects_rednode(self.dut)
         f = self.red_node.find('def', name='__init__')
         f.parent.remove(f)
-        self.datamodel = DataModel(self.dut)
         set_convert_obj(self.dut)
 
     def test_find(self):

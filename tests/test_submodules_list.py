@@ -1,11 +1,5 @@
-import textwrap
-from pathlib import Path
-
-import pytest
-from pyha.common.const import Const
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix
-from pyha.conversion.conversion import get_conversion_datamodel, Conversion
+from pyha.conversion.conversion import Conversion
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_GATE, SIM_RTL, SIM_HW_MODEL
 
 
@@ -33,19 +27,6 @@ class TestBasic:
         self.dut.main(3, 4)
         self.dut.main(3, 4)
         self.conv = Conversion(self.dut)
-        _, self.datamodel = get_conversion_datamodel(self.dut)
-
-
-    def test_datamodel_training(self):
-        assert self.datamodel.self_data['sublist'][0].main.calls == 2
-        assert self.datamodel.self_data['sublist'][1].main.calls == 2
-
-    def test_typedefs(self):
-        assert 'sublist' in self.datamodel.self_data
-
-        expect = 'type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;'
-        assert expect == self.conv.conv.build_typedefs()
-
 
     def test_sim(self):
         x = [range(16), range(16)]
@@ -93,16 +74,6 @@ class TestDeepSubmodules:
 
         assert_sim_match(self.dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
-    def test_datamodel(self):
-        conv, datamodel = get_conversion_datamodel(self.dut)
-        assert len(datamodel.self_data) == 1
-        assert datamodel.self_data['sublist'] == self.dut.sublist
-
-        conv, datamodel = get_conversion_datamodel(self.dut.sublist[0])
-        assert len(datamodel.self_data) == 2
-        assert 'reg' in datamodel.self_data
-        assert 'submodule' in datamodel.self_data
-
 
 def test_for():
     class A4(HW):
@@ -128,6 +99,6 @@ def test_for():
     dut = B4()
 
     x = list(range(16))
-    expected = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
     assert_sim_match(dut, expected, x)

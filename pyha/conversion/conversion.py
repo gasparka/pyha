@@ -3,13 +3,9 @@ import textwrap
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
-
 from redbaron import RedBaron
-
-from pyha.common.hwsim import HW, PyhaList
 from pyha.conversion.conversion_types import VHDLModule
 from pyha.conversion.converter import convert
-from pyha.conversion.extract_datamodel import DataModel
 from pyha.conversion.top_generator import TopGenerator
 
 
@@ -39,15 +35,9 @@ def get_objects_rednode(obj):
     return red_list[0]
 
 
-def get_conversion_datamodel(obj):
-    red_node = get_objects_rednode(obj)
-    datamodel = DataModel(obj)
-    conv = convert(red_node, caller=None, datamodel=datamodel)
-    return conv, datamodel
-
-
 def get_conversion(obj):
-    conv, _ = get_conversion_datamodel(obj)
+    red_node = get_objects_rednode(obj)
+    conv = convert(red_node, obj)
     return conv
 
 
@@ -57,7 +47,8 @@ class Conversion:
         self.is_child = is_child
         self.obj = obj
         self.class_name = obj.__class__.__name__
-        self.conv, self.datamodel = get_conversion_datamodel(obj)
+        self.red_node = get_objects_rednode(obj)
+        self.conv = convert(self.red_node, obj)
 
         self.vhdl_conversion = str(self.conv)
         if not is_child:
@@ -66,18 +57,17 @@ class Conversion:
         # recursively convert all child modules
         self.childs = []
 
-        for k, x in self.obj.__dict__.items():
-            if isinstance(x, PyhaList) and isinstance(x[0], HW):
-                x = x[0]
-                self.childs.append(Conversion(x, is_child=True))
-            elif isinstance(x, HW) and k != '_pyha_initial_self':
-                self.childs.append(Conversion(x, is_child=True))
-            else:
-                continue
+        # for k, x in self.obj.__dict__.items():
+        #     if isinstance(x, PyhaList) and isinstance(x[0], HW):
+        #         x = x[0]
+        #         self.childs.append(Conversion(x, is_child=True))
+        #     elif isinstance(x, HW) and k != '_pyha_initial_self':
+        #         self.childs.append(Conversion(x, is_child=True))
+        #     else:
+        #         continue
 
     @property
     def inputs(self) -> List[object]:
-        # return [x.value if isinstance(x, Const) else x for x in self.top_vhdl.get_object_inputs()]
         return self.top_vhdl.get_object_inputs()
 
     @property

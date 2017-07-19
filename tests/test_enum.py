@@ -1,10 +1,8 @@
-import textwrap
 from enum import Enum
 
 import pytest
+
 from pyha.common.hwsim import HW
-from pyha.conversion.conversion import get_conversion
-from pyha.conversion.extract_datamodel import DataModel
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
@@ -28,11 +26,6 @@ def t0():
     dut.main(1)
     dut.main(2)
     return dut
-
-
-def test_datamodel(t0):
-    datamodel = DataModel(t0)
-    assert datamodel.self_data['mode'] == TestEnum.ENUM1
 
 
 def test_simulate(t0):

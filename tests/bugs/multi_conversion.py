@@ -36,7 +36,7 @@ def converter():
     class Conv:
         def __call__(self, code):
             red = RedBaron(code)
-            return convert(red[0], caller=self)
+            return convert(red[0])
 
     return Conv()
 

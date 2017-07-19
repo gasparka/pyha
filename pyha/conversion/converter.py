@@ -645,13 +645,8 @@ def set_convert_obj(obj):
     convert_obj = obj
 
 
-def convert(red: Node, caller=None, datamodel=None):
-    from pyha.conversion.extract_datamodel import DataModel
-    assert type(caller) is not DataModel
-    try:
-        set_convert_obj(datamodel.obj)
-    except:
-        pass
+def convert(red: Node, obj=None):
+    set_convert_obj(obj)
 
     # delete __init__, not converting this
     with suppress(AttributeError):
@@ -664,15 +659,15 @@ def convert(red: Node, caller=None, datamodel=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
-    if datamodel is not None:
+    if obj is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
     red = ForModification.apply(red)
     red = CallModifications.apply(red)
-    if datamodel is not None:
+    if obj is not None:
         AutoResize.apply(red)
 
-    conv = red_to_conv_hub(red, caller)  # converts all nodes
+    conv = red_to_conv_hub(red, caller=None)  # converts all nodes
 
     return conv
 
