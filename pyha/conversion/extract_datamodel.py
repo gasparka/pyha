@@ -68,6 +68,7 @@ def extract_locals(obj):
 
 class DataModel:
     def __init__(self, obj=None, self_data=None, locals=None, skip_locals=False):
+        pass
         self.obj = obj
         if obj is None:
             self.self_data = None if self_data is None else self_data

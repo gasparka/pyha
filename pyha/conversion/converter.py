@@ -539,7 +539,15 @@ class ClassNodeConv(NodeConv):
         return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
+        # self typedefs
         typedefs = [x._pyha_typedef() for x in self.data.elems if x._pyha_typedef() is not None]
+
+        # local vars
+        for function in self.value:
+            if not isinstance(function, DefNodeConv):
+                continue
+            variables = [conv_class(name, val, val) for name, val in function.data.locals.items()]
+            typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return '\n'.join(typedefs)
 

@@ -151,13 +151,20 @@ class TestClassNodeConv:
                 self.cl = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
                 self.subl = [A()] * 2
 
+            def a(self):
+                loc = [Sfix(0.1, 2, -1), Sfix(1.5, 2, -1)]
+
+        dut = T()
+        dut.a()
+
         expect = textwrap.dedent("""\
             type integer_list_t is array (natural range <>) of integer;
             type boolean_list_t is array (natural range <>) of boolean;
             type sfixed2downto_15_list_t is array (natural range <>) of sfixed(2 downto -15);
-            type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;""")
+            type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;
+            type sfixed2downto_1_list_t is array (natural range <>) of sfixed(2 downto -1);""")
 
-        c = get_conversion(T()).build_typedefs()
+        c = get_conversion(dut).build_typedefs()
         assert expect == str(c)
 
     def test_build_init(self):
