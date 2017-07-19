@@ -98,14 +98,6 @@ def test_write_vhdl_files(dut, tmpdir):
     assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
-def test_inputs(dut):
-    assert len(dut.inputs) == 1 and type(dut.inputs[0]) == int
-
-
-def test_outputs(dut):
-    assert len(dut.outputs) == 1 and type(dut.outputs[0]) == int
-
-
 def test_convert_submodule():
     class Aa(HW):
         def __init__(self):

@@ -81,8 +81,13 @@ class BaseVHDLType:
     def _pyha_stdlogic_type(self) -> str:
         raise NotImplementedError()
 
-    def _pyha_from_stdlogic(self) -> str:
+    def _pyha_convert_from_stdlogic(self,  var_name) -> str:
         raise NotImplementedError()
+
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        raise NotImplementedError()
+
+
 
 class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial):
@@ -130,6 +135,11 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        raise NotImplementedError
+        # if isinstance(var[0], bool):
+        #     return f'bool_list_to_logic({var_name})'
+
 
 class VHDLInt(BaseVHDLType):
     def _pyha_type(self):
@@ -141,6 +151,9 @@ class VHDLInt(BaseVHDLType):
     def _pyha_convert_from_stdlogic(self, var_name) -> str:
         return f'to_integer(signed({var_name}))'
 
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        return f'std_logic_vector(to_signed({var_name}, 32))'
+
 
 class VHDLBool(BaseVHDLType):
     def _pyha_type(self):
@@ -151,6 +164,9 @@ class VHDLBool(BaseVHDLType):
 
     def _pyha_convert_from_stdlogic(self, var_name) -> str:
         return f'logic_to_bool({var_name})'
+
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        return f'bool_to_logic({var_name})'
 
 
 class VHDLSfix(BaseVHDLType):
@@ -165,6 +181,9 @@ class VHDLSfix(BaseVHDLType):
 
     def _pyha_convert_from_stdlogic(self, var_name) -> str:
         return f'Sfix({var_name}, {self.current.left}, {self.current.right})'
+
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        return f'to_slv({var_name})'
 
 
 class VHDLModule(BaseVHDLType):
@@ -207,6 +226,12 @@ class VHDLEnum(BaseVHDLType):
 
     def _pyha_reset_value(self):
         return self.initial.name
+
+    def _pyha_convert_from_stdlogic(self, var_name) -> str:
+        raise NotImplementedError # old solution interpeted as ints?
+
+    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+        raise NotImplementedError # old solution interpeted as ints?
 
 
 def conv_class(name, current_val, initial_val=None):

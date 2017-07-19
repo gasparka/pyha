@@ -1,8 +1,5 @@
 import textwrap
-from enum import Enum
-
-from pyha.common.sfix import Sfix, ComplexSfix
-from pyha.common.util import tabber
+from pyha.common.util import tabber, get_iterable
 from pyha.conversion.conversion_types import VHDLModule, conv_class
 from pyha.conversion.converter import file_header
 
@@ -45,27 +42,11 @@ class TopGenerator:
         return self.get_object_args() + self.get_object_kwargs()
 
     def get_object_return(self) -> list:
-        rets = self.simulated_object.main.last_return
+        rets = get_iterable(self.simulated_object.main.last_return)
+        if rets == [None]:
+            return []
         rets = [conv_class('-', val, val) for val in rets]
         return rets
-
-
-    def normal_to_slv(self, var, var_name) -> str:
-        if type(var) == int:
-            return f'std_logic_vector(to_signed({var_name}, 32))'
-        elif type(var) == bool:
-            return f'bool_to_logic({var_name})'
-        elif type(var) == Sfix:
-            return f'to_slv({var_name})'
-        elif type(var) == ComplexSfix:
-            return f'to_slv({var_name}.real) & to_slv({var_name}.imag)'
-        elif isinstance(var, Enum):
-            return self.normal_to_slv(var.value, var_name)
-        elif isinstance(var, list):
-            if isinstance(var[0], bool):
-                return f'bool_list_to_logic({var_name})'
-        else:
-            assert 0
 
     def make_entity_inputs(self) -> str:
         return '\n'.join(f'in{i}: in {x._pyha_stdlogic_type()};'
@@ -80,7 +61,7 @@ class TopGenerator:
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_type_conversions(self) -> str:
-        return '\n'.join(f'out{i} <= {self.normal_to_slv(x, "var_out{}".format(i))};'
+        return '\n'.join(f'out{i} <= {x._pyha_convert_to_stdlogic(f"var_out{i}")};'
                          for i, x in enumerate(self.get_object_return()))
 
     def make_input_variables(self) -> str:
@@ -101,7 +82,6 @@ class TopGenerator:
 
             library work;
                 use work.PyhaUtil.all;
-                use work.ComplexTypes.all;
                 use work.all;""")
 
     def object_class_name(self) -> str:
@@ -114,7 +94,7 @@ class TopGenerator:
         input_args = ', '.join(f'var_in{i}'
                                for i, _ in enumerate(self.get_object_args()))
         ofs = len(self.get_object_args())
-        input_kwargs = ', '.join(f'{x[0]}=>var_in{i + ofs}'
+        input_kwargs = ', '.join(f'{x._pyha_name()}=>var_in{i + ofs}'
                                  for i, x in enumerate(self.get_object_kwargs()))
 
         inputs = ', '.join([input_args, input_kwargs]) if len(self.get_object_kwargs()) else input_args

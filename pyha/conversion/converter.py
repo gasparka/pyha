@@ -470,7 +470,6 @@ class ClassNodeConv(NodeConv):
                 use ieee.math_real.all;
 
             library work;
-                use work.ComplexTypes.all;
                 use work.PyhaUtil.all;
                 use work.all;""")
 
