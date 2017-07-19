@@ -125,27 +125,17 @@ class CocotbAuto(object):
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
-                if isinstance(self.outputs[i], bool):
+                if isinstance(self.outputs[i].current, bool):
                     outp[i][j] = bool(int(val))
-                elif isinstance(self.outputs[i], int):
+                elif isinstance(self.outputs[i].current, int):
                     val = getSignedNumber(int(val, 2), 32)
                     outp[i][j] = val
-                elif not isinstance(self.outputs[i], list):
-                    val = getSignedNumber(int(val, 2), len(self.outputs[i]))
+                elif not isinstance(self.outputs[i].current, list):
+                    val = getSignedNumber(int(val, 2), len(self.outputs[i].current))
 
-                if isinstance(self.outputs[i], Sfix):
-                    outp[i][j] = (val * 2 ** self.outputs[i].right)
-                elif isinstance(self.outputs[i], ComplexSfix):
-                    val = int(val.real)
-                    mask = (2 ** (self.outputs[i].bitwidth() // 2)) - 1
-                    real = (val >> (self.outputs[i].bitwidth() // 2))
-                    real = getSignedNumber(real & mask, self.outputs[i].bitwidth() // 2)
-                    real *= 2 ** self.outputs[i].right
-
-                    imag = getSignedNumber(val & mask, self.outputs[i].bitwidth() // 2)
-                    imag *= 2 ** self.outputs[i].right
-                    outp[i][j] = real + imag * 1j
-                elif isinstance(self.outputs[i], list) and isinstance(self.outputs[i][0], bool):
+                if isinstance(self.outputs[i].current, Sfix):
+                    outp[i][j] = (val * 2 ** self.outputs[i].current.right)
+                elif isinstance(self.outputs[i].current, list) and isinstance(self.outputs[i].current[0], bool):
                     v = np.array([bool(int(x)) for x in val])
                     outp[i][j] = v
                     pass
