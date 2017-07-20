@@ -1,19 +1,15 @@
-import inspect
 import sys
 from collections import UserList
-from contextlib import suppress
 from copy import deepcopy, copy
 from enum import Enum
 
-import numpy as np
+from six import iteritems, with_metaclass
 
 from pyha.common.const import Const
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, ComplexSfix, resize
-from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
-from pyha.common.util import get_iterable
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
@@ -164,6 +160,7 @@ class Meta(type):
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
     instance_count = 0
+    instances = []
 
     # ran when instance is made
     def __call__(cls, *args, **kwargs):
@@ -171,6 +168,8 @@ class Meta(type):
 
         ret._pyha_instance_id = cls.instance_count
         cls.instance_count += 1
+        cls.instances = copy(cls.instances + [ret])
+        # cls.instances[cls.__name__] = ret
 
         for k, v in ret.__dict__.items():
             if isinstance(v, list):

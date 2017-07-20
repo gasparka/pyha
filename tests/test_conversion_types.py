@@ -89,6 +89,16 @@ class TestVHDLList:
                  'self.sublist(1).submodule.\\next\\.regor := False;\n'
         assert expect == s._pyha_reset()
 
+    def test_pyha_type_is_compatible(self):
+        a = VHDLList('name', [1, 2], [1, 2])
+        b = VHDLList('name', [4, 5], [2, 2])
+        c = VHDLList('name', [False, True], [False, True])
+        d = VHDLList('name', [1, 2, 3], [1, 2, 3])
+        assert a._pyha_type_is_compatible(a)
+        assert a._pyha_type_is_compatible(b)
+        assert not a._pyha_type_is_compatible(c)
+        assert not d._pyha_type_is_compatible(c)
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
@@ -118,6 +128,12 @@ class TestVHDLSfix:
         dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))
         expect = 'Sfix(0.3, 2, -8)'
         assert dut._pyha_reset_value() == expect
+
+    def test_pyha_type_is_compatible(self):
+        a = VHDLSfix('name', Sfix(0, 1, -17), Sfix(0.3, 1, -17))
+        b = VHDLSfix('name', Sfix(0, 1, -1), Sfix(0.3, 1, -1))
+        assert a._pyha_type_is_compatible(a)
+        assert not a._pyha_type_is_compatible(b)
 
 
 class TestVHDLModule:
@@ -230,6 +246,30 @@ class TestVHDLModule:
                  'self.name.\\out\\(1).REG := 1;'
 
         assert dut._pyha_reset_constants() == expect
+
+    def test_pyha_type_is_compatible(self):
+        class A(HW):
+            def __init__(self, init):
+                self.REG = init
+
+        class B(HW):
+            def __init__(self):
+                self.REG = 1
+                self.lol = False
+
+        class C(HW):
+            def __init__(self):
+                self.a = A(1)
+                self.b = B()
+
+        a = VHDLModule('name', A(1), A(2))
+        b = VHDLModule('name', B(), B())
+        c = VHDLModule('name', C(), C())
+        assert a._pyha_type_is_compatible(a)
+        assert not a._pyha_type_is_compatible(b)
+        assert c._pyha_type_is_compatible(c)
+        assert not c._pyha_type_is_compatible(a)
+        assert not c._pyha_type_is_compatible(b)
 
 
 class TestVHDLEnum:
