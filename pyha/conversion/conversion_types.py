@@ -51,6 +51,11 @@ class BaseVHDLType:
         return f'self.\\next\\.{name} := self.{name};'
 
     def _pyha_update_registers(self):
+        # for constants (UPPERCASE NAME) dont update
+        tmp = self._name.replace('_', '')
+        if tmp.isupper():
+            return ''
+
         name = self._pyha_name()
         return f'self.{name} := self.\\next\\.{name};'
 
@@ -73,6 +78,7 @@ class BaseVHDLType:
                     part = part[:part.find('(')]
                 if part[0] == '\\':
                     part = part[1:-1]  # cut out VHDL escaping
+                part = part.replace('_', '')
                 if part.isupper():
                     ret.append(line.replace('.\\next\\', ''))
 

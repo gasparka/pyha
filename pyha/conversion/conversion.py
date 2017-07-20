@@ -67,7 +67,7 @@ class Conversion:
 
         for node in self.datamodel.elems:
             if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                self.childs.append(Conversion(node.elems[0], node))
+                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
             elif isinstance(node, VHDLModule):
                 if node._pyha_module_name() in self.converted_names:
                     continue

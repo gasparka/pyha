@@ -260,6 +260,7 @@ class TestVHDLModule:
         class T(HW):
             def __init__(self):
                 self.A = 0
+                self.UNDER_SCORE = 1
                 self.c = 2
                 self.REGISTER = 3
                 self.ARR = [4, 5]
@@ -270,6 +271,7 @@ class TestVHDLModule:
         dut = VHDLModule('name', T(), T())
 
         expect = 'self.name.A := 0;\n' \
+                 'self.name.UNDER_SCORE := 1;\n' \
                  'self.name.\\REGISTER\\ := 3;\n' \
                  'self.name.ARR := (4, 5);\n' \
                  'self.name.m.REG := 1;\n' \

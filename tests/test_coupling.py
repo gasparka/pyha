@@ -187,7 +187,6 @@ class TestClassNodeConv:
                 A_0.\\_pyha_init\\(self.sub);
                 A_0.\\_pyha_init\\(self.subl(0));
                 A_0.\\_pyha_init\\(self.subl(1));
-                \\_pyha_reset_constants\\(self);
             end procedure;""")
 
         dut = get_conversion(T())
@@ -216,7 +215,6 @@ class TestClassNodeConv:
                 A_0.\\_pyha_update_registers\\(self.sub);
                 A_0.\\_pyha_update_registers\\(self.subl(0));
                 A_0.\\_pyha_update_registers\\(self.subl(1));
-                \\_pyha_reset_constants\\(self);
             end procedure;""")
 
         dut = get_conversion(T())

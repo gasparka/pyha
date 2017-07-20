@@ -2,7 +2,6 @@ import datetime
 import logging
 import textwrap
 from contextlib import suppress
-from enum import Enum
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
@@ -503,7 +502,6 @@ class ClassNodeConv(NodeConv):
             procedure \\_pyha_update_registers\\(self:inout self_t) is
             begin
             {DATA}
-                \\_pyha_reset_constants\\(self);
             end procedure;""")
 
         if prototype_only:
@@ -516,7 +514,6 @@ class ClassNodeConv(NodeConv):
             procedure \\_pyha_init\\(self:inout self_t) is
             begin
             {DATA}
-                \\_pyha_reset_constants\\(self);
             end procedure;""")
 
         if prototype_only:
