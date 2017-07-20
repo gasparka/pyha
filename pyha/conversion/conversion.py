@@ -3,8 +3,10 @@ import textwrap
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
+
 from redbaron import RedBaron
-from pyha.conversion.conversion_types import VHDLModule
+
+from pyha.conversion.conversion_types import VHDLModule, VHDLList
 from pyha.conversion.converter import convert
 from pyha.conversion.top_generator import TopGenerator
 
@@ -42,29 +44,37 @@ def get_conversion(obj):
 
 
 class Conversion:
-    def __init__(self, obj, is_child=False):
+    converted_names = []
 
-        self.is_child = is_child
+    def __init__(self, obj, datamodel=None):
+        self.datamodel = datamodel
+        self.is_root = datamodel is None
+        if self.is_root:
+            Conversion.converted_names = []
+            self.datamodel = VHDLModule('-', obj)
+
         self.obj = obj
         self.class_name = obj.__class__.__name__
         self.red_node = get_objects_rednode(obj)
         self.conv = convert(self.red_node, obj)
 
         self.vhdl_conversion = str(self.conv)
-        if not is_child:
+        self.converted_names += [self.datamodel._pyha_module_name()]
+        if self.is_root:
             self.top_vhdl = TopGenerator(obj)
 
         # recursively convert all child modules
         self.childs = []
 
-        # for k, x in self.obj.__dict__.items():
-        #     if isinstance(x, PyhaList) and isinstance(x[0], HW):
-        #         x = x[0]
-        #         self.childs.append(Conversion(x, is_child=True))
-        #     elif isinstance(x, HW) and k != '_pyha_initial_self':
-        #         self.childs.append(Conversion(x, is_child=True))
-        #     else:
-        #         continue
+        for node in self.datamodel.elems:
+            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+            elif isinstance(node, VHDLModule):
+                if node._pyha_module_name() in self.converted_names:
+                    continue
+                self.childs.append(Conversion(node.current, node))
+            else:
+                continue
 
     @property
     def inputs(self) -> List[object]:
@@ -82,14 +92,12 @@ class Conversion:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
         # paths.append(base_dir / '{}.vhd'.format(self.class_name))
-        mod = VHDLModule('-', self.obj)
-        fname = mod._pyha_module_name()
-        paths.append(base_dir / f'{fname}.vhd')
+        paths.append(base_dir / f'{self.datamodel._pyha_module_name()}.vhd')
         with paths[-1].open('w') as f:
             f.write(str(self.vhdl_conversion))
 
         # add top_generator file
-        if not self.is_child:
+        if self.is_root:
             paths.append(base_dir / 'top.vhd')
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())

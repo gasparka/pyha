@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
@@ -186,6 +187,7 @@ def test_simple_full(simple_obj):
 
                             --call the main entry
                             Simple_0.\_pyha_init\(self_var);
+                            Simple_0.\_pyha_reset_constants\(self_var);
                             Simple_0.main(self_var, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
@@ -198,6 +200,7 @@ def test_simple_full(simple_obj):
                             elsif rising_edge(clk) then
                                 if enable then
                                     Simple_0.\_pyha_update_registers\(self_var);
+                                    Simple_0.\_pyha_reset_constants\(self_var);
                                     self <= self_var;
                                 end if;
                             end if;

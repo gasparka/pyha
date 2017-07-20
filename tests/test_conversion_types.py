@@ -89,6 +89,16 @@ class TestVHDLList:
                  'self.sublist(1).submodule.\\next\\.regor := False;\n'
         assert expect == s._pyha_reset()
 
+    def test_pyha_type_is_compatible(self):
+        a = VHDLList('name', [1, 2], [1, 2])
+        b = VHDLList('name', [4, 5], [2, 2])
+        c = VHDLList('name', [False, True], [False, True])
+        d = VHDLList('name', [1, 2, 3], [1, 2, 3])
+        assert a._pyha_type_is_compatible(a)
+        assert a._pyha_type_is_compatible(b)
+        assert not a._pyha_type_is_compatible(c)
+        assert not d._pyha_type_is_compatible(c)
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
@@ -119,6 +129,12 @@ class TestVHDLSfix:
         expect = 'Sfix(0.3, 2, -8)'
         assert dut._pyha_reset_value() == expect
 
+    def test_pyha_type_is_compatible(self):
+        a = VHDLSfix('name', Sfix(0, 1, -17), Sfix(0.3, 1, -17))
+        b = VHDLSfix('name', Sfix(0, 1, -1), Sfix(0.3, 1, -1))
+        assert a._pyha_type_is_compatible(a)
+        assert not a._pyha_type_is_compatible(b)
+
 
 class TestVHDLModule:
     def setup(self):
@@ -128,6 +144,37 @@ class TestVHDLModule:
                 self.b = Sfix(0, 0, -17)
 
         self.dut = VHDLModule('name', T(), T())
+
+    def test_pyha_module_name(self):
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.b = Sfix(0, 0, -17)
+
+        class Root(HW):
+            def __init__(self):
+                self.a = T()
+                self.b = T()
+
+        dut = VHDLModule('name', Root(), Root())
+        expect = 'T_0'
+        assert dut.elems[0]._pyha_module_name() == expect
+        assert dut.elems[1]._pyha_module_name() == expect
+
+    def test_pyha_module_name_not_compatible(self):
+        class T(HW):
+            def __init__(self, n):
+                self.a = [1] * n
+                self.b = Sfix(0, 0, -17)
+
+        class Root(HW):
+            def __init__(self):
+                self.a = T(2)
+                self.b = T(3)
+
+        dut = VHDLModule('name', Root(), Root())
+        assert dut.elems[0]._pyha_module_name() == 'T_0'
+        assert dut.elems[1]._pyha_module_name() == 'T_1'
 
     def test_pyha_type(self):
         expect = 'T_0.self_t'
@@ -213,6 +260,7 @@ class TestVHDLModule:
         class T(HW):
             def __init__(self):
                 self.A = 0
+                self.UNDER_SCORE = 1
                 self.c = 2
                 self.REGISTER = 3
                 self.ARR = [4, 5]
@@ -223,6 +271,7 @@ class TestVHDLModule:
         dut = VHDLModule('name', T(), T())
 
         expect = 'self.name.A := 0;\n' \
+                 'self.name.UNDER_SCORE := 1;\n' \
                  'self.name.\\REGISTER\\ := 3;\n' \
                  'self.name.ARR := (4, 5);\n' \
                  'self.name.m.REG := 1;\n' \
@@ -230,6 +279,30 @@ class TestVHDLModule:
                  'self.name.\\out\\(1).REG := 1;'
 
         assert dut._pyha_reset_constants() == expect
+
+    def test_pyha_type_is_compatible(self):
+        class A(HW):
+            def __init__(self, init):
+                self.REG = init
+
+        class B(HW):
+            def __init__(self):
+                self.REG = 1
+                self.lol = False
+
+        class C(HW):
+            def __init__(self):
+                self.a = A(1)
+                self.b = B()
+
+        a = VHDLModule('name', A(1), A(2))
+        b = VHDLModule('name', B(), B())
+        c = VHDLModule('name', C(), C())
+        assert a._pyha_type_is_compatible(a)
+        assert not a._pyha_type_is_compatible(b)
+        assert c._pyha_type_is_compatible(c)
+        assert not c._pyha_type_is_compatible(a)
+        assert not c._pyha_type_is_compatible(b)
 
 
 class TestVHDLEnum:

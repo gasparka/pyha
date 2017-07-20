@@ -51,6 +51,11 @@ class BaseVHDLType:
         return f'self.\\next\\.{name} := self.{name};'
 
     def _pyha_update_registers(self):
+        # for constants (UPPERCASE NAME) dont update
+        tmp = self._name.replace('_', '')
+        if tmp.isupper():
+            return ''
+
         name = self._pyha_name()
         return f'self.{name} := self.\\next\\.{name};'
 
@@ -73,6 +78,7 @@ class BaseVHDLType:
                     part = part[:part.find('(')]
                 if part[0] == '\\':
                     part = part[1:-1]  # cut out VHDL escaping
+                part = part.replace('_', '')
                 if part.isupper():
                     ret.append(line.replace('.\\next\\', ''))
 
@@ -81,12 +87,16 @@ class BaseVHDLType:
     def _pyha_stdlogic_type(self) -> str:
         raise NotImplementedError()
 
-    def _pyha_convert_from_stdlogic(self,  var_name) -> str:
+    def _pyha_convert_from_stdlogic(self, var_name) -> str:
         raise NotImplementedError()
 
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
         raise NotImplementedError()
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        """ Test is ``other`` (same type as ``self``) is compatible in VHDL domain. Meaning that
+        all array types shall have same [start,end]. Recursive."""
+        raise NotImplementedError()
 
 
 class VHDLList(BaseVHDLType):
@@ -140,6 +150,14 @@ class VHDLList(BaseVHDLType):
         # if isinstance(var[0], bool):
         #     return f'bool_list_to_logic({var_name})'
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        if len(self.current) != len(other.current):
+            return False
+
+        return self.elems[0]._pyha_type_is_compatible(other.elems[0])
+
 
 class VHDLInt(BaseVHDLType):
     def _pyha_type(self):
@@ -154,6 +172,11 @@ class VHDLInt(BaseVHDLType):
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
         return f'std_logic_vector(to_signed({var_name}, 32))'
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
+
 
 class VHDLBool(BaseVHDLType):
     def _pyha_type(self):
@@ -167,6 +190,11 @@ class VHDLBool(BaseVHDLType):
 
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
         return f'bool_to_logic({var_name})'
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
 
 
 class VHDLSfix(BaseVHDLType):
@@ -185,6 +213,11 @@ class VHDLSfix(BaseVHDLType):
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
         return f'to_slv({var_name})'
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return self.current.left == other.current.left and self.current.right == other.current.right
+
 
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None):
@@ -193,8 +226,14 @@ class VHDLModule(BaseVHDLType):
 
         self.elems = get_conversion_vars(self.current)
 
+    def _pyha_instance_id(self):
+        for i, instance in enumerate(self.current.instances):
+            mod = VHDLModule('-', instance)
+            if self._pyha_type_is_compatible(mod):
+                return i
+
     def _pyha_module_name(self):
-        return f'{type(self.current).__name__}_{self.current._pyha_instance_id}'
+        return f'{type(self.current).__name__}_{self._pyha_instance_id()}'
 
     def _pyha_type(self):
         return f'{self._pyha_module_name()}.self_t'
@@ -214,6 +253,17 @@ class VHDLModule(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+
+        if len(self.elems) != len(other.elems):
+            # actually object with more elements could match with the one with lesser elemems, but this is too specific atm.
+            return False
+
+        return all(self_elem._pyha_type_is_compatible(other_elem)
+                   for self_elem, other_elem in zip(self.elems, other.elems))
+
 
 class VHDLEnum(BaseVHDLType):
     def _pyha_type(self):
@@ -228,10 +278,15 @@ class VHDLEnum(BaseVHDLType):
         return self.initial.name
 
     def _pyha_convert_from_stdlogic(self, var_name) -> str:
-        raise NotImplementedError # old solution interpeted as ints?
+        raise NotImplementedError  # old solution interpeted as ints?
 
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
-        raise NotImplementedError # old solution interpeted as ints?
+        raise NotImplementedError  # old solution interpeted as ints?
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
 
 
 def conv_class(name, current_val, initial_val=None):
@@ -247,7 +302,7 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLModule(name, current_val, initial_val)
     elif isinstance(current_val, Enum):
         return VHDLEnum(name, current_val, initial_val)
-    elif isinstance(current_val, list): # this may happen for local variables or arguments
+    elif isinstance(current_val, list):  # this may happen for local variables or arguments
         return conv_class(name, PyhaList(current_val), PyhaList(initial_val))
     assert 0
 

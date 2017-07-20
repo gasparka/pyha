@@ -1,4 +1,5 @@
 import textwrap
+
 from pyha.common.util import tabber, get_iterable
 from pyha.conversion.conversion_types import VHDLModule, conv_class
 from pyha.conversion.converter import file_header
@@ -150,6 +151,7 @@ class TopGenerator:
 
                         --call the main entry
                         {DUT_NAME}.\\_pyha_init\\(self_var);
+                        {DUT_NAME}.\\_pyha_reset_constants\\(self_var);
                         {DUT_NAME}.main(self_var, {CALL_ARGUMENTS});
 
                         --convert normal types to slv
@@ -162,6 +164,7 @@ class TopGenerator:
                         elsif rising_edge(clk) then
                             if enable then
                                 {DUT_NAME}.\\_pyha_update_registers\\(self_var);
+                                {DUT_NAME}.\\_pyha_reset_constants\\(self_var);
                                 self <= self_var;
                             end if;
                         end if;
