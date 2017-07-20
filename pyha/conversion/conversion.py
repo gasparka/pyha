@@ -50,6 +50,7 @@ class Conversion:
         self.datamodel = datamodel
         self.is_root = datamodel is None
         if self.is_root:
+            Conversion.converted_names = []
             self.datamodel = VHDLModule('-', obj)
 
         self.obj = obj
@@ -91,9 +92,7 @@ class Conversion:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
         # paths.append(base_dir / '{}.vhd'.format(self.class_name))
-        mod = VHDLModule('-', self.obj)
-        fname = mod._pyha_module_name()
-        paths.append(base_dir / f'{fname}.vhd')
+        paths.append(base_dir / f'{self.datamodel._pyha_module_name()}.vhd')
         with paths[-1].open('w') as f:
             f.write(str(self.vhdl_conversion))
 
