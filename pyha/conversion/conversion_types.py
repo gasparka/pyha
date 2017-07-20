@@ -220,8 +220,14 @@ class VHDLModule(BaseVHDLType):
 
         self.elems = get_conversion_vars(self.current)
 
+    def _pyha_instance_id(self):
+        for i, instance in enumerate(self.current.instances):
+            mod = VHDLModule('-', instance)
+            if self._pyha_type_is_compatible(mod):
+                return i
+
     def _pyha_module_name(self):
-        return f'{type(self.current).__name__}_{self.current._pyha_instance_id}'
+        return f'{type(self.current).__name__}_{self._pyha_instance_id()}'
 
     def _pyha_type(self):
         return f'{self._pyha_module_name()}.self_t'
