@@ -135,6 +135,19 @@ class TestVHDLSfix:
         assert a._pyha_type_is_compatible(a)
         assert not a._pyha_type_is_compatible(b)
 
+    def test_pyha_serialize(self):
+        d = VHDLSfix('name', Sfix(0, 1, -1), Sfix(0, 1, -1))
+        assert d._pyha_serialize() == '000'
+
+        d = VHDLSfix('name', Sfix(0.5, 0, -1), Sfix(0.5, 0, -1))
+        assert d._pyha_serialize() == '01'
+
+        d = VHDLSfix('name', Sfix(0.9999, 0, -8), Sfix(0.9999, 0, -8))
+        assert d._pyha_serialize() == '011111111'
+
+        d = VHDLSfix('name', Sfix(-1, 0, -8), Sfix(-1, 0, -8))
+        assert d._pyha_serialize() == '100000000'
+
 
 class TestVHDLModule:
     def setup(self):

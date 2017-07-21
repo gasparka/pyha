@@ -1,5 +1,6 @@
 import cocotb
 import numpy as np
+from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue
 from cocotb.triggers import RisingEdge, Timer
@@ -29,8 +30,10 @@ def run_dut(dut, in_data, out_count):
         # put input
         # print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
-            # print('Set {} to {}'.format('in' + str(i), xi))
-            setattr(dut, 'in' + str(i), int(xi.astype(int)))
+            print('Set {} to {}'.format('in' + str(i), str(xi)))
+            v = getattr(dut, 'in' + str(i))
+            bval = BinaryValue(str(xi), len(xi))
+            v.setimmediatevalue(bval)
 
         yield RisingEdge(dut.clk)
 
@@ -40,7 +43,7 @@ def run_dut(dut, in_data, out_count):
             var = 'out' + str(i)
             # val = getattr(dut, var).value.signed_integer
             val = str(getattr(dut, var).value)
-            # print(val)
+            print(val)
             tmp.append(val)
         ret.append(tmp)
 

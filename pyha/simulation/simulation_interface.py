@@ -299,7 +299,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x)
+        hw_y = dut.main(*x).astype(float)
         if expected is None and sim_type is simulations[0]:
             l.warning(f'"expected=None", all sims must output: \n{hw_y}')
             expected = hw_y

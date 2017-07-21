@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List
 
+import numpy as np
+
 from pyha.common.hwsim import PyhaFunc, HW, PyhaList
 from pyha.common.sfix import Sfix
 
@@ -33,6 +35,15 @@ def to_signed_int(number, bit_length):
         return number | ~mask
     else:
         return number & mask
+
+
+def to_twoscomplement(bits, value):
+    # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
+    if value < 0:
+        value = (1 << bits) + value
+    formatstring = '{:0%ib}' % bits
+    return formatstring.format(value)
+
 
 class BaseVHDLType:
     def __init__(self, var_name, current, initial):
@@ -173,6 +184,7 @@ class VHDLList(BaseVHDLType):
         return [x._pyha_to_python_value() for x in self.elems]
 
 
+
 class VHDLInt(BaseVHDLType):
     def _pyha_type(self):
         return 'integer'
@@ -193,6 +205,9 @@ class VHDLInt(BaseVHDLType):
 
     def _pyha_to_python_value(self) -> str:
         return self.current
+
+    def _pyha_serialize(self):
+        return to_twoscomplement(32, self.current)
 
     def _pyha_deserialize(self, serial):
         return to_signed_int(int(serial, 2), 32)
@@ -218,6 +233,9 @@ class VHDLBool(BaseVHDLType):
 
     def _pyha_to_python_value(self) -> str:
         return self.current
+
+    def _pyha_serialize(self):
+        return '1' if self.current else '0'
 
     def _pyha_deserialize(self, serial):
         return bool(int(serial))
@@ -246,6 +264,10 @@ class VHDLSfix(BaseVHDLType):
 
     def _pyha_to_python_value(self) -> str:
         return float(self.current)
+
+    def _pyha_serialize(self):
+        val = self.current.fixed_value()
+        return to_twoscomplement(len(self.current), val)
 
     def _pyha_deserialize(self, serial):
         val = to_signed_int(int(serial, 2), len(self.current))
@@ -326,7 +348,7 @@ class VHDLEnum(BaseVHDLType):
 
 
 def conv_class(name, current_val, initial_val=None):
-    if type(current_val) == int:
+    if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool:
         return VHDLBool(name, current_val, initial_val)

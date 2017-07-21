@@ -166,6 +166,21 @@ class TestRegisters:
     def test_basic(self):
         class Register(HW):
             def __init__(self):
+                self.b = 123
+
+            def main(self, nb):
+                self.b = nb
+                return self.b
+
+        dut = Register()
+        inputs = [1, 2, 3, 4]
+        expect = [123, 1, 2, 3]
+
+        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+    def test_multi(self):
+        class Register(HW):
+            def __init__(self):
                 self.a = Sfix(0.123)
                 self.b = 123
                 self.c = False

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.conversion.conversion_types import conv_class
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -91,10 +91,8 @@ class CocotbAuto(object):
 
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
-        # # convert all Sfix elements to 'integer' form
-        input_data = np.vectorize(
-            lambda x: x.fixed_value() if isinstance(x, (Sfix, ComplexSfix)) else x)(input_data)
 
+        input_data = np.vectorize(lambda x: conv_class('-', x, x)._pyha_serialize())(input_data)
         np.save(str(self.base_path / 'input.npy'), input_data)
 
         # write makefile template
@@ -109,15 +107,11 @@ class CocotbAuto(object):
             print(err)
             return []
 
-        outp = np.load(str(self.base_path / 'output.npy'))
-        outp = outp.astype(object)
-        outp = np.transpose(outp)
+        outp = np.load(str(self.base_path / 'output.npy')).astype(object).T
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
                 outp[i][j] = self.conversion.outputs[i]._pyha_deserialize(val)
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
-        outp = np.transpose(outp)
-
-        return outp
+        return outp.T
