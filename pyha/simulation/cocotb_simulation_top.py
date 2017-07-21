@@ -1,12 +1,9 @@
-# Simple tests for an adder module
-
 import cocotb
 import numpy as np
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue
-from cocotb.triggers import RisingEdge, Timer, FallingEdge
+from cocotb.triggers import RisingEdge, Timer
 
-debug = False
 
 @cocotb.coroutine
 def reset(dut, duration=10000):
@@ -28,8 +25,6 @@ def run_dut(dut, in_data, out_count):
     ret = []
     # print('Input data: {}'.format(in_data))
     for x in in_data:
-
-
 
         # put input
         # print('Processing slice: {}'.format(x))

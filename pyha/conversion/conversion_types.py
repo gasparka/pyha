@@ -26,6 +26,14 @@ def escape_reserved_vhdl(x: str) -> str:
     return x
 
 
+def to_signed_int(number, bit_length):
+    # http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
+    mask = (2 ** bit_length) - 1
+    if number & (1 << (bit_length - 1)):
+        return number | ~mask
+    else:
+        return number & mask
+
 class BaseVHDLType:
     def __init__(self, var_name, current, initial):
         self._name = var_name
@@ -98,6 +106,9 @@ class BaseVHDLType:
         all array types shall have same [start,end]. Recursive."""
         raise NotImplementedError()
 
+    def _pyha_to_python_value(self) -> str:
+        raise NotImplementedError()
+
 
 class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial):
@@ -158,6 +169,9 @@ class VHDLList(BaseVHDLType):
 
         return self.elems[0]._pyha_type_is_compatible(other.elems[0])
 
+    def _pyha_to_python_value(self) -> str:
+        return [x._pyha_to_python_value() for x in self.elems]
+
 
 class VHDLInt(BaseVHDLType):
     def _pyha_type(self):
@@ -177,6 +191,12 @@ class VHDLInt(BaseVHDLType):
             return False
         return True
 
+    def _pyha_to_python_value(self) -> str:
+        return self.current
+
+    def _pyha_deserialize(self, serial):
+        return to_signed_int(int(serial, 2), 32)
+
 
 class VHDLBool(BaseVHDLType):
     def _pyha_type(self):
@@ -195,6 +215,12 @@ class VHDLBool(BaseVHDLType):
         if type(self.current) != type(other.current):
             return False
         return True
+
+    def _pyha_to_python_value(self) -> str:
+        return self.current
+
+    def _pyha_deserialize(self, serial):
+        return bool(int(serial))
 
 
 class VHDLSfix(BaseVHDLType):
@@ -217,6 +243,13 @@ class VHDLSfix(BaseVHDLType):
         if type(self.current) != type(other.current):
             return False
         return self.current.left == other.current.left and self.current.right == other.current.right
+
+    def _pyha_to_python_value(self) -> str:
+        return float(self.current)
+
+    def _pyha_deserialize(self, serial):
+        val = to_signed_int(int(serial, 2), len(self.current))
+        return val * 2 ** self.current.right
 
 
 class VHDLModule(BaseVHDLType):
@@ -287,6 +320,9 @@ class VHDLEnum(BaseVHDLType):
         if type(self.current) != type(other.current):
             return False
         return True
+
+    def _pyha_to_python_value(self) -> str:
+        return self.current.value
 
 
 def conv_class(name, current_val, initial_val=None):

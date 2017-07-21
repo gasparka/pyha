@@ -3,7 +3,6 @@ import os
 from cmath import isclose
 from contextlib import suppress
 from copy import deepcopy
-from enum import Enum
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,9 +11,10 @@ from typing import List
 import numpy as np
 
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.common.hwsim import default_sfix, default_complex_sfix
+from pyha.common.sfix import Sfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
+from pyha.conversion.conversion_types import conv_class
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -85,36 +85,22 @@ def type_conversions(func):
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
                 elif isinstance(arg[0], (complex, np.complex64)):
+                    assert 0
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
                     args[i] = [t(x, is_local=True) for x in arg]
 
-
         ret = func(self, *args, **kwargs)
 
-        def output_types(li):
-            ret = []
-            for x in li:
-                if type(x) in [list, tuple]:
-                    ret.append(output_types(x))
-                elif type(x) == Sfix:
-                    ret.append(float(x))
-                elif type(x) == ComplexSfix:
-                    ret.append(float(x.real) + float(x.imag) * 1j)
-                elif isinstance(x, Enum):
-                    ret.append(x.value)
-                else:
-                    ret.append(x)
-            return ret
-
-        ret = output_types(ret)
+        # convert outputs to python types (ex. Sfix -> float)
+        if self.simulation_type == SIM_HW_MODEL:
+            ret = [conv_class('-', x, x)._pyha_to_python_value() for x in ret]
         return np.array(ret)
 
     return type_enforcement_wrap
 
 
 class Simulation:
-    """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, input_types: List[object] = None, dir_path=None):
