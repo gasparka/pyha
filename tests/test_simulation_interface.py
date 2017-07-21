@@ -2,12 +2,13 @@
 import subprocess
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    type_conversions, in_out_transpose, SIM_GATE, assert_sim_match
+    SIM_GATE, assert_sim_match
 
 
 def test_ghdl_version():
@@ -53,62 +54,62 @@ def test_sim_no_model():
     Simulation(SIM_MODEL, NoMain(), None)
 
 
-def test_type_conversion():
-    class Tmp:
-        def __init__(self):
-            self.input_types = [Sfix(left=8, right=-8)]
-
-        def wtf(self, *args, **kwargs):
-            return self.dummy(*args)
-
-        @type_conversions
-        @in_out_transpose
-        def dummy(self, *args):
-            return [self.main(*x) for x in args]
-
-        def main(self, a):
-            assert type(a) == Sfix
-            return a
-
-    ret = Tmp().wtf([0.5, 0.5, 1.5, 9])
-    assert (ret == [0.5, 0.5, 1.5, 9]).all()
-    # assert type(ret[0]) == float
-
-    ret = Tmp().wtf(np.array([0.5, 0.5, 1.5, 9]))
-    assert (ret == [0.5, 0.5, 1.5, 9]).all()
-    # assert type(ret[0]) == float
-
-
-def test_type_conversions_multi():
-    class Tmp:
-        def __init__(self):
-            self.input_types = [int, bool, Sfix(left=8, right=-8)]
-
-        def wtf(self, *args):
-            return self.dummy(*args)
-
-        @type_conversions
-        @in_out_transpose
-        def dummy(self, *args):
-            return [self.main(*x) for x in args]
-
-        def main(self, a, b, c):
-            assert type(a) == int
-            assert type(b) == bool
-            assert type(c) == Sfix
-            return a, b, c
-
-    ain, bin, cin = [[1, 2, 3, 4], [True, False, True, False], [0.5, 0.5, 1.5, 9]]
-    ret = Tmp().wtf(ain, bin, cin)
-    aout, bout, cout = ret
-    assert (ain == aout).all()
-    # assert type(aout[0]) == int
-
-    assert (bin == bout).all()
-    # assert type(bout[0]) == bool
-
-    assert (cin == cout).all()
-    # assert type(cout[0]) == float
+# def test_type_conversion():
+#     class Tmp:
+#         def __init__(self):
+#             self.input_types = [Sfix(left=8, right=-8)]
+#
+#         def wtf(self, *args, **kwargs):
+#             return self.dummy(*args)
+#
+#         @type_conversions
+#         @in_out_transpose
+#         def dummy(self, *args):
+#             return [self.main(*x) for x in args]
+#
+#         def main(self, a):
+#             assert type(a) == Sfix
+#             return a
+#
+#     ret = Tmp().wtf([0.5, 0.5, 1.5, 9])
+#     assert (ret == [0.5, 0.5, 1.5, 9]).all()
+#     # assert type(ret[0]) == float
+#
+#     ret = Tmp().wtf(np.array([0.5, 0.5, 1.5, 9]))
+#     assert (ret == [0.5, 0.5, 1.5, 9]).all()
+#     # assert type(ret[0]) == float
+#
+#
+# def test_type_conversions_multi():
+#     class Tmp:
+#         def __init__(self):
+#             self.input_types = [int, bool, Sfix(left=8, right=-8)]
+#
+#         def wtf(self, *args):
+#             return self.dummy(*args)
+#
+#         @type_conversions
+#         @in_out_transpose
+#         def dummy(self, *args):
+#             return [self.main(*x) for x in args]
+#
+#         def main(self, a, b, c):
+#             assert type(a) == int
+#             assert type(b) == bool
+#             assert type(c) == Sfix
+#             return a, b, c
+#
+#     ain, bin, cin = [[1, 2, 3, 4], [True, False, True, False], [0.5, 0.5, 1.5, 9]]
+#     ret = Tmp().wtf(ain, bin, cin)
+#     aout, bout, cout = ret
+#     assert (ain == aout).all()
+#     # assert type(aout[0]) == int
+#
+#     assert (bin == bout).all()
+#     # assert type(bout[0]) == bool
+#
+#     assert (cin == cout).all()
+#     # assert type(cout[0]) == float
 
 
 class TestCombInt:

@@ -350,7 +350,7 @@ class VHDLEnum(BaseVHDLType):
 def conv_class(name, current_val, initial_val=None):
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
-    elif type(current_val) == bool:
+    elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)

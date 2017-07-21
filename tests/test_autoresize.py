@@ -454,6 +454,7 @@ class TestLocalsComplexSfix:
             return arg
 
     def test_sim(self):
+        pytest.skip('COMPLEX SFIX')
         x = [0.1 + 0.2j, 0.2 + 0.1j]
 
         dut = self.A8()
