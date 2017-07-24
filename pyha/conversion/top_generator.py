@@ -46,7 +46,10 @@ class TopGenerator:
         rets = get_iterable(self.simulated_object.main.last_return)
         if rets == [None]:
             return []
-        rets = [conv_class('-', val, val) for val in rets]
+        if isinstance(rets, tuple):  # multiple returns
+            rets = [conv_class('-', val, val) for val in rets]
+        else:
+            rets = [conv_class('-', rets, rets)]
         return rets
 
     def make_entity_inputs(self) -> str:

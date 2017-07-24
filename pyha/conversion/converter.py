@@ -212,8 +212,11 @@ class DefNodeConv(NodeConv):
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
         if self.data.last_return is not None:
-            rets = [conv_class(f'ret_{i}', val, val)
-                    for i, val in enumerate(get_iterable(self.data.last_return))]
+            if isinstance(self.data.last_return, tuple):  # multiple returns
+                rets = [conv_class(f'ret_{i}', val, val)
+                        for i, val in enumerate(get_iterable(self.data.last_return))]
+            else:
+                rets = [conv_class(f'ret_{0}', self.data.last_return, self.data.last_return)]
             rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
         return '; '.join(args + rets)
