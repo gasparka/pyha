@@ -112,7 +112,7 @@ class BaseVHDLType:
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
         raise NotImplementedError()
 
-    def _pyha_convert_to_stdlogic(self, var_name) -> str:
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         raise NotImplementedError()
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -137,8 +137,8 @@ class VHDLInt(BaseVHDLType):
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
         return f'{out_var_name} := to_integer(signed({in_var_name}));\n'
 
-    def _pyha_convert_to_stdlogic(self, var_name) -> str:
-        return f'std_logic_vector(to_signed({var_name}, 32))'
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return f'{out_name}({31 + out_index_offset} downto {0 + out_index_offset}) <= std_logic_vector(to_signed({in_name}, 32));\n'
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -168,8 +168,8 @@ class VHDLBool(BaseVHDLType):
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
         return f'{out_var_name} := logic_to_bool({in_var_name});\n'
 
-    def _pyha_convert_to_stdlogic(self, var_name) -> str:
-        return f'bool_to_logic({var_name})'
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return f'{out_name}({0 + out_index_offset} downto {0 + out_index_offset}) <= bool_to_logic({in_name});\n'
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -202,8 +202,8 @@ class VHDLSfix(BaseVHDLType):
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
         return f'{out_var_name} := Sfix({in_var_name}, {self.current.left}, {self.current.right});\n'
 
-    def _pyha_convert_to_stdlogic(self, var_name) -> str:
-        return f'to_slv({var_name})'
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return f'{out_name}({self._pyha_bitwidth() -1 + out_index_offset} downto {0 + out_index_offset}) <= to_slv({in_name});\n'
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -323,6 +323,16 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_convert_from_stdlogic(prefix, in_name)  # recursive
         return ret
 
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        # return f'{out_name}({31 + out_index_offset} downto {0 + out_index_offset} := std_logic_vector(to_signed({in_name}, 32));\n'
+        ret = ''
+        total_width = self._pyha_bitwidth()
+        elem_width = total_width // len(self.elems)
+        for i, sub in enumerate(self.elems):
+            prefix = f'{out_name}'
+            tmp_in_name = f'{in_name}({i})'
+            ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset + elem_width * i)  # recursive
+        return ret
 
 
 

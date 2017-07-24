@@ -49,7 +49,7 @@ class TopGenerator:
         if isinstance(rets, tuple):  # multiple returns
             rets = [conv_class('-', val, val) for val in rets]
         else:
-            rets = [conv_class('-', rets, rets)]
+            rets = [conv_class('-', rets[0], rets[0])]
         return rets
 
     def make_entity_inputs(self) -> str:
@@ -65,8 +65,8 @@ class TopGenerator:
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_type_conversions(self) -> str:
-        return '\n'.join(f'out{i} <= {x._pyha_convert_to_stdlogic(f"var_out{i}")};'
-                         for i, x in enumerate(self.get_object_return()))
+        return ''.join(x._pyha_convert_to_stdlogic(f'out{i}', f'var_out{i}')
+                       for i, x in enumerate(self.get_object_return()))
 
     def make_input_variables(self) -> str:
         return '\n'.join(f'variable var_in{i}: {x._pyha_type()};'

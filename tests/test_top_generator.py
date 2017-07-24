@@ -59,9 +59,10 @@ def test_variables_output(basic_obj):
 def test_output_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                out0 <= std_logic_vector(to_signed(var_out0, 32));
-                out1 <= bool_to_logic(var_out1);
-                out2 <= to_slv(var_out2);""")
+                out0(31 downto 0) <= std_logic_vector(to_signed(var_out0, 32));
+                out1(0 downto 0) <= bool_to_logic(var_out1);
+                out2(13 downto 0) <= to_slv(var_out2);
+                """)
 
     res = TopGenerator(dut)
 
@@ -192,7 +193,7 @@ def test_simple_full(simple_obj):
                             Simple_0.main(self_var, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
-                            out0 <= std_logic_vector(to_signed(var_out0, 32));
+                            out0(31 downto 0) <= std_logic_vector(to_signed(var_out0, 32));
 
 
                             if (not rst_n) then
