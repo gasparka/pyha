@@ -8,6 +8,7 @@ library ieee;
 
 package PyhaUtil is
   type boolean_list_t is array (natural range <>) of boolean;
+  type integer_list_t is array (natural range <>) of integer;
 
 
   function left_index(x: sfixed) return integer;

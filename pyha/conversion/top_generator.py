@@ -1,6 +1,6 @@
 import textwrap
 
-from pyha.common.util import tabber, get_iterable
+from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, conv_class
 from pyha.conversion.converter import file_header
 
@@ -43,13 +43,13 @@ class TopGenerator:
         return self.get_object_args() + self.get_object_kwargs()
 
     def get_object_return(self) -> list:
-        rets = get_iterable(self.simulated_object.main.last_return)
-        if rets == [None]:
+        rets = self.simulated_object.main.last_return
+        if rets == None:
             return []
         if isinstance(rets, tuple):  # multiple returns
             rets = [conv_class('-', val, val) for val in rets]
         else:
-            rets = [conv_class('-', rets[0], rets[0])]
+            rets = [conv_class('-', rets, rets)]
         return rets
 
     def make_entity_inputs(self) -> str:
