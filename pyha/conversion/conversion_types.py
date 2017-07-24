@@ -163,7 +163,7 @@ class VHDLBool(BaseVHDLType):
         return 1
 
     def _pyha_stdlogic_type(self) -> str:
-        return 'std_logic'
+        return 'std_logic_vector(0 downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
         return f'{out_var_name} := logic_to_bool({in_var_name});\n'
