@@ -103,6 +103,9 @@ class BaseVHDLType:
 
         return '\n'.join(ret)
 
+    def _pyha_bitwidth(self) -> int:
+        raise NotImplementedError()
+
     def _pyha_stdlogic_type(self) -> str:
         raise NotImplementedError()
 

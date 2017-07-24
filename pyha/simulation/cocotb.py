@@ -65,7 +65,7 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
 
-        self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+        self.environment['GHDL_OPTIONS'] = '--std=08'
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             try:
@@ -75,7 +75,7 @@ class CocotbAuto(object):
             altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
             # altera_libs = pyha.__path__[0] + '/common/hdl/altera'
             self.environment[
-                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'  # TODO: push PR to cocotb
+                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
@@ -107,11 +107,19 @@ class CocotbAuto(object):
             print(err)
             return []
 
-        outp = np.load(str(self.base_path / 'output.npy')).astype(object).T
+        out = np.load(str(self.base_path / 'output.npy'))
+        outp = out.astype(object).T
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
                 outp[i][j] = self.conversion.outputs[i]._pyha_deserialize(val)
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
-        return outp.T
+        outp = outp.T.tolist()
+
+        # convert second level lists to tuples if dealing with 'multiple returns'
+        if len(self.conversion.outputs) > 1:
+            for i, row in enumerate(outp):
+                outp[i] = tuple(outp[i])
+
+        return outp

@@ -63,7 +63,7 @@ def in_out_transpose(func):
 
         ret = func(self, *args, **kwargs)
 
-        with suppress(TypeError):  # was one dimensional list
+        if isinstance(ret[0], tuple):
             ret = [list(x) for x in zip(*ret)]  # transpose
         return ret
 
@@ -197,9 +197,9 @@ class Simulation:
                 self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
                 with RegisterBehaviour.force_disable():
                     with Sfix._float_mode:
-                        return self.as_model(*args)
-
-            r = self.model.model_main(*args)
+                        r = self.as_model(*args)
+            else:
+                r = self.model.model_main(*args)
 
             if r == []:
                 return np.array(r)
