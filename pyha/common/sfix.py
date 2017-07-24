@@ -1,8 +1,8 @@
 import logging
 import textwrap
+from copy import deepcopy
 
 import numpy as np
-from copy import deepcopy
 
 from pyha.common.context_managers import RegisterBehaviour, ContextManagerRefCounted, AutoResize
 
@@ -472,9 +472,6 @@ class Sfix:
 
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)
-
-    def to_stdlogic(self):
-        return f'std_logic_vector({self.left + abs(self.right)} downto 0)'
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):

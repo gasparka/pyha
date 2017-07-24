@@ -82,7 +82,6 @@ class TestInterface:
         assert_sim_match(dut, data, data)
 
 
-
 def test_hw_sim_resets():
     """ Registers should take initial values on each new simulation(call of main) invocation,
     motivation is to provide same interface as with COCOTB based RTL simulation."""
@@ -109,10 +108,11 @@ def test_hw_sim_resets():
 
 def test_numpy_complex64():
     pytest.skip('TODO')
+
     class T4(HW):
         def main(self, x):
             return x
 
     dut = T4()
-    input = np.array([0.5+0.1j, 0.1-0.5j], dtype=np.complex64)
+    input = np.array([0.5 + 0.1j, 0.1 - 0.5j], dtype=np.complex64)
     assert_sim_match(dut, None, input, simulations=[SIM_HW_MODEL, SIM_RTL])

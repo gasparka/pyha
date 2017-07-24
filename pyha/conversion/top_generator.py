@@ -70,8 +70,8 @@ class TopGenerator:
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_input_type_conversions(self) -> str:
-        return '\n'.join(f'var_in{i} := {x._pyha_convert_from_stdlogic(f"in{i}")};'
-                         for i, x in enumerate(self.get_object_inputs()))
+        return ''.join(x._pyha_convert_from_stdlogic(f'var_in{i}', f'in{i}')
+                       for i, x in enumerate(self.get_object_inputs()))
 
     def make_imports(self) -> str:
         return textwrap.dedent("""\

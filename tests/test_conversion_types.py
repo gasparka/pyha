@@ -99,6 +99,13 @@ class TestVHDLList:
         assert not a._pyha_type_is_compatible(c)
         assert not d._pyha_type_is_compatible(c)
 
+    def test_pyha_convert_from_stdlogic(self):
+        a = VHDLList('name', [1, 2], [1, 2])
+        expect = 'var(0) := to_integer(signed(in0(63 downto 32)));\n' \
+                 'var(1) := to_integer(signed(in0(31 downto 0)));\n'
+
+        assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
