@@ -2,6 +2,7 @@ from decimal import *
 
 import numpy as np
 import pytest
+
 from pyha.common.sfix import Sfix, fixed_wrap, resize
 
 getcontext().prec = 128
@@ -366,17 +367,6 @@ def test_max_representable():
 
     a = Sfix(0, -2, -3)
     assert a.max_representable() == 0.25 + 0.25 / 2
-
-
-def test_to_stdlogic():
-    a = Sfix(0.1, 0, 0)
-    assert a.to_stdlogic() == 'std_logic_vector(0 downto 0)'
-
-    a = Sfix(0.1, 3, 0)
-    assert a.to_stdlogic() == 'std_logic_vector(3 downto 0)'
-
-    a = Sfix(0.1, 3, -4)
-    assert a.to_stdlogic() == 'std_logic_vector(7 downto 0)'
 
 
 def test_neg():

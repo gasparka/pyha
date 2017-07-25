@@ -25,7 +25,7 @@ def test_entity_inputs(basic_obj):
     expect = textwrap.dedent("""\
                 in0: in std_logic_vector(31 downto 0);
                 in1: in std_logic_vector(19 downto 0);
-                in2: in std_logic;""")
+                in2: in std_logic_vector(0 downto 0);""")
 
     res = TopGenerator(dut)
 
@@ -36,7 +36,7 @@ def test_entity_outputs(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
                 out0: out std_logic_vector(31 downto 0);
-                out1: out std_logic;
+                out1: out std_logic_vector(0 downto 0);
                 out2: out std_logic_vector(13 downto 0);""")
 
     res = TopGenerator(dut)
@@ -148,6 +148,7 @@ def test_simple_full(simple_obj):
 
                     library work;
                         use work.PyhaUtil.all;
+                        use work.Typedefs.all;
                         use work.all;
 
                     entity  top is
