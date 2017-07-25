@@ -86,6 +86,7 @@ class TopGenerator:
 
             library work;
                 use work.PyhaUtil.all;
+                use work.Typedefs.all;
                 use work.all;""")
 
     def object_class_name(self) -> str:

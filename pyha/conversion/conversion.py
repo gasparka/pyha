@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 
 from redbaron import RedBaron
 
+from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, VHDLList
-from pyha.conversion.converter import convert
+from pyha.conversion.converter import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
 
@@ -45,6 +46,7 @@ def get_conversion(obj):
 
 class Conversion:
     converted_names = []
+    typedefs = []
 
     def __init__(self, obj, datamodel=None):
         self.datamodel = datamodel
@@ -62,6 +64,8 @@ class Conversion:
         self.converted_names += [self.datamodel._pyha_module_name()]
         if self.is_root:
             self.top_vhdl = TopGenerator(obj)
+
+        Conversion.typedefs.extend(self.conv.build_typedefs())
 
         # recursively convert all child modules
         self.childs = []
@@ -102,4 +106,22 @@ class Conversion:
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
+            paths.insert(0, base_dir / 'typedefs.vhd')
+            with paths[0].open('w') as f:
+                f.write(self.build_typedefs_package())
+
         return paths
+
+    def build_typedefs_package(self):
+        template = textwrap.dedent("""\
+            {FILE_HEADER}
+            library ieee;
+                use ieee.fixed_pkg.all;
+
+            package Typedefs is
+            {TYPES}
+            end package;
+            """)
+        self.typedefs = list(dict.fromkeys(self.typedefs))  # remove duplicates
+        return template.format(FILE_HEADER=file_header(),
+                               TYPES=tabber('\n'.join(self.typedefs)))

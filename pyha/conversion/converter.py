@@ -473,6 +473,7 @@ class ClassNodeConv(NodeConv):
 
             library work;
                 use work.PyhaUtil.all;
+                use work.Typedefs.all;
                 use work.all;""")
 
     def build_reset(self, prototype_only=False):
@@ -549,14 +550,12 @@ class ClassNodeConv(NodeConv):
             variables = [conv_class(name, val, val) for name, val in function.data.locals.items()]
             typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
-        return '\n'.join(typedefs)
+        return typedefs
 
     def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
-            {TYPEDEFS}
-
             {SELF_T}
 
             {FUNC_HEADERS}
@@ -565,7 +564,6 @@ class ClassNodeConv(NodeConv):
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
         sockets['NAME'] = self.data._pyha_module_name()
-        sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
         proto = self.build_init(prototype_only=True) + '\n\n'

@@ -157,15 +157,16 @@ class TestClassNodeConv:
         dut = T()
         dut.a()
 
-        expect = textwrap.dedent("""\
-            type integer_list_t is array (natural range <>) of integer;
-            type boolean_list_t is array (natural range <>) of boolean;
-            type sfixed2downto_15_list_t is array (natural range <>) of sfixed(2 downto -15);
-            type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;
-            type sfixed2downto_1_list_t is array (natural range <>) of sfixed(2 downto -1);""")
+        expect = [
+            'type integer_list_t is array (natural range <>) of integer;',
+            'type boolean_list_t is array (natural range <>) of boolean;',
+            'type sfixed2downto_15_list_t is array (natural range <>) of sfixed(2 downto -15);',
+            'type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;',
+            'type sfixed2downto_1_list_t is array (natural range <>) of sfixed(2 downto -1);',
+        ]
 
         c = get_conversion(dut).build_typedefs()
-        assert expect == str(c)
+        assert expect == c
 
     def test_build_init(self):
         class A(HW):
@@ -309,8 +310,6 @@ class TestClassNodeConv:
             -- class
             -- doc
             package B0_0 is
-
-
                 type next_t is record
                     much_dummy_very_wow: integer;
                 end record;
