@@ -92,8 +92,15 @@ class CocotbAuto(object):
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
 
-        input_data = np.vectorize(lambda x: conv_class('-', x, x)._pyha_serialize())(input_data)
-        np.save(str(self.base_path / 'input.npy'), input_data)
+        indata = []
+        for arguments in input_data:
+            if len(arguments) == 1:
+                l = [conv_class('-', arguments[0], arguments[0])._pyha_serialize()]
+            else:
+                l = [conv_class('-', arg, arg)._pyha_serialize() for arg in arguments]
+            indata.append(l)
+
+        np.save(str(self.base_path / 'input.npy'), indata)
 
         # write makefile template
         with (self.base_path / 'Makefile').open('w') as f:

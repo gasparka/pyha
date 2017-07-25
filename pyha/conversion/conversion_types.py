@@ -325,13 +325,12 @@ class VHDLList(BaseVHDLType):
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
             prefix = f'{out_var_name}({i})'
-            base_bound = total_width - (elem_width * i)
-            in_name = f'{in_var_name}({base_bound-1} downto {base_bound-elem_width})'
+            base_bound = (elem_width * i)
+            in_name = f'{in_var_name}({base_bound-1 + elem_width} downto {base_bound})'
             ret += sub._pyha_convert_from_stdlogic(prefix, in_name)  # recursive
         return ret
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        # return f'{out_name}({31 + out_index_offset} downto {0 + out_index_offset} := std_logic_vector(to_signed({in_name}, 32));\n'
         ret = ''
         total_width = self._pyha_bitwidth()
         elem_width = total_width // len(self.elems)
@@ -340,6 +339,18 @@ class VHDLList(BaseVHDLType):
             tmp_in_name = f'{in_name}({i})'
             ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset + elem_width * i)  # recursive
         return ret
+
+    def _pyha_serialize(self):
+        return ''.join(x._pyha_serialize() for x in self.elems)
+
+    def _pyha_deserialize(self, serial):
+        ret = []
+        for i, elem in enumerate(self.elems):
+            offset = i * elem._pyha_bitwidth()
+            e = elem._pyha_deserialize(serial[offset: offset + elem._pyha_bitwidth()])
+            ret.append(e)
+        return ret
+
 
 
 class VHDLModule(BaseVHDLType):

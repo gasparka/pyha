@@ -24,7 +24,7 @@ def run_dut(dut, in_data, out_count):
     yield reset(dut)
 
     ret = []
-    # print('Input data: {}'.format(in_data))
+    print('Input data: {}'.format(in_data))
     for x in in_data:
 
         # put input

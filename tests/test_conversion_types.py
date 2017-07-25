@@ -101,8 +101,8 @@ class TestVHDLList:
 
     def test_pyha_convert_from_stdlogic(self):
         a = VHDLList('name', [1, 2], [1, 2])
-        expect = 'var(0) := to_integer(signed(in0(63 downto 32)));\n' \
-                 'var(1) := to_integer(signed(in0(31 downto 0)));\n'
+        expect = 'var(0) := to_integer(signed(in0(31 downto 0)));\n' \
+                 'var(1) := to_integer(signed(in0(63 downto 32)));\n'
 
         assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
 
@@ -112,6 +112,16 @@ class TestVHDLList:
                  'var(63 downto 32) <= std_logic_vector(to_signed(in0(1), 32));\n'
 
         assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
+
+    def test_pyha_serialize(self):
+        d = VHDLList('name', [1, 2], [1, 2])
+        assert d._pyha_serialize() == '0000000000000000000000000000000100000000000000000000000000000010'
+
+    def test_pyha_deserialize(self):
+        d = VHDLList('name', [1, 2], [1, 2])
+        assert d._pyha_deserialize('0000000000000000000000000000000100000000000000000000000000000010') \
+               == [1, 2]
+
 
 
 class TestVHDLInt:
