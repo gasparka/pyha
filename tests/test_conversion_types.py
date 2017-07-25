@@ -34,7 +34,7 @@ class TestVHDLList:
         self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
 
     def test_pyha_type_sfix(self):
-        expect = 'sfixed1downto_2_list_t(0 to 1)'
+        expect = 'Typedefs.sfixed1downto_2_list_t(0 to 1)'
         assert self.dut._pyha_type() == expect
 
     def test_pyha_typedef(self):
@@ -108,10 +108,10 @@ class TestVHDLList:
 
     def test_pyha_convert_to_stdlogic(self):
         a = VHDLList('name', [1, 2], [1, 2])
-        expect = 'var(31 downto 0) := std_logic_vector(to_signed(in0(0), 32));\n' \
-                 'var(63 downto 32) := std_logic_vector(to_signed(in0(1), 32));\n'
+        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0(0), 32));\n' \
+                 'var(63 downto 32) <= std_logic_vector(to_signed(in0(1), 32));\n'
 
-        assert expect == a._pyha_convert_to_stdlogic('var', 0, 'in0')
+        assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
 
 
 class TestVHDLInt:

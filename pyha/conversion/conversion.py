@@ -53,6 +53,7 @@ class Conversion:
         self.is_root = datamodel is None
         if self.is_root:
             Conversion.converted_names = []
+            Conversion.typedefs = []
             self.datamodel = VHDLModule('-', obj)
 
         self.obj = obj
@@ -121,6 +122,10 @@ class Conversion:
                 use ieee.fixed_float_types.all;
                 use ieee.fixed_pkg.all;
                 use ieee.math_real.all;
+                
+            library work;
+                use work.PyhaUtil.all;
+                use work.all;
 
             package Typedefs is
             {TYPES}

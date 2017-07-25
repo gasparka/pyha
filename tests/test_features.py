@@ -96,7 +96,7 @@ class TestSubmodulesList:
         expected = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 
-        assert_sim_match(dut, expected, *x)
+        assert_sim_match(dut, expected, *x, dir_path='/home/gaspar/git/pyha/playground')
 
     def test_deep(self):
         class C2(HW):

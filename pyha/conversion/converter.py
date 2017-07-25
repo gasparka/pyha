@@ -557,12 +557,15 @@ class ClassNodeConv(NodeConv):
             {MULTILINE_COMMENT}
             package {NAME} is
             {SELF_T}
+            {SELF_ARRAY_TYPEDEF}
 
             {FUNC_HEADERS}
             end package;""")
 
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
+        sockets['SELF_ARRAY_TYPEDEF'] = \
+            f'    type {self.data._pyha_arr_type_name()} is array (natural range <>) of {self.data._pyha_type()};'
         sockets['NAME'] = self.data._pyha_module_name()
         sockets['SELF_T'] = tabber(self.build_data_structs())
 

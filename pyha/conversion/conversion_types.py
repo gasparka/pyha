@@ -256,17 +256,23 @@ class VHDLList(BaseVHDLType):
         self.elems = [conv_class('-', c, i) for c, i in zip(self.current, self.initial)]
         self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
 
-    def _pyha_type_name(self):
+    def _pyha_arr_type_name(self):
         elem_type = self.elems[0]._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
         return f'{elem_type}_list_t'
 
     def _pyha_type(self):
-        return f'Typedefs.{self._pyha_type_name()}(0 to {len(self.current) - 1})'
+        lib = 'Typedefs'
+        if not self.not_submodules_list:
+            lib = self.elems[0]._pyha_module_name()
+
+        return f'{lib}.{self._pyha_arr_type_name()}(0 to {len(self.current) - 1})'
 
     def _pyha_typedef(self):
-        return f'type {self._pyha_type_name()} is array (natural range <>) of {self.elems[0]._pyha_type()};'
+        if self.not_submodules_list:
+            return f'type {self._pyha_arr_type_name()} is array (natural range <>) of {self.elems[0]._pyha_type()};'
+        return None  # arrays of submodules are already defined in each submodule package!
 
     def _pyha_init(self):
         if self.not_submodules_list:
@@ -336,7 +342,6 @@ class VHDLList(BaseVHDLType):
         return ret
 
 
-
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None):
         initial = initial or current._pyha_initial_self
@@ -355,6 +360,12 @@ class VHDLModule(BaseVHDLType):
 
     def _pyha_type(self):
         return f'{self._pyha_module_name()}.self_t'
+
+    def _pyha_arr_type_name(self):
+        elem_type = self._pyha_type()
+        # some type may contain illegal chars for name..replace them
+        elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
+        return f'{elem_type}_list_t'
 
     def _pyha_init(self) -> str:
         return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()});'
@@ -381,7 +392,6 @@ class VHDLModule(BaseVHDLType):
 
         return all(self_elem._pyha_type_is_compatible(other_elem)
                    for self_elem, other_elem in zip(self.elems, other.elems))
-
 
 
 def conv_class(name, current_val, initial_val=None):

@@ -25,7 +25,7 @@ class TestDefNodeConv:
                  'i: integer; ' \
                  'b: boolean; ' \
                  'f: sfixed(1 downto -2); ' \
-                 'l: integer_list_t(0 to 1); ' \
+                 'l: Typedefs.integer_list_t(0 to 1); ' \
                  'ret_0:out integer; ' \
                  'ret_1:out boolean; ' \
                  'ret_2:out sfixed(0 downto -17); ' \
@@ -49,7 +49,7 @@ class TestDefNodeConv:
         dut = T()
         dut.a(1)
 
-        expect = 'variable l: integer_list_t(0 to 1);\n' \
+        expect = 'variable l: Typedefs.integer_list_t(0 to 1);\n' \
                  'variable i: integer;\n' \
                  'variable b: boolean;'
 
@@ -114,11 +114,11 @@ class TestClassNodeConv:
                     c: integer;
                     d: boolean;
                     mode: TestEnum;
-                    al: integer_list_t(0 to 11);
-                    bl: boolean_list_t(0 to 1);
-                    cl: sfixed2downto_15_list_t(0 to 1);
+                    al: Typedefs.integer_list_t(0 to 11);
+                    bl: Typedefs.boolean_list_t(0 to 1);
+                    cl: Typedefs.sfixed2downto_15_list_t(0 to 1);
                     sub: A_0.self_t;
-                    subl: A_0_self_t_list_t(0 to 1);
+                    subl: A_0.A_0_self_t_list_t(0 to 1);
                 end record;
 
                 type self_t is record
@@ -127,11 +127,11 @@ class TestClassNodeConv:
                     c: integer;
                     d: boolean;
                     mode: TestEnum;
-                    al: integer_list_t(0 to 11);
-                    bl: boolean_list_t(0 to 1);
-                    cl: sfixed2downto_15_list_t(0 to 1);
+                    al: Typedefs.integer_list_t(0 to 11);
+                    bl: Typedefs.boolean_list_t(0 to 1);
+                    cl: Typedefs.sfixed2downto_15_list_t(0 to 1);
                     sub: A_0.self_t;
-                    subl: A_0_self_t_list_t(0 to 1);
+                    subl: A_0.A_0_self_t_list_t(0 to 1);
                     \\next\\: next_t;
                 end record;""")
 
@@ -161,7 +161,6 @@ class TestClassNodeConv:
             'type integer_list_t is array (natural range <>) of integer;',
             'type boolean_list_t is array (natural range <>) of boolean;',
             'type sfixed2downto_15_list_t is array (natural range <>) of sfixed(2 downto -15);',
-            'type A_0_self_t_list_t is array (natural range <>) of A_0.self_t;',
             'type sfixed2downto_1_list_t is array (natural range <>) of sfixed(2 downto -1);',
         ]
 
@@ -318,6 +317,7 @@ class TestClassNodeConv:
                     much_dummy_very_wow: integer;
                     \\next\\: next_t;
                 end record;
+                type B0_0_self_t_list_t is array (natural range <>) of B0_0.self_t;
 
                 procedure \_pyha_init\(self:inout self_t);
 
