@@ -256,16 +256,17 @@ class VHDLList(BaseVHDLType):
         self.elems = [conv_class('-', c, i) for c, i in zip(self.current, self.initial)]
         self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
 
-    def _pyha_type(self):
+    def _pyha_type_name(self):
         elem_type = self.elems[0]._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
-        return f'{elem_type}_list_t(0 to {len(self.current) - 1})'
+        return f'{elem_type}_list_t'
+
+    def _pyha_type(self):
+        return f'Typedefs.{self._pyha_type_name()}(0 to {len(self.current) - 1})'
 
     def _pyha_typedef(self):
-        t = self._pyha_type()
-        t_name = t[:t.find('(')]  # cut out the (x to x) part
-        return f'type {t_name} is array (natural range <>) of {self.elems[0]._pyha_type()};'
+        return f'type {self._pyha_type_name()} is array (natural range <>) of {self.elems[0]._pyha_type()};'
 
     def _pyha_init(self):
         if self.not_submodules_list:
