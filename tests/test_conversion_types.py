@@ -341,6 +341,43 @@ class TestVHDLModule:
         assert not c._pyha_type_is_compatible(a)
         assert not c._pyha_type_is_compatible(b)
 
+    def test_pyha_convert_from_stdlogic(self):
+        class B(HW):
+            def __init__(self):
+                self.f = Sfix(0, 0, -17)
+
+        class A(HW):
+            def __init__(self):
+                self.i = 1
+                self.b = False
+                self.sub = B()
+
+        a = VHDLModule('name', A(), A())
+        expect = 'var.i := to_integer(signed(in0(31 downto 0)));\n' \
+                 'var.b := logic_to_bool(in0(32 downto 32));\n' \
+                 'var.sub.f := Sfix(in0(50 downto 33)(17 downto 0), 0, -17);\n'
+
+        assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
+
+    def test_pyha_convert_to_stdlogic(self):
+        class B(HW):
+            def __init__(self):
+                self.f = Sfix(0, 0, -17)
+
+        class A(HW):
+            def __init__(self):
+                self.i = 1
+                self.b = False
+                self.sub = B()
+
+        a = VHDLModule('name', A(), A())
+
+        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0.i, 32));\n' \
+                 'var(32 downto 32) <= bool_to_logic(in0.b);\n' \
+                 'var(50 downto 33) <= to_slv(in0.sub.f);\n'
+
+        assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
+
 
 class TestVHDLEnum:
     class T(Enum):

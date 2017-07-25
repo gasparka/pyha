@@ -8,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    SIM_GATE, assert_sim_match, debug_assert_sim_match
+    SIM_GATE, assert_sim_match
 
 
 def test_ghdl_version():
@@ -79,7 +79,26 @@ class TestInterface:
 
         dut = T()
         data = [[1, 2], [3, 4], [5, 6]]
-        debug_assert_sim_match(dut, data, data, dir_path='/home/gaspar/git/pyha/playground')
+        assert_sim_match(dut, data, data)
+
+    def test_submodule(self):
+        class Sub(HW):
+            def __init__(self):
+                self.a = 1
+                self.b = False
+
+        class T(HW):
+            def __init__(self):
+                self.d = Sub()
+
+            def main(self, l):
+                return l
+
+        dut = T()
+        data = [Sub(), Sub()]
+        assert_sim_match(dut, data, data, dir_path='/home/gaspar/git/pyha/playground')
+
+
 
 
 def test_hw_sim_resets():

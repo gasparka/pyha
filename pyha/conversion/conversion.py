@@ -71,6 +71,8 @@ class Conversion:
         # recursively convert all child modules
         self.childs = []
 
+        # TODO: convert input and output submodules! they may not be registered in datamodel
+
         for node in self.datamodel.elems:
             if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
                 self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
