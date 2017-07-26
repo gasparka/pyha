@@ -1,3 +1,4 @@
+import copy
 from enum import Enum
 from typing import List
 
@@ -437,12 +438,16 @@ class VHDLModule(BaseVHDLType):
         return ''.join(x._pyha_serialize() for x in self.elems)
 
     def _pyha_deserialize(self, serial):
-        ret = []
+        ret = copy.copy(self.current)
         for i, elem in enumerate(self.elems):
             offset = i * elem._pyha_bitwidth()
             e = elem._pyha_deserialize(serial[offset: offset + elem._pyha_bitwidth()])
-            ret.append(e)
+            setattr(ret, elem._name, e)
+
         return ret
+
+    def _pyha_is_equal(self):
+        pass
 
 
 def conv_class(name, current_val, initial_val=None):
