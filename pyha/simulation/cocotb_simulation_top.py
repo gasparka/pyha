@@ -24,13 +24,13 @@ def run_dut(dut, in_data, out_count):
     yield reset(dut)
 
     ret = []
-    print('Input data: {}'.format(in_data))
+    # print('Input data: {}'.format(in_data))
     for x in in_data:
 
         # put input
         # print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):
-            print('Set {} to {}'.format('in' + str(i), str(xi)))
+            # print('Set {} to {}'.format('in' + str(i), str(xi)))
             v = getattr(dut, 'in' + str(i))
             bval = BinaryValue(str(xi), len(xi))
             v.setimmediatevalue(bval)
@@ -43,7 +43,7 @@ def run_dut(dut, in_data, out_count):
             var = 'out' + str(i)
             # val = getattr(dut, var).value.signed_integer
             val = str(getattr(dut, var).value)
-            print(val)
+            # print(val)
             tmp.append(val)
         ret.append(tmp)
 

@@ -2,7 +2,7 @@ from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL
 
 
 class TestConst:
@@ -241,3 +241,66 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground')
+
+
+class TestMainAsModel:
+    """ Issue #107. Main can be interpreted as model (delays and fixed point stuffs are OFF) """
+
+    def test_counter_int(self):
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = a + 1
+                return self.a
+
+        x = [1, 2, 3]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_int_list(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [0, 0]
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = [a] + self.a[:-1]
+                return self.a[-1]
+
+        x = [1, 2, 3]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_counter_sfix(self):
+        class T(HW):
+            def __init__(self):
+                self.a = Sfix(0.0, 0, -17)
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = self.a + 0.0123
+                return self.a
+
+        x = [1] * 16
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_sfix_list(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [Sfix(0.0, 0, -17)] * 2
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = [a] + self.a[:-1]
+                return self.a[-1]
+
+        x = [0.1, 0.2, 0.3, 0.4, 0.5]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
