@@ -476,6 +476,18 @@ class ClassNodeConv(NodeConv):
                 use work.Typedefs.all;
                 use work.all;""")
 
+    def build_deepcopy(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_deepcopy\\(self:inout self_t; other: in self_t) is
+            begin
+            {DATA}
+            end procedure;""")
+
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_deepcopy() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
+
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
             procedure \\_pyha_reset\\(self:inout self_t) is
@@ -572,6 +584,7 @@ class ClassNodeConv(NodeConv):
         proto = self.build_init(prototype_only=True) + '\n\n'
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
+        proto += self.build_deepcopy(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
         proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
@@ -586,6 +599,8 @@ class ClassNodeConv(NodeConv):
             {CONSTANT_SELF}
 
             {RESET_SELF}
+            
+            {DEEPCOPY}
 
             {UPDATE_SELF}
 
@@ -598,6 +613,7 @@ class ClassNodeConv(NodeConv):
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
+        sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
@@ -667,6 +683,7 @@ def convert(red: Node, obj=None):
     red = CallModifications.apply(red)
     if obj is not None:
         AutoResize.apply(red)
+        SubmoduleDeepcopy.apply(red)
 
     conv = red_to_conv_hub(red, caller=None)  # converts all nodes
 
@@ -750,6 +767,17 @@ class AutoResize:
 
         return pass_nodes
 
+
+class SubmoduleDeepcopy:
+    @staticmethod
+    def apply(red_node):
+        nodes = AutoResize.find(red_node)
+
+        for x in nodes:
+            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            if isinstance(target_type, VHDLModule):
+                x.replace(
+                    f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 class ImplicitNext:
     """

@@ -1,4 +1,5 @@
 import copy
+import logging
 from enum import Enum
 from math import isclose
 from typing import List
@@ -48,7 +49,8 @@ def to_twoscomplement(bits, value):
 
 
 class BaseVHDLType:
-    def __init__(self, var_name, current, initial):
+    def __init__(self, var_name, current, initial=None):
+        initial = initial or current
         self._name = var_name
         self.initial = initial
         self.current = current
@@ -86,6 +88,10 @@ class BaseVHDLType:
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
         return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};\n'
+
+    def _pyha_deepcopy(self, prefix='self') -> str:
+        name = self._pyha_name()
+        return f'{prefix}.\\next\\.{name} := {prefix.replace("self", "other")}.{name};\n'
 
     def _pyha_reset_constants(self) -> str:
         r = self._pyha_reset()
@@ -130,7 +136,8 @@ class BaseVHDLType:
             return False
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
-            print(f'NOT EQUAL {name} {self.current} != {other.current}')
+            l = logging.getLogger('_pyha_is_equal')
+            l.info(f'{name} {self.current} != {other.current}')
         return eq
 
 
@@ -312,6 +319,17 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
+    def _pyha_deepcopy(self, prefix='self') -> str:
+        name = self._pyha_name()
+        if self.not_submodules_list:
+            return f'{prefix}.\\next\\.{name} := {prefix.replace("self", "other")}.{name};\n'
+
+        ret = ''
+        for i, sub in enumerate(self.elems):
+            tmp_prefix = f'{prefix}.{name}({i})'
+            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
+        return ret
+
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
             return False
@@ -414,6 +432,15 @@ class VHDLModule(BaseVHDLType):
             if self._name != '-':
                 tmp_prefix = f'{prefix}.{self._pyha_name()}'
             ret += sub._pyha_reset(tmp_prefix)  # recursive
+        return ret
+
+    def _pyha_deepcopy(self, prefix='self'):
+        ret = ''
+        for i, sub in enumerate(self.elems):
+            tmp_prefix = prefix
+            if self._name != '-':
+                tmp_prefix = f'{prefix}.{self._pyha_name()}'
+            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:

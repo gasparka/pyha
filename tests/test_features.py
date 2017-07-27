@@ -2,7 +2,8 @@ from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
+    assert_equals
 
 
 class TestConst:
@@ -214,6 +215,26 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, inputs, rtol=1e-4)
 
+    def test_submodule(self):
+        class Sub(HW):
+            def __init__(self, i=0):
+                self.a = i
+                self.b = False
+
+        class T(HW):
+            def __init__(self):
+                self.d = Sub()
+                self.DELAY = 1
+
+            def main(self, l):
+                self.d = l
+                return self.d
+
+        dut = T()
+        data = [Sub(1), Sub(2)]
+        ret = simulate(dut, data, dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, data)
+
     def test_shiftregs(self):
         class ShiftReg(HW):
             def __init__(self, in_t=Sfix(left=0, right=-17)):
@@ -241,6 +262,28 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                          dir_path='/home/gaspar/git/pyha/playground')
+
+    def test_submodule_shiftreg(self):
+        class Sub(HW):
+            def __init__(self, i=0):
+                self.a = i
+                self.b = False
+
+        class ShiftReg(HW):
+            def __init__(self):
+                self.shr_sub = [Sub(1), Sub(2), Sub(3), Sub(4)]
+
+            def main(self, new_sub):
+                self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                return self.shr_sub[-1]
+
+        dut = ShiftReg()
+
+        inputs = [Sub(0), Sub(1), Sub(2), Sub(3), Sub(4), Sub(5)]
+        expect = [Sub(0), Sub(1), Sub(2), Sub(3), Sub(4), Sub(5)]
+
+        ret = simulate(dut, inputs, dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, expect)
 
 
 class TestMainAsModel:

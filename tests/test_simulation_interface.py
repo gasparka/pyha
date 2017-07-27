@@ -8,7 +8,7 @@ import pyha
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import NoModelError, Simulation, SIM_RTL, SIM_HW_MODEL, SIM_MODEL, \
-    SIM_GATE, assert_sim_match, simulate, equals
+    SIM_GATE, assert_sim_match, simulate, assert_equals
 
 
 def test_ghdl_version():
@@ -82,22 +82,33 @@ class TestInterface:
         assert_sim_match(dut, data, data)
 
     def test_submodule(self):
+        """ May fail when model sim output is no copy() """
+
+        class SubSub(HW):
+            def __init__(self, i):
+                self.a = i * 3
+
         class Sub(HW):
             def __init__(self, i=0):
+                self.subsub = SubSub(i)
                 self.a = i
                 self.b = False
 
         class T(HW):
             def __init__(self):
                 self.d = Sub()
+                self.DELAY = 1
 
             def main(self, l):
-                return l
+                self.d.a = l.a
+                self.d.b = l.b
+                self.d.subsub.a = l.subsub.a
+                return self.d
 
         dut = T()
         data = [Sub(1), Sub(2)]
         ret = simulate(dut, data)
-        equals(ret, data)
+        assert_equals(ret, data)
 
 
 def test_hw_sim_resets():

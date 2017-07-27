@@ -166,7 +166,7 @@ class Simulation:
         self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
         ret = []
         for x in args:
-            ret.append(self.model.main(*x))
+            ret.append(deepcopy(self.model.main(*x)))  # deepcopy required or 'subsub' modules break
             self.model._pyha_update_self()
         return ret
 
@@ -235,8 +235,8 @@ def simulate(model, *x, simulations=None, dir_path=None):
             for sim_type in simulations}
 
 
-def equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
-    l = logging.getLogger(__name__)
+def assert_equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
+    l = logging.getLogger('equals()')
     expected = conv_class('root', expected, expected)
 
     for sim_name, sim_data in simulations.items():
