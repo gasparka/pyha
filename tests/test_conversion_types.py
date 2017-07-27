@@ -378,6 +378,21 @@ class TestVHDLModule:
 
         assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
 
+    def test_pyha_is_equal(self):
+        class A(HW):
+            def __init__(self, v):
+                self.f = v
+
+        a = VHDLModule('name', A(0.1), A(0.2))
+        b = VHDLModule('name', A(0.2), A(0.2))
+        assert a._pyha_is_equal(a)
+        assert not a._pyha_is_equal(b)
+
+        a = VHDLModule('name', A([1, 2, 3]), A([1, 2, 3]))
+        b = VHDLModule('name', A([3, 2, 1]), A([3, 2, 1]))
+        assert a._pyha_is_equal(a)
+        assert not a._pyha_is_equal(b)
+
 
 class TestVHDLEnum:
     class T(Enum):

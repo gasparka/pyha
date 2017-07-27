@@ -228,48 +228,43 @@ class Simulation:
 ##############################################################################
 # utility functions
 
-def debug_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                           fuck_it=False, **kwards):
-    """ Instead of asserting anything return outputs of each simulation """
+
+def simulate(model, *x, simulations=None, dir_path=None):
     simulations = sim_rules(simulations, model)
-    outs = []
-    for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x)
-        outs.append(hw_y)
-    return outs
+    return {sim_type: Simulation(sim_type, model=model, dir_path=dir_path).main(*x).tolist()
+            for sim_type in simulations}
 
 
-def assert_model_hwmodel_match(model, *x, types=None, rtol=1e-9, atol=1e-9):
-    if skipping_hwmodel_simulations() or skipping_model_simulations():
-        return
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
-    # return outs
-    np.testing.assert_allclose(outs[0], outs[1], rtol, atol)
+def equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
+    l = logging.getLogger(__name__)
+    expected = conv_class('root', expected, expected)
+
+    for sim_name, sim_data in simulations.items():
+        sim_data = conv_class('root', sim_data, sim_data)
+        eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
+        if eq:
+            l.info(f'{sim_name} OK!')
+        else:
+            l.info(f'{sim_name} FAILED!')
+        assert eq
 
 
-def assert_hwmodel_rtl_match(model, *x, types=None):
-    if skipping_hwmodel_simulations() or skipping_rtl_simulations():
-        return
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
-    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+# def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+#                           skip_first=0):
+#     """
+#     Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
+#
+#     """
+#     import matplotlib.pyplot as plt
+#     simulations = sim_rules(simulations, model)
+#     for sim_type in simulations:
+#         dut = Simulation(sim_type, model=model, dir_path=dir_path)
+#         hw_y = dut.main(*x)
+#         plt.plot(hw_y[skip_first:], label=str(sim_type))
+#
+#     plt.legend()
+#     plt.show()
 
-
-def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                          skip_first=0):
-    """
-    Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
-
-    """
-    import matplotlib.pyplot as plt
-    simulations = sim_rules(simulations, model)
-    for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, dir_path=dir_path)
-        hw_y = dut.main(*x)
-        plt.plot(hw_y[skip_first:], label=str(sim_type))
-
-    plt.legend()
-    plt.show()
 
 
 def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2 ** -17) * 4, dir_path=None,

@@ -1,5 +1,6 @@
 import copy
 from enum import Enum
+from math import isclose
 from typing import List
 
 import numpy as np
@@ -123,6 +124,14 @@ class BaseVHDLType:
 
     def _pyha_to_python_value(self) -> str:
         raise NotImplementedError()
+
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+        if type(self.current) != type(other.current):
+            return False
+        eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
+        if not eq:
+            print(f'NOT EQUAL {name} {self.current} != {other.current}')
+        return eq
 
 
 class VHDLInt(BaseVHDLType):
@@ -352,6 +361,20 @@ class VHDLList(BaseVHDLType):
             ret.append(e)
         return ret
 
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+        if type(self.current) != type(other.current):
+            return False
+
+        if len(self.elems) != len(other.elems):
+            return False
+
+        r = []
+        for i, (self_elem, other_elem) in enumerate(zip(self.elems, other.elems)):
+            ret = self_elem._pyha_is_equal(other_elem, f'{name}({i})', rtol, atol)
+            r.append(ret)
+
+        return all(r)
+
 
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None):
@@ -446,8 +469,24 @@ class VHDLModule(BaseVHDLType):
 
         return ret
 
-    def _pyha_is_equal(self):
-        pass
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+        if type(self.current) != type(other.current):
+            return False
+
+        if len(self.elems) != len(other.elems):
+            return False
+
+        r = []
+        for self_elem, other_elem in zip(self.elems, other.elems):
+            ret = self_elem._pyha_is_equal(other_elem, f'{type(self.current).__name__}.{self_elem._name}', rtol, atol)
+            r.append(ret)
+
+        return all(r)
+
+
+class VHDLFloat(BaseVHDLType):
+    # this is not convertable atm...
+    pass
 
 
 def conv_class(name, current_val, initial_val=None):
@@ -455,6 +494,8 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
+    if type(current_val) == float:
+        return VHDLFloat(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
