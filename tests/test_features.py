@@ -282,7 +282,7 @@ class TestRegisters:
         inputs = [Sub(0), Sub(1), Sub(2), Sub(3), Sub(4), Sub(5)]
         expect = [Sub(4), Sub(3), Sub(2), Sub(1), Sub(0), Sub(1)]
 
-        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL], dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret, expect)
 
 

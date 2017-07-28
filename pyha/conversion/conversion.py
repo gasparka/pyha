@@ -56,6 +56,20 @@ class Conversion:
             Conversion.typedefs = []
             self.datamodel = VHDLModule('-', obj)
 
+        # recursively convert all child modules
+        self.childs = []
+
+        # TODO: convert input and output submodules! they may not be registered in datamodel
+        for node in self.datamodel.elems:
+            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+            elif isinstance(node, VHDLModule):
+                if node._pyha_module_name() in self.converted_names:
+                    continue
+                self.childs.append(Conversion(node.current, node))
+            else:
+                continue
+
         self.obj = obj
         self.class_name = obj.__class__.__name__
         self.red_node = get_objects_rednode(obj)
@@ -68,20 +82,6 @@ class Conversion:
 
         Conversion.typedefs.extend(self.conv.build_typedefs())
 
-        # recursively convert all child modules
-        self.childs = []
-
-        # TODO: convert input and output submodules! they may not be registered in datamodel
-
-        for node in self.datamodel.elems:
-            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
-            elif isinstance(node, VHDLModule):
-                if node._pyha_module_name() in self.converted_names:
-                    continue
-                self.childs.append(Conversion(node.current, node))
-            else:
-                continue
 
     @property
     def inputs(self) -> List[object]:

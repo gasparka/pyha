@@ -463,7 +463,7 @@ class ClassNodeConv(NodeConv):
         return f[0]
 
     def build_imports(self):
-        return textwrap.dedent("""\
+        template = textwrap.dedent("""\
             library ieee;
                 use ieee.std_logic_1164.all;
                 use ieee.numeric_std.all;
@@ -474,7 +474,14 @@ class ClassNodeConv(NodeConv):
             library work;
                 use work.PyhaUtil.all;
                 use work.Typedefs.all;
-                use work.all;""")
+                use work.all;
+            {IMPORTS}""")
+
+        # add all converted classes to imports
+        # look: https://github.com/tgingold/ghdl/issues/209
+        from pyha.conversion.conversion import Conversion
+        imports = [f'use work.{x}.all;' for x in Conversion.converted_names]
+        return template.format(IMPORTS=formatter(imports))
 
     def build_deepcopy(self, prototype_only=False):
         template = textwrap.dedent("""\
@@ -778,6 +785,7 @@ class SubmoduleDeepcopy:
             if isinstance(target_type, VHDLModule):
                 x.replace(
                     f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+
 
 class ImplicitNext:
     """
