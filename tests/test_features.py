@@ -267,24 +267,33 @@ class TestRegisters:
         class Sub(HW):
             def __init__(self, i=0):
                 self.a = i
-                self.b = False
+                # self.b = False
 
         class ShiftReg(HW):
             def __init__(self):
-                self.shr_sub = [Sub(1), Sub(2), Sub(3), Sub(4)]
+                self.shr_sub = [Sub(3), Sub(4)]
 
             def main(self, new_sub):
+                print(new_sub.a)
+                print(self.shr_sub[0].a)
+                print(self.shr_sub[1].a)
                 self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                # out = self.shr_sub[-1]
+                # print(self.shr_sub[-1].a)
                 return self.shr_sub[-1]
 
         dut = ShiftReg()
 
-        inputs = [Sub(0), Sub(1), Sub(2), Sub(3), Sub(4), Sub(5)]
-        expect = [Sub(4), Sub(3), Sub(2), Sub(1), Sub(0), Sub(1)]
+        inputs = [Sub(999), Sub(9999)]
+        expect = [Sub(4), Sub(3)]
 
         ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret, expect)
 
+
+class TestResetValues:
+    # RESET VALEUS ARE SHIT!
+    pass
 
 class TestMainAsModel:
     """ Issue #107. Main can be interpreted as model (delays and fixed point stuffs are OFF) """

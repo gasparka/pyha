@@ -13,7 +13,7 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum
+from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -305,10 +305,9 @@ class AssertNodeConv(NodeConv):
 
 class PrintNodeConv(NodeConv):
     def __str__(self):
-        if isinstance(self.red_node.value[0], TupleNode):
-            raise Exception(f'{self.red_node} -> print only supported with one Sfix argument!')
-        return f"report to_string({self.red_node.value[0].value});"
-        return f"report to_string(to_real({self.red_node.value[0].value}));"
+        # return f"report to_string(to_signed({str(self.value[0])[1:-1]}, 32));"
+        return f"report to_string{self.value[0]};"
+
 
 
 class ListNodeConv(NodeConv):
@@ -495,6 +494,21 @@ class ClassNodeConv(NodeConv):
         data = [x._pyha_deepcopy() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
+    def build_list_deepcopy(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_list_deepcopy\\(self:inout {DTYPE}; other: in {DTYPE}) is
+            begin
+                for i in self'range loop
+                    \\_pyha_deepcopy\\(self(i), other(i));
+                end loop;
+            end procedure;""")
+
+        dtype = self.data._pyha_arr_type_name()
+        template = template.format(DTYPE=dtype)
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        return template
+
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
             procedure \\_pyha_reset\\(self:inout self_t) is
@@ -592,6 +606,7 @@ class ClassNodeConv(NodeConv):
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
         proto += self.build_deepcopy(prototype_only=True) + '\n\n'
+        proto += self.build_list_deepcopy(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
         proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
@@ -608,6 +623,8 @@ class ClassNodeConv(NodeConv):
             {RESET_SELF}
             
             {DEEPCOPY}
+            
+            {DEEPCOPY_LIST}
 
             {UPDATE_SELF}
 
@@ -621,6 +638,7 @@ class ClassNodeConv(NodeConv):
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
         sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
+        sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
@@ -691,6 +709,7 @@ def convert(red: Node, obj=None):
     if obj is not None:
         AutoResize.apply(red)
         SubmoduleDeepcopy.apply(red)
+        SubmoduleListDeepcopy.apply(red)
 
     conv = red_to_conv_hub(red, caller=None)  # converts all nodes
 
@@ -776,6 +795,7 @@ class AutoResize:
 
 
 class SubmoduleDeepcopy:
+    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
     @staticmethod
     def apply(red_node):
         nodes = AutoResize.find(red_node)
@@ -785,6 +805,20 @@ class SubmoduleDeepcopy:
             if isinstance(target_type, VHDLModule):
                 x.replace(
                     f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+
+
+class SubmoduleListDeepcopy:
+    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
+
+    @staticmethod
+    def apply(red_node):
+        nodes = AutoResize.find(red_node)
+
+        for x in nodes:
+            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            if isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
+                x.replace(
+                    f'{target_type.elems[0]._pyha_module_name()}._pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 
 class ImplicitNext:
