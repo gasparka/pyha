@@ -336,9 +336,16 @@ class HW(with_metaclass(Meta)):
             return
 
         if isinstance(value, list):
+            # list assign
             # example: self.i = [i] + self.i[:-1]
             assert isinstance(self.__dict__[name], PyhaList)
-            self.__dict__[name]._pyha_next = value
+            if hasattr(self.__dict__[name][0], '_pyha_update_self'):
+                # list of submodules -> need to copy each value to submodule next
+                for elem, new in zip(self.__dict__[name], value):
+                    # for deeper submodules, deepcopy was not necessary..
+                    elem.__dict__['_pyha_next'] = copy(new.__dict__)
+            else:
+                self.__dict__[name]._pyha_next = value
             return
 
         self._pyha_next[name] = value

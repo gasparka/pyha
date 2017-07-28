@@ -50,7 +50,7 @@ def to_twoscomplement(bits, value):
 
 class BaseVHDLType:
     def __init__(self, var_name, current, initial=None):
-        initial = initial or current
+        initial = initial if initial is not None else current
         self._name = var_name
         self.initial = initial
         self.current = current
