@@ -271,6 +271,7 @@ class VHDLList(BaseVHDLType):
         super().__init__(var_name, current, initial)
 
         self.elems = [conv_class('-', c, i) for c, i in zip(self.current, self.initial)]
+        self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
 
     def _pyha_arr_type_name(self):
@@ -404,6 +405,7 @@ class VHDLModule(BaseVHDLType):
         super().__init__(var_name, current, initial)
 
         self.elems = get_conversion_vars(self.current)
+        self.elems = [x for x in self.elems if x is not None]
 
     def _pyha_instance_id(self):
         for i, instance in enumerate(self.current.instances):
@@ -516,6 +518,13 @@ class VHDLModule(BaseVHDLType):
 
 
 class VHDLFloat(BaseVHDLType):
+    def _pyha_type(self) -> str:
+        return 'real'
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        """ Test is ``other`` (same type as ``self``) is compatible in VHDL domain. Meaning that
+        all array types shall have same [start,end]. Recursive."""
+        return True
     # this is not convertable atm...
     pass
 
@@ -525,11 +534,14 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
-    if type(current_val) == float:
-        return VHDLFloat(name, current_val, initial_val)
+    elif type(current_val) == float:
+        return None
+        # return VHDLFloat(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
+        if isinstance(current_val[0], float):
+            return None
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, HW):
         return VHDLModule(name, current_val, initial_val)
