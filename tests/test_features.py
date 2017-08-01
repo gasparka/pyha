@@ -1,5 +1,6 @@
 from enum import Enum
 
+from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
@@ -347,5 +348,35 @@ class TestMainAsModel:
 
         x = [0.1, 0.2, 0.3, 0.4, 0.5]
 
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+
+class TestComplexSfix:
+    def test_py_implementation(self):
+        a = ComplexSfix()
+        assert a.real == Sfix(0.0)
+        assert a.imag == Sfix(0.0)
+
+        a = ComplexSfix(0)
+        assert a.real == Sfix(0.0)
+        assert a.imag == Sfix(0.0)
+
+        a = ComplexSfix(0.5 + 1.2j, 1, -12)
+        assert a.real == Sfix(0.5, 1, -12)
+        assert a.imag == Sfix(1.2, 1, -12)
+
+        a = ComplexSfix(0.699 + 0.012j, 0, -4)
+        assert a.real.val == 0.6875
+        assert a.imag.val == 0
+        assert a.left == 0
+        assert a.right == -4
+
+    def test_in_out(self):
+        class T(HW):
+            def main(self, a):
+                return a
+
+        x = [1] * 16
         dut = T()
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])

@@ -11,7 +11,7 @@ from typing import List
 import numpy as np
 
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import default_sfix, default_complex_sfix
+from pyha.common.hwsim import default_sfix
 from pyha.common.sfix import Sfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.conversion.conversion_types import conv_class
