@@ -324,7 +324,11 @@ class TestClassNodeConv:
                 procedure \_pyha_reset_constants\(self:inout self_t);
 
                 procedure \_pyha_reset\(self:inout self_t);
+                
+                procedure \_pyha_deepcopy\(self:inout self_t; other: in self_t);
 
+                procedure \_pyha_list_deepcopy\(self:inout B0_0_self_t_list_t; other: in B0_0_self_t_list_t);
+                
                 procedure \_pyha_update_registers\(self:inout self_t);
 
                 procedure main(self:inout self_t);

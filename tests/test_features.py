@@ -216,6 +216,7 @@ class TestRegisters:
         assert_sim_match(dut, expect, inputs, rtol=1e-4)
 
     def test_submodule(self):
+        """ Assign of submodules is specilly handled.. """
         class Sub(HW):
             def __init__(self, i=0):
                 self.a = i
@@ -264,6 +265,7 @@ class TestRegisters:
                          dir_path='/home/gaspar/git/pyha/playground')
 
     def test_submodule_shiftreg(self):
+        """ May fail when list of submoduls fail to take correct initial values """
         class Sub(HW):
             def __init__(self, i=0):
                 self.a = i
@@ -274,26 +276,17 @@ class TestRegisters:
                 self.shr_sub = [Sub(3), Sub(4)]
 
             def main(self, new_sub):
-                print(new_sub.a)
-                print(self.shr_sub[0].a)
-                print(self.shr_sub[1].a)
                 self.shr_sub = [new_sub] + self.shr_sub[:-1]
-                # out = self.shr_sub[-1]
-                # print(self.shr_sub[-1].a)
                 return self.shr_sub[-1]
 
         dut = ShiftReg()
 
-        inputs = [Sub(999), Sub(9999)]
-        expect = [Sub(4), Sub(3)]
+        inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
+        expect = [Sub(4), Sub(3), Sub(999), Sub(9999)]
 
         ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret, expect)
 
-
-class TestResetValues:
-    # RESET VALEUS ARE SHIT!
-    pass
 
 class TestMainAsModel:
     """ Issue #107. Main can be interpreted as model (delays and fixed point stuffs are OFF) """

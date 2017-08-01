@@ -185,8 +185,8 @@ def test_typedefs():
         
         package Typedefs is
             type integer_list_t is array (natural range <>) of integer;
-            type sfixed1downto_5_list_t is array (natural range <>) of sfixed(1 downto -5);
             type boolean_list_t is array (natural range <>) of boolean;
+            type sfixed1downto_5_list_t is array (natural range <>) of sfixed(1 downto -5);
         end package;
             """)
 

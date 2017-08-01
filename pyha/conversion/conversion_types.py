@@ -396,7 +396,11 @@ class VHDLList(BaseVHDLType):
 
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None):
-        initial = initial or current._pyha_initial_self
+        if initial is None:
+            initial = current._pyha_initial_self
+        else:
+            current._pyha_initial_self = initial._pyha_initial_self
+
         super().__init__(var_name, current, initial)
 
         self.elems = get_conversion_vars(self.current)
