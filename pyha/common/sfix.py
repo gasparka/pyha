@@ -1,8 +1,7 @@
 import logging
-import textwrap
+from copy import deepcopy
 
 import numpy as np
-from copy import deepcopy
 
 from pyha.common.context_managers import RegisterBehaviour, ContextManagerRefCounted, AutoResize
 
@@ -60,34 +59,6 @@ class ComplexSfix:
 
         self._pyha_next = {'real': deepcopy(self.real), 'imag': deepcopy(self.imag)}
 
-    def _pyha_update_self(self):
-        if RegisterBehaviour.is_force_disabled():
-            return
-        # update atoms
-        self.__dict__.update(self._pyha_next)
-        pass
-
-    def __setattr__(self, name, value):
-        # todo: temporary hack, remove with types overhaul
-
-        if name == 'is_local':
-            self.__dict__[name] = value
-            return
-        #
-        if self.is_local:
-            self.__dict__[name] = value
-            return
-
-        if AutoResize.is_enabled():
-            target = getattr(self, name)
-            from pyha.common.hwsim import auto_resize
-            value = auto_resize(target, value)
-
-        if not RegisterBehaviour.is_enabled():
-            self.__dict__[name] = value
-            return
-
-        self._pyha_next[name] = value
 
     @property
     def left(self):
@@ -128,40 +99,6 @@ class ComplexSfix:
     def __len__(self):
         return self.bitwidth()
 
-    def to_stdlogic(self):
-        return f'std_logic_vector({self.bitwidth() - 1} downto 0)'
-
-    def vhdl_reset(self):
-        return f'(real=>{self.real.vhdl_reset()}, imag=>{self.imag.vhdl_reset()})'
-
-    def fixed_value(self):
-        assert self.bitwidth() <= 64  # must fit into numpy int, this is cocotb related?
-        real = self.real.fixed_value()
-        imag = self.imag.fixed_value()
-        mask = (2 ** (self.bitwidth() // 2)) - 1
-        return ((real & mask) << (self.bitwidth() // 2)) | (imag & mask)
-
-    def vhdl_type_name(self):
-        from pyha.conversion.coupling import pytype_to_vhdl
-        return pytype_to_vhdl(self)
-
-    def vhdl_type_define(self):
-        dtype = f'sfixed({self.left} downto {self.right})'
-        return textwrap.dedent(f"""\
-            type {self.vhdl_type_name()} is record
-                real: {dtype};
-                imag: {dtype};
-            end record;
-            function ComplexSfix(a, b: sfixed({self.left} downto {self.right})) return {self.vhdl_type_name()};
-            """)
-
-    def vhdl_init_function(self):
-        return textwrap.dedent(f"""\
-            function ComplexSfix(a, b: sfixed({self.left} downto {self.right})) return {self.vhdl_type_name()} is
-            begin
-                return (a, b);
-            end function;
-            """)
 
 
 # TODO: Verify stuff against VHDL library
@@ -472,9 +409,6 @@ class Sfix:
 
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right)
-
-    def to_stdlogic(self):
-        return f'std_logic_vector({self.left + abs(self.right)} downto 0)'
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):

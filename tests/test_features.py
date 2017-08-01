@@ -2,7 +2,8 @@ from enum import Enum
 
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
+    assert_equals
 
 
 class TestConst:
@@ -96,7 +97,7 @@ class TestSubmodulesList:
         expected = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 
-        assert_sim_match(dut, expected, *x)
+        assert_sim_match(dut, expected, *x, dir_path='/home/gaspar/git/pyha/playground')
 
     def test_deep(self):
         class C2(HW):
@@ -166,6 +167,21 @@ class TestRegisters:
     def test_basic(self):
         class Register(HW):
             def __init__(self):
+                self.b = 123
+
+            def main(self, nb):
+                self.b = nb
+                return self.b
+
+        dut = Register()
+        inputs = [1, 2, 3, 4]
+        expect = [123, 1, 2, 3]
+
+        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+
+    def test_multi(self):
+        class Register(HW):
+            def __init__(self):
                 self.a = Sfix(0.123)
                 self.b = 123
                 self.c = False
@@ -199,6 +215,27 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, inputs, rtol=1e-4)
 
+    def test_submodule(self):
+        """ Assign of submodules is specilly handled.. """
+        class Sub(HW):
+            def __init__(self, i=0):
+                self.a = i
+                self.b = False
+
+        class T(HW):
+            def __init__(self):
+                self.d = Sub()
+                self.DELAY = 1
+
+            def main(self, l):
+                self.d = l
+                return self.d
+
+        dut = T()
+        data = [Sub(1), Sub(2)]
+        ret = simulate(dut, data, dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, data)
+
     def test_shiftregs(self):
         class ShiftReg(HW):
             def __init__(self, in_t=Sfix(left=0, right=-17)):
@@ -224,4 +261,91 @@ class TestRegisters:
                   [True, False, False, True, False, False],
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                         dir_path='/home/gaspar/git/pyha/playground')
+
+    def test_submodule_shiftreg(self):
+        """ May fail when list of submoduls fail to take correct initial values """
+        class Sub(HW):
+            def __init__(self, i=0):
+                self.a = i
+                # self.b = False
+
+        class ShiftReg(HW):
+            def __init__(self):
+                self.shr_sub = [Sub(3), Sub(4)]
+
+            def main(self, new_sub):
+                self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                return self.shr_sub[-1]
+
+        dut = ShiftReg()
+
+        inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
+        expect = [Sub(4), Sub(3), Sub(999), Sub(9999)]
+
+        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, expect)
+
+
+class TestMainAsModel:
+    """ Issue #107. Main can be interpreted as model (delays and fixed point stuffs are OFF) """
+
+    def test_counter_int(self):
+        class T(HW):
+            def __init__(self):
+                self.a = 0
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = a + 1
+                return self.a
+
+        x = [1, 2, 3]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_int_list(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [0, 0]
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = [a] + self.a[:-1]
+                return self.a[-1]
+
+        x = [1, 2, 3]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_counter_sfix(self):
+        class T(HW):
+            def __init__(self):
+                self.a = Sfix(0.0, 0, -17)
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = self.a + 0.0123
+                return self.a
+
+        x = [1] * 16
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+
+    def test_sfix_list(self):
+        class T(HW):
+            def __init__(self):
+                self.a = [Sfix(0.0, 0, -17)] * 2
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = [a] + self.a[:-1]
+                return self.a[-1]
+
+        x = [0.1, 0.2, 0.3, 0.4, 0.5]
+
+        dut = T()
+        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.conversion.conversion_types import conv_class
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -45,9 +45,9 @@ include $(COCOTB)/makefiles/Makefile.sim
 
 
 class CocotbAuto(object):
-    def __init__(self, base_path, src, outputs, sim_folder='coco_sim'):
+    def __init__(self, base_path, src, conversion, sim_folder='coco_sim'):
         self.logger = logging.getLogger(__name__)
-        self.outputs = outputs
+        self.conversion = conversion
         self.src = src
         self.base_path = base_path
         self.sim_folder = sim_folder
@@ -65,7 +65,7 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
 
-        self.environment['GHDL_OPTIONS'] = '--std=08'  # TODO: push PR to cocotb
+        self.environment['GHDL_OPTIONS'] = '--std=08'
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             try:
@@ -75,7 +75,7 @@ class CocotbAuto(object):
             altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
             # altera_libs = pyha.__path__[0] + '/common/hdl/altera'
             self.environment[
-                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'  # TODO: push PR to cocotb
+                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
@@ -87,15 +87,20 @@ class CocotbAuto(object):
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/cocotb_simulation_top.py'
         shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
-        self.environment['OUTPUT_VARIABLES'] = str(len(self.outputs))
+        self.environment['OUTPUT_VARIABLES'] = str(len(self.conversion.outputs))
 
     def run(self, *input_data):
         self.logger.info('Running COCOTB simulation....')
-        # # convert all Sfix elements to 'integer' form
-        input_data = np.vectorize(
-            lambda x: x.fixed_value() if isinstance(x, (Sfix, ComplexSfix)) else x)(input_data)
 
-        np.save(str(self.base_path / 'input.npy'), input_data)
+        indata = []
+        for arguments in input_data:
+            if len(arguments) == 1:
+                l = [conv_class('-', arguments[0], arguments[0])._pyha_serialize()]
+            else:
+                l = [conv_class('-', arg, arg)._pyha_serialize() for arg in arguments]
+            indata.append(l)
+
+        np.save(str(self.base_path / 'input.npy'), indata)
 
         # write makefile template
         with (self.base_path / 'Makefile').open('w') as f:
@@ -109,38 +114,19 @@ class CocotbAuto(object):
             print(err)
             return []
 
-        outp = np.load(str(self.base_path / 'output.npy'))
-        outp = outp.astype(object)
-
-        # convert 'integer' form back to Sfix
-        outp = np.transpose(outp)
-
-        def getSignedNumber(number, bitLength):
-            # http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
-            mask = (2 ** bitLength) - 1
-            if number & (1 << (bitLength - 1)):
-                return number | ~mask
-            else:
-                return number & mask
+        out = np.load(str(self.base_path / 'output.npy'))
+        outp = out.astype(object).T
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
-                if isinstance(self.outputs[i].current, bool):
-                    outp[i][j] = bool(int(val))
-                elif isinstance(self.outputs[i].current, int):
-                    val = getSignedNumber(int(val, 2), 32)
-                    outp[i][j] = val
-                elif not isinstance(self.outputs[i].current, list):
-                    val = getSignedNumber(int(val, 2), len(self.outputs[i].current))
-
-                if isinstance(self.outputs[i].current, Sfix):
-                    outp[i][j] = (val * 2 ** self.outputs[i].current.right)
-                elif isinstance(self.outputs[i].current, list) and isinstance(self.outputs[i].current[0], bool):
-                    v = np.array([bool(int(x)) for x in val])
-                    outp[i][j] = v
-                    pass
+                outp[i][j] = self.conversion.outputs[i]._pyha_deserialize(val)
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
-        outp = np.transpose(outp)
+        outp = outp.T.tolist()
+
+        # convert second level lists to tuples if dealing with 'multiple returns'
+        if len(self.conversion.outputs) > 1:
+            for i, row in enumerate(outp):
+                outp[i] = tuple(outp[i])
 
         return outp

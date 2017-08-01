@@ -3,7 +3,6 @@ import os
 from cmath import isclose
 from contextlib import suppress
 from copy import deepcopy
-from enum import Enum
 from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,9 +11,10 @@ from typing import List
 import numpy as np
 
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import HW, default_sfix, default_complex_sfix
-from pyha.common.sfix import Sfix, ComplexSfix
+from pyha.common.hwsim import default_sfix, default_complex_sfix
+from pyha.common.sfix import Sfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
+from pyha.conversion.conversion_types import conv_class
 from pyha.simulation.sim_provider import SimProvider
 
 
@@ -63,7 +63,7 @@ def in_out_transpose(func):
 
         ret = func(self, *args, **kwargs)
 
-        with suppress(TypeError):  # was one dimensional list
+        if isinstance(ret[0], tuple):
             ret = [list(x) for x in zip(*ret)]  # transpose
         return ret
 
@@ -85,36 +85,22 @@ def type_conversions(func):
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
                 elif isinstance(arg[0], (complex, np.complex64)):
+                    assert 0
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
                     args[i] = [t(x, is_local=True) for x in arg]
 
-
         ret = func(self, *args, **kwargs)
 
-        def output_types(li):
-            ret = []
-            for x in li:
-                if type(x) in [list, tuple]:
-                    ret.append(output_types(x))
-                elif type(x) == Sfix:
-                    ret.append(float(x))
-                elif type(x) == ComplexSfix:
-                    ret.append(float(x.real) + float(x.imag) * 1j)
-                elif isinstance(x, Enum):
-                    ret.append(x.value)
-                else:
-                    ret.append(x)
-            return ret
-
-        ret = output_types(ret)
+        # convert outputs to python types (ex. Sfix -> float)
+        if self.simulation_type == SIM_HW_MODEL:
+            ret = [conv_class('-', x, x)._pyha_to_python_value() for x in ret]
         return np.array(ret)
 
     return type_enforcement_wrap
 
 
 class Simulation:
-    """ Returned stuff is always Numpy array? """
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, input_types: List[object] = None, dir_path=None):
@@ -180,7 +166,7 @@ class Simulation:
         self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
         ret = []
         for x in args:
-            ret.append(self.model.main(*x))
+            ret.append(deepcopy(self.model.main(*x)))  # deepcopy required or 'subsub' modules break
             self.model._pyha_update_self()
         return ret
 
@@ -211,9 +197,9 @@ class Simulation:
                 self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
                 with RegisterBehaviour.force_disable():
                     with Sfix._float_mode:
-                        return self.as_model(*args)
-
-            r = self.model.model_main(*args)
+                        r = self.as_model(*args)
+            else:
+                r = self.model.model_main(*args)
 
             if r == []:
                 return np.array(r)
@@ -242,48 +228,43 @@ class Simulation:
 ##############################################################################
 # utility functions
 
-def debug_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                           fuck_it=False, **kwards):
-    """ Instead of asserting anything return outputs of each simulation """
+
+def simulate(model, *x, simulations=None, dir_path=None):
     simulations = sim_rules(simulations, model)
-    outs = []
-    for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x)
-        outs.append(hw_y)
-    return outs
+    return {sim_type: Simulation(sim_type, model=model, dir_path=dir_path).main(*x).tolist()
+            for sim_type in simulations}
 
 
-def assert_model_hwmodel_match(model, *x, types=None, rtol=1e-9, atol=1e-9):
-    if skipping_hwmodel_simulations() or skipping_model_simulations():
-        return
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_MODEL, SIM_HW_MODEL])
-    # return outs
-    np.testing.assert_allclose(outs[0], outs[1], rtol, atol)
+def assert_equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
+    l = logging.getLogger('equals()')
+    expected = conv_class('root', expected, expected)
+
+    for sim_name, sim_data in simulations.items():
+        sim_data = conv_class('root', sim_data, sim_data)
+        eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
+        if eq:
+            l.info(f'{sim_name} OK!')
+        else:
+            l.info(f'{sim_name} FAILED!')
+        assert eq
 
 
-def assert_hwmodel_rtl_match(model, *x, types=None):
-    if skipping_hwmodel_simulations() or skipping_rtl_simulations():
-        return
-    outs = debug_assert_sim_match(model, types, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL])
-    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+# def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+#                           skip_first=0):
+#     """
+#     Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
+#
+#     """
+#     import matplotlib.pyplot as plt
+#     simulations = sim_rules(simulations, model)
+#     for sim_type in simulations:
+#         dut = Simulation(sim_type, model=model, dir_path=dir_path)
+#         hw_y = dut.main(*x)
+#         plt.plot(hw_y[skip_first:], label=str(sim_type))
+#
+#     plt.legend()
+#     plt.show()
 
-
-def plot_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                          skip_first=0):
-    """
-    Same arguments as :code:`assert_sim_match`. Instead of asserting it plots all the simulations.
-
-    """
-    import matplotlib.pyplot as plt
-    simulations = sim_rules(simulations, model)
-    for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, dir_path=dir_path)
-        hw_y = dut.main(*x)
-        plt.plot(hw_y[skip_first:], label=str(sim_type))
-
-    plt.legend()
-    plt.show()
 
 
 def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2 ** -17) * 4, dir_path=None,
@@ -313,7 +294,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x)
+        hw_y = dut.main(*x).astype(float)
         if expected is None and sim_type is simulations[0]:
             l.warning(f'"expected=None", all sims must output: \n{hw_y}')
             expected = hw_y

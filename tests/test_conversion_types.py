@@ -34,7 +34,7 @@ class TestVHDLList:
         self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
 
     def test_pyha_type_sfix(self):
-        expect = 'sfixed1downto_2_list_t(0 to 1)'
+        expect = 'Typedefs.sfixed1downto_2_list_t(0 to 1)'
         assert self.dut._pyha_type() == expect
 
     def test_pyha_typedef(self):
@@ -99,6 +99,30 @@ class TestVHDLList:
         assert not a._pyha_type_is_compatible(c)
         assert not d._pyha_type_is_compatible(c)
 
+    def test_pyha_convert_from_stdlogic(self):
+        a = VHDLList('name', [1, 2], [1, 2])
+        expect = 'var(0) := to_integer(signed(in0(31 downto 0)));\n' \
+                 'var(1) := to_integer(signed(in0(63 downto 32)));\n'
+
+        assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
+
+    def test_pyha_convert_to_stdlogic(self):
+        a = VHDLList('name', [1, 2], [1, 2])
+        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0(0), 32));\n' \
+                 'var(63 downto 32) <= std_logic_vector(to_signed(in0(1), 32));\n'
+
+        assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
+
+    def test_pyha_serialize(self):
+        d = VHDLList('name', [1, 2], [1, 2])
+        assert d._pyha_serialize() == '0000000000000000000000000000000100000000000000000000000000000010'
+
+    def test_pyha_deserialize(self):
+        d = VHDLList('name', [1, 2], [1, 2])
+        assert d._pyha_deserialize('0000000000000000000000000000000100000000000000000000000000000010') \
+               == [1, 2]
+
+
 
 class TestVHDLInt:
     def test_pyha_type(self):
@@ -134,6 +158,19 @@ class TestVHDLSfix:
         b = VHDLSfix('name', Sfix(0, 1, -1), Sfix(0.3, 1, -1))
         assert a._pyha_type_is_compatible(a)
         assert not a._pyha_type_is_compatible(b)
+
+    def test_pyha_serialize(self):
+        d = VHDLSfix('name', Sfix(0, 1, -1), Sfix(0, 1, -1))
+        assert d._pyha_serialize() == '000'
+
+        d = VHDLSfix('name', Sfix(0.5, 0, -1), Sfix(0.5, 0, -1))
+        assert d._pyha_serialize() == '01'
+
+        d = VHDLSfix('name', Sfix(0.9999, 0, -8), Sfix(0.9999, 0, -8))
+        assert d._pyha_serialize() == '011111111'
+
+        d = VHDLSfix('name', Sfix(-1, 0, -8), Sfix(-1, 0, -8))
+        assert d._pyha_serialize() == '100000000'
 
 
 class TestVHDLModule:
@@ -303,6 +340,58 @@ class TestVHDLModule:
         assert c._pyha_type_is_compatible(c)
         assert not c._pyha_type_is_compatible(a)
         assert not c._pyha_type_is_compatible(b)
+
+    def test_pyha_convert_from_stdlogic(self):
+        class B(HW):
+            def __init__(self):
+                self.f = Sfix(0, 0, -17)
+
+        class A(HW):
+            def __init__(self):
+                self.i = 1
+                self.b = False
+                self.sub = B()
+
+        a = VHDLModule('name', A(), A())
+        expect = 'var.i := to_integer(signed(in0(31 downto 0)));\n' \
+                 'var.b := logic_to_bool(in0(32 downto 32));\n' \
+                 'var.sub.f := Sfix(in0(50 downto 33)(17 downto 0), 0, -17);\n'
+
+        assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
+
+    def test_pyha_convert_to_stdlogic(self):
+        class B(HW):
+            def __init__(self):
+                self.f = Sfix(0, 0, -17)
+
+        class A(HW):
+            def __init__(self):
+                self.i = 1
+                self.b = False
+                self.sub = B()
+
+        a = VHDLModule('name', A(), A())
+
+        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0.i, 32));\n' \
+                 'var(32 downto 32) <= bool_to_logic(in0.b);\n' \
+                 'var(50 downto 33) <= to_slv(in0.sub.f);\n'
+
+        assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
+
+    def test_pyha_is_equal(self):
+        class A(HW):
+            def __init__(self, v):
+                self.f = v
+
+        a = VHDLModule('name', A(0.1), A(0.2))
+        b = VHDLModule('name', A(0.2), A(0.2))
+        assert a._pyha_is_equal(a)
+        assert not a._pyha_is_equal(b)
+
+        a = VHDLModule('name', A([1, 2, 3]), A([1, 2, 3]))
+        b = VHDLModule('name', A([3, 2, 1]), A([3, 2, 1]))
+        assert a._pyha_is_equal(a)
+        assert not a._pyha_is_equal(b)
 
 
 class TestVHDLEnum:

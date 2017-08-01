@@ -1,6 +1,6 @@
 import textwrap
 
-from pyha.common.util import tabber, get_iterable
+from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, conv_class
 from pyha.conversion.converter import file_header
 
@@ -43,10 +43,13 @@ class TopGenerator:
         return self.get_object_args() + self.get_object_kwargs()
 
     def get_object_return(self) -> list:
-        rets = get_iterable(self.simulated_object.main.last_return)
-        if rets == [None]:
+        rets = self.simulated_object.main.last_return
+        if rets == None:
             return []
-        rets = [conv_class('-', val, val) for val in rets]
+        if isinstance(rets, tuple):  # multiple returns
+            rets = [conv_class('-', val, val) for val in rets]
+        else:
+            rets = [conv_class('-', rets, rets)]
         return rets
 
     def make_entity_inputs(self) -> str:
@@ -62,16 +65,16 @@ class TopGenerator:
                          for i, x in enumerate(self.get_object_return()))
 
     def make_output_type_conversions(self) -> str:
-        return '\n'.join(f'out{i} <= {x._pyha_convert_to_stdlogic(f"var_out{i}")};'
-                         for i, x in enumerate(self.get_object_return()))
+        return ''.join(x._pyha_convert_to_stdlogic(f'out{i}', f'var_out{i}')
+                       for i, x in enumerate(self.get_object_return()))
 
     def make_input_variables(self) -> str:
         return '\n'.join(f'variable var_in{i}: {x._pyha_type()};'
                          for i, x in enumerate(self.get_object_inputs()))
 
     def make_input_type_conversions(self) -> str:
-        return '\n'.join(f'var_in{i} := {x._pyha_convert_from_stdlogic(f"in{i}")};'
-                         for i, x in enumerate(self.get_object_inputs()))
+        return ''.join(x._pyha_convert_from_stdlogic(f'var_in{i}', f'in{i}')
+                       for i, x in enumerate(self.get_object_inputs()))
 
     def make_imports(self) -> str:
         return textwrap.dedent("""\
@@ -83,6 +86,7 @@ class TopGenerator:
 
             library work;
                 use work.PyhaUtil.all;
+                use work.Typedefs.all;
                 use work.all;""")
 
     def object_class_name(self) -> str:

@@ -1,8 +1,10 @@
+import textwrap
 from pathlib import Path
 
 import pytest
 
 from pyha.common.hwsim import HW
+from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match
 
@@ -95,8 +97,9 @@ def test_get_objects_rednode_selective():
 def test_write_vhdl_files(dut, tmpdir):
     tmpdir = Path(str(tmpdir))
     files = dut.write_vhdl_files(tmpdir)
-    assert files[0] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
-    assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
+    assert files[0] == tmpdir / 'typedefs.vhd' and files[0].is_file()
+    assert files[1] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
+    assert files[2] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
 def test_convert_submodule():
@@ -142,4 +145,50 @@ def test_convert_submodule_name_conflict():
     conv = Conversion(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
-    assert names == ['A2_0.vhd', 'B2_0.vhd', 'top.vhd']
+    assert names == ['typedefs.vhd', 'A2_0.vhd', 'B2_0.vhd', 'top.vhd']
+
+
+def test_typedefs():
+    class A(HW):
+        def __init__(self):
+            self.reg = [1, 2]
+
+        def main(self):
+            b = [False, True]
+            pass
+
+    class B(HW):
+        def __init__(self):
+            self.sub = A()
+            self.l = [1, 2]
+            self.s = [Sfix(0, 1, -5)] * 2
+
+        def main(self, a):
+            self.sub.main()
+            return a
+
+    dut = B()
+    dut.main(1)
+    conv = Conversion(dut)
+
+    expect = textwrap.dedent("""\
+        library ieee;
+            use ieee.std_logic_1164.all;
+            use ieee.numeric_std.all;
+            use ieee.fixed_float_types.all;
+            use ieee.fixed_pkg.all;
+            use ieee.math_real.all;
+            
+        library work;
+            use work.PyhaUtil.all;
+            use work.all;
+        
+        package Typedefs is
+            type integer_list_t is array (natural range <>) of integer;
+            type boolean_list_t is array (natural range <>) of boolean;
+            type sfixed1downto_5_list_t is array (natural range <>) of sfixed(1 downto -5);
+        end package;
+            """)
+
+    defs = conv.build_typedefs_package()
+    assert expect == defs[defs.find('\n') + 1:]

@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 
 from redbaron import RedBaron
 
+from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, VHDLList
-from pyha.conversion.converter import convert
+from pyha.conversion.converter import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
 
@@ -45,13 +46,29 @@ def get_conversion(obj):
 
 class Conversion:
     converted_names = []
+    typedefs = []
 
     def __init__(self, obj, datamodel=None):
         self.datamodel = datamodel
         self.is_root = datamodel is None
         if self.is_root:
             Conversion.converted_names = []
+            Conversion.typedefs = []
             self.datamodel = VHDLModule('-', obj)
+
+        # recursively convert all child modules
+        self.childs = []
+
+        # TODO: convert input and output submodules! they may not be registered in datamodel
+        for node in self.datamodel.elems:
+            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+            elif isinstance(node, VHDLModule):
+                if node._pyha_module_name() in self.converted_names:
+                    continue
+                self.childs.append(Conversion(node.current, node))
+            else:
+                continue
 
         self.obj = obj
         self.class_name = obj.__class__.__name__
@@ -63,18 +80,8 @@ class Conversion:
         if self.is_root:
             self.top_vhdl = TopGenerator(obj)
 
-        # recursively convert all child modules
-        self.childs = []
+        Conversion.typedefs.extend(self.conv.build_typedefs())
 
-        for node in self.datamodel.elems:
-            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
-            elif isinstance(node, VHDLModule):
-                if node._pyha_module_name() in self.converted_names:
-                    continue
-                self.childs.append(Conversion(node.current, node))
-            else:
-                continue
 
     @property
     def inputs(self) -> List[object]:
@@ -102,4 +109,30 @@ class Conversion:
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
+            paths.insert(0, base_dir / 'typedefs.vhd')
+            with paths[0].open('w') as f:
+                f.write(self.build_typedefs_package())
+
         return paths
+
+    def build_typedefs_package(self):
+        template = textwrap.dedent("""\
+            {FILE_HEADER}
+            library ieee;
+                use ieee.std_logic_1164.all;
+                use ieee.numeric_std.all;
+                use ieee.fixed_float_types.all;
+                use ieee.fixed_pkg.all;
+                use ieee.math_real.all;
+                
+            library work;
+                use work.PyhaUtil.all;
+                use work.all;
+
+            package Typedefs is
+            {TYPES}
+            end package;
+            """)
+        self.typedefs = list(dict.fromkeys(self.typedefs))  # remove duplicates
+        return template.format(FILE_HEADER=file_header(),
+                               TYPES=tabber('\n'.join(self.typedefs)))

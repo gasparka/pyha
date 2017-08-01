@@ -13,7 +13,7 @@ import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum
+from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -212,8 +212,11 @@ class DefNodeConv(NodeConv):
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
         if self.data.last_return is not None:
-            rets = [conv_class(f'ret_{i}', val, val)
-                    for i, val in enumerate(get_iterable(self.data.last_return))]
+            if isinstance(self.data.last_return, tuple):  # multiple returns
+                rets = [conv_class(f'ret_{i}', val, val)
+                        for i, val in enumerate(get_iterable(self.data.last_return))]
+            else:
+                rets = [conv_class(f'ret_{0}', self.data.last_return, self.data.last_return)]
             rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
         return '; '.join(args + rets)
@@ -304,8 +307,8 @@ class PrintNodeConv(NodeConv):
     def __str__(self):
         if isinstance(self.red_node.value[0], TupleNode):
             raise Exception(f'{self.red_node} -> print only supported with one Sfix argument!')
-        return f"report to_string({self.red_node.value[0].value});"
-        return f"report to_string(to_real({self.red_node.value[0].value}));"
+        return f"report to_string{self.value[0]};"
+
 
 
 class ListNodeConv(NodeConv):
@@ -460,7 +463,7 @@ class ClassNodeConv(NodeConv):
         return f[0]
 
     def build_imports(self):
-        return textwrap.dedent("""\
+        template = textwrap.dedent("""\
             library ieee;
                 use ieee.std_logic_1164.all;
                 use ieee.numeric_std.all;
@@ -470,7 +473,42 @@ class ClassNodeConv(NodeConv):
 
             library work;
                 use work.PyhaUtil.all;
-                use work.all;""")
+                use work.Typedefs.all;
+                use work.all;
+            {IMPORTS}""")
+
+        # add all converted classes to imports
+        # look: https://github.com/tgingold/ghdl/issues/209
+        from pyha.conversion.conversion import Conversion
+        imports = [f'use work.{x}.all;' for x in Conversion.converted_names]
+        return template.format(IMPORTS=formatter(imports))
+
+    def build_deepcopy(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_deepcopy\\(self:inout self_t; other: in self_t) is
+            begin
+            {DATA}
+            end procedure;""")
+
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        data = [x._pyha_deepcopy() for x in self.data.elems]
+        return template.format(DATA=formatter(data))
+
+    def build_list_deepcopy(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            procedure \\_pyha_list_deepcopy\\(self:inout {DTYPE}; other: in {DTYPE}) is
+            begin
+                for i in self'range loop
+                    \\_pyha_deepcopy\\(self(i), other(i));
+                end loop;
+            end procedure;""")
+
+        dtype = self.data._pyha_arr_type_name()
+        template = template.format(DTYPE=dtype)
+        if prototype_only:
+            return template.splitlines()[0][:-3] + ';'
+        return template
 
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
@@ -546,28 +584,30 @@ class ClassNodeConv(NodeConv):
             variables = [conv_class(name, val, val) for name, val in function.data.locals.items()]
             typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
-        return '\n'.join(typedefs)
+        return typedefs
 
     def build_package_header(self):
         template = textwrap.dedent("""\
             {MULTILINE_COMMENT}
             package {NAME} is
-            {TYPEDEFS}
-
             {SELF_T}
+            {SELF_ARRAY_TYPEDEF}
 
             {FUNC_HEADERS}
             end package;""")
 
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
+        sockets['SELF_ARRAY_TYPEDEF'] = \
+            f'    type {self.data._pyha_arr_type_name()} is array (natural range <>) of {self.data._pyha_type()};'
         sockets['NAME'] = self.data._pyha_module_name()
-        sockets['TYPEDEFS'] = tabber(self.build_typedefs())
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
         proto = self.build_init(prototype_only=True) + '\n\n'
         proto += self.build_reset_constants(prototype_only=True) + '\n\n'
         proto += self.build_reset(prototype_only=True) + '\n\n'
+        proto += self.build_deepcopy(prototype_only=True) + '\n\n'
+        proto += self.build_list_deepcopy(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
         proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
         sockets['FUNC_HEADERS'] = tabber(proto)
@@ -582,6 +622,10 @@ class ClassNodeConv(NodeConv):
             {CONSTANT_SELF}
 
             {RESET_SELF}
+            
+            {DEEPCOPY}
+            
+            {DEEPCOPY_LIST}
 
             {UPDATE_SELF}
 
@@ -594,6 +638,8 @@ class ClassNodeConv(NodeConv):
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
+        sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
+        sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
 
@@ -663,6 +709,8 @@ def convert(red: Node, obj=None):
     red = CallModifications.apply(red)
     if obj is not None:
         AutoResize.apply(red)
+        SubmoduleDeepcopy.apply(red)
+        SubmoduleListDeepcopy.apply(red)
 
     conv = red_to_conv_hub(red, caller=None)  # converts all nodes
 
@@ -745,6 +793,33 @@ class AutoResize:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
 
         return pass_nodes
+
+
+class SubmoduleDeepcopy:
+    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
+    @staticmethod
+    def apply(red_node):
+        nodes = AutoResize.find(red_node)
+
+        for x in nodes:
+            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            if isinstance(target_type, VHDLModule):
+                x.replace(
+                    f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+
+
+class SubmoduleListDeepcopy:
+    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
+
+    @staticmethod
+    def apply(red_node):
+        nodes = AutoResize.find(red_node)
+
+        for x in nodes:
+            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            if isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
+                x.replace(
+                    f'{target_type.elems[0]._pyha_module_name()}._pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 
 class ImplicitNext:

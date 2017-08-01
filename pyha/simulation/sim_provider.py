@@ -42,7 +42,7 @@ class SimProvider:
             src = [str(vho)]
             # src = ['/home/gaspar/git/pyha/playground/conv/simulation/modelsim/quartus_project.vho']
 
-        return CocotbAuto(self.base_path, src, self.conv.outputs)
+        return CocotbAuto(self.base_path, src, self.conv)
 
     def make_quartus_project(self):
         rules = {}

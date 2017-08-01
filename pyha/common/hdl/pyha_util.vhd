@@ -8,6 +8,7 @@ library ieee;
 
 package PyhaUtil is
   type boolean_list_t is array (natural range <>) of boolean;
+  type integer_list_t is array (natural range <>) of integer;
 
 
   function left_index(x: sfixed) return integer;
@@ -19,9 +20,8 @@ package PyhaUtil is
 
   function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed;
 
-  function logic_to_bool(x: std_logic) return boolean;
-  function bool_to_logic(x: boolean) return std_logic;
-  function bool_list_to_logic(x: boolean_list_t) return std_logic_vector;
+  function logic_to_bool(x: std_logic_vector(0 downto 0)) return boolean;
+  function bool_to_logic(x: boolean) return std_logic_vector;
 
   function "and"(a, b:integer) return integer;
   function "sla"(a, b:integer) return integer;
@@ -82,32 +82,24 @@ package body PyhaUtil is
     return to_sfixed(a, left_index, right_index);
   end function;
 
-  function logic_to_bool(x: std_logic) return boolean is
+  function logic_to_bool(x: std_logic_vector(0 downto 0)) return boolean is
   begin
-    if x = '1' then
+    if x(0) = '1' then
       return True;
     else
       return False;
     end if;
   end function;
 
-  function bool_to_logic(x: boolean) return std_logic is
+  function bool_to_logic(x: boolean) return std_logic_vector is
   begin
     if x = True then
-      return '1';
+      return "1";
     else
-      return '0';
+      return "0";
     end if;
   end function;
 
-  function bool_list_to_logic(x: boolean_list_t) return std_logic_vector is
-    variable s: std_logic_vector(x'range);
-  begin
-    for i in x'range loop
-      s(i) := bool_to_logic(x(i));
-    end loop;
-    return s;
-  end function;
 
   function "and"(a, b:integer) return integer is
   begin
@@ -138,7 +130,7 @@ package body PyhaUtil is
     variable tmp: signed(31 downto 0);
   begin
      tmp := to_signed(a, 32);
-     tmp(0) := tmp(0) or bool_to_logic(b);
+     tmp(0) := tmp(0) or bool_to_logic(b)(0);
      return to_integer(tmp);
   end function;
 

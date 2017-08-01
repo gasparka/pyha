@@ -25,7 +25,7 @@ def test_entity_inputs(basic_obj):
     expect = textwrap.dedent("""\
                 in0: in std_logic_vector(31 downto 0);
                 in1: in std_logic_vector(19 downto 0);
-                in2: in std_logic;""")
+                in2: in std_logic_vector(0 downto 0);""")
 
     res = TopGenerator(dut)
 
@@ -36,7 +36,7 @@ def test_entity_outputs(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
                 out0: out std_logic_vector(31 downto 0);
-                out1: out std_logic;
+                out1: out std_logic_vector(0 downto 0);
                 out2: out std_logic_vector(13 downto 0);""")
 
     res = TopGenerator(dut)
@@ -59,9 +59,10 @@ def test_variables_output(basic_obj):
 def test_output_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                out0 <= std_logic_vector(to_signed(var_out0, 32));
-                out1 <= bool_to_logic(var_out1);
-                out2 <= to_slv(var_out2);""")
+                out0(31 downto 0) <= std_logic_vector(to_signed(var_out0, 32));
+                out1(0 downto 0) <= bool_to_logic(var_out1);
+                out2(13 downto 0) <= to_slv(var_out2);
+                """)
 
     res = TopGenerator(dut)
 
@@ -85,7 +86,8 @@ def test_input_type_conversion(basic_obj):
     expect = textwrap.dedent("""\
                 var_in0 := to_integer(signed(in0));
                 var_in1 := Sfix(in1, 2, -17);
-                var_in2 := logic_to_bool(in2);""")
+                var_in2 := logic_to_bool(in2);
+                """)
 
     res = TopGenerator(dut)
 
@@ -146,6 +148,7 @@ def test_simple_full(simple_obj):
 
                     library work;
                         use work.PyhaUtil.all;
+                        use work.Typedefs.all;
                         use work.all;
 
                     entity  top is
@@ -191,7 +194,7 @@ def test_simple_full(simple_obj):
                             Simple_0.main(self_var, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
-                            out0 <= std_logic_vector(to_signed(var_out0, 32));
+                            out0(31 downto 0) <= std_logic_vector(to_signed(var_out0, 32));
 
 
                             if (not rst_n) then
