@@ -641,7 +641,7 @@ class ClassNodeConv(NodeConv):
         sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
         sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
-        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
+        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeConv))
 
         return template.format(**sockets)
 

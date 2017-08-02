@@ -530,13 +530,13 @@ class VHDLFloat(BaseVHDLType):
 
 
 def conv_class(name, current_val, initial_val=None):
+
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == float:
         return None
-        # return VHDLFloat(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
@@ -544,7 +544,11 @@ def conv_class(name, current_val, initial_val=None):
             return None
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, HW):
-        return VHDLModule(name, current_val, initial_val)
+        try:
+            return current_val._pyha_converter(name, current_val, initial_val)
+        except:
+            return VHDLModule(name, current_val, initial_val)
+
     elif isinstance(current_val, Enum):
         return VHDLEnum(name, current_val, initial_val)
     elif isinstance(current_val, list):  # this may happen for local variables or arguments

@@ -1,5 +1,6 @@
 from pyha.common.hwsim import HW
 from pyha.common.sfix import fixed_saturate, fixed_round, Sfix
+from pyha.conversion.conversion_types import VHDLModule
 
 
 class ComplexSfixPy:
@@ -73,6 +74,20 @@ class ComplexSfixPy:
         return False
 
 
+class ComplexModule(VHDLModule):
+    def _pyha_to_python_value(self):
+        return self.current.val
+
+    def _pyha_deserialize(self, serial):
+        o = super()._pyha_deserialize(serial)
+        return o.real + o.imag * 1j
+
+
 class ComplexSfix(HW, ComplexSfixPy):
+    _pyha_converter = ComplexModule
+
     def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate, round_style=fixed_round):
         super().__init__(val, left, right, overflow_style, round_style)
+
+
+default_complex_sfix = ComplexSfix(0, 0, -17)

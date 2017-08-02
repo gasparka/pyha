@@ -59,7 +59,18 @@ class Conversion:
         # recursively convert all child modules
         self.childs = []
 
-        # TODO: convert input and output submodules! they may not be registered in datamodel
+        if self.is_root:
+            self.top_vhdl = TopGenerator(obj)
+            for node in self.inputs:
+                if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                    self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+                elif isinstance(node, VHDLModule):
+                    if node._pyha_module_name() in self.converted_names:
+                        continue
+                    self.childs.append(Conversion(node.current, node))
+                else:
+                    continue
+
         for node in self.datamodel.elems:
             if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
                 self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
@@ -77,8 +88,6 @@ class Conversion:
 
         self.vhdl_conversion = str(self.conv)
         self.converted_names += [self.datamodel._pyha_module_name()]
-        if self.is_root:
-            self.top_vhdl = TopGenerator(obj)
 
         Conversion.typedefs.extend(self.conv.build_typedefs())
 

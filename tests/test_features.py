@@ -377,6 +377,8 @@ class TestComplexSfix:
             def main(self, a):
                 return a
 
-        x = [1] * 16
+        inputs = [0.1 + 0.5j] * 16
         dut = T()
-        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                       dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, inputs)
