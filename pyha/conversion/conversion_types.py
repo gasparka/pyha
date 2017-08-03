@@ -413,6 +413,10 @@ class VHDLModule(BaseVHDLType):
             if self._pyha_type_is_compatible(mod):
                 return i
 
+        # types that get full bounds during simulation can end up here
+        self.current.instances.append(self.current)
+        return len(self.current.instances)
+
     def _pyha_module_name(self):
         return f'{type(self.current).__name__}_{self._pyha_instance_id()}'
 
@@ -495,7 +499,7 @@ class VHDLModule(BaseVHDLType):
 
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
-        for i, elem in enumerate(self.elems):
+        for i, elem in enumerate(reversed(self.elems)):
             offset = i * elem._pyha_bitwidth()
             e = elem._pyha_deserialize(serial[offset: offset + elem._pyha_bitwidth()])
             setattr(ret, elem._name, e)

@@ -1,7 +1,6 @@
 # TODO: this file is messy, alot of copy paste code
 import subprocess
 
-import numpy as np
 import pytest
 
 import pyha
@@ -133,15 +132,3 @@ def test_hw_sim_resets():
     dut.main([0.1])
     first_out = float(dut.pure_output[0])
     assert first_out == 0.5
-
-
-def test_numpy_complex64():
-    pytest.skip('TODO')
-
-    class T4(HW):
-        def main(self, x):
-            return x
-
-    dut = T4()
-    input = np.array([0.5 + 0.1j, 0.1 - 0.5j], dtype=np.complex64)
-    assert_sim_match(dut, None, input, simulations=[SIM_HW_MODEL, SIM_RTL])

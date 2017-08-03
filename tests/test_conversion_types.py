@@ -383,8 +383,8 @@ class TestVHDLModule:
             def __init__(self, v):
                 self.f = v
 
-        a = VHDLModule('name', A(0.1), A(0.2))
-        b = VHDLModule('name', A(0.2), A(0.2))
+        a = VHDLModule('name', A(False), A(True))
+        b = VHDLModule('name', A(True), A(False))
         assert a._pyha_is_equal(a)
         assert not a._pyha_is_equal(b)
 

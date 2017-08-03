@@ -286,9 +286,10 @@ class HW(with_metaclass(Meta)):
             x._pyha_update_self()
 
     def __setattr__(self, name, value):
-        # todo: alos implements imlicit next
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
+
+        Also implements the 'implicit next'/'signal assignments'
         """
 
         if AutoResize.is_enabled():
