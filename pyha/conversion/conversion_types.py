@@ -370,11 +370,11 @@ class VHDLList(BaseVHDLType):
         return ret
 
     def _pyha_serialize(self):
-        return ''.join(x._pyha_serialize() for x in self.elems)
+        return ''.join(x._pyha_serialize() for x in reversed(self.elems))
 
     def _pyha_deserialize(self, serial):
         ret = []
-        for i, elem in enumerate(self.elems):
+        for i, elem in enumerate(reversed(self.elems)):
             offset = i * elem._pyha_bitwidth()
             e = elem._pyha_deserialize(serial[offset: offset + elem._pyha_bitwidth()])
             ret.append(e)
@@ -495,7 +495,7 @@ class VHDLModule(BaseVHDLType):
         return ret
 
     def _pyha_serialize(self):
-        return ''.join(x._pyha_serialize() for x in self.elems)
+        return ''.join(x._pyha_serialize() for x in reversed(self.elems))
 
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
@@ -522,30 +522,38 @@ class VHDLModule(BaseVHDLType):
 
 
 class VHDLFloat(BaseVHDLType):
-    def _pyha_type(self) -> str:
-        return 'real'
-
-    def _pyha_type_is_compatible(self, other) -> bool:
-        """ Test is ``other`` (same type as ``self``) is compatible in VHDL domain. Meaning that
-        all array types shall have same [start,end]. Recursive."""
-        return True
-    # this is not convertable atm...
     pass
 
 
-def conv_class(name, current_val, initial_val=None):
+class VHDLComplex(BaseVHDLType):
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+        if type(self.current) != type(other.current):
+            return False
+        eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
+        eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
+        eq = eq1 and eq2
+        if not eq:
+            l = logging.getLogger('_pyha_is_equal')
+            l.info(f'{name} {self.current} != {other.current}')
+        return eq
 
+
+def conv_class(name, current_val, initial_val=None):
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == float:
-        return None
+        # if allow_non_convertible:
+        return VHDLFloat(name, current_val, initial_val)
+        # return None
+    elif isinstance(current_val, complex):
+        return VHDLComplex(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
-        if isinstance(current_val[0], float):
-            return None
+        # if not allow_non_convertible and isinstance(current_val[0], float):
+        #     return None
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, HW):
         try:
@@ -557,6 +565,7 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLEnum(name, current_val, initial_val)
     elif isinstance(current_val, list):  # this may happen for local variables or arguments
         return conv_class(name, PyhaList(current_val), PyhaList(initial_val))
+
     assert 0
 
 

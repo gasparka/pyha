@@ -47,8 +47,10 @@ def get_conversion(obj):
 class Conversion:
     converted_names = []
     typedefs = []
+    in_progress = False
 
     def __init__(self, obj, datamodel=None):
+        self.in_progress = True
         self.datamodel = datamodel
         self.is_root = datamodel is None
         if self.is_root:
@@ -90,6 +92,7 @@ class Conversion:
         self.converted_names += [self.datamodel._pyha_module_name()]
 
         Conversion.typedefs.extend(self.conv.build_typedefs())
+        self.in_progress = False
 
 
     @property

@@ -80,6 +80,17 @@ class TestInterface:
         data = [[1, 2], [3, 4], [5, 6]]
         assert_sim_match(dut, data, data)
 
+    def test_list_unit(self):
+        """ Make sure elements are not swapped due to serialization """
+
+        class T(HW):
+            def main(self, l):
+                return l[0], l[1]
+
+        dut = T()
+        data = [[1, 2], [3, 4], [5, 6]]
+        assert_sim_match(dut, None, data)
+
     def test_submodule(self):
         """ May fail when model sim output is no copy() """
 

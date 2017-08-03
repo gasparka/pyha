@@ -382,3 +382,17 @@ class TestComplexSfix:
         ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                        dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret, inputs)
+
+    def test_serialise_deserialise(self):
+        """ Was problem that imag and real were swapped """
+
+        class T(HW):
+            def main(self, a):
+                print(a.imag)
+                return a.imag, a.real
+
+        inputs = [0.1 + 0.5j] * 2
+        dut = T()
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                       dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, [[0.5, 0.5], [0.1, 0.1]])

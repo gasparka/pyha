@@ -237,23 +237,10 @@ def simulate(model, *x, simulations=None, dir_path=None):
 
 
 def assert_equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
+    allow_non_convertible = True
     l = logging.getLogger('equals()')
-
-    # TODO, all this is nasty hack
-    def conv(expected):
-        for i, arg in enumerate(expected):
-            if isinstance(arg, float):
-                t = default_sfix
-                expected[i] = t(expected[i])
-            elif isinstance(arg, (complex, np.complex64)):
-                t = default_complex_sfix
-                expected[i] = t(expected[i])
-
-    conv(expected)
     expected = conv_class('root', expected, expected)
-
     for sim_name, sim_data in simulations.items():
-        conv(sim_data)
         sim_data = conv_class('root', sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
         if eq:
