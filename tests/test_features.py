@@ -72,7 +72,7 @@ class TestStreaming:
 
         dut = A()
         inputs = [1, 2, 3]
-        assert_sim_match(dut, None, inputs, simulations=[SIM_HW_MODEL, SIM_RTL])
+        assert_sim_match(dut, None, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
 
 class TestSubmodulesList:
@@ -102,7 +102,7 @@ class TestSubmodulesList:
         expected = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 
-        assert_sim_match(dut, expected, *x, dir_path='/home/gaspar/git/pyha/playground')
+        assert_sim_match(dut, expected, *x)
 
     def test_deep(self):
         class C2(HW):
@@ -239,7 +239,7 @@ class TestRegisters:
 
         dut = T()
         data = [Sub(1), Sub(2)]
-        ret = simulate(dut, data, dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, data)
         assert_equals(ret, data)
 
     def test_shiftregs(self):
@@ -291,7 +291,7 @@ class TestRegisters:
         inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
         expect = [Sub(4), Sub(3), Sub(999), Sub(9999)]
 
-        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
         assert_equals(ret, expect)
 
 
@@ -385,17 +385,6 @@ class TestInterface:
         data = [[1, 2], [3, 4], [5, 6]]
         assert_sim_match(dut, data, data)
 
-    def test_list_unit(self):
-        """ Make sure elements are not swapped due to serialization """
-
-        class T(HW):
-            def main(self, l):
-                return l[0], l[1]
-
-        dut = T()
-        data = [[1, 2], [3, 4], [5, 6]]
-        assert_sim_match(dut, None, data)
-
     def test_sfix(self):
         class T(HW):
             def main(self, l):
@@ -483,8 +472,7 @@ class TestComplexSfix:
 
         inputs = [0.1 + 0.5j] * 16
         dut = T()
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                       dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs)
         assert_equals(ret, inputs)
 
 
@@ -504,8 +492,7 @@ class TestInOutOrdering:
 
         inputs = [Sub()] * 2
         dut = T()
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                       dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs)
         assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.123] * 2], rtol=1e-1)
 
     def test_sub_sub(self):
@@ -525,15 +512,19 @@ class TestInOutOrdering:
 
         inputs = [Sub()] * 2
         dut = T()
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                       dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs)
         assert_equals(ret, [[0.987] * 2, [0.987] * 2, [0.123] * 2], rtol=1e-1)
 
-    def test_in_out(self):
-        class Sub(HW):
+    def test_sub_sub_direct(self):
+        class SubSub(HW):
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
-                self.v1 = Sfix(0.569, 0, -4)
+                self.v1 = Sfix(0.1, 0, -4)
+
+        class Sub(HW):
+            def __init__(self):
+                self.s0 = SubSub()
+                self.s1 = SubSub()
                 self.v2 = Sfix(0.123, 0, -4)
 
         class T(HW):
@@ -542,9 +533,62 @@ class TestInOutOrdering:
 
         inputs = [Sub()] * 2
         dut = T()
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
-                       dir_path='/home/gaspar/git/pyha/playground')
-        assert_equals(ret, inputs)
+        ret = simulate(dut, inputs)
+        assert_equals(ret)
+
+    def test_list(self):
+        class T(HW):
+            def main(self, l):
+                return l
+
+        dut = T()
+        data = [[False, False, True], [True, False, True]]
+        assert_sim_match(dut, data, data)
+
+    def test_list_unit(self):
+        """ Make sure elements are not swapped due to serialization """
+
+        class T(HW):
+            def main(self, l):
+                return l[0], l[1], l[2]
+
+        dut = T()
+        data = [[False, False, True], [True, False, True]]
+        assert_sim_match(dut, None, data)
+
+    def test_list_sub(self):
+        class SubSub(HW):
+            def __init__(self):
+                self.v0 = Sfix(0.987, 0, -4)
+                self.v1 = Sfix(0.1, 0, -4)
+                self.arr = [1, 2, 3, 4, 5, 6, 7]
+
+        class Sub(HW):
+            def __init__(self):
+                self.s0 = [SubSub()] * 2
+
+        class T(HW):
+            def main(self, a):
+                return a
+
+        inputs = [Sub()] * 2
+        dut = T()
+        ret = simulate(dut, inputs)
+        assert_equals(ret)
+
+        inputs = [[Sub()] * 2] * 2
+        dut = T()
+        ret = simulate(dut, inputs)
+        assert_equals(ret)
+
+        class T2(HW):
+            def main(self, a):
+                return a.s0[0].arr
+
+        inputs = [Sub()] * 2
+        dut = T2()
+        ret = simulate(dut, inputs)
+        assert_equals(ret)
 
 
 def test_hw_sim_resets():

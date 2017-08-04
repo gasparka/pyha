@@ -117,7 +117,7 @@ class BaseVHDLType:
     def _pyha_stdlogic_type(self) -> str:
         raise NotImplementedError()
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         raise NotImplementedError()
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
@@ -151,8 +151,9 @@ class VHDLInt(BaseVHDLType):
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector(31 downto 0)'
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, is_recursion=False) -> str:
-        return f'{out_var_name} := to_integer(signed({in_var_name}));\n'
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
+        return f'{out_var_name} := to_integer(signed({in_name}));\n'
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return f'{out_name}({31 + out_index_offset} downto {0 + out_index_offset}) <= std_logic_vector(to_signed({in_name}, 32));\n'
@@ -182,8 +183,9 @@ class VHDLBool(BaseVHDLType):
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector(0 downto 0)'
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, is_recursion=False) -> str:
-        return f'{out_var_name} := logic_to_bool({in_var_name});\n'
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
+        return f'{out_var_name} := logic_to_bool({in_name});\n'
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return f'{out_name}({0 + out_index_offset} downto {0 + out_index_offset}) <= bool_to_logic({in_name});\n'
@@ -216,8 +218,9 @@ class VHDLSfix(BaseVHDLType):
     def _pyha_stdlogic_type(self) -> str:
         return f'std_logic_vector({self.current.left + abs(self.current.right)} downto 0)'
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, is_recursion=False) -> str:
-        return f'{out_var_name} := Sfix({in_var_name}, {self.current.left}, {self.current.right});\n'
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
+        return f'{out_var_name} := Sfix({in_name}, {self.current.left}, {self.current.right});\n'
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return f'{out_name}({self._pyha_bitwidth() -1 + out_index_offset} downto {0 + out_index_offset}) <= to_slv({in_name});\n'
@@ -251,7 +254,7 @@ class VHDLEnum(BaseVHDLType):
     def _pyha_reset_value(self):
         return self.initial.name
 
-    def _pyha_convert_from_stdlogic(self, var_name) -> str:
+    def _pyha_convert_from_stdlogic(self, var_name, in_index_offset=0) -> str:
         raise NotImplementedError  # old solution interpeted as ints?
 
     def _pyha_convert_to_stdlogic(self, var_name) -> str:
@@ -348,15 +351,14 @@ class VHDLList(BaseVHDLType):
     def _pyha_stdlogic_type(self) -> str:
         return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name) -> str:
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
         total_width = self._pyha_bitwidth()
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
-            prefix = f'{out_var_name}({i})'
-            base_bound = (elem_width * i)
-            in_name = f'{in_var_name}({base_bound-1 + elem_width} downto {base_bound})'
-            ret += sub._pyha_convert_from_stdlogic(prefix, in_name)  # recursive
+            prefix = f'{out_var_name}({len(self.elems) - i -1})'
+            ret += sub._pyha_convert_from_stdlogic(prefix, in_var_name, in_index_offset)  # recursive
+            in_index_offset += elem_width
         return ret
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
@@ -365,7 +367,7 @@ class VHDLList(BaseVHDLType):
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
             prefix = f'{out_name}'
-            tmp_in_name = f'{in_name}({i})'
+            tmp_in_name = f'{in_name}({len(self.elems) - i -1})'
             ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset + elem_width * i)  # recursive
         return ret
 
@@ -477,18 +479,13 @@ class VHDLModule(BaseVHDLType):
     def _pyha_stdlogic_type(self) -> str:
         return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
 
-    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, is_recursion=False) -> str:
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
-        offset = 0
         for sub in self.elems:
             elem_width = sub._pyha_bitwidth()
             prefix = f'{out_var_name}.{sub._pyha_name()}'
-            if not is_recursion:
-                in_name = f'{in_var_name}({offset+elem_width-1} downto {offset})'
-            else:
-                in_name = in_var_name
-            offset += elem_width
-            ret += sub._pyha_convert_from_stdlogic(prefix, in_name, is_recursion=True)  # recursive
+            ret += sub._pyha_convert_from_stdlogic(prefix, in_var_name, in_index_offset)  # recursive
+            in_index_offset += elem_width
         return ret
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
@@ -506,9 +503,10 @@ class VHDLModule(BaseVHDLType):
 
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
-        for i, elem in enumerate(self.elems):
-            offset = i * elem._pyha_bitwidth()
+        offset = 0
+        for elem in reversed(self.elems):
             e = elem._pyha_deserialize(serial[offset: offset + elem._pyha_bitwidth()])
+            offset += elem._pyha_bitwidth()
             setattr(ret, elem._name, e)
 
         return ret

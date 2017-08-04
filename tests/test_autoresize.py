@@ -185,8 +185,7 @@ class TestComplex:
 
         dut = self.A2(fixed_saturate, fixed_round)
         assert_sim_match(dut, expected, x,
-                         simulations=[SIM_HW_MODEL, SIM_RTL],
-                         dir_path='/home/gaspar/git/pyha/playground')
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -346,8 +345,7 @@ class TestLazyComplexSfix:
 
         dut = self.A5()
         assert_sim_match(dut, None, x,
-                         simulations=[SIM_HW_MODEL, SIM_RTL],
-                         dir_path='/home/gaspar/git/pyha/playground')
+                         simulations=[SIM_HW_MODEL, SIM_RTL])
 
 
 class TestAssignConstant:

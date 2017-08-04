@@ -50,6 +50,9 @@ class Conversion:
     in_progress = False
 
     def __init__(self, obj, datamodel=None):
+        self.obj = obj
+        self.class_name = obj.__class__.__name__
+        print(f'Convert {self.class_name}')
         self.in_progress = True
         self.datamodel = datamodel
         self.is_root = datamodel is None
@@ -61,38 +64,38 @@ class Conversion:
         # recursively convert all child modules
         self.childs = []
 
-        if self.is_root:
-            self.top_vhdl = TopGenerator(obj)
-            for node in self.inputs:
-                if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                    self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
-                elif isinstance(node, VHDLModule):
-                    if node._pyha_module_name() in self.converted_names:
-                        continue
-                    self.childs.append(Conversion(node.current, node))
-                else:
-                    continue
-
-        for node in self.datamodel.elems:
+        def conv(self, node):
             if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                if node.elems[0]._pyha_module_name() in self.converted_names:
+                    return
                 self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
             elif isinstance(node, VHDLModule):
                 if node._pyha_module_name() in self.converted_names:
-                    continue
+                    return
                 self.childs.append(Conversion(node.current, node))
-            else:
-                continue
 
-        self.obj = obj
-        self.class_name = obj.__class__.__name__
+        if self.is_root:
+            self.top_vhdl = TopGenerator(obj)
+
+            # maybe some input/output is a convertable module?
+            for node in self.inputs:
+                conv(self, node)
+
+            for node in self.outputs:
+                conv(self, node)
+
+        # convert instance elements before the instance itself, recursive
+        for node in self.datamodel.elems:
+            conv(self, node)
+
         self.red_node = get_objects_rednode(obj)
         self.conv = convert(self.red_node, obj)
 
         self.vhdl_conversion = str(self.conv)
-        self.converted_names += [self.datamodel._pyha_module_name()]
-
+        Conversion.converted_names += [self.datamodel._pyha_module_name()]
         Conversion.typedefs.extend(self.conv.build_typedefs())
-        self.in_progress = False
+        Conversion.in_progress = False
+
 
 
     @property
