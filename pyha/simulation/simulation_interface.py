@@ -236,9 +236,14 @@ def simulate(model, *x, simulations=None, dir_path=None):
             for sim_type in simulations}
 
 
-def assert_equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
-    allow_non_convertible = True
+def assert_equals(simulations, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
     l = logging.getLogger('equals()')
+    if expected is None:
+        if 'MODEL' in simulations.keys():
+            expected = simulations['MODEL']
+        else:
+            expected = simulations['HW_MODEL']
+
     expected = conv_class('root', expected, expected)
     for sim_name, sim_data in simulations.items():
         sim_data = conv_class('root', sim_data, sim_data)

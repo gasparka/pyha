@@ -1,10 +1,14 @@
+import subprocess
 from enum import Enum
 
+import pytest
+
+import pyha
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
-    assert_equals
+    assert_equals, Simulation, NoModelError
 
 
 class TestConst:
@@ -218,6 +222,7 @@ class TestRegisters:
 
     def test_submodule(self):
         """ Assign of submodules is specilly handled.. """
+
         class Sub(HW):
             def __init__(self, i=0):
                 self.a = i
@@ -267,6 +272,7 @@ class TestRegisters:
 
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
+
         class Sub(HW):
             def __init__(self, i=0):
                 self.a = i
@@ -352,6 +358,104 @@ class TestMainAsModel:
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
 
 
+class TestInterface:
+    def test_basic(self):
+        class T(HW):
+            def main(self, i):
+                return i
+
+        dut = T()
+        assert_sim_match(dut, range(4), range(4))
+
+    def test_multi(self):
+        class T(HW):
+            def main(self, b, sfix):
+                return b, sfix
+
+        dut = T()
+        data = [[True, False, False], [0.1, 0.2, 0.3]]
+        assert_sim_match(dut, data, *data)
+
+    def test_list(self):
+        class T(HW):
+            def main(self, l):
+                return l
+
+        dut = T()
+        data = [[1, 2], [3, 4], [5, 6]]
+        assert_sim_match(dut, data, data)
+
+    def test_list_unit(self):
+        """ Make sure elements are not swapped due to serialization """
+
+        class T(HW):
+            def main(self, l):
+                return l[0], l[1]
+
+        dut = T()
+        data = [[1, 2], [3, 4], [5, 6]]
+        assert_sim_match(dut, None, data)
+
+    def test_sfix(self):
+        class T(HW):
+            def main(self, l):
+                return l
+
+        dut = T()
+        data = [0.1] * 3
+        ret = simulate(dut, data)
+        assert_equals(ret, data)
+
+    def test_submodule_sfix(self):
+        """ Problem where sfix values in submodule were not converted to float after sim"""
+
+        class Sub(HW):
+            def __init__(self):
+                self.subsub = Sfix(0.3, 0, -17)
+
+        class T(HW):
+            def __init__(self):
+                self.d = Sub()
+                self.DELAY = 1
+
+            def main(self, l):
+                return self.d
+
+        dut = T()
+        data = [1] * 2
+        ret = simulate(dut, data)
+        assert_equals(ret)
+
+    def test_submodule(self):
+        """ May fail when model sim output is no copy() """
+
+        class SubSub(HW):
+            def __init__(self, i):
+                self.a = i * 3
+
+        class Sub(HW):
+            def __init__(self, i=0):
+                self.subsub = SubSub(i)
+                self.a = i
+                self.b = False
+
+        class T(HW):
+            def __init__(self):
+                self.d = Sub()
+                self.DELAY = 1
+
+            def main(self, l):
+                self.d.a = l.a
+                self.d.b = l.b
+                self.d.subsub.a = l.subsub.a
+                return self.d
+
+        dut = T()
+        data = [Sub(1), Sub(2)]
+        ret = simulate(dut, data)
+        assert_equals(ret, data)
+
+
 class TestComplexSfix:
     def test_py_implementation(self):
         a = ComplexSfix()
@@ -383,16 +487,128 @@ class TestComplexSfix:
                        dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret, inputs)
 
-    def test_serialise_deserialise(self):
-        """ Was problem that imag and real were swapped """
+
+class TestInOutOrdering:
+    """ Had problems with the serialize/deserialise ordering, some stuff was flipped """
+
+    def test_sub(self):
+        class Sub(HW):
+            def __init__(self):
+                self.v0 = Sfix(0.987, 0, -4)
+                self.v1 = Sfix(0.569, 0, -4)
+                self.v2 = Sfix(0.123, 0, -4)
 
         class T(HW):
             def main(self, a):
-                print(a.imag)
-                return a.imag, a.real
+                return a.v0, a.v1, a.v2
 
-        inputs = [0.1 + 0.5j] * 2
+        inputs = [Sub()] * 2
         dut = T()
         ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
                        dir_path='/home/gaspar/git/pyha/playground')
-        assert_equals(ret, [[0.5, 0.5], [0.1, 0.1]])
+        assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.123] * 2], rtol=1e-1)
+
+    def test_sub_sub(self):
+        class SubSub(HW):
+            def __init__(self):
+                self.v0 = Sfix(0.987, 0, -4)
+
+        class Sub(HW):
+            def __init__(self):
+                self.s0 = SubSub()
+                self.s1 = SubSub()
+                self.v2 = Sfix(0.123, 0, -4)
+
+        class T(HW):
+            def main(self, a):
+                return a.s0.v0, a.s1.v0, a.v2
+
+        inputs = [Sub()] * 2
+        dut = T()
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                       dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, [[0.987] * 2, [0.987] * 2, [0.123] * 2], rtol=1e-1)
+
+    def test_in_out(self):
+        class Sub(HW):
+            def __init__(self):
+                self.v0 = Sfix(0.987, 0, -4)
+                self.v1 = Sfix(0.569, 0, -4)
+                self.v2 = Sfix(0.123, 0, -4)
+
+        class T(HW):
+            def main(self, a):
+                return a
+
+        inputs = [Sub()] * 2
+        dut = T()
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                       dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret, inputs)
+
+
+def test_hw_sim_resets():
+    """ Registers should take initial values on each new simulation(call of main) invocation,
+    motivation is to provide same interface as with COCOTB based RTL simulation."""
+
+    class Rst_Hw(HW):
+        def __init__(self):
+            self.sfix_reg = Sfix(0.5, 0, -18)
+            self.DELAY = 1
+
+        def main(self, in_sfix):
+            self.sfix_reg = in_sfix
+            return self.sfix_reg
+
+    dut = Simulation(SIM_HW_MODEL, model=Rst_Hw())
+    dut.main([0.1])
+    first_out = float(dut.pure_output[0])
+    assert first_out == 0.5
+
+    # make new simulation, registers must reset
+    dut.main([0.1])
+    first_out = float(dut.pure_output[0])
+    assert first_out == 0.5
+
+
+def test_ghdl_version():
+    # ghdl has same version for 'all versions'
+    ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
+    assert 'GHDL 0.34dev (20151126) [Dunoon edition]' == ret
+
+
+def test_cocotb_version():
+    version_file = pyha.__path__[0] + '/../cocotb/version'
+    with open(version_file, 'r') as f:
+        assert 'VERSION=1.0\n' == f.read()
+
+
+def test_sim_no_model():
+    class NoMain(HW):
+        def model_main(self):
+            pass
+
+    class NoModelMain(HW):
+        def main(self):
+            pass
+
+    with pytest.raises(NoModelError):
+        Simulation(SIM_MODEL, None)
+
+    with pytest.raises(NoModelError):
+        Simulation(SIM_HW_MODEL, NoMain(), None)
+
+    with pytest.raises(NoModelError):
+        Simulation(SIM_GATE, NoMain(), None)
+
+    with pytest.raises(NoModelError):
+        Simulation(SIM_RTL, NoMain(), None)
+
+    # with pytest.raises(NoModelError):
+    #     Simulation(SIM_MODEL, NoModelMain(), None)
+
+    # this shall not raise as we are not simulating model
+    Simulation(SIM_HW_MODEL, NoModelMain(), None)
+
+    # ok, not using main
+    Simulation(SIM_MODEL, NoMain(), None)

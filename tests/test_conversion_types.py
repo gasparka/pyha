@@ -393,6 +393,30 @@ class TestVHDLModule:
         assert a._pyha_is_equal(a)
         assert not a._pyha_is_equal(b)
 
+    def test_pyha_to_python_value(self):
+        class A(HW):
+            def __init__(self):
+                self.f = Sfix(0.5, 0, -5)
+                self.fl = [Sfix(0.5, 0, -5)] * 2
+
+        a = VHDLModule('name', A(), A())
+        pyt = a._pyha_to_python_value()
+        assert pyt.f == 0.5
+        assert pyt.fl == [0.5] * 2
+
+
+        # def test_serialize(self):
+        #     class A(HW):
+        #         def __init__(self):
+        #             self.f = False
+        #             self.t = True
+        #
+        #     a = VHDLModule('name', A(), A())
+        #     r = a._pyha_serialize()
+        #
+        #     c = a._pyha_convert_from_stdlogic('var', 'in0')
+        #     pass
+
 
 class TestVHDLEnum:
     class T(Enum):
