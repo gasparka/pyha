@@ -641,7 +641,7 @@ class ClassNodeConv(NodeConv):
         sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
         sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
-        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value)
+        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeConv))
 
         return template.format(**sockets)
 
@@ -846,10 +846,6 @@ class ImplicitNext:
             if len(x) > 1 and str(x[0].value) == 'self':
                 loc = len(x) - 1
                 if isinstance(x[loc], GetitemNode):
-                    loc -= 1
-
-                # fixme: ComplexSfix ralated hack
-                if str(x[len(x) - 1]) in ('real', 'imag'):
                     loc -= 1
                 x.insert(loc, 'next')
 

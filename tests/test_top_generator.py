@@ -84,9 +84,9 @@ def test_variables_input(basic_obj):
 def test_input_type_conversion(basic_obj):
     dut = basic_obj
     expect = textwrap.dedent("""\
-                var_in0 := to_integer(signed(in0));
-                var_in1 := Sfix(in1, 2, -17);
-                var_in2 := logic_to_bool(in2);
+                var_in0 := to_integer(signed(in0(31 downto 0)));
+                var_in1 := Sfix(in1(19 downto 0), 2, -17);
+                var_in2 := logic_to_bool(in2(0 downto 0));
                 """)
 
     res = TopGenerator(dut)
@@ -186,7 +186,7 @@ def test_simple_full(simple_obj):
                             self_var := self;
 
                             --convert slv to normal types
-                            var_in0 := to_integer(signed(in0));
+                            var_in0 := to_integer(signed(in0(31 downto 0)));
 
                             --call the main entry
                             Simple_0.\_pyha_init\(self_var);

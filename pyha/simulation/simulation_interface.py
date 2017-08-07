@@ -10,8 +10,9 @@ from typing import List
 
 import numpy as np
 
+from pyha.common.complex_sfix import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import default_sfix, default_complex_sfix
+from pyha.common.hwsim import default_sfix
 from pyha.common.sfix import Sfix
 from pyha.conftest import SKIP_SIMULATIONS_MASK
 from pyha.conversion.conversion_types import conv_class
@@ -85,15 +86,15 @@ def type_conversions(func):
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
                 elif isinstance(arg[0], (complex, np.complex64)):
-                    assert 0
+                    # assert 0
                     t = default_complex_sfix
                     self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
-                    args[i] = [t(x, is_local=True) for x in arg]
+                    args[i] = [t(x) for x in arg]
 
         ret = func(self, *args, **kwargs)
 
         # convert outputs to python types (ex. Sfix -> float)
-        if self.simulation_type == SIM_HW_MODEL:
+        if self.simulation_type in [SIM_MODEL, SIM_HW_MODEL]:
             ret = [conv_class('-', x, x)._pyha_to_python_value() for x in ret]
         return np.array(ret)
 
@@ -235,10 +236,15 @@ def simulate(model, *x, simulations=None, dir_path=None):
             for sim_type in simulations}
 
 
-def assert_equals(simulations, expected, rtol=1e-04, atol=(2 ** -17) * 4):
+def assert_equals(simulations, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
     l = logging.getLogger('equals()')
-    expected = conv_class('root', expected, expected)
+    if expected is None:
+        if 'MODEL' in simulations.keys():
+            expected = simulations['MODEL']
+        else:
+            expected = simulations['HW_MODEL']
 
+    expected = conv_class('root', expected, expected)
     for sim_name, sim_data in simulations.items():
         sim_data = conv_class('root', sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
@@ -294,7 +300,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
 
     for sim_type in simulations:
         dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x).astype(float)
+        hw_y = dut.main(*x)
         if expected is None and sim_type is simulations[0]:
             l.warning(f'"expected=None", all sims must output: \n{hw_y}')
             expected = hw_y

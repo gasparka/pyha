@@ -252,5 +252,5 @@ def test_real_precison_bug():
     inp *= 0.01
 
     dut = Bug()
-    plot_assert_sim_match(dut, None, inp, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyhacores/playground')
+    # plot_assert_sim_match(dut, None, inp, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyhacores/playground')
     assert 0

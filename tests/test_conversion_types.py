@@ -101,15 +101,15 @@ class TestVHDLList:
 
     def test_pyha_convert_from_stdlogic(self):
         a = VHDLList('name', [1, 2], [1, 2])
-        expect = 'var(0) := to_integer(signed(in0(31 downto 0)));\n' \
-                 'var(1) := to_integer(signed(in0(63 downto 32)));\n'
+        expect = 'var(1) := to_integer(signed(in0(31 downto 0)));\n' \
+                 'var(0) := to_integer(signed(in0(63 downto 32)));\n'
 
         assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
 
     def test_pyha_convert_to_stdlogic(self):
         a = VHDLList('name', [1, 2], [1, 2])
-        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0(0), 32));\n' \
-                 'var(63 downto 32) <= std_logic_vector(to_signed(in0(1), 32));\n'
+        expect = 'var(31 downto 0) <= std_logic_vector(to_signed(in0(1), 32));\n' \
+                 'var(63 downto 32) <= std_logic_vector(to_signed(in0(0), 32));\n'
 
         assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
 
@@ -355,7 +355,7 @@ class TestVHDLModule:
         a = VHDLModule('name', A(), A())
         expect = 'var.i := to_integer(signed(in0(31 downto 0)));\n' \
                  'var.b := logic_to_bool(in0(32 downto 32));\n' \
-                 'var.sub.f := Sfix(in0(50 downto 33)(17 downto 0), 0, -17);\n'
+                 'var.sub.f := Sfix(in0(50 downto 33), 0, -17);\n'
 
         assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
 
@@ -383,8 +383,8 @@ class TestVHDLModule:
             def __init__(self, v):
                 self.f = v
 
-        a = VHDLModule('name', A(0.1), A(0.2))
-        b = VHDLModule('name', A(0.2), A(0.2))
+        a = VHDLModule('name', A(False), A(True))
+        b = VHDLModule('name', A(True), A(False))
         assert a._pyha_is_equal(a)
         assert not a._pyha_is_equal(b)
 
@@ -392,6 +392,30 @@ class TestVHDLModule:
         b = VHDLModule('name', A([3, 2, 1]), A([3, 2, 1]))
         assert a._pyha_is_equal(a)
         assert not a._pyha_is_equal(b)
+
+    def test_pyha_to_python_value(self):
+        class A(HW):
+            def __init__(self):
+                self.f = Sfix(0.5, 0, -5)
+                self.fl = [Sfix(0.5, 0, -5)] * 2
+
+        a = VHDLModule('name', A(), A())
+        pyt = a._pyha_to_python_value()
+        assert pyt.f == 0.5
+        assert pyt.fl == [0.5] * 2
+
+
+        # def test_serialize(self):
+        #     class A(HW):
+        #         def __init__(self):
+        #             self.f = False
+        #             self.t = True
+        #
+        #     a = VHDLModule('name', A(), A())
+        #     r = a._pyha_serialize()
+        #
+        #     c = a._pyha_convert_from_stdlogic('var', 'in0')
+        #     pass
 
 
 class TestVHDLEnum:

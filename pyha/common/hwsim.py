@@ -1,13 +1,11 @@
 import sys
 from collections import UserList
 from copy import deepcopy, copy
-from enum import Enum
 
 from six import iteritems, with_metaclass
 
-from pyha.common.const import Const
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
-from pyha.common.sfix import Sfix, ComplexSfix, resize
+from pyha.common.sfix import Sfix, resize
 
 # functions that will not be decorated/converted/parsed
 
@@ -18,43 +16,9 @@ PYHA_VARIABLES = (
     '_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
 default_sfix = Sfix(0, 0, -17)
-default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 
 
-class AssignToSelf(Exception):
-    def __init__(self, class_name, variable_name):
-        message = f'Assigment to self.{variable_name}, did you mean self.next.{variable_name}?\nClass: {class_name}'
-        super().__init__(message)
-
-
-class TypeNotConsistent(Exception):
-    def __init__(self, class_name, function_name, variable_name, old, new):
-        # these clutter printing
-        from contextlib import suppress
-        with suppress(KeyError):  # only available for 'self'
-            new.pop('_pyha_initial_self')
-            old.pop('_pyha_initial_self')
-        message = f'Self/local not consistent type!\nClass: {class_name}\nFunction: {function_name}\nVariable: {variable_name}\nOld: {type(old)}:{repr(old)}\nNew: {type(new)}:{new}'
-        super().__init__(message)
-
-
-def is_convertible(obj):
-    allowed_types = [ComplexSfix, Sfix, int, bool, Const]
-    if type(obj) in allowed_types:
-        return True
-    elif isinstance(obj, (PyhaList, list)):
-        # To check whether all elements are of the same type
-        if len(set(map(type, obj))) == 1:
-            if all(type(x) in allowed_types for x in obj):
-                return True
-            elif isinstance(obj[0], HW):  # list of submodules
-                return True
-    elif isinstance(obj, Enum):
-        return True
-    elif isinstance(obj, HW):
-        return True
-
-    return False
+# default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 
 
 def deepish_copy(org):
@@ -322,9 +286,10 @@ class HW(with_metaclass(Meta)):
             x._pyha_update_self()
 
     def __setattr__(self, name, value):
-        # todo: alos implements imlicit next
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         this is only enabled for 'main' function, that simulates hardware.
+
+        Also implements the 'implicit next'/'signal assignments'
         """
 
         if AutoResize.is_enabled():

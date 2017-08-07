@@ -3,8 +3,9 @@ from enum import Enum
 
 from redbaron import RedBaron
 
+from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, ComplexSfix, resize
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
 
@@ -466,7 +467,7 @@ class TestAutoResize:
                 # not subjects to resize conversion
                 # some may be rejected due to type
                 self.int_reg = a
-                self.complex_reg = ComplexSfix(0.45 + 0.88j)
+                self.complex_reg = self.complex_reg
                 b = self.sfix_reg
                 self.submod_reg.int_reg = a
                 self.int_list[0] = a
@@ -492,7 +493,7 @@ class TestAutoResize:
         """ Test all assignments that could be potential subjects, has no type info """
         expect = [
             'self.int_reg = a',
-            'self.complex_reg = ComplexSfix(0.45 + 0.88j)',
+            'self.complex_reg = self.complex_reg',
             'self.submod_reg.int_reg = a',
             'self.int_list[0] = a',
             'self.submod_list[1].int_reg = a',
