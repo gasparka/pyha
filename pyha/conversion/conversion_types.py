@@ -5,7 +5,6 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
 from pyha.common.hwsim import PyhaFunc, HW, PyhaList
 from pyha.common.sfix import Sfix
 
@@ -544,21 +543,25 @@ class VHDLComplex(BaseVHDLType):
 
 
 def conv_class(name, current_val, initial_val=None):
+    from pyha.conversion.conversion import Conversion
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == float:
-        # if allow_non_convertible:
+        if Conversion.in_progress:
+            return None
+
         return VHDLFloat(name, current_val, initial_val)
-        # return None
+
     elif isinstance(current_val, complex):
         return VHDLComplex(name, current_val, initial_val)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
-        # if not allow_non_convertible and isinstance(current_val[0], float):
-        #     return None
+        if Conversion.in_progress and isinstance(current_val[0], float):
+            return None
+
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, HW):
         try:

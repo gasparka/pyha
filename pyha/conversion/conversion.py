@@ -4,12 +4,11 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
-from redbaron import RedBaron
-
 from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, VHDLList
 from pyha.conversion.converter import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
+from redbaron import RedBaron
 
 
 def get_objects_rednode(obj):
@@ -47,13 +46,13 @@ def get_conversion(obj):
 class Conversion:
     converted_names = []
     typedefs = []
-    in_progress = False
+    in_progress = 0
 
     def __init__(self, obj, datamodel=None):
         self.obj = obj
         self.class_name = obj.__class__.__name__
         print(f'Convert {self.class_name}')
-        self.in_progress = True
+        Conversion.in_progress += 1
         self.datamodel = datamodel
         self.is_root = datamodel is None
         if self.is_root:
@@ -94,7 +93,7 @@ class Conversion:
         self.vhdl_conversion = str(self.conv)
         Conversion.converted_names += [self.datamodel._pyha_module_name()]
         Conversion.typedefs.extend(self.conv.build_typedefs())
-        Conversion.in_progress = False
+        Conversion.in_progress -= 1
 
 
 
@@ -107,7 +106,7 @@ class Conversion:
         return self.top_vhdl.get_object_return()
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
-
+        Conversion.in_progress += 1
         # todo: makedirs
         paths = []
         for x in self.childs:
@@ -128,6 +127,7 @@ class Conversion:
             with paths[0].open('w') as f:
                 f.write(self.build_typedefs_package())
 
+        Conversion.in_progress -= 1
         return paths
 
     def build_typedefs_package(self):
