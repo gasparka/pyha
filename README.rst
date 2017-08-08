@@ -19,7 +19,8 @@ pyha
      :alt: Updates
 
 .. image:: https://coveralls.io/repos/github/gasparka/pyha/badge.svg?branch=develop
-:target: https://coveralls.io/github/gasparka/pyha?branch=develop
+    :target: https://coveralls.io/github/gasparka/pyha?branch=develop
+
 
 ..
     .. image:: https://landscape.io/github/petspats/pyha/develop/landscape.svg?style=flat
