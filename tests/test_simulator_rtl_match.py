@@ -4,7 +4,8 @@ import pytest
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
-    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match
+    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match, \
+    debug_assert_sim_match
 
 
 def assert_exact_match(model, types, *x):

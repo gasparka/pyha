@@ -9,7 +9,6 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-
 from pyha.common.complex_sfix import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.hwsim import default_sfix
@@ -270,6 +269,17 @@ def assert_equals(simulations, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
 #
 #     plt.legend()
 #     plt.show()
+
+def debug_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
+                           fuck_it=False, **kwards):
+    """ Instead of asserting anything return outputs of each simulation """
+    simulations = sim_rules(simulations, model)
+    outs = []
+    for sim_type in simulations:
+        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
+        hw_y = dut.main(*x)
+        outs.append(hw_y)
+    return outs
 
 
 

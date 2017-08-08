@@ -1,9 +1,8 @@
 import subprocess
 from enum import Enum
 
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix
@@ -267,8 +266,7 @@ class TestRegisters:
                   [True, False, False, True, False, False],
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                         dir_path='/home/gaspar/git/pyha/playground')
+        assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
