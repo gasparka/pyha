@@ -63,7 +63,7 @@ class ComplexSfixPy:
         return ComplexSfix(x, self.left, self.right, **kwargs)
 
     def __str__(self):
-        return f'{self.real.val:.5f}{"" if self.imag.val < 0.0 else "+"}{self.imag.val:.5f}j [{self.left}:{self.right}]'
+        return '{:.5f}{}{:.5f}j [{}:{}]'.format(self.real.val, "" if self.imag.val < 0.0 else "+", self.imag.val, self.left, self.right)
 
     def __repr__(self):
         return str(self)

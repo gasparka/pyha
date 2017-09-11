@@ -5,6 +5,7 @@ from math import isclose
 from typing import List
 
 import numpy as np
+
 from pyha.common.hwsim import PyhaFunc, HW, PyhaList
 from pyha.common.sfix import Sfix
 
@@ -26,7 +27,7 @@ def escape_reserved_vhdl(x: str) -> str:
                            'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor']
 
     if x.lower() in vhdl_reserved_names or x[0] == '_':
-        return f'\\{x}\\'  # "escape" reserved name
+        return '\\{}\\'.format(x)  # "escape" reserved name
     return x
 
 
@@ -70,7 +71,7 @@ class BaseVHDLType:
 
     def _pyha_init(self) -> str:
         name = self._pyha_name()
-        return f'self.\\next\\.{name} := self.{name};'
+        return 'self.\\next\\.{} := self.{};'.format(name, name)
 
     def _pyha_update_registers(self):
         # for constants (UPPERCASE NAME) dont update
@@ -79,18 +80,18 @@ class BaseVHDLType:
             return ''
 
         name = self._pyha_name()
-        return f'self.{name} := self.\\next\\.{name};'
+        return 'self.{} := self.\\next\\.{};'.format(name, name)
 
     def _pyha_reset_value(self):
         return self.initial
 
     def _pyha_reset(self, prefix='self') -> str:
         name = self._pyha_name()
-        return f'{prefix}.\\next\\.{name} := {self._pyha_reset_value()};\n'
+        return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
     def _pyha_deepcopy(self, prefix='self') -> str:
         name = self._pyha_name()
-        return f'{prefix}.\\next\\.{name} := {prefix.replace("self", "other")}.{name};\n'
+        return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
 
     def _pyha_reset_constants(self) -> str:
         r = self._pyha_reset()
@@ -136,7 +137,7 @@ class BaseVHDLType:
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
             l = logging.getLogger('_pyha_is_equal')
-            l.info(f'{name} {self.current} != {other.current}')
+            l.info('{} {} != {}'.format(name, self.current, other.current))
         return eq
 
 
@@ -151,11 +152,11 @@ class VHDLInt(BaseVHDLType):
         return 'std_logic_vector(31 downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
-        return f'{out_var_name} := to_integer(signed({in_name}));\n'
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        return '{} := to_integer(signed({}));\n'.format(out_var_name, in_name)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return f'{out_name}({31 + out_index_offset} downto {0 + out_index_offset}) <= std_logic_vector(to_signed({in_name}, 32));\n'
+        return '{}({} downto {}) <= std_logic_vector(to_signed({}, 32));\n'.format(out_name, 31 + out_index_offset, 0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -183,11 +184,11 @@ class VHDLBool(BaseVHDLType):
         return 'std_logic_vector(0 downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
-        return f'{out_var_name} := logic_to_bool({in_name});\n'
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        return '{} := logic_to_bool({});\n'.format(out_var_name, in_name)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return f'{out_name}({0 + out_index_offset} downto {0 + out_index_offset}) <= bool_to_logic({in_name});\n'
+        return '{}({} downto {}) <= bool_to_logic({});\n'.format(out_name, 0 + out_index_offset, 0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -206,23 +207,23 @@ class VHDLBool(BaseVHDLType):
 
 class VHDLSfix(BaseVHDLType):
     def _pyha_type(self):
-        return f'sfixed({self.current.left} downto {self.current.right})'
+        return 'sfixed({} downto {})'.format(self.current.left, self.current.right)
 
     def _pyha_bitwidth(self) -> int:
         return len(self.current)
 
     def _pyha_reset_value(self):
-        return f'Sfix({self.initial.init_val}, {self.current.left}, {self.current.right})'
+        return 'Sfix({}, {}, {})'.format(self.initial.init_val, self.current.left, self.current.right)
 
     def _pyha_stdlogic_type(self) -> str:
-        return f'std_logic_vector({self.current.left + abs(self.current.right)} downto 0)'
+        return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = f'{in_var_name}({in_index_offset+self._pyha_bitwidth()-1} downto {in_index_offset})'
-        return f'{out_var_name} := Sfix({in_name}, {self.current.left}, {self.current.right});\n'
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        return '{} := Sfix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return f'{out_name}({self._pyha_bitwidth() -1 + out_index_offset} downto {0 + out_index_offset}) <= to_slv({in_name});\n'
+        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() -1 + out_index_offset, 0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -248,7 +249,7 @@ class VHDLEnum(BaseVHDLType):
     def _pyha_typedef(self):
         name = self._pyha_type()
         types = ','.join([x.name for x in type(self.current)])
-        return f'type {name} is ({types});'
+        return 'type {} is ({});'.format(name, types)
 
     def _pyha_reset_value(self):
         return self.initial.name
@@ -280,25 +281,25 @@ class VHDLList(BaseVHDLType):
         elem_type = self.elems[0]._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
-        return f'{elem_type}_list_t'
+        return '{}_list_t'.format(elem_type)
 
     def _pyha_type(self):
         lib = 'Typedefs'
         if not self.not_submodules_list:
             lib = self.elems[0]._pyha_module_name()
 
-        return f'{lib}.{self._pyha_arr_type_name()}(0 to {len(self.current) - 1})'
+        return '{}.{}(0 to {})'.format(lib, self._pyha_arr_type_name(), len(self.current) - 1)
 
     def _pyha_typedef(self):
         if self.not_submodules_list:
-            return f'type {self._pyha_arr_type_name()} is array (natural range <>) of {self.elems[0]._pyha_type()};'
+            return 'type {} is array (natural range <>) of {};'.format(self._pyha_arr_type_name(), self.elems[0]._pyha_type())
         return None  # arrays of submodules are already defined in each submodule package!
 
     def _pyha_init(self):
         if self.not_submodules_list:
             return super()._pyha_init()
 
-        inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()}({i}));'
+        inits = ['{}.\\_pyha_init\\(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
                  for i in range(len(self.current))]
         return '\n'.join(inits)
 
@@ -306,7 +307,7 @@ class VHDLList(BaseVHDLType):
         if self.not_submodules_list:
             return super()._pyha_update_registers()
 
-        inits = [f'{self.elems[0]._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()}({i}));'
+        inits = ['{}.\\_pyha_update_registers\\(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
                  for i in range(len(self.current))]
         return '\n'.join(inits)
 
@@ -314,22 +315,22 @@ class VHDLList(BaseVHDLType):
         name = self._pyha_name()
         if self.not_submodules_list:
             data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
-            return f'{prefix}.\\next\\.{name} := ({data});\n'
+            return '{}.\\next\\.{} := ({});\n'.format(prefix, name, data)
 
         ret = ''
         for i, sub in enumerate(self.elems):
-            tmp_prefix = f'{prefix}.{name}({i})'
+            tmp_prefix = '{}.{}({})'.format(prefix, name, i)
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
     def _pyha_deepcopy(self, prefix='self') -> str:
         name = self._pyha_name()
         if self.not_submodules_list:
-            return f'{prefix}.\\next\\.{name} := {prefix.replace("self", "other")}.{name};\n'
+            return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
 
         ret = ''
         for i, sub in enumerate(self.elems):
-            tmp_prefix = f'{prefix}.{name}({i})'
+            tmp_prefix = '{}.{}({})'.format(prefix, name, i)
             ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
@@ -348,14 +349,14 @@ class VHDLList(BaseVHDLType):
         return sum([x._pyha_bitwidth() for x in self.elems])
 
     def _pyha_stdlogic_type(self) -> str:
-        return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth()-1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
         total_width = self._pyha_bitwidth()
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
-            prefix = f'{out_var_name}({len(self.elems) - i -1})'
+            prefix = '{}({})'.format(out_var_name, len(self.elems) - i -1)
             ret += sub._pyha_convert_from_stdlogic(prefix, in_var_name, in_index_offset)  # recursive
             in_index_offset += elem_width
         return ret
@@ -365,8 +366,8 @@ class VHDLList(BaseVHDLType):
         total_width = self._pyha_bitwidth()
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
-            prefix = f'{out_name}'
-            tmp_in_name = f'{in_name}({len(self.elems) - i -1})'
+            prefix = '{}'.format(out_name)
+            tmp_in_name = '{}({})'.format(in_name, len(self.elems) - i -1)
             ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset + elem_width * i)  # recursive
         return ret
 
@@ -390,7 +391,7 @@ class VHDLList(BaseVHDLType):
 
         r = []
         for i, (self_elem, other_elem) in enumerate(zip(self.elems, other.elems)):
-            ret = self_elem._pyha_is_equal(other_elem, f'{name}({i})', rtol, atol)
+            ret = self_elem._pyha_is_equal(other_elem, '{}({})'.format(name, i), rtol, atol)
             r.append(ret)
 
         return all(r)
@@ -419,29 +420,29 @@ class VHDLModule(BaseVHDLType):
         return len(self.current.instances)
 
     def _pyha_module_name(self):
-        return f'{type(self.current).__name__}_{self._pyha_instance_id()}'
+        return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
 
     def _pyha_type(self):
-        return f'{self._pyha_module_name()}.self_t'
+        return '{}.self_t'.format(self._pyha_module_name())
 
     def _pyha_arr_type_name(self):
         elem_type = self._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
-        return f'{elem_type}_list_t'
+        return '{}_list_t'.format(elem_type)
 
     def _pyha_init(self) -> str:
-        return f'{self._pyha_module_name()}.\\_pyha_init\\(self.{self._pyha_name()});'
+        return '{}.\\_pyha_init\\(self.{});'.format(self._pyha_module_name(), self._pyha_name())
 
     def _pyha_update_registers(self):
-        return f'{self._pyha_module_name()}.\\_pyha_update_registers\\(self.{self._pyha_name()});'
+        return '{}.\\_pyha_update_registers\\(self.{});'.format(self._pyha_module_name(), self._pyha_name())
 
     def _pyha_reset(self, prefix='self'):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
             if self._name != '-':
-                tmp_prefix = f'{prefix}.{self._pyha_name()}'
+                tmp_prefix = '{}.{}'.format(prefix, self._pyha_name())
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
@@ -450,7 +451,7 @@ class VHDLModule(BaseVHDLType):
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
             if self._name != '-':
-                tmp_prefix = f'{prefix}.{self._pyha_name()}'
+                tmp_prefix = '{}.{}'.format(prefix, self._pyha_name())
             ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
@@ -476,13 +477,13 @@ class VHDLModule(BaseVHDLType):
         return sum([x._pyha_bitwidth() for x in self.elems])
 
     def _pyha_stdlogic_type(self) -> str:
-        return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth()-1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
         for sub in self.elems:
             elem_width = sub._pyha_bitwidth()
-            prefix = f'{out_var_name}.{sub._pyha_name()}'
+            prefix = '{}.{}'.format(out_var_name, sub._pyha_name())
             ret += sub._pyha_convert_from_stdlogic(prefix, in_var_name, in_index_offset)  # recursive
             in_index_offset += elem_width
         return ret
@@ -491,8 +492,8 @@ class VHDLModule(BaseVHDLType):
         ret = ''
         for i, sub in enumerate(self.elems):
             elem_width = sub._pyha_bitwidth()
-            prefix = f'{out_name}'
-            tmp_in_name = f'{in_name}.{sub._pyha_name()}'
+            prefix = '{}'.format(out_name)
+            tmp_in_name = '{}.{}'.format(in_name, sub._pyha_name())
             ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset)  # recursive
             out_index_offset += elem_width
         return ret
@@ -519,7 +520,7 @@ class VHDLModule(BaseVHDLType):
 
         r = []
         for self_elem, other_elem in zip(self.elems, other.elems):
-            ret = self_elem._pyha_is_equal(other_elem, f'{type(self.current).__name__}.{self_elem._name}', rtol, atol)
+            ret = self_elem._pyha_is_equal(other_elem, '{}.{}'.format(type(self.current).__name__, self_elem._name), rtol, atol)
             r.append(ret)
 
         return all(r)
@@ -538,7 +539,7 @@ class VHDLComplex(BaseVHDLType):
         eq = eq1 and eq2
         if not eq:
             l = logging.getLogger('_pyha_is_equal')
-            l.info(f'{name} {self.current} != {other.current}')
+            l.info('{} {} != {}'.format(name, self.current, other.current))
         return eq
 
 

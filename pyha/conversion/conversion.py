@@ -4,11 +4,12 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
+from redbaron import RedBaron
+
 from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, VHDLList
 from pyha.conversion.converter import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
-from redbaron import RedBaron
 
 
 def get_objects_rednode(obj):
@@ -51,7 +52,7 @@ class Conversion:
     def __init__(self, obj, datamodel=None):
         self.obj = obj
         self.class_name = obj.__class__.__name__
-        print(f'Convert {self.class_name}')
+        print('Convert {}'.format(self.class_name))
         Conversion.in_progress += 1
         self.datamodel = datamodel
         self.is_root = datamodel is None
@@ -113,7 +114,7 @@ class Conversion:
             paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
         # paths.append(base_dir / '{}.vhd'.format(self.class_name))
-        paths.append(base_dir / f'{self.datamodel._pyha_module_name()}.vhd')
+        paths.append(base_dir / '{}.vhd'.format(self.datamodel._pyha_module_name()))
         with paths[-1].open('w') as f:
             f.write(str(self.vhdl_conversion))
 
