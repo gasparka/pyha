@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
 import pyha
 from pyha.conversion.conversion_types import conv_class
 
@@ -65,7 +64,7 @@ class CocotbAuto(object):
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
 
-        self.environment['GHDL_OPTIONS'] = '--std=08'
+        self.environment['GHDL_ARGS'] = '--std=08'
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             try:
@@ -75,7 +74,7 @@ class CocotbAuto(object):
             altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
             # altera_libs = pyha.__path__[0] + '/common/hdl/altera'
             self.environment[
-                'GHDL_OPTIONS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
+                'GHDL_ARGS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
