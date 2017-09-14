@@ -2,6 +2,8 @@
 pyha
 ====
 
+.. sudo apt install libgnat-4.9
+
 .. warning:: Ongoing work on the first release. Many things will change, not advised to use this tool at the moment.
 
 .. image:: https://img.shields.io/pypi/v/pyha.svg

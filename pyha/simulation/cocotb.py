@@ -56,15 +56,22 @@ class CocotbAuto(object):
 
     def default_assignments(self):
 
-        # ill throw my computer out of the window counter: 7
+        # ill throw my computer out of the window counter: 8
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)
+        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent) # on some computers required.. on some fucks up the build
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
 
         self.environment['GHDL_ARGS'] = '--std=08'
+
+        self.environment['PATH'] = pyha.__path__[0] + '/../ghdl/bin/:' + self.environment['PATH']
+        print(self.environment['PATH'])
+        # try:
+        #     ghdl_path = Path(shutil.which('ghdl'))
+        # except:
+        #     raise Exception('You dont have GHDL in PATH!')
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             try:
@@ -73,8 +80,7 @@ class CocotbAuto(object):
                 raise Exception('You dont have GHDL in PATH!')
             altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
             # altera_libs = pyha.__path__[0] + '/common/hdl/altera'
-            self.environment[
-                'GHDL_ARGS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
+            self.environment['GHDL_ARGS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
