@@ -3,17 +3,16 @@ import logging
 import textwrap
 from contextlib import suppress
 
-from parse import parse
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
-
 import pyha
+from parse import parse
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -726,12 +725,17 @@ def convert(red: Node, obj=None):
 
 
 def super_getattr(obj, attr):
+
     for part in attr.split('.'):
         if part == 'self' or part == 'next':
             continue
+
         if part.find('[') != -1:  # is array indexing
             part = part[:part.find('[')]
             obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
+        elif part.find(']') != -1:
+            # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
+            continue
         else:
             obj = getattr(obj, part)
 
