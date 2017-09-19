@@ -119,6 +119,9 @@ class TopGenerator:
                 entity  top is
                     port (
                         clk, rst_n, enable: in std_logic;
+                        
+                        -- look #153 if you want enable
+                        -- enable: in std_logic;
 
                         -- inputs
                 {ENTITY_INPUTS}
@@ -166,11 +169,12 @@ class TopGenerator:
                             {DUT_NAME}.\\_pyha_reset\\(self_var);
                             self <= self_var;
                         elsif rising_edge(clk) then
-                            if enable then
+                            -- look #153 if you want enable
+                            --if enable then
                                 {DUT_NAME}.\\_pyha_update_registers\\(self_var);
                                 {DUT_NAME}.\\_pyha_reset_constants\\(self_var);
                                 self <= self_var;
-                            end if;
+                            --end if;
                         end if;
 
                     end process;
