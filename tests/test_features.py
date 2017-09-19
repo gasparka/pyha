@@ -50,6 +50,29 @@ class TestEnum:
         assert_sim_match(dut, expected, x)
 
 
+    def test_statemachine(self):
+        class T(HW):
+            def __init__(self):
+                self.state = TheEnum.ENUM0
+
+            def main(self):
+                if self.state == TheEnum.ENUM0:
+                    self.state = TheEnum.ENUM1
+                elif self.state == TheEnum.ENUM1:
+                    self.state = TheEnum.ENUM2
+                elif self.state == TheEnum.ENUM2:
+                    self.state = TheEnum.ENUM3
+                elif self.state == TheEnum.ENUM3:
+                    self.state = TheEnum.ENUM0
+
+                return 1
+
+        dut = T()
+        inputs = [[0.1] * 256]
+        ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+
+
+
 class TestStreaming:
     class Streaming(HW):
         def __init__(self, dtype):

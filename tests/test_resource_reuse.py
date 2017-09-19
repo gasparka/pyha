@@ -1,3 +1,5 @@
+from enum import Enum
+
 import numpy as np
 from pyha.common.hwsim import HW
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
@@ -14,42 +16,26 @@ class Unit(HW):
         return self.mac
 
 
-def test_basic_share():
-    # quartus shares mult and add
-    class Dut(HW):
-        def __init__(self):
-            self.a = [Unit(), Unit]
-            self.state = 0
-
-        def main(self, in0, in1):
-            res = self.a[self.state].main(in0, in1)
-
-            if self.state == 1:
-                self.state = 0
-            else:
-                self.state = 1
-
-            return res
-
-    dut = Dut()
-    inputs = [[0.1, 0.2, 0.3, 0.4], [0.1, 0.2, 0.3, 0.4]]
-    ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                   dir_path='/home/gaspar/git/pyha/playground')
-
-
 def test_basic_share2():
     # quartus shares mult and add (need to hack away the len bug)
     class Dut(HW):
         def __init__(self):
-            self.a = [Unit() for x in range(128)]
+            self.a = [Unit() for x in range(4)]
             self.state = 0
 
         def main(self, in0, in1):
-            res = self.a[self.state].main(in0, in1)
 
-            self.state = self.state + 1
-            if self.state >= len(self.a) - 1:
-                self.state = 0
+            # res = [x.main(in0, in1) for x in self.a]
+            res = [Sfix()] * 4
+            for i in range(len(self.a)):
+                res[i] = self.a[i].main(in0, in1)
+                # res = x.main(in0, in1)
+
+            # res = self.a[self.state].main(in0, in1)
+
+            # self.state = self.state + 1
+            # if self.state >= len(self.a) - 1:
+            #     self.state = 0
 
             return res
 
@@ -102,21 +88,43 @@ class FIR(HW):
         return signal.lfilter(self.taps, [1.0], x)
 
 
+class TheEnum(Enum):
+    ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
 def test_fir_share():
+
     # shares everything
     class Dut(HW):
         def __init__(self):
             # taps = signal.remez(8, [0, 0.1, 0.2, 0.5], [1, 0])
-            self.a = [FIR(np.random.rand(16)) for x in range(16)]
+            self.a = [FIR(np.random.rand(5)) for x in range(5)]
+            # self.state = 0
             self.state = 0
 
         def main(self, in0):
-            res = self.a[self.state].main(in0)
 
-            self.state = self.state + 1
-            if self.state >= len(self.a) - 1:
+            # res = [Sfix()] * 4
+            # for i in range(len(self.a)):
+            #     res[i] = self.a[i].main(in0)
+
+            if self.state == 0:
+                res = self.a[0].main(in0)
+                self.state = 1
+            elif self.state == 1:
+                res = self.a[1].main(in0)
+                self.state = 2
+            elif self.state == 2:
+                res = self.a[2].main(in0)
+                self.state = 4
+            elif self.state == 4:
+                res = self.a[4].main(in0)
                 self.state = 0
+
+            # res = self.a[i].main(in0)
+            #
+            # self.state = self.state + 1
+            # if self.state >= len(self.a) - 1:
+            #     self.state = 0
 
             return res
 
