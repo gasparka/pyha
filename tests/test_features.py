@@ -49,7 +49,6 @@ class TestEnum:
         expected = list(range(16))
         assert_sim_match(dut, expected, x)
 
-
     def test_statemachine(self):
         class T(HW):
             def __init__(self):
@@ -70,7 +69,6 @@ class TestEnum:
         dut = T()
         inputs = [[0.1] * 256]
         ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
-
 
 
 class TestStreaming:
@@ -677,3 +675,32 @@ def test_sim_no_model():
 
     # ok, not using main
     Simulation(SIM_MODEL, NoMain(), None)
+
+
+def tst_conv2d(a, b):
+    res = 0
+    for a_row, b_row in zip(a, b):
+        for a_item, b_item in zip(a_row, b_row):
+           res += a_item * b_item
+
+
+    class Tst(HW):
+        def __init__(self):
+            self.sum = [0] * 10
+
+        def main(self, a, b):
+            i = 1
+            for a_row, b_row in zip(a, b):
+                for a_item, b_item in zip(a_row, b_row):
+                    if i == 0:
+                        self.sum[i] = a_item * b_item
+                    else:
+                        self.sum[i] = self.sum[i - 1] + a_item * b_item
+
+                    self.sum[i] = self.sum[i-1] + a_item * b_item
+                    # res += a_item * b_item
+
+            return self.sum[-1]
+
+
+
