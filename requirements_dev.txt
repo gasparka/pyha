@@ -3,6 +3,6 @@ wheel==0.29.0
 watchdog==0.8.3
 flake8==3.4.1
 coverage==4.4.1
-Sphinx==1.6.3
+Sphinx==1.6.4
 sphinx-rtd-theme==0.2.4
 twine==1.9.1
