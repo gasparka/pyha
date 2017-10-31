@@ -18,7 +18,7 @@ def reset(dut, duration=10000):
 
 @cocotb.coroutine
 def run_dut(dut, in_data, out_count):
-    dut.enable = 1
+    # dut.enable = 1
     # dut.in0 = 0
     cocotb.fork(Clock(dut.clk, 5000).start())
     yield reset(dut)
