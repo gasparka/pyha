@@ -118,7 +118,7 @@ class TopGenerator:
 
                 entity  top is
                     port (
-                        clk, rst_n, enable: in std_logic;
+                        clk, rst_n: in std_logic;
                         
                         -- look #153 if you want enable
                         -- enable: in std_logic;

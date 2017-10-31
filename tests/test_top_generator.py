@@ -153,7 +153,10 @@ def test_simple_full(simple_obj):
 
                     entity  top is
                         port (
-                            clk, rst_n, enable: in std_logic;
+                            clk, rst_n: in std_logic;
+                            
+                            -- look #153 if you want enable
+                            -- enable: in std_logic;
 
                             -- inputs
                             in0: in std_logic_vector(31 downto 0);
@@ -201,11 +204,12 @@ def test_simple_full(simple_obj):
                                 Simple_0.\_pyha_reset\(self_var);
                                 self <= self_var;
                             elsif rising_edge(clk) then
-                                if enable then
+                                -- look #153 if you want enable
+                                --if enable then
                                     Simple_0.\_pyha_update_registers\(self_var);
                                     Simple_0.\_pyha_reset_constants\(self_var);
                                     self <= self_var;
-                                end if;
+                                --end if;
                             end if;
 
                         end process;
