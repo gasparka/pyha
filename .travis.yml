@@ -1,5 +1,8 @@
 language: python
-dist: precise
+
+dist: trusty
+sudo: required
+
 python: 3.6
 before_script:
   - sudo sh scripts/install_ghdl.sh

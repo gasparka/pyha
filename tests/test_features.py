@@ -63,12 +63,14 @@ class TestEnum:
                     self.state = TheEnum.ENUM3
                 elif self.state == TheEnum.ENUM3:
                     self.state = TheEnum.ENUM0
+                    return 2
 
                 return 1
 
         dut = T()
-        inputs = [0.1] * 256
-        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+        inputs = [0.1] * 8
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+        assert_equals(ret)
 
 
 class TestStreaming:
