@@ -68,7 +68,7 @@ class TestEnum:
 
         dut = T()
         inputs = [[0.1] * 256]
-        ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, None, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
 
 
 class TestStreaming:
