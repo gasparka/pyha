@@ -2,7 +2,6 @@
 pyha
 ====
 
-.. sudo apt install libgnat-4.9
 
 .. warning:: Ongoing work on the first release. Many things will change, not advised to use this tool at the moment.
 
@@ -35,3 +34,17 @@ pyha
 
 * Free software: Apache Software License 2.0
 * Documentation: https://pyha.readthedocs.io.
+
+=======
+Install
+=======
+
+On Ubuntu 16.04, GHDL dependencies:
+
+```
+sudo apt install libgnat-4.9
+```
+
+```
+pip install pyha
+```

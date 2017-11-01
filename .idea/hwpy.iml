@@ -3,8 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/_legacy" />
-      <excludeFolder url="file://$MODULE_DIR$/cocotb" />
-      <excludeFolder url="file://$MODULE_DIR$/ghdl" />
+      <excludeFolder url="file://$MODULE_DIR$/ghdl_old" />
       <excludeFolder url="file://$MODULE_DIR$/playground" />
       <excludeFolder url="file://$MODULE_DIR$/pyha/_legacy" />
     </content>
