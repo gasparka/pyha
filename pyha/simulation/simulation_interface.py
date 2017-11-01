@@ -104,8 +104,11 @@ class Simulation:
     hw_instances = {}
 
     def __init__(self, simulation_type, model=None, input_types: List[object] = None, dir_path=None):
+
+        # if is CI, use temp dir
+        dir_path = None if 'TRAVIS' in os.environ else dir_path
+
         self.logger = logging.getLogger(__name__)
-        # self.tmpdir = TemporaryDirectory().name
         self.dir_path = dir_path
         if self.dir_path is None:
             self.keep_me_alive = TemporaryDirectory()
