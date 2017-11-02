@@ -639,7 +639,7 @@ def test_hw_sim_resets():
 def test_ghdl_version():
     # ghdl has same version for 'all versions'
     ret = subprocess.getoutput(pyha.__path__[0] + '/../ghdl/bin/ghdl --version | grep -m1 GHDL')
-    assert 'GHDL 0.34dev (20151126) [Dunoon edition]' == ret
+    assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
 
 
 def test_cocotb_version():

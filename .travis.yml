@@ -4,17 +4,16 @@ dist: trusty
 sudo: required
 
 python: 3.6
-before_script:
-  - sudo sh scripts/install_ghdl.sh
-  - source ~/.bashrc
-  - export PYHA_SKIP_QUARTUS_SIMS=1
 
 install:
+  - sudo sh scripts/install_ghdl.sh
+  - source ~/.bashrc
   - pip install .
   - pip install coveralls
   - pip install codeclimate-test-reporter
 
 script:
+  - export PYHA_SKIP_QUARTUS_SIMS=1
   - coverage run --source pyha -m py.test -m "not slowtest" tests
 
 after_success:
