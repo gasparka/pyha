@@ -7,14 +7,10 @@ python: 3.6
 before_script:
   - sudo sh scripts/install_ghdl.sh
   - export PATH=$PATH:$PWD/ghdl/bin/
-#  - sudo apt-get install git make gcc g++ swig
-#  - sh scripts/install_cocotb.sh
-#  - export COCOTB=$PWD/cocotb
   - export PYHA_SKIP_QUARTUS_SIMS=1
 
 install:
   - pip install .
-  - pip install -r requirements_dev.txt
   - pip install coveralls
   - pip install codeclimate-test-reporter
 
