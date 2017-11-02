@@ -48,3 +48,7 @@ sudo apt install libgnat-4.9
 ```
 pip install pyha
 ```
+
+For running VHDL simulations, GHDL is needed. On Ubuntu it can be installed with
+
+```sudo ./scripts/install_ghdl.sh```

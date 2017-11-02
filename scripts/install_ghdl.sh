@@ -15,6 +15,3 @@ tar -C ghdl -xvf /tmp/ghdl.tar.gz
 # add ghdl to your path
 echo 'export PATH=$PATH:'"$PWD/ghdl/bin/" >> ~/.bashrc
 
-# reload bash
-exec bash
-
