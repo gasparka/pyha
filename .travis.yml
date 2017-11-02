@@ -6,7 +6,6 @@ sudo: required
 python: 3.6
 before_script:
   - sudo sh scripts/install_ghdl.sh
-  - export PATH=$PATH:$PWD/ghdl/bin/
   - export PYHA_SKIP_QUARTUS_SIMS=1
 
 install:

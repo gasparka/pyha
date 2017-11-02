@@ -12,5 +12,9 @@ wget https://github.com/tgingold/ghdl/releases/download/v0.34/ghdl-v0.34-mcode-u
 mkdir ghdl
 tar -C ghdl -xvf /tmp/ghdl.tar.gz
 
-echo 'export PATH=$PATH:$PWD/ghdl/bin/' >> ~/.bashrc
+# add ghdl to your path
+echo 'export PATH=$PATH:'"$PWD/ghdl/bin/" >> ~/.bashrc
+
+# reload bash
+exec bash
 
