@@ -5,11 +5,8 @@ sudo: required
 
 python: 3.6
 before_script:
-  - sudo apt-get update
-  - sudo apt install libgnat-4.9/xenial
-
-#  - sudo sh scripts/install_ghdl.sh
-#  - export PATH=$PATH:$PWD/ghdl/bin/
+  - sudo sh scripts/install_ghdl.sh
+  - export PATH=$PATH:$PWD/ghdl/bin/
 #  - sudo apt-get install git make gcc g++ swig
 #  - sh scripts/install_cocotb.sh
 #  - export COCOTB=$PWD/cocotb
