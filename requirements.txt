@@ -5,4 +5,4 @@ scipy==1.0.0
 pytest==3.2.3
 parse==1.8.2
 sphinxcontrib-fulltoc==1.2.0
-six
+six==1.11.0
