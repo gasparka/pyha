@@ -1,5 +1,0 @@
-v 4
-file . "../../src/std/textio_body.v93" "f92778a177c5d49ba23bacee8452434311481e23" "20170815071621.870":
-  package body textio at 18( 760) + 0 on 12;
-file . "../../src/std/textio.v93" "0be31223749a9042fd2e700ce9a5d9011fcc9281" "20170815071621.857":
-  package textio at 19( 820) + 0 on 11 body;
