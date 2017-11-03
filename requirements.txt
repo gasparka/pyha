@@ -1,7 +1,8 @@
 redbaron==0.6.3
 scipy==1.0.0
 numpy==1.13.3
-pytest==3.2.1
+scipy==0.19.1
+pytest==3.2.3
 parse==1.8.2
 sphinxcontrib-fulltoc==1.2.0
 six
