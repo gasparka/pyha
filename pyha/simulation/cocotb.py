@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+
 import pyha
 from pyha.conversion.conversion_types import conv_class
 
@@ -65,13 +66,6 @@ class CocotbAuto(object):
         self.environment['SIM'] = 'ghdl'
 
         self.environment['GHDL_ARGS'] = '--std=08'
-
-        self.environment['PATH'] = pyha.__path__[0] + '/../ghdl/bin/:' + self.environment['PATH']
-        print(self.environment['PATH'])
-        # try:
-        #     ghdl_path = Path(shutil.which('ghdl'))
-        # except:
-        #     raise Exception('You dont have GHDL in PATH!')
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
             try:
