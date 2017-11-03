@@ -429,6 +429,7 @@ class TestCallModifications:
                 self.r = self.sub.f()
                 f = resize(Sfix(1, 1, -15), 0, -15)
                 self.arr[0], self.arr[1] = self.multi(x)
+                lol = self.arr[len(self.arr) - 1]
 
         dut = T()
         dut.a(1)
@@ -438,7 +439,8 @@ class TestCallModifications:
                  'b(self, x, ret_0=>loc);\n' \
                  'Sub_0.f(self.sub, ret_0=>self.\\next\\.r);\n' \
                  'f := resize(Sfix(1, 1, -15), 0, -15);\n' \
-                 'multi(self, x, ret_0=>self.\\next\\.arr(0), ret_1=>self.\\next\\.arr(1));'
+                 'multi(self, x, ret_0=>self.\\next\\.arr(0), ret_1=>self.\\next\\.arr(1));\n'\
+                 "lol := self.arr((self.arr)'length - 1);"
         conv = get_conversion(dut)
         func = conv.get_function('a')
         assert expect == func.build_body()
@@ -604,3 +606,4 @@ class TestImplicitNext:
         red = RedBaron(code)
         ImplicitNext.apply(red)
         assert red.dumps() == expect
+

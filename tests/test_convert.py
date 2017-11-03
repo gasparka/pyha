@@ -1,8 +1,9 @@
 import textwrap
 
 import pytest
-from pyha.conversion.converter import convert
 from redbaron import RedBaron
+
+from pyha.conversion.converter import convert
 
 
 @pytest.fixture
@@ -25,6 +26,7 @@ def test_name(converter):
     code = 'test'
     conv = converter(code)
     assert str(conv) == 'test'
+
 
 def test_name2(converter):
     code = 'Register'
@@ -444,6 +446,21 @@ def test_call_semicolon_for(converter):
 
     conv = converter(code)
     assert expect == str(conv)
+
+
+def test_call_len(converter):
+    code = 'len(x)'
+    expect = "(x)'length"
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = 'len(self.x)'
+    expect = "(self.x)'length"
+
+    conv = converter(code)
+    assert expect == str(conv)
+
 
 def test_indexing(converter):
     code = textwrap.dedent("""\

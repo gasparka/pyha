@@ -3,16 +3,17 @@ import logging
 import textwrap
 from contextlib import suppress
 
-import pyha
 from parse import parse
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
+
+import pyha
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,6 +69,13 @@ class AtomtrailersNodeConv(NodeConv):
         for i, x in enumerate(self.value):
             # add '.' infront if NameNode
             new = '.{}' if isinstance(x, NameNodeConv) and i != 0 else '{}'
+
+            if x.value == 'len' and isinstance(x.red_node.next, CallNode):
+                continue
+
+            if isinstance(x.red_node, CallNode) and x.red_node.previous.value == 'len':
+                new = str(x) + "'length"
+
             ret += new.format(x)
 
         return ret
@@ -269,7 +277,6 @@ class PassNodeConv(NodeConv):
 class CallNodeConv(NodeConv):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
-
         is_assign = self.red_node.parent_find('assign')
         if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
             base += ';'
@@ -409,7 +416,7 @@ class ForNodeConv(NodeConv):
         if str(self.iterator) == '\\_i_\\':
             return f"{pyrange}'range"
 
-        range_len_pattern = parse('\\range\\(len({}))', pyrange)
+        range_len_pattern = parse("\\range\\(({})'length)", pyrange)
         if range_len_pattern is not None:
             return range_len_pattern[0] + "'range"
         else:
@@ -418,17 +425,17 @@ class ForNodeConv(NodeConv):
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
                     # todo: handle many more cases
-                    len = parse('len({})', two_args[1].strip())
+                    len = parse("({})'length", two_args[1].strip())
                     if len is not None:
                         return f"{two_args[0].strip()} to ({len[0]}'length) - 1"
 
-                    len = parse('len({}){}', two_args[1].strip())
+                    len = parse("({})'length{}", two_args[1].strip())
                     if len is not None:
                         return f"{two_args[0].strip()} to ({len[0]}'length{len[1]}) - 1"
 
                     return f'{two_args[0].strip()} to ({two_args[1].strip()}) - 1'
                 else:
-                    len = parse('len({}){}', range_pattern[0])
+                    len = parse("({})'length{}", range_pattern[0])
                     if len is not None:
                         return f"0 to ({len[0]}'length{len[1]}) - 1"
                     return f'0 to ({range_pattern[0]}) - 1'
@@ -813,7 +820,6 @@ class SubmoduleDeepcopy:
 
 
 class SubmoduleListDeepcopy:
-    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
 
     @staticmethod
     def apply(red_node):
@@ -931,6 +937,10 @@ class CallModifications:
                 return x
 
             call = x.call
+            # dont run this function for calls to len()
+            if call.previous.value == 'len':
+                return x
+
             if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
                 call.append(str(x.target))
                 call.value[-1].target = 'ret_0'
