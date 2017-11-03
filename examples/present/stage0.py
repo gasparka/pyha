@@ -1,6 +1,4 @@
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, resize, fixed_truncate
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class Demo(Hardware):
@@ -33,17 +31,3 @@ class Demo(Hardware):
         mult = self.multiply(input)
         add = self.adder(input)
         return mult, add
-
-
-# run this to assert Python, RTL and GATE simulations match output
-# conversion files are written to 'dir_path'
-def test_demo():
-    dut = Demo(coef=0.1)
-    inputs = [0.1, 0.2, 0.3, 0.2, 0.1]
-
-    assert_sim_match(dut,
-                     [Sfix(left=0, right=-17)],
-                     None, inputs,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                     rtol=1e-4,
-                     dir_path='/home/gaspar/git/pyha/examples/demo/conversion')

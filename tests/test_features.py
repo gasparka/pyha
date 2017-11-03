@@ -1,10 +1,11 @@
 import subprocess
 from enum import Enum
 
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_sfix import ComplexSfix
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
     assert_equals, Simulation, NoModelError
@@ -12,7 +13,7 @@ from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 class TestConst:
     def test_basic(self):
-        class B2(HW):
+        class B2(Hardware):
             def __init__(self):
                 self.REG = 1
 
@@ -32,7 +33,7 @@ class TheEnum(Enum):
 
 class TestEnum:
     def test_basic(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self, mode):
                 self.mode = mode
 
@@ -50,7 +51,7 @@ class TestEnum:
         assert_sim_match(dut, expected, x)
 
     def test_statemachine(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.state = TheEnum.ENUM0
 
@@ -74,7 +75,7 @@ class TestEnum:
 
 
 class TestStreaming:
-    class Streaming(HW):
+    class Streaming(Hardware):
         def __init__(self, dtype):
             self.data = dtype
             self.valid = False
@@ -84,7 +85,7 @@ class TestStreaming:
             self.valid = True
 
     def test_basic(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.a = TestStreaming.Streaming(0)
 
@@ -99,7 +100,7 @@ class TestStreaming:
 
 class TestSubmodulesList:
     def test_basic(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.reg = 0
 
@@ -107,7 +108,7 @@ class TestSubmodulesList:
                 self.reg = x
                 return self.reg
 
-        class B(HW):
+        class B(Hardware):
             def __init__(self):
                 self.sublist = [A(), A()]
                 self.DELAY = 1
@@ -127,14 +128,14 @@ class TestSubmodulesList:
         assert_sim_match(dut, expected, *x)
 
     def test_deep(self):
-        class C2(HW):
+        class C2(Hardware):
             def __init__(self):
                 self.regor = False
 
             def main(self, x):
                 return x
 
-        class A2(HW):
+        class A2(Hardware):
             def __init__(self, reg_init):
                 self.reg = reg_init
                 self.submodule = C2()
@@ -144,7 +145,7 @@ class TestSubmodulesList:
                 self.reg = x
                 return self.reg
 
-        class B2(HW):
+        class B2(Hardware):
             def __init__(self):
                 self.sublist = [A2(2), A2(128)]
 
@@ -162,7 +163,7 @@ class TestSubmodulesList:
         assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_for(self):
-        class A4(HW):
+        class A4(Hardware):
             def __init__(self, reg_init):
                 self.reg = reg_init
 
@@ -170,7 +171,7 @@ class TestSubmodulesList:
                 self.reg = x
                 return self.reg
 
-        class B4(HW):
+        class B4(Hardware):
             def __init__(self):
                 self.sublist = [A4(i) for i in range(4)]
                 self.DELAY = 1
@@ -192,7 +193,7 @@ class TestSubmodulesList:
 
 class TestRegisters:
     def test_basic(self):
-        class Register(HW):
+        class Register(Hardware):
             def __init__(self):
                 self.b = 123
 
@@ -207,7 +208,7 @@ class TestRegisters:
         assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_multi(self):
-        class Register(HW):
+        class Register(Hardware):
             def __init__(self):
                 self.a = Sfix(0.123)
                 self.b = 123
@@ -226,7 +227,7 @@ class TestRegisters:
         assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
     def test_sfix_lazy(self):
-        class LazySfixReg(HW):
+        class LazySfixReg(Hardware):
             def __init__(self):
                 self.a = Sfix()
                 self.DELAY = 1
@@ -245,12 +246,12 @@ class TestRegisters:
     def test_submodule(self):
         """ Assign of submodules is specilly handled.. """
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self, i=0):
                 self.a = i
                 self.b = False
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.d = Sub()
                 self.DELAY = 1
@@ -265,7 +266,7 @@ class TestRegisters:
         assert_equals(ret, data)
 
     def test_shiftregs(self):
-        class ShiftReg(HW):
+        class ShiftReg(Hardware):
             def __init__(self, in_t=Sfix(left=0, right=-17)):
                 self.in_t = in_t
                 self.shr_int = [1, 2, 3, 4]
@@ -294,12 +295,12 @@ class TestRegisters:
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self, i=0):
                 self.a = i
                 # self.b = False
 
-        class ShiftReg(HW):
+        class ShiftReg(Hardware):
             def __init__(self):
                 self.shr_sub = [Sub(3), Sub(4)]
 
@@ -320,7 +321,7 @@ class TestMainAsModel:
     """ Issue #107. Main can be interpreted as model (delays and fixed point stuffs are OFF) """
 
     def test_counter_int(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.DELAY = 1
@@ -335,7 +336,7 @@ class TestMainAsModel:
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
 
     def test_int_list(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = [0, 0]
                 self.DELAY = 1
@@ -350,7 +351,7 @@ class TestMainAsModel:
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
 
     def test_counter_sfix(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = Sfix(0.0, 0, -17)
                 self.DELAY = 1
@@ -364,7 +365,7 @@ class TestMainAsModel:
         assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
 
     def test_sfix_list(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = [Sfix(0.0, 0, -17)] * 2
                 self.DELAY = 1
@@ -381,7 +382,7 @@ class TestMainAsModel:
 
 class TestInterface:
     def test_basic(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, i):
                 return i
 
@@ -389,7 +390,7 @@ class TestInterface:
         assert_sim_match(dut, range(4), range(4))
 
     def test_multi(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, b, sfix):
                 return b, sfix
 
@@ -398,7 +399,7 @@ class TestInterface:
         assert_sim_match(dut, data, *data)
 
     def test_list(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, l):
                 return l
 
@@ -407,7 +408,7 @@ class TestInterface:
         assert_sim_match(dut, data, data)
 
     def test_sfix(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, l):
                 return l
 
@@ -419,11 +420,11 @@ class TestInterface:
     def test_submodule_sfix(self):
         """ Problem where sfix values in submodule were not converted to float after sim"""
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self):
                 self.subsub = Sfix(0.3, 0, -17)
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.d = Sub()
                 self.DELAY = 1
@@ -439,17 +440,17 @@ class TestInterface:
     def test_submodule(self):
         """ May fail when model sim output is no copy() """
 
-        class SubSub(HW):
+        class SubSub(Hardware):
             def __init__(self, i):
                 self.a = i * 3
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self, i=0):
                 self.subsub = SubSub(i)
                 self.a = i
                 self.b = False
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.d = Sub()
                 self.DELAY = 1
@@ -487,7 +488,7 @@ class TestComplexSfix:
         assert a.right == -4
 
     def test_in_out(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, a):
                 return a
 
@@ -501,13 +502,13 @@ class TestInOutOrdering:
     """ Had problems with the serialize/deserialise ordering, some stuff was flipped """
 
     def test_sub(self):
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
                 self.v1 = Sfix(0.569, 0, -4)
                 self.v2 = Sfix(0.123, 0, -4)
 
-        class T(HW):
+        class T(Hardware):
             def main(self, a):
                 return a.v0, a.v1, a.v2
 
@@ -517,17 +518,17 @@ class TestInOutOrdering:
         assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.123] * 2], rtol=1e-1)
 
     def test_sub_sub(self):
-        class SubSub(HW):
+        class SubSub(Hardware):
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self):
                 self.s0 = SubSub()
                 self.s1 = SubSub()
                 self.v2 = Sfix(0.123, 0, -4)
 
-        class T(HW):
+        class T(Hardware):
             def main(self, a):
                 return a.s0.v0, a.s1.v0, a.v2
 
@@ -537,18 +538,18 @@ class TestInOutOrdering:
         assert_equals(ret, [[0.987] * 2, [0.987] * 2, [0.123] * 2], rtol=1e-1)
 
     def test_sub_sub_direct(self):
-        class SubSub(HW):
+        class SubSub(Hardware):
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
                 self.v1 = Sfix(0.1, 0, -4)
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self):
                 self.s0 = SubSub()
                 self.s1 = SubSub()
                 self.v2 = Sfix(0.123, 0, -4)
 
-        class T(HW):
+        class T(Hardware):
             def main(self, a):
                 return a
 
@@ -558,7 +559,7 @@ class TestInOutOrdering:
         assert_equals(ret)
 
     def test_list(self):
-        class T(HW):
+        class T(Hardware):
             def main(self, l):
                 return l
 
@@ -569,7 +570,7 @@ class TestInOutOrdering:
     def test_list_unit(self):
         """ Make sure elements are not swapped due to serialization """
 
-        class T(HW):
+        class T(Hardware):
             def main(self, l):
                 return l[0], l[1], l[2]
 
@@ -578,17 +579,17 @@ class TestInOutOrdering:
         assert_sim_match(dut, None, data)
 
     def test_list_sub(self):
-        class SubSub(HW):
+        class SubSub(Hardware):
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
                 self.v1 = Sfix(0.1, 0, -4)
                 self.arr = [1, 2, 3, 4, 5, 6, 7]
 
-        class Sub(HW):
+        class Sub(Hardware):
             def __init__(self):
                 self.s0 = [SubSub()] * 2
 
-        class T(HW):
+        class T(Hardware):
             def main(self, a):
                 return a
 
@@ -602,7 +603,7 @@ class TestInOutOrdering:
         ret = simulate(dut, inputs)
         assert_equals(ret)
 
-        class T2(HW):
+        class T2(Hardware):
             def main(self, a):
                 return a.s0[0].arr
 
@@ -616,7 +617,7 @@ def test_hw_sim_resets():
     """ Registers should take initial values on each new simulation(call of main) invocation,
     motivation is to provide same interface as with COCOTB based RTL simulation."""
 
-    class Rst_Hw(HW):
+    class Rst_Hw(Hardware):
         def __init__(self):
             self.sfix_reg = Sfix(0.5, 0, -18)
             self.DELAY = 1
@@ -649,11 +650,11 @@ def test_cocotb_version():
 
 
 def test_sim_no_model():
-    class NoMain(HW):
+    class NoMain(Hardware):
         def model_main(self):
             pass
 
-    class NoModelMain(HW):
+    class NoModelMain(Hardware):
         def main(self):
             pass
 
@@ -686,7 +687,7 @@ def tst_conv2d(a, b):
            res += a_item * b_item
 
 
-    class Tst(HW):
+    class Tst(Hardware):
         def __init__(self):
             self.sum = [0] * 10
 

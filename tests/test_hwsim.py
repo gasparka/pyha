@@ -1,18 +1,18 @@
 import time
 
-from pyha.common.hwsim import HW, Meta, PyhaFunc
+from pyha.common.hwsim import Hardware, Meta, PyhaFunc
 from pyha.common.sfix import Sfix
 
 
 def test_metaclass_assigned():
-    class A(HW):
+    class A(Hardware):
         pass
 
     assert type(A) == Meta
 
 
 def test_locals_decorated():
-    class A(HW):
+    class A(Hardware):
         def main(self, *args, **kwargs):
             pass
 
@@ -25,7 +25,7 @@ def test_locals_decorated():
 
 def test_objects_not_decorated():
     # had problem where LocalExtractor was applied to all CALLABLE objects
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = Sfix(0.0)
 
@@ -36,7 +36,7 @@ def test_objects_not_decorated():
 
 
 def test_next_init():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = 1
 
@@ -54,10 +54,10 @@ def test_next_init():
 def test_next_filter():
     """ Next should contain only convertible items, shall not contain any submodules """
 
-    class B(HW):
+    class B(Hardware):
         pass
 
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = 1
             self.b = Sfix()
@@ -74,7 +74,7 @@ def test_next_filter():
 
 
 def test_float_register():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = 1.0
 
@@ -93,14 +93,14 @@ def test_float_register():
 
 
 def test_submodule_float_register():
-    class B(HW):
+    class B(Hardware):
         def __init__(self):
             self.a = 1.0
 
         def main(self, next):
             self.a = next
 
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.b = B()
 
@@ -120,7 +120,7 @@ def test_submodule_float_register():
 def test_only_main_is_clocked():
     """ Only 'main' shall simulate clock! """
 
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = 1.0
 
@@ -138,7 +138,7 @@ def test_only_main_is_clocked():
 
 
 def test_list_register():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = [1.0, 2.0, 3.0]
 
@@ -156,7 +156,7 @@ def test_list_register():
 
 
 def test_list_cascade_register():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = [1.0, 2.0, 3.0]
 
@@ -164,7 +164,7 @@ def test_list_cascade_register():
             self.a = [next] + self.a[:-1]
             return self.a[-1]
 
-    class B(HW):
+    class B(Hardware):
         def __init__(self):
             self.a = A()
             self.l = [0.0, 0.0]
@@ -191,7 +191,7 @@ def test_list_cascade_register():
 
 
 def test_initial_self():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = Sfix(0.0123)
             self.i = 25
@@ -219,26 +219,26 @@ def test_meta_deepcopy():
     problem was in nested deepcopy() calls
     """
 
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = Sfix(0.592)
 
-    class B(HW):
+    class B(Hardware):
         def __init__(self):
             self.l = A()
             self.a = Sfix(0.592)
 
-    class C(HW):
+    class C(Hardware):
         def __init__(self):
             self.l = B()
             self.a = Sfix(0.592)
 
-    class D(HW):
+    class D(Hardware):
         def __init__(self):
             self.l = C()
             self.a = Sfix(0.592)
 
-    class E(HW):
+    class E(Hardware):
         def __init__(self):
             self.l = D()
             self.b = D()
@@ -254,7 +254,7 @@ def test_meta_deepcopy():
 
 
 def test_outputs():
-    class A(HW):
+    class A(Hardware):
         def main(self, a):
             return a
 
@@ -267,7 +267,7 @@ def test_outputs():
 
 
 def test_setattr_assign_self():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = 0
 
@@ -281,7 +281,7 @@ def test_setattr_assign_self():
 
 
 def test_setattr_resize():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.a = Sfix(0, 0, -2)
 

@@ -6,7 +6,7 @@ from typing import List
 
 import numpy as np
 
-from pyha.common.hwsim import PyhaFunc, HW, PyhaList
+from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList
 from pyha.common.sfix import Sfix
 
 
@@ -564,7 +564,7 @@ def conv_class(name, current_val, initial_val=None):
             return None
 
         return VHDLList(name, current_val, initial_val)
-    elif isinstance(current_val, HW):
+    elif isinstance(current_val, Hardware):
         try:
             return current_val._pyha_converter(name, current_val, initial_val)
         except:
@@ -578,7 +578,7 @@ def conv_class(name, current_val, initial_val=None):
     assert 0
 
 
-def get_conversion_vars(obj: HW) -> List[BaseVHDLType]:
+def get_conversion_vars(obj: Hardware) -> List[BaseVHDLType]:
     def filter_junk(x):
         return {k: v for k, v in x.items()
                 if not k.startswith('_pyha') and not k.startswith('__')

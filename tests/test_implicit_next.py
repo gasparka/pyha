@@ -1,11 +1,11 @@
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class TestBuiltins:
-    class T0(HW):
+    class T0(Hardware):
         def __init__(self):
             self.i = 1
             self.b = True
@@ -71,7 +71,7 @@ class TestBuiltins:
 
 
 class TestBuiltinsList:
-    class T1(HW):
+    class T1(Hardware):
         def __init__(self):
             self.i = [1, 2, 3]
             self.b = [True, False, True]
@@ -136,7 +136,7 @@ class TestBuiltinsList:
 
 
 class TestSfix:
-    class T2(HW):
+    class T2(Hardware):
         def __init__(self):
             self.i = Sfix(0.1, 0, -17)
 
@@ -170,7 +170,7 @@ class TestSfix:
 
 
 class TestSfixList:
-    class T3(HW):
+    class T3(Hardware):
         def __init__(self):
             self.i = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
 
@@ -207,7 +207,7 @@ class TestSfixList:
 
 
 class TestSubmodule:
-    class T4Sub(HW):
+    class T4Sub(Hardware):
         def __init__(self):
             self.i = 1
             self.i2 = 2
@@ -216,7 +216,7 @@ class TestSubmodule:
             self.i = i
             return self.i
 
-    class T4(HW):
+    class T4(Hardware):
         def __init__(self):
             self.sub = TestSubmodule.T4Sub()
             self.i = 0
@@ -263,7 +263,7 @@ class TestSubmodule:
 
 
 class TestSubmoduleList:
-    class T5Sub(HW):
+    class T5Sub(Hardware):
         def __init__(self):
             self.i = 1
             self.i2 = 2
@@ -272,7 +272,7 @@ class TestSubmoduleList:
             self.i = i
             return self.i
 
-    class T5(HW):
+    class T5(Hardware):
         def __init__(self):
             self.sub = [TestSubmoduleList.T5Sub(), TestSubmoduleList.T5Sub()]
             self.i = 0

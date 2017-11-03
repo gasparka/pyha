@@ -1,10 +1,10 @@
-from pyha.common.const import Const
-from pyha.common.sfix import Sfix, resize, fixed_truncate
-from pyha.common.hwsim import HW
 import numpy as np
 
+from pyha.common.hwsim import Hardware
+from pyha.common.sfix import Sfix, resize, fixed_truncate
 
-class BigFir(HW):
+
+class BigFir(Hardware):
     def __init__(self, coef):
         self.coef = coef
 

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion_types import get_conversion_vars, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
     VHDLEnum, BaseVHDLType
@@ -28,7 +28,7 @@ class TestVHDLList:
         d = [Sfix(0, 1, -2)] * 2
         self.dut = VHDLList('out', d, d)
 
-        class T(HW):
+        class T(Hardware):
             pass
 
         self.dut_sub = VHDLList('out', [T()] * 2, [T()] * 2)
@@ -71,11 +71,11 @@ class TestVHDLList:
         assert expect == dut._pyha_reset('self.dummy')
 
     def test_pyha_reset_submodules(self):
-        class C2(HW):
+        class C2(Hardware):
             def __init__(self):
                 self.regor = False
 
-        class A2(HW):
+        class A2(Hardware):
             def __init__(self, reg_init):
                 self.reg = reg_init
                 self.submodule = C2()
@@ -175,7 +175,7 @@ class TestVHDLSfix:
 
 class TestVHDLModule:
     def setup(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.b = Sfix(0, 0, -17)
@@ -183,12 +183,12 @@ class TestVHDLModule:
         self.dut = VHDLModule('name', T(), T())
 
     def test_pyha_module_name(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.b = Sfix(0, 0, -17)
 
-        class Root(HW):
+        class Root(Hardware):
             def __init__(self):
                 self.a = T()
                 self.b = T()
@@ -199,12 +199,12 @@ class TestVHDLModule:
         assert dut.elems[1]._pyha_module_name() == expect
 
     def test_pyha_module_name_not_compatible(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self, n):
                 self.a = [1] * n
                 self.b = Sfix(0, 0, -17)
 
-        class Root(HW):
+        class Root(Hardware):
             def __init__(self):
                 self.a = T(2)
                 self.b = T(3)
@@ -231,21 +231,21 @@ class TestVHDLModule:
         assert self.dut._pyha_reset() == expect
 
     def test_pyha_reset_recursive(self):
-        class Label(HW):
+        class Label(Hardware):
             def __init__(self):
                 self.register = Sfix(0.563, 0, -18)
 
-        class C3(HW):
+        class C3(Hardware):
             def __init__(self):
                 self.nested_list = [Label(), Label()]
                 self.regor = False
 
-        class A3(HW):
+        class A3(Hardware):
             def __init__(self, reg_init):
                 self.reg = reg_init
                 self.submodule = C3()
 
-        class B3(HW):
+        class B3(Hardware):
             def __init__(self):
                 self.ror = 554
                 self.sublist = [A3(2), A3(128)]
@@ -265,7 +265,7 @@ class TestVHDLModule:
     def test_pyha_reset_lazy_sfix(self):
         """ Test that lazy Sfix values will take correct bound after 'main' execution"""
 
-        class A4(HW):
+        class A4(Hardware):
             def __init__(self):
                 self.a = [Sfix()] * 2
                 self.b = [Sfix(left=1)] * 2
@@ -290,11 +290,11 @@ class TestVHDLModule:
         assert expect == dut._pyha_reset()
 
     def test_pyha_reset_constants(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.REG = 1
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.A = 0
                 self.UNDER_SCORE = 1
@@ -318,16 +318,16 @@ class TestVHDLModule:
         assert dut._pyha_reset_constants() == expect
 
     def test_pyha_type_is_compatible(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self, init):
                 self.REG = init
 
-        class B(HW):
+        class B(Hardware):
             def __init__(self):
                 self.REG = 1
                 self.lol = False
 
-        class C(HW):
+        class C(Hardware):
             def __init__(self):
                 self.a = A(1)
                 self.b = B()
@@ -342,11 +342,11 @@ class TestVHDLModule:
         assert not c._pyha_type_is_compatible(b)
 
     def test_pyha_convert_from_stdlogic(self):
-        class B(HW):
+        class B(Hardware):
             def __init__(self):
                 self.f = Sfix(0, 0, -17)
 
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.i = 1
                 self.b = False
@@ -360,11 +360,11 @@ class TestVHDLModule:
         assert expect == a._pyha_convert_from_stdlogic('var', 'in0')
 
     def test_pyha_convert_to_stdlogic(self):
-        class B(HW):
+        class B(Hardware):
             def __init__(self):
                 self.f = Sfix(0, 0, -17)
 
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.i = 1
                 self.b = False
@@ -379,7 +379,7 @@ class TestVHDLModule:
         assert expect == a._pyha_convert_to_stdlogic('var', 'in0')
 
     def test_pyha_is_equal(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self, v):
                 self.f = v
 
@@ -394,7 +394,7 @@ class TestVHDLModule:
         assert not a._pyha_is_equal(b)
 
     def test_pyha_to_python_value(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.f = Sfix(0.5, 0, -5)
                 self.fl = [Sfix(0.5, 0, -5)] * 2
@@ -445,7 +445,7 @@ class TestVHDLEnum:
 
 
 def test_get_conversion_vars_int():
-    class T(HW):
+    class T(Hardware):
         def __init__(self):
             self.i = 0
 
@@ -463,7 +463,7 @@ def test_get_conversion_vars_int():
 
 
 def test_get_conversion_vars_int_list():
-    class T(HW):
+    class T(Hardware):
         def __init__(self):
             self.i = [0, 1, 2]
 

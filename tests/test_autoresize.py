@@ -1,12 +1,12 @@
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.context_managers import AutoResize
-from pyha.common.hwsim import HW, SfixList, PyhaList
+from pyha.common.hwsim import Hardware, SfixList, PyhaList
 from pyha.common.sfix import Sfix, fixed_saturate, fixed_round, fixed_truncate, fixed_wrap
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL
 
 
 class TestSfix:
-    class A(HW):
+    class A(Hardware):
         def __init__(self, overflow_style, round_style):
             self.a = Sfix(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
 
@@ -59,7 +59,7 @@ class TestSfix:
 
 
 class TestSfixList:
-    class A1(HW):
+    class A1(Hardware):
         def __init__(self, overflow_style, round_style):
             self.a = [Sfix(0, 0, -4,
                            overflow_style=overflow_style,
@@ -155,7 +155,7 @@ class TestSfixList:
 
 
 class TestComplex:
-    class A2(HW):
+    class A2(Hardware):
         def __init__(self, overflow_style, round_style):
             self.a = ComplexSfix(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
             self.DELAY = 1
@@ -214,7 +214,7 @@ class TestComplex:
 
 
 class TestLazySfix:
-    class A3(HW):
+    class A3(Hardware):
         def __init__(self):
             self.a = Sfix()
             self.b = Sfix(left=1)
@@ -255,7 +255,7 @@ class TestLazySfix:
 
 
 class TestLazySfixList:
-    class A4(HW):
+    class A4(Hardware):
         def __init__(self):
             self.a = [Sfix()] * 2
             self.b = [Sfix(left=1)] * 2
@@ -306,7 +306,7 @@ class TestLazySfixList:
 
 
 class TestLazyComplexSfix:
-    class A5(HW):
+    class A5(Hardware):
         def __init__(self):
             self.a = ComplexSfix()
             self.b = ComplexSfix(left=1)
@@ -349,7 +349,7 @@ class TestLazyComplexSfix:
 
 
 class TestAssignConstant:
-    class A6(HW):
+    class A6(Hardware):
         def __init__(self):
             self.a = Sfix(0, 0, -17)
             self.b = Sfix(0, 2, -17)
@@ -397,7 +397,7 @@ class TestAssignConstant:
 class TestLocalsSfix:
 
     def test_no_resize(self):
-        class A7B(HW):
+        class A7B(Hardware):
             def main(self, arg):
                 b = Sfix(0.5, 0, -17)
                 b = Sfix(0.5, 5, -5)
@@ -414,7 +414,7 @@ class TestLocalsSfix:
 
     def test_sim(self):
 
-        class A7(HW):
+        class A7(Hardware):
             def main(self, arg):
                 b = Sfix(0.5, 0, -17)
                 c = Sfix(0.1, 5, -12)

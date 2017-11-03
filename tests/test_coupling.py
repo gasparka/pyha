@@ -4,7 +4,7 @@ from enum import Enum
 from redbaron import RedBaron
 
 from pyha.common.complex_sfix import ComplexSfix
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
@@ -12,7 +12,7 @@ from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification,
 
 class TestDefNodeConv:
     def test_build_arguments(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.reg = 1
 
@@ -39,7 +39,7 @@ class TestDefNodeConv:
         assert expect == func.build_arguments()
 
     def test_build_variables(self):
-        class T(HW):
+        class T(Hardware):
             def a(self, arg):
                 b = False
                 i = 1
@@ -59,7 +59,7 @@ class TestDefNodeConv:
         assert expect == func.build_variables()
 
     def test_build_function(self):
-        class T(HW):
+        class T(Hardware):
             def out(self, i):
                 if i:
                     return 1
@@ -88,14 +88,14 @@ class TestDefNodeConv:
 
 class TestClassNodeConv:
     def test_build_data_structs(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.sub = 0
 
         class TestEnum(Enum):
             ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = Sfix(1.0, 0, -27)
                 self.out = Sfix(1.0, 0, -27)  # reserved name
@@ -140,11 +140,11 @@ class TestClassNodeConv:
         assert expect == str(c)
 
     def test_build_typedefs(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.sub = 0
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.al = [0] * 12
                 self.al2 = [0] * 12  # duplicate list
@@ -169,11 +169,11 @@ class TestClassNodeConv:
         assert expect == c
 
     def test_build_init(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.sub = 0
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.al = [0, 0]
@@ -197,11 +197,11 @@ class TestClassNodeConv:
         assert expect == str(dut.build_init(prototype_only=True))
 
     def test_build_update_self(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.sub = 0
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.al = [0, 0]
@@ -225,11 +225,11 @@ class TestClassNodeConv:
         assert expect == str(dut.build_update_registers(prototype_only=True))
 
     def test_build_reset(self):
-        class A(HW):
+        class A(Hardware):
             def __init__(self):
                 self.r = 123
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.a = 0
                 self.al = [0, 1]
@@ -254,7 +254,7 @@ class TestClassNodeConv:
         assert expect == str(dut.build_reset(prototype_only=True))
 
     def test_build_reset_constants(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.A = 0
                 self.a = 0
@@ -275,7 +275,7 @@ class TestClassNodeConv:
         assert expect == str(dut.build_reset_constants(prototype_only=True))
 
     def test_multiline_comments(self):
-        class B0(HW):
+        class B0(Hardware):
             """ class
             doc """
 
@@ -354,7 +354,7 @@ class TestForModification:
         assert expect == y.dumps()
 
     def test_for_self(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.arr = [1, 2, 3]
 
@@ -380,7 +380,7 @@ class EnumType(Enum):
 
 class TestEnumModifications:
     def test_basic(self):
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.r = EnumType.ENUMVALUE
 
@@ -406,11 +406,11 @@ class TestEnumModifications:
 
 class TestCallModifications:
     def test_convert_call(self):
-        class Sub(HW):
+        class Sub(Hardware):
             def f(self):
                 return False
 
-        class T(HW):
+        class T(Hardware):
             def __init__(self):
                 self.sub = Sub()
                 self.r = False
@@ -448,12 +448,12 @@ class TestCallModifications:
 
 class TestAutoResize:
     def setup_class(self):
-        class T1(HW):
+        class T1(Hardware):
             def __init__(self):
                 self.int_reg = 0
                 self.sfix_reg = Sfix(0.1, 2, -19, round_style=fixed_truncate)
 
-        class T0(HW):
+        class T0(Hardware):
             def __init__(self):
                 self.int_reg = 0
                 self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style=fixed_wrap)

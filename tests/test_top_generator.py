@@ -2,14 +2,14 @@ import textwrap
 
 import pytest
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
 
 
 @pytest.fixture
 def basic_obj():
-    class Register(HW):
+    class Register(Hardware):
         def main(self, a, b, c):
             return a * 5, True, Sfix(0.0, 5, -8)
 
@@ -118,7 +118,7 @@ def test_call_arguments(basic_obj):
 
 @pytest.fixture
 def simple_obj():
-    class Simple(HW):
+    class Simple(Hardware):
         def main(self, a):
             return a
 
@@ -228,7 +228,7 @@ def test_simple_full(simple_obj):
 ##################################
 
 def test_no_inputs():
-    class Simple(HW):
+    class Simple(Hardware):
         def main(self):
             return 1
 
@@ -241,7 +241,7 @@ def test_no_inputs():
 
 
 def test_no_outputs():
-    class Simple(HW):
+    class Simple(Hardware):
         def main(self, a):
             pass
 
@@ -254,7 +254,7 @@ def test_no_outputs():
 
 
 def test_no_sim():
-    class Simple(HW):
+    class Simple(Hardware):
         def main(self, a):
             return a
 
@@ -265,7 +265,7 @@ def test_no_sim():
 
 
 def test_decorator():
-    class A(HW):
+    class A(Hardware):
         def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 
@@ -281,7 +281,7 @@ def test_decorator():
 
 
 def test_decorator_kwargs():
-    class A(HW):
+    class A(Hardware):
         def main(self, a, b, c):
             return a * 5, True, Sfix(0.0)
 

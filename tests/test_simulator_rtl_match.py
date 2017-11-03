@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
     skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match, \
@@ -25,7 +25,7 @@ def assert_exact_match_gate(model, types, *x):
 
 
 def test_shift_right():
-    class t0(HW):
+    class t0(Hardware):
         def main(self, x, n):
             ret = x >> n
             return ret
@@ -37,7 +37,7 @@ def test_shift_right():
 
 
 def test_right_index():
-    class t1(HW):
+    class t1(Hardware):
         def main(self, x):
             ret = right_index(x)
             return ret
@@ -47,7 +47,7 @@ def test_right_index():
 
 
 def test_left_index():
-    class t2(HW):
+    class t2(Hardware):
         def main(self, x):
             ret = left_index(x)
             return ret
@@ -57,7 +57,7 @@ def test_left_index():
 
 
 def test_sfix_add():
-    class t3(HW):
+    class t3(Hardware):
         def main(self, x, x1):
             ret = x + x1
             return ret
@@ -68,7 +68,7 @@ def test_sfix_add():
 
 
 def test_sfix_sub():
-    class t4(HW):
+    class t4(Hardware):
         def main(self, x, x1):
             ret = x - x1
             return ret
@@ -79,7 +79,7 @@ def test_sfix_sub():
 
 
 def test_resize_right():
-    class t5(HW):
+    class t5(Hardware):
         def main(self, x):
             ret = resize(x, 2, -4)
             return ret
@@ -89,7 +89,7 @@ def test_resize_right():
 
 
 def test_resize_left():
-    class t6(HW):
+    class t6(Hardware):
         def main(self, x):
             ret = resize(x, 0, -18)
             return ret
@@ -99,7 +99,7 @@ def test_resize_left():
 
 
 def test_array_indexing():
-    class t7(HW):
+    class t7(Hardware):
         def __init__(self):
             self.a = [Sfix(0.1, 0, -28), Sfix(0.2, 0, -28), Sfix(0.3, 0, -28), Sfix(0.4, 0, -28)]
 
@@ -110,7 +110,7 @@ def test_array_indexing():
     assert_exact_match(t7(), [int], x)
 
     # test indexing by -1
-    class t8(HW):
+    class t8(Hardware):
         def __init__(self):
             self.a = [Sfix(0.1, 0, -28), Sfix(0.2, 0, -28), Sfix(0.3, 0, -28), Sfix(0.4, 0, -28)]
 
@@ -124,7 +124,7 @@ def test_array_indexing():
 @pytest.mark.slowtest
 @pytest.mark.parametrize('bits', range(-1, -32, -1))
 def test_sfix_constants(bits):
-    class T8(HW):
+    class T8(Hardware):
         def __init__(self, bits):
             self.bits_const = bits
 
@@ -143,7 +143,7 @@ def test_sfix_constants(bits):
 @pytest.mark.parametrize('right', range(-1, -32, -1))
 @pytest.mark.parametrize('left', range(2))
 def test_sfix_wrapper(left, right):
-    class T9(HW):
+    class T9(Hardware):
         def __init__(self):
             self.phase_acc = Sfix()
             self.DELAY = 1
@@ -163,7 +163,7 @@ def test_sfix_add_shift_right_resize(shift_i):
     right = -18
     left = 0
 
-    class T10(HW):
+    class T10(Hardware):
         def main(self, x, y, i):
             ret = resize(x - (y >> i), size_res=x)
             return ret
@@ -180,7 +180,7 @@ def test_sfix_shift_right(shift_i):
     right = -18
     left = 2
 
-    class T12(HW):
+    class T12(Hardware):
         def main(self, x, i):
             ret = x >> i
             return ret
@@ -197,7 +197,7 @@ def test_sfix_shift_left(shift_i):
     right = -18
     left = 6
 
-    class T13(HW):
+    class T13(Hardware):
         def main(self, x, i):
             ret = x << i
             return ret
@@ -212,7 +212,7 @@ def test_sfix_shift_left5():
     right = -18
     left = 6
 
-    class T13(HW):
+    class T13(Hardware):
         def main(self, x, i):
             ret = x << i
             return ret
@@ -223,7 +223,7 @@ def test_sfix_shift_left5():
 
 
 def test_passtrough_boolean():
-    class T14(HW):
+    class T14(Hardware):
         def main(self, x):
             return x
 
@@ -233,7 +233,7 @@ def test_passtrough_boolean():
 
 def test_int_operations():
     # TODO: 32 bit operations would fail?
-    class T15(HW):
+    class T15(Hardware):
         def main(self, x):
             rand = x & 0x8000
             ror = x | 0x8200
@@ -252,7 +252,7 @@ def test_int_operations():
 def test_real_precison_bug():
     """ This shows how RTL simulation can differ from HWSIM, because we should use integer math in Sfix class??"""
     pytest.xfail('Not solved yet')
-    class Bug(HW):
+    class Bug(Hardware):
         def main(self, c):
             m = resize(c.real * c.real * c.real, 0, -17, round_style=fixed_truncate)
             return m

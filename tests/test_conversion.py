@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.conversion.conversion import Conversion, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match
@@ -15,7 +15,7 @@ class T:
 
 @pytest.fixture
 def dut():
-    class Dummy(HW):
+    class Dummy(Hardware):
         def main(self, a):
             return a
 
@@ -55,11 +55,11 @@ def test_get_objects_rednode_local2():
 
 
 def test_get_objects_rednode_local_two():
-    class Dummy(HW):
+    class Dummy(Hardware):
         def main(self, a):
             return a
 
-    class Dummy2(HW):
+    class Dummy2(Hardware):
         def main(self, a):
             return a
 
@@ -103,7 +103,7 @@ def test_write_vhdl_files(dut, tmpdir):
 
 
 def test_convert_submodule():
-    class Aa(HW):
+    class Aa(Hardware):
         def __init__(self):
             self.reg = 0
 
@@ -111,7 +111,7 @@ def test_convert_submodule():
             self.reg = a
             return self.reg
 
-    class B(HW):
+    class B(Hardware):
         def __init__(self):
             self.sub = Aa()
             self.DELAY = 1
@@ -128,11 +128,11 @@ def test_convert_submodule():
 
 
 def test_convert_submodule_name_conflict():
-    class A2(HW):
+    class A2(Hardware):
         def __init__(self):
             self.reg = 0
 
-    class B2(HW):
+    class B2(Hardware):
         def __init__(self):
             self.sub = A2()
             self.sub2 = A2()
@@ -149,7 +149,7 @@ def test_convert_submodule_name_conflict():
 
 
 def test_typedefs():
-    class A(HW):
+    class A(Hardware):
         def __init__(self):
             self.reg = [1, 2]
 
@@ -157,7 +157,7 @@ def test_typedefs():
             b = [False, True]
             pass
 
-    class B(HW):
+    class B(Hardware):
         def __init__(self):
             self.sub = A()
             self.l = [1, 2]

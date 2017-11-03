@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import fixed_saturate, fixed_round, Sfix
 from pyha.conversion.conversion_types import VHDLModule
 
@@ -83,7 +83,7 @@ class ComplexModule(VHDLModule):
         return o.real + o.imag * 1j
 
 
-class ComplexSfix(HW, ComplexSfixPy):
+class ComplexSfix(Hardware, ComplexSfixPy):
     _pyha_converter = ComplexModule
 
     def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate, round_style=fixed_round):

@@ -261,7 +261,7 @@ class PyhaList(UserList):
             self.data = self._pyha_next[:]
 
 
-class HW(with_metaclass(Meta)):
+class Hardware(with_metaclass(Meta)):
     def __deepcopy__(self, memo):
         """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__

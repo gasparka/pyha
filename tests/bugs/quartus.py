@@ -1,6 +1,6 @@
 import numpy as np
 
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix, left_index, right_index
 from pyha.common.sfix import resize
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
@@ -8,7 +8,7 @@ from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL,
 
 # integers into resize functions must be constant or quartus fails
 # it fails to derive constantness from register values
-class ResizeBoundNotConstant(HW):
+class ResizeBoundNotConstant(Hardware):
     def __init__(self, window_len):
         self.window_len = window_len
         self.window_pow_const = int(np.log2(window_len))

@@ -1,13 +1,14 @@
 from enum import Enum
 
 import numpy as np
-from pyha.common.hwsim import HW
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, simulate, SIM_GATE
 from scipy import signal
 
+from pyha.common.hwsim import Hardware
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
+from pyha.simulation.simulation_interface import SIM_HW_MODEL, simulate, SIM_GATE
 
-class Unit(HW):
+
+class Unit(Hardware):
     def __init__(self):
         self.mac = Sfix(0.0, left=0, round_style=fixed_truncate, overflow_style=fixed_wrap)
 
@@ -18,7 +19,7 @@ class Unit(HW):
 
 def test_basic_share2():
     # quartus shares mult and add (need to hack away the len bug)
-    class Dut(HW):
+    class Dut(Hardware):
         def __init__(self):
             self.a = [Unit() for x in range(4)]
             self.state = 0
@@ -59,7 +60,7 @@ def rescale_taps(taps):
     return taps.tolist()
 
 
-class FIR(HW):
+class FIR(Hardware):
     """ FIR filter, taps will be normalized to sum 1 """
 
     def __init__(self, taps):
@@ -94,7 +95,7 @@ class TheEnum(Enum):
 def test_fir_share():
 
     # shares everything
-    class Dut(HW):
+    class Dut(Hardware):
         def __init__(self):
             # taps = signal.remez(8, [0, 0.1, 0.2, 0.5], [1, 0])
             self.a = [FIR(np.random.rand(5)) for x in range(5)]

@@ -1,4 +1,4 @@
-from pyha.common.hwsim import HW
+from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
@@ -7,7 +7,7 @@ Everything is sequentially executed, you can use debugger to step around in code
 Itself it does nothing useful."""
 
 
-class A0(HW):
+class A0(Hardware):
     """ Simple module that has one Sfix register """
 
     def __init__(self, initial_value):
@@ -21,7 +21,7 @@ class A0(HW):
         return self.reg
 
 
-class A1(HW):
+class A1(Hardware):
     """ This module has a Sfix register and an A0 submodule registers """
 
     def __init__(self, initial_value):
@@ -38,7 +38,7 @@ class A1(HW):
         return r, self.reg
 
 
-class A2(HW):
+class A2(Hardware):
     """ This module has list of registers and submodules """
 
     def __init__(self):
