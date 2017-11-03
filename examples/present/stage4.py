@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from pyha.common.hwsim import Hardware
 from pyha.simulation.simulation_interface import *
 
-""" Algatuseks kasutame integer tüüpi, pärast tuleb fixed """
+""" Fixed point! Lazy fixed point... """
 
 class Demo(Hardware):
     def __init__(self):
-        self.accumulator = 0
+        self.accumulator = Sfix()
         self.DELAY = 1
 
     def main(self, coef, input):
@@ -16,10 +16,11 @@ class Demo(Hardware):
 
 
 def test_demo():
-    """ Põhiidee tuua sisse unit testid ja näidata, et iga mudeli kohta on vaja ainult ühte testi """
-    coefs = list(range(128))
-    inputs = list(range(128))
-
+    """ Demo fixed point erinevust. Vb näita kuidas käsitis default tüüpi muuta?
+    -1 to 1 normaliseermine
+    """
+    coefs = np.random.rand(8)
+    inputs = np.random.rand(8)
 
     model = Demo()
     sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
