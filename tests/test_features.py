@@ -655,7 +655,7 @@ def test_float_to_sfix():
 
 def test_ghdl_version():
     # ghdl has same version for 'all versions'
-    ret = subprocess.getoutput(pyha.__path__[0] + '/../ghdl/bin/ghdl --version | grep -m1 GHDL')
+    ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
     assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
 
 
