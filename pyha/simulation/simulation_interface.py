@@ -100,6 +100,12 @@ def type_conversions(func):
     return type_enforcement_wrap
 
 
+
+def convert_float_to_fixed(obj):
+    for k, v in obj.__dict__.items():
+        print(k, v)
+
+
 class Simulation:
     hw_instances = {}
 
@@ -154,7 +160,8 @@ class Simulation:
     @in_out_transpose
     @flush_pipeline
     def hw_simulation(self, *args):
-
+        convert_float_to_fixed(self.model)
+        # convert datamodel to Fixed...
         if self.simulation_type == SIM_HW_MODEL:
             ret = self.run_hw_model(args)
         elif self.simulation_type in [SIM_RTL, SIM_GATE]:
@@ -184,7 +191,7 @@ class Simulation:
     def main(self, *args) -> np.array:
         self.logger.info(f'Running {self.simulation_type} simulation!')
 
-        if len(args) == 0 or args == (None,):
+        if len(args) == 0 or args is (None,):
             raise InputTypesError('Your model has 0 inputs (main() arguments), this is not supported at the moment -> add dummy input')
 
         # fixme: remove this during type refactoring

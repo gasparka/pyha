@@ -1,9 +1,8 @@
 import subprocess
 from enum import Enum
 
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
@@ -635,6 +634,23 @@ def test_hw_sim_resets():
     dut.main([0.1])
     first_out = float(dut.pure_output[0])
     assert first_out == 0.5
+
+
+def test_float_to_sfix():
+    class D(Hardware):
+        def __init__(self):
+            self.reg = 0.5
+            self.DELAY = 1
+
+        def main(self, in_sfix):
+            self.reg = in_sfix
+            return self.reg
+
+    dut = Simulation(SIM_HW_MODEL, model=D())
+    dut.main([0.1])
+    first_out = float(dut.pure_output[0])
+    assert first_out == 0.5
+
 
 
 def test_ghdl_version():
