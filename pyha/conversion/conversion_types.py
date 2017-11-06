@@ -5,7 +5,6 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
 from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList
 from pyha.common.sfix import Sfix
 
@@ -575,6 +574,7 @@ def conv_class(name, current_val, initial_val=None):
     elif isinstance(current_val, list):  # this may happen for local variables or arguments
         return conv_class(name, PyhaList(current_val), PyhaList(initial_val))
 
+    print(type(current_val))
     assert 0
 
 

@@ -3,17 +3,16 @@ import logging
 import textwrap
 from contextlib import suppress
 
-from parse import parse
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
-
 import pyha
+from parse import parse
 from pyha.common.hwsim import SKIP_FUNCTIONS
 from pyha.common.sfix import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,6 +44,11 @@ class NodeConv:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
                     if isinstance(xj, DefNode) and xj.name in SKIP_FUNCTIONS:
+                        continue
+
+                    # function is NOT simulated, dont convert it
+                    if isinstance(xj, DefNode) and getattr(convert_obj, xj.name).calls == 0:
+                        logger.warning(f'Class "{red_node.name}" function "{xj.name}" was NOT called during simulation, not converting it!')
                         continue
                     self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
 
