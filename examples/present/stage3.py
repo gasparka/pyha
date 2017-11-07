@@ -13,9 +13,15 @@ class ArraySharingDemo(Hardware):
     def main(self, coef, input):
         out = self.components[self.state].main(coef, input)
 
+
+        # next_state = self.state + 1
+        # if next_state >= len(self.components):
+        #     next_state = 0
+        #
+        # self.state = next_state
+        # self.state = min(len(self.components), self.state + 1)
         self.state = self.state + 1
-        self.state = min(len(self.components), self.state + 1)
-        if self.state > len(self.components):
+        if self.state >= len(self.components):
             self.state = 0
 
         return out
@@ -36,8 +42,9 @@ def test_demo():
     coefs = list(range(8))
     inputs = list(range(8))
 
-    model = DualDemo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+    model = ArraySharingDemo()
+    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                    dir_path='/home/gaspar/git/pyha/playground')
 
     print(sims['MODEL'])
     print(sims['HW_MODEL'])

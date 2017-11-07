@@ -5,6 +5,7 @@ from pyha.simulation.simulation_interface import *
 
 """ Algatuseks kasutame integer tüüpi, pärast tuleb fixed """
 
+
 class Demo(Hardware):
     def __init__(self):
         self.accumulator = 0
@@ -20,9 +21,9 @@ def test_demo():
     coefs = list(range(128))
     inputs = list(range(128))
 
-
     model = Demo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                    dir_path='/home/gaspar/git/pyha/playground')
 
     plt.plot(sims['MODEL'])
     plt.plot(sims['HW_MODEL'])
@@ -30,5 +31,3 @@ def test_demo():
     plt.show()
 
     print(sims)
-
-

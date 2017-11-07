@@ -9,13 +9,13 @@ class ArrayDemo(Hardware):
     def __init__(self):
         self.components = [Demo(), Demo(), Demo(), Demo()]
 
-    def main(self, coef, input):
-        out = [x.main(coef, input) for x in self.components]
-        return out
+    # def main2(self, coef, input):
+    #     out = [x.main(coef, input) for x in self.components]
+    #     return out
 
-    def main_sew(self, coef, input):
-        out = self.components[0].main(coef, input)
-        for x in self.components[1:]:
+    def main(self, coef, input):
+        out = input
+        for x in self.components:
             out = x.main(coef, out)
 
         return out
@@ -25,8 +25,9 @@ def test_demo():
     coefs = list(range(8))
     inputs = list(range(8))
 
-    model = DualDemo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+    model = ArrayDemo()
+    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                    dir_path='/home/gaspar/git/pyha/playground')
 
     print(sims['MODEL'])
     print(sims['HW_MODEL'])
@@ -36,3 +37,9 @@ def test_demo():
     # plt.show()
 
     print(sims)
+
+
+out = [x.main(coef, input) for x in self.components]
+
+for x in self.components:
+    out[i] = x.main(coef, input)

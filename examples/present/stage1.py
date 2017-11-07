@@ -10,13 +10,13 @@ class DualDemo(Hardware):
         self.first = Demo()
         self.second = Demo()
 
-    def main(self, coef, input):
+    def main2(self, coef, input):
         first_out = self.first.main(coef, input)
         second_out = self.second.main(coef, input)
 
         return first_out, second_out
 
-    def main2(self, coef, input):
+    def main(self, coef, input):
         first_out = self.first.main(coef, input)
         second_out = self.second.main(coef, first_out)
 
@@ -29,8 +29,8 @@ def test_demo():
     inputs = list(range(8))
 
     model = DualDemo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
-
+    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                    dir_path='/home/gaspar/git/pyha/playground')
     print(sims['MODEL'])
     print(sims['HW_MODEL'])
     # plt.plot(sims['MODEL'])
