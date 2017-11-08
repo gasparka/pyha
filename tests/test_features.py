@@ -69,7 +69,8 @@ class TestEnum:
 
         dut = T()
         inputs = [0.1] * 8
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
+                       dir_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret)
 
 
@@ -636,25 +637,42 @@ def test_hw_sim_resets():
     assert first_out == 0.5
 
 
-def test_float_to_sfix():
+class TestFloatToSfix:
     class D(Hardware):
         def __init__(self):
             self.reg = 0.5
-            self.DELAY = 1
+            self.saturation = 1.5  # make sure is saturated
+            self.round = 0.00009  # make sure is rounded
 
-        def main(self, in_sfix):
-            self.reg = in_sfix
-            return self.reg
+    class Listy(Hardware):
+        def __init__(self):
+            self.float_list = [0.5, 0.00009, 1.5]
+            # self.l = [D(), D()] # submod list
 
-    dut = Simulation(SIM_HW_MODEL, model=D())
-    dut.main([0.1])
-    first_out = float(dut.pure_output[0])
-    assert first_out == 0.5
+    def test_basic(self):
+        dut = self.D()
+        dut._pyha_floats_to_fixed()
+        assert dut.reg == Sfix(0.5, 0, -17)
+        assert dut.round.val == 9.1552734375e-05
+        assert dut.saturation.val == 0.9999923706054688
 
+        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17)
+        assert dut._pyha_next['round'].val == 9.1552734375e-05
+        assert dut._pyha_next['saturation'].val == 0.9999923706054688
+
+    def test_list(self):
+        dut = self.Listy()
+        dut._pyha_floats_to_fixed()
+        assert dut.float_list[0] == Sfix(0.5, 0, -17)
+        assert dut.float_list[1].val == 9.1552734375e-05
+        assert dut.float_list[2].val == 0.9999923706054688
+
+        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17)
+        assert dut.float_list._pyha_next[1].val == 9.1552734375e-05
+        assert dut.float_list._pyha_next[2].val == 0.9999923706054688
 
 
 def test_ghdl_version():
-    # ghdl has same version for 'all versions'
     ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
     assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
 
@@ -700,8 +718,7 @@ def tst_conv2d(a, b):
     res = 0
     for a_row, b_row in zip(a, b):
         for a_item, b_item in zip(a_row, b_row):
-           res += a_item * b_item
-
+            res += a_item * b_item
 
     class Tst(Hardware):
         def __init__(self):
@@ -716,10 +733,7 @@ def tst_conv2d(a, b):
                     else:
                         self.sum[i] = self.sum[i - 1] + a_item * b_item
 
-                    self.sum[i] = self.sum[i-1] + a_item * b_item
+                    self.sum[i] = self.sum[i - 1] + a_item * b_item
                     # res += a_item * b_item
 
             return self.sum[-1]
-
-
-

@@ -1,11 +1,11 @@
+import logging
 import sys
 from collections import UserList
 from copy import deepcopy, copy
 
-from six import iteritems, with_metaclass
-
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, resize
+from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
 
@@ -17,8 +17,9 @@ PYHA_VARIABLES = (
 
 default_sfix = Sfix(0, 0, -17)
 
-
 # default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def deepish_copy(org):
@@ -253,12 +254,23 @@ class PyhaList(UserList):
     def _pyha_update_self(self):
         if RegisterBehaviour.is_force_disabled():
             return
-        if hasattr(self.data[0], '_pyha_update_self'):
-            # object already knows how to handle registers
+        if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
                 x._pyha_update_self()
         else:
             self.data = self._pyha_next[:]
+
+    def _pyha_floats_to_fixed(self):
+
+        if hasattr(self.data[0], '_pyha_update_self'): # is submodule
+            for x in self.data:
+                x._pyha_floats_to_fixed()
+        else:
+            logger.warning(
+                f'List is of type [float] -> converted to [Sfix({default_sfix.left}, {default_sfix.right})]')
+            new = [default_sfix(x) for x in self.data]
+            self.data = new
+            self._pyha_next = deepcopy(new)
 
 
 class Hardware(with_metaclass(Meta)):
@@ -285,9 +297,22 @@ class Hardware(with_metaclass(Meta)):
         for x in self._pyha_updateable:
             x._pyha_update_self()
 
+    def _pyha_floats_to_fixed(self):
+        # update atoms
+        for k, v in self.__dict__.items():
+            if isinstance(v, float):
+                logger.info(
+                    f'Class "{self.__class__.__name__}" variable "{k}" is of type float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
+                new = default_sfix(v)
+                self.__dict__[k] = new
+                self._pyha_next[k] = deepcopy(new)
+
+        # update all childs
+        for x in self._pyha_updateable:
+            x._pyha_floats_to_fixed()
+
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
-        this is only enabled for 'main' function, that simulates hardware.
 
         Also implements the 'implicit next'/'signal assignments'
         """

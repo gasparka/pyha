@@ -100,16 +100,6 @@ def type_conversions(func):
     return type_enforcement_wrap
 
 
-
-def convert_float_to_fixed(obj):
-    logger.warning(
-        f'Variable {name} is of type [float] -> converted to [Sfix({default_sfix.left}, {default_sfix.right}]')
-    current_val = [default_sfix(x) for x in current_val]
-    initial_val = [default_sfix(x) for x in initial_val]
-    for k, v in obj.__dict__.items():
-        print(k, v)
-
-
 class Simulation:
     hw_instances = {}
 
@@ -164,6 +154,7 @@ class Simulation:
     @in_out_transpose
     @flush_pipeline
     def hw_simulation(self, *args):
+        self.model._pyha_floats_to_fixed()
         # convert_float_to_fixed(self.model)
         # convert datamodel to Fixed...
         if self.simulation_type == SIM_HW_MODEL:
