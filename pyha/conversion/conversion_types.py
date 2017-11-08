@@ -5,7 +5,7 @@ from math import isclose
 from typing import List
 
 import numpy as np
-from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList, default_sfix
+from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList
 from pyha.common.sfix import Sfix
 
 logging.basicConfig(level=logging.INFO)
@@ -563,10 +563,7 @@ def conv_class(name, current_val, initial_val=None):
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
         if Conversion.in_progress and isinstance(current_val[0], float):
-            logger.warning(f'Variable {name} is of type [float] -> converted to [Sfix({default_sfix.left}, {default_sfix.right}]')
-            current_val = [default_sfix(x) for x in current_val]
-            initial_val = [default_sfix(x) for x in initial_val]
-
+            return None
 
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, Hardware):

@@ -78,7 +78,7 @@ class AtomtrailersNodeConv(NodeConv):
                 continue
 
             if isinstance(x.red_node, CallNode) and x.red_node.previous.value == 'len':
-                new = str(x) + "'length"
+                new = f"{str(x)[1:-1]}'length"
 
             ret += new.format(x)
 
@@ -420,8 +420,8 @@ class ForNodeConv(NodeConv):
         if str(self.iterator) == '\\_i_\\':
             return f"{pyrange}'range"
 
-        range_len_pattern = parse("\\range\\(({})'length)", pyrange)
-        if range_len_pattern is not None:
+        range_len_pattern = parse("\\range\\({}'length)", pyrange)
+        if range_len_pattern is not None and ',' not in range_len_pattern[0]:
             return range_len_pattern[0] + "'range"
         else:
             range_pattern = parse('\\range\\({})', pyrange)
@@ -429,17 +429,17 @@ class ForNodeConv(NodeConv):
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
                     # todo: handle many more cases
-                    len = parse("({})'length", two_args[1].strip())
+                    len = parse("{}'length", two_args[1].strip())
                     if len is not None:
                         return f"{two_args[0].strip()} to ({len[0]}'length) - 1"
 
-                    len = parse("({})'length{}", two_args[1].strip())
+                    len = parse("{}'length{}", two_args[1].strip())
                     if len is not None:
                         return f"{two_args[0].strip()} to ({len[0]}'length{len[1]}) - 1"
 
                     return f'{two_args[0].strip()} to ({two_args[1].strip()}) - 1'
                 else:
-                    len = parse("({})'length{}", range_pattern[0])
+                    len = parse("{}'length{}", range_pattern[0])
                     if len is not None:
                         return f"0 to ({len[0]}'length{len[1]}) - 1"
                     return f'0 to ({range_pattern[0]}) - 1'
