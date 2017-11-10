@@ -146,7 +146,7 @@ class TestVHDLSfix:
 
     def test_pyha_reset_value(self):
         dut = VHDLSfix('name', Sfix(0, 1, -17), initial=Sfix(0.3, 1, -17))
-        expect = 'Sfix(0.3, 1, -17)'
+        expect = 'Sfix(0.3000030517578125, 1, -17)'
         assert dut._pyha_reset_value() == expect
 
         dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))
@@ -253,12 +253,12 @@ class TestVHDLModule:
         dut = VHDLModule('name', B3(), B3())
         expect = 'self.name.\\next\\.\\ror\\ := 554;\n' \
                  'self.name.sublist(0).\\next\\.reg := 2;\n' \
-                 'self.name.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
-                 'self.name.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
+                 'self.name.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
                  'self.name.sublist(0).submodule.\\next\\.regor := False;\n' \
                  'self.name.sublist(1).\\next\\.reg := 128;\n' \
-                 'self.name.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
-                 'self.name.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.563, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
+                 'self.name.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
                  'self.name.sublist(1).submodule.\\next\\.regor := False;\n'
         assert dut._pyha_reset() == expect
 

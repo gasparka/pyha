@@ -262,7 +262,8 @@ class PyhaList(UserList):
             self.data = self._pyha_next[:]
 
     def _pyha_floats_to_fixed(self):
-
+        if not isinstance(self.data[0], float):
+            return
         if hasattr(self.data[0], '_pyha_update_self'): # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed()
