@@ -1,25 +1,26 @@
 """ Real life example. FIR"""
+
 import numpy as np
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import assert_sim_match
 from scipy import signal
+
+from pyha.common.hwsim import Hardware
+from pyha.common.sfix import Sfix
+from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL
 
 
 class FIR(Hardware):
     """ Transposed FIR filter """
 
     def __init__(self, taps):
-        self.taps = np.array(taps).tolist()
+        # constants
+        self.DELAY = 1
+        self.TAPS = np.array(taps).tolist()
 
         # registers
-        # self.acc = [Sfix(left=0, round_style=fixed_truncate, overflow_style=fixed_wrap)] * (len(self.taps) + 1)
-        self.acc = [Sfix(left=0, round_style=fixed_truncate, overflow_style=fixed_wrap)] * len(self.taps)
+        self.acc = [Sfix(left=0)] * len(taps)
+        # self.acc = [0.0] * len(taps)
 
 
-        # constants
-        self.TAPSS = [Sfix(x, 0, -17) for x in self.taps]
-        self.DELAY = 1
 
         # # constants
         # self.DELAY = 1
@@ -36,14 +37,23 @@ class FIR(Hardware):
         # self.acc[2] = self.acc[1] + x * self.TAPSS[2]
         # self.acc[3] = self.acc[2] + x * self.TAPSS[1]
         # self.acc[4] = self.acc[3] + x * self.TAPSS[0]
+
         for i in range(len(self.acc)):
             if i == 0:
-                self.acc[0] = x * self.TAPSS[-1]
+                self.acc[0] = x * self.TAPS[-1]
             else:
-                self.acc[i] = self.acc[i - 1] + x * self.TAPSS[len(self.TAPSS) - 1 - i]
+                self.acc[i] = self.acc[i - 1] + x * self.TAPS[len(self.TAPS) - 1 - i]
 
-        # self.acc[0] = x * self.TAPSS[3]
-        # self.acc[1] = self.acc[0] + x * self.TAPSS[2]
+        # old = deepcopy(self.acc)
+        # self.acc[0] = x * self.TAPS[1]
+        # self.acc[1] = old[0] + x * self.TAPS[0]
+
+        # for i in range(len(self.acc)):
+        #     if i == 0:
+        #         self.acc[0] = x * self.TAPS[-1]
+        #     else:
+        #         self.acc[i] = old[i - 1] + x * self.TAPS[len(self.TAPS) - 1 - i]
+
         # self.acc[2] = self.acc[1] + x * self.TAPSS[1]
         # self.acc[3] = self.acc[2] + x * self.TAPSS[0]
 
@@ -51,7 +61,10 @@ class FIR(Hardware):
         return self.acc[-1]
 
     def model_main(self, x):
-        return signal.lfilter(self.taps, [1.0], x)
+        return signal.lfilter(self.TAPS, [1.0], x)
+
+
+simulations = [SIM_MODEL, SIM_HW_MODEL]
 
 
 def test_simple():
@@ -59,7 +72,8 @@ def test_simple():
     dut = FIR(taps)
     inp = [0.1, 0.2, 0.3, 0.4]
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_symmetric():
@@ -67,7 +81,8 @@ def test_symmetric():
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 64)
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_sfix_bug():
@@ -77,7 +92,8 @@ def test_sfix_bug():
     dut = FIR(taps)
     inp = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_non_symmetric():
@@ -85,7 +101,8 @@ def test_non_symmetric():
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 128)
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_remez16():
@@ -94,7 +111,8 @@ def test_remez16():
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 64)
 
-    assert_sim_match(dut, None, inp, dir_path='/home/gaspar/git/pyhacores/playground')
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_remez32():
@@ -103,7 +121,8 @@ def test_remez32():
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 64)
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims)
 
 
 def test_remez128():
@@ -112,4 +131,5 @@ def test_remez128():
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 128)
 
-    assert_sim_match(dut, None, inp)
+    sims = simulate(dut, inp, simulations=simulations)
+    assert_equals(sims, rtol=1e-5)

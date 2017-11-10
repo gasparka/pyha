@@ -232,6 +232,9 @@ class Sfix:
                     right,
                     init_only=True)
 
+    def __radd__(self, other):
+        return self.__add__(other)
+
     def __sub__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right)
