@@ -126,6 +126,9 @@ class CocotbAuto(object):
         # convert second level lists to tuples if dealing with 'multiple returns'
         if len(self.conversion.outputs) > 1:
             for i, row in enumerate(outp):
-                outp[i] = tuple(outp[i])
+                try:
+                    outp[i] = tuple(outp[i])
+                except TypeError: # happend when outp[i] is single float
+                    outp[i] = [outp[i]]
 
         return outp

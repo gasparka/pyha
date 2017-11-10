@@ -3,9 +3,10 @@ import sys
 from collections import UserList
 from copy import deepcopy, copy
 
+from six import iteritems, with_metaclass
+
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.sfix import Sfix, resize
-from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
 
@@ -307,9 +308,17 @@ class Hardware(with_metaclass(Meta)):
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
 
+
         # update all childs
         for x in self._pyha_updateable:
             x._pyha_floats_to_fixed()
+
+        # update initial self
+        try:
+            self._pyha_initial_self._pyha_floats_to_fixed()
+        except:
+            pass
+        # self._pyha_initial_self = deepcopy(self)
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.

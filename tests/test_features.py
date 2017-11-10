@@ -1,8 +1,9 @@
 import subprocess
 from enum import Enum
 
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
@@ -644,6 +645,9 @@ class TestFloatToSfix:
             self.saturation = 1.5  # make sure is saturated
             self.round = 0.00009  # make sure is rounded
 
+        def main(self, a):
+            return self.reg, self.saturation, self.round
+
     class Listy(Hardware):
         def __init__(self):
             self.float_list = [0.5, 0.00009, 1.5]
@@ -659,6 +663,20 @@ class TestFloatToSfix:
         assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17)
         assert dut._pyha_next['round'].val == 9.1552734375e-05
         assert dut._pyha_next['saturation'].val == 0.9999923706054688
+
+        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17)
+        assert dut._pyha_initial_self.round.val == 9.1552734375e-05
+        assert dut._pyha_initial_self.saturation.val == 0.9999923706054688
+
+    def test_basic_sim(self):
+        dut = self.D()
+        inp = [0]
+        r = simulate(dut, inp, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL],
+                     dir_path='/home/gaspar/git/pyha/playground')
+
+        assert r['MODEL'] == [[0.5], [1.5], [9e-05]]
+        assert r['HW_MODEL'] == [[0.5], [0.9999923706054688], [9.1552734375e-05]]
+        assert r['HW_MODEL'] == r['RTL']
 
     def test_list(self):
         dut = self.Listy()

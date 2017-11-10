@@ -5,6 +5,7 @@ from math import isclose
 from typing import List
 
 import numpy as np
+
 from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList
 from pyha.common.sfix import Sfix
 
@@ -130,7 +131,7 @@ class BaseVHDLType:
         all array types shall have same [start,end]. Recursive."""
         raise NotImplementedError()
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         raise NotImplementedError()
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
@@ -165,7 +166,7 @@ class VHDLInt(BaseVHDLType):
             return False
         return True
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         return self.current
 
     def _pyha_serialize(self):
@@ -197,7 +198,7 @@ class VHDLBool(BaseVHDLType):
             return False
         return True
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         return self.current
 
     def _pyha_serialize(self):
@@ -215,7 +216,7 @@ class VHDLSfix(BaseVHDLType):
         return len(self.current)
 
     def _pyha_reset_value(self):
-        return 'Sfix({}, {}, {})'.format(self.initial.init_val, self.current.left, self.current.right)
+        return 'Sfix({}, {}, {})'.format(self.initial.val, self.current.left, self.current.right)
 
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
@@ -232,7 +233,7 @@ class VHDLSfix(BaseVHDLType):
             return False
         return self.current.left == other.current.left and self.current.right == other.current.right
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         return float(self.current)
 
     def _pyha_serialize(self):
@@ -267,7 +268,7 @@ class VHDLEnum(BaseVHDLType):
             return False
         return True
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         return self.current.value
 
 
@@ -344,7 +345,7 @@ class VHDLList(BaseVHDLType):
 
         return self.elems[0]._pyha_type_is_compatible(other.elems[0])
 
-    def _pyha_to_python_value(self) -> str:
+    def _pyha_to_python_value(self):
         return [x._pyha_to_python_value() for x in self.elems]
 
     def _pyha_bitwidth(self) -> int:
@@ -529,7 +530,8 @@ class VHDLModule(BaseVHDLType):
 
 
 class VHDLFloat(BaseVHDLType):
-    pass
+    def _pyha_to_python_value(self):
+        return self.current
 
 
 class VHDLComplex(BaseVHDLType):
