@@ -3,33 +3,51 @@
 import numpy as np
 from scipy import signal
 
+from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import Hardware
 from pyha.common.sfix import Sfix
 from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL
 
+"""
+1. Näitan model_main ning teste...4 erinevat reshiimi.
+    Demon mingit müra eemaldamise testi, kust visuaalselt näha mis toimps. (jupiter?)
+    
+* Kuidas model aitab arendusel, saab kasutada pytest unit teste ning testid on TAASKASUTATAVAD, samad testid
+    saab jooksutada riistvaras!
+* Kuidas asju saab debugida!
+* Kuidas keerukaid objekte saab in/outida!
+* Taaskasutus...näitan kuidas kaks tükki paralleeri panna ning seriaali...massiivid?
+* Näitan kuidas mitu FIRi panna interleaved reshiimi, mis säästab korrutajaid.
+* Vaja pöörata tähelepanu põhi abstraktsioonile, mis on main funktsioon, iga call on üks clock
+* Teine põhi point on REGISTRID, pyha on siin suht eriline..
+* Fixed-point detailid või lasta üle?
+
+* Kui sügavale minna? Kas näidata dev protsessi - see meeldiks mulle aga võtab aega + on detailne.
+    Teine võimalus lihtsalt demoda kiirelt kõiki võimalusi.
+    Teha kaks eraldi videot? Üks käib kiirelt featuritest üle...teine on rohkem põhjalik?
+    Tundub et liiga deep on see....
+    Teine võimalus ongi näidata, et FIR on ja kohe hakata taaskasutama seda, ilma detialideta.
+    Esimene video peab olema võimalikult lihtne/ilma detailideta ja demoma pyha erinevaid featureid.
+    Tundub et 3 videot teha on mõistlik
+
+"""
+
 
 class FIR(Hardware):
-    """ Transposed FIR filter """
-
     def __init__(self, taps):
         # constants
         self.DELAY = 1
         self.TAPS = np.array(taps).tolist()
+        ComplexSfix
 
         # registers
         self.acc = [Sfix(left=0)] * len(taps)
-        # self.acc = [0.0] * len(taps)
-
-
-
-        # # constants
-        # self.DELAY = 1
-        # self.TAPS = taps
-        #
-        # # registers
-        # self.acc = [0.0] * (len(self.TAPS) + 1)
 
     def main(self, x):
+
+        for i in range(len(self.acc)):
+            self.acc[i+1] = self.acc[i] + x * self.TAPSS[len(self.TAPSS) - i - 1]
+
         # for i in range(1, len(self.acc)):
         #     self.acc[i] = self.acc[i - 1] + x * self.TAPSS[len(self.TAPSS) - i]
 
@@ -57,7 +75,6 @@ class FIR(Hardware):
         # self.acc[2] = self.acc[1] + x * self.TAPSS[1]
         # self.acc[3] = self.acc[2] + x * self.TAPSS[0]
 
-
         return self.acc[-1]
 
     def model_main(self, x):
@@ -67,12 +84,19 @@ class FIR(Hardware):
 simulations = [SIM_MODEL, SIM_HW_MODEL]
 
 
+def test_wtf():
+    taps = [0.01, 0.02, 0.03, 0.04, 0.03, 0.02, 0.01]
+    inp = np.random.uniform(-1, 1, 16)
+    print(np.convolve(inp, taps, mode='full'))
+    print(signal.lfilter(taps, [1.0], inp))
+
 def test_simple():
     taps = [0.01, 0.02]
     dut = FIR(taps)
     inp = [0.1, 0.2, 0.3, 0.4]
 
     sims = simulate(dut, inp, simulations=simulations)
+    print(sims)
     assert_equals(sims)
 
 
@@ -132,4 +156,5 @@ def test_remez128():
     inp = np.random.uniform(-1, 1, 128)
 
     sims = simulate(dut, inp, simulations=simulations)
+    print(len(sims['MODEL']), len(sims['HW_MODEL']))
     assert_equals(sims, rtol=1e-5)
