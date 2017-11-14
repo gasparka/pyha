@@ -293,6 +293,40 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
 
+    def test_shiftreg_sfix_lazy(self):
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sfix = [Sfix(0.5)] * 4
+
+            def main(self, new_sfix):
+                self.shr_sfix = [new_sfix] + self.shr_sfix[:-1]
+                return self.shr_sfix[-1]
+
+        dut = ShiftReg()
+
+        inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        expect = [0.5, 0.5, 0.5, 0.5, 0.1, 0.2]
+        sims = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_equals(sims, expected=expect)
+        print(sims)
+
+    def test_shiftreg_sfix_lazy_backward(self):
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sfix = [Sfix(0.0)] * 4
+
+            def main(self, new_sfix):
+                self.shr_sfix = self.shr_sfix[1:] + [new_sfix]
+                return self.shr_sfix[-1]
+
+        dut = ShiftReg()
+
+        inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        expect = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+        sims = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        print(sims)
+        assert_equals(sims, expected=expect)
+
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
 
