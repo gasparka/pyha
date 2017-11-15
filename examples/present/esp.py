@@ -4,8 +4,8 @@ import numpy as np
 from scipy import signal
 
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
+from pyha.common.sfix import Sfix, resize, fixed_wrap, fixed_truncate
+from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class FIR(Hardware):
@@ -19,6 +19,17 @@ class FIR(Hardware):
         # registers
         # self.acc = [Sfix(left=0)] * len(taps)
         self.in_history = [Sfix(0.0)] * len(taps)
+        # self.out = Sfix()
+
+        self.retime1 = Sfix(0.0)
+        self.retime2 = Sfix(0.0)
+        self.retime3 = Sfix(0.0)
+
+        self.inre1 = Sfix()
+        self.inre2 = Sfix()
+
+
+
         # self.acc = [0.0] * len(taps)
         # self.sum = Sfix(0.0)
 
@@ -31,13 +42,22 @@ class FIR(Hardware):
         # self.acc = [0.0] * (len(self.TAPS) + 1)
 
     def main(self, x):
-        self.in_history = self.in_history[1:] + [x]
+        self.inre1 = x
+        self.inre2 = self.inre1
 
-        sum = Sfix(0.0, 17, -34)
+        self.in_history = self.in_history[1:] + [self.inre2]
+
+        sum = Sfix(0.0, 1, -34)
         for i in range(len(self.TAPS)):
-            sum = sum + self.in_history[i] * self.TAPS[i]
+            sum = resize(sum + self.in_history[i] * self.TAPS[i], 1, -34, overflow_style=fixed_wrap, round_style=fixed_truncate)
 
-        return sum
+        self.retime1 = sum
+        self.retime2 = self.retime1
+        self.retime3 = self.retime2
+
+        return self.retime3
+        # self.out = self.retime[-1]
+        # return self.out
         # for i in range(1, len(self.acc)):
         #     self.acc[i] = self.acc[i - 1] + x * self.TAPSS[len(self.TAPSS) - i]
 
@@ -72,7 +92,18 @@ class FIR(Hardware):
         return signal.lfilter(self.TAPS, [1.0], x)
 
 
-simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_GATE]
+
+
+def test_remezTT_TTTT():
+    np.random.seed(0)
+    taps = signal.remez(4, [0, 0.1, 0.2, 0.5], [1, 0])
+    dut = FIR(taps)
+    inp = np.random.uniform(-1, 1, 64)
+
+    sims = simulate(dut, inp, simulations=simulations,
+                    dir_path='/home/gaspar/git/pyha/playground')
+    # assert_equals(sims)
 
 
 def test_simple():
@@ -113,15 +144,6 @@ def test_non_symmetric():
     assert_equals(sims)
 
 
-def test_remez16():
-    np.random.seed(0)
-    taps = signal.remez(16, [0, 0.1, 0.2, 0.5], [1, 0])
-    dut = FIR(taps)
-    inp = np.random.uniform(-1, 1, 64)
-
-    sims = simulate(dut, inp, simulations=simulations,
-                    dir_path='/home/gaspar/git/pyha/playground')
-    # assert_equals(sims)
 
 
 def test_remez32():
