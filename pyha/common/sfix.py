@@ -85,8 +85,8 @@ class Sfix:
     #     """
     #     Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_saturate,
-                 round_style=fixed_round, init_only=False):
+    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_wrap,
+                 round_style=fixed_truncate, init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
