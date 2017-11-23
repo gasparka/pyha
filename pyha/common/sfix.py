@@ -13,7 +13,6 @@ fixed_round = 'fixed_round'
 fixed_saturate = 'fixed_saturate'
 fixed_wrap = 'fixed_wrap'
 
-
 # TODO: Verify stuff against VHDL library
 class Sfix:
     """
