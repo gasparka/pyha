@@ -70,6 +70,7 @@ def test_simple():
     print(sims)
     assert_equals(sims)
 
+
 def test_wtf():
     taps = [0.01, 0.02, 0.03, 0.04, 0.03, 0.02, 0.01]
     inp = np.random.uniform(-1, 1, 16)
@@ -127,7 +128,7 @@ def test_remez16():
     a = 0.2120513916015625
     b = 0.21208651196033795
     import math
-    math.isclose(a,b)
+    math.isclose(a, b)
 
 
 def test_remez32():
@@ -149,7 +150,6 @@ def test_remez128():
     sims = simulate(dut, inp, simulations=simulations)
     print(len(sims['MODEL']), len(sims['HW_MODEL']))
     assert_equals(sims, rtol=1e-5)
-
 
 # class FIR(Hardware):
 #     def __init__(self, taps):
