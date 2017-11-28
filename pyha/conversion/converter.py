@@ -3,16 +3,17 @@ import logging
 import textwrap
 from contextlib import suppress
 
-import pyha
 from parse import parse
-from pyha.common.hwsim import SKIP_FUNCTIONS
-from pyha.common.sfix import Sfix
-from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
     IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
+
+import pyha
+from pyha.common.hwsim import SKIP_FUNCTIONS
+from pyha.common.sfix import Sfix
+from pyha.common.util import get_iterable, tabber, formatter
+from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1004,6 +1005,7 @@ class EnumModifications:
             type_name = x._pyha_type()
             red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
             for i, node in enumerate(red_names):
-                red_names[i].replace(node[1])
+                enum_obj = type(x.current)[str(node[1])]
+                red_names[i].replace(str(enum_obj.value))
 
         return red_node

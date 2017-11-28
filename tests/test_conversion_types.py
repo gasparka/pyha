@@ -146,7 +146,7 @@ class TestVHDLSfix:
 
     def test_pyha_reset_value(self):
         dut = VHDLSfix('name', Sfix(0, 1, -17), initial=Sfix(0.3, 1, -17))
-        expect = 'Sfix(0.3000030517578125, 1, -17)'
+        expect = 'Sfix(0.29999542236328125, 1, -17)'
         assert dut._pyha_reset_value() == expect
 
         dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))
@@ -430,17 +430,17 @@ class TestVHDLEnum:
     def test_pyha_typedef(self):
         d = self.T.ENUM0
         dut = VHDLEnum('name', d, d)
-        expect = 'type T is (ENUM0,ENUM1,ENUM2,ENUM3);'
+        expect = 'type T is range 0 to 3; -- enum converted to range due to Quartus "bug", see #154'
         assert dut._pyha_typedef() == expect
 
     def test_pyha_reset_value(self):
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
-        expect = 'ENUM1'
+        expect = 1
         assert dut._pyha_reset_value() == expect
 
     def test_pyha_reset(self):
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
-        expect = 'self.\\next\\.name := ENUM1;\n'
+        expect = 'self.\\next\\.name := 1;\n'
         assert dut._pyha_reset() == expect
 
 

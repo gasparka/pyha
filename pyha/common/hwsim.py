@@ -6,7 +6,7 @@ from copy import deepcopy, copy
 from six import iteritems, with_metaclass
 
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
-from pyha.common.sfix import Sfix, resize
+from pyha.common.sfix import Sfix, resize, fixed_round, fixed_saturate
 
 # functions that will not be decorated/converted/parsed
 
@@ -16,7 +16,8 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 PYHA_VARIABLES = (
     '_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
-default_sfix = Sfix(0, 0, -17)
+default_sfix = Sfix(0, 0, -17, overflow_style=fixed_saturate,
+                 round_style=fixed_round)
 
 # default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 logging.basicConfig(level=logging.INFO)
