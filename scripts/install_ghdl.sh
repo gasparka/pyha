@@ -3,8 +3,8 @@ set -vx
 
 # install gnat runtime, adding repo is needed if not ran on  Ubuntu 16 (Xenial)
 echo deb http://cz.archive.ubuntu.com/ubuntu xenial main universe > /etc/apt/sources.list.d/pyha_tmp.list
-apt-get update
-apt-get install -y libgnat-4.9
+sudo apt-get update
+sudo apt-get install -y libgnat-4.9
 rm -f /etc/apt/sources.list.d/pyha_tmp.list
 
 # download ghdl
