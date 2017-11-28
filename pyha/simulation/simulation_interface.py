@@ -245,7 +245,7 @@ def simulate(model, *x, simulations=None, dir_path=None):
 
 
 def assert_equals(simulations, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
-    l = logging.getLogger('equals()')
+    l = logging.getLogger('assert_equals()')
     if expected is None:
         if 'MODEL' in simulations.keys():
             expected = simulations['MODEL']

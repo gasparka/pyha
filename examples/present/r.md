@@ -1,12 +1,14 @@
 # intro
 
-Lives somwhere between HDL and HLS, is HDL but looks like HLS.
+Pyha is a project that simplifies development/testing of hardware with Python.
 
-Pyha follows OOP designs practices. Need to derive the class from 'hardware'.
 Main function for main entrance...however you can make more functions if needed.
 
 
-# demo 1
+# demo 1 -> FIR MODEL MAIN, muud asjad on hidden
+
+Main design unit is a Python class.
+Currently focus on 
 
 * Fir filter -> Usual demo.
 * Golden reference -> Pyha has this merged into the main design unit.
@@ -19,6 +21,7 @@ objects into the simulator.
 
 Go over different simulations.
 
+HW simulatsiooni juures peaks katma:
 **Debugging?**
 **Fixed point?**
 **Registers?**

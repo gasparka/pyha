@@ -13,7 +13,6 @@ class ArraySharingDemo(Hardware):
     def main(self, coef, input):
         out = self.components[self.state].main(coef, input)
 
-
         # next_state = self.state + 1
         # if next_state >= len(self.components):
         #     next_state = 0
@@ -36,6 +35,7 @@ class MoreDemo(Hardware):
         self.reg[0].accumulator = self.reg[0].accumulator + 1
 
         return self.reg
+
 
 def test_demo():
     """ Siin vist testi pole mõtet näidata ..."""
