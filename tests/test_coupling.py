@@ -1,12 +1,13 @@
 import textwrap
 from enum import Enum
 
+from redbaron import RedBaron
+
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, fixed_round, fixed_saturate, resize
+from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
-from redbaron import RedBaron
 
 
 class TestDefNodeConv:
@@ -518,10 +519,10 @@ class TestAutoResize:
                         'self.complex_reg.imag = a'
                         ]
 
-        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_round),
-                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
-                        Sfix(0, overflow_style=fixed_saturate, round_style=fixed_round),
-                        Sfix(0.1, 2, -19, overflow_style=fixed_saturate, round_style=fixed_truncate),
+        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_truncate),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_wrap, round_style=fixed_truncate),
+                        Sfix(0, overflow_style=fixed_wrap, round_style=fixed_truncate),
+                        Sfix(0.1, 2, -19, overflow_style=fixed_wrap, round_style=fixed_truncate),
                         Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
                         Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
 
@@ -532,12 +533,12 @@ class TestAutoResize:
         assert expect_types == passed_types
 
     def test_apply(self):
-        expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)',
-                        'self.submod_reg.sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
-                        'self.sfix_list[0] = resize(a, None, None, fixed_saturate, fixed_round)',
-                        'self.submod_list[1].sfix_reg = resize(a, 2, -19, fixed_saturate, fixed_truncate)',
-                        'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_round)',
-                        'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_round)'
+        expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_truncate)',
+                        'self.submod_reg.sfix_reg = resize(a, 2, -19, fixed_wrap, fixed_truncate)',
+                        'self.sfix_list[0] = resize(a, None, None, fixed_wrap, fixed_truncate)',
+                        'self.submod_list[1].sfix_reg = resize(a, 2, -19, fixed_wrap, fixed_truncate)',
+                        'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_truncate)',
+                        'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_truncate)'
                         ]
 
         nodes = AutoResize.apply(self.red_node)

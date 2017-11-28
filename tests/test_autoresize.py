@@ -74,7 +74,7 @@ class TestSfixList:
 
     def test_sfixlist_operation(self):
         a = [Sfix(0.1, 1, -27)] * 2
-        b = SfixList(a, Sfix(0, 0, -4))
+        b = SfixList(a, Sfix(0, 0, -4, round_style=fixed_round))
         with AutoResize.enable():
             b[0] = a[0]
 
@@ -236,15 +236,15 @@ class TestLazySfix:
 
             assert dut._pyha_next['a'].left == 2
             assert dut._pyha_next['a'].right == -27
-            assert dut._pyha_next['a'].val == 0.10000000149011612
+            assert dut._pyha_next['a'].val == 0.09999999403953552
 
             assert dut._pyha_next['b'].left == 1
             assert dut._pyha_next['b'].right == -27
-            assert dut._pyha_next['b'].val == 0.10000000149011612
+            assert dut._pyha_next['b'].val == 0.09999999403953552
 
             assert dut._pyha_next['c'].left == 2
             assert dut._pyha_next['c'].right == -4
-            assert dut._pyha_next['c'].val == 0.125
+            assert dut._pyha_next['c'].val == 0.0625
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -276,15 +276,15 @@ class TestLazySfixList:
 
             assert dut.a._pyha_next[0].left == 2
             assert dut.a._pyha_next[0].right == -27
-            assert dut.a._pyha_next[0].val == 0.10000000149011612
+            assert dut.a._pyha_next[0].val == 0.09999999403953552
 
             assert dut.b._pyha_next[0].left == 1
             assert dut.b._pyha_next[0].right == -27
-            assert dut.b._pyha_next[0].val == 0.10000000149011612
+            assert dut.b._pyha_next[0].val == 0.09999999403953552
 
             assert dut.c._pyha_next[0].left == 2
             assert dut.c._pyha_next[0].right == -4
-            assert dut.c._pyha_next[0].val == 0.125
+            assert dut.c._pyha_next[0].val == 0.0625
 
     def test_type_build(self):
         """ Fill Nones in initial type """
@@ -332,13 +332,13 @@ class TestLazyComplexSfix:
 
         assert dut.a._pyha_next['real'].left == 2
         assert dut.a._pyha_next['real'].right == -27
-        assert dut.a._pyha_next['real'].val == 0.10000000149011612
+        assert dut.a._pyha_next['real'].val == 0.09999999403953552
         assert dut.b._pyha_next['imag'].left == 1
         assert dut.b._pyha_next['imag'].right == -27
-        assert dut.b._pyha_next['imag'].val == 0.10000000149011612
+        assert dut.b._pyha_next['imag'].val == 0.09999999403953552
         assert dut.c._pyha_next['real'].left == 2
         assert dut.c._pyha_next['real'].right == -4
-        assert dut.c._pyha_next['real'].val == 0.125
+        assert dut.c._pyha_next['real'].val == 0.0625
 
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -373,7 +373,7 @@ class TestAssignConstant:
 
             assert dut._pyha_next['a'].left == 0
             assert dut._pyha_next['a'].right == -17
-            assert dut._pyha_next['a'].val == 0.1230010986328125
+            assert dut._pyha_next['a'].val == 0.12299346923828125
 
             assert dut._pyha_next['b'].left == 2
             assert dut._pyha_next['b'].right == -17

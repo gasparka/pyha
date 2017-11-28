@@ -146,7 +146,7 @@ class TestVHDLSfix:
 
     def test_pyha_reset_value(self):
         dut = VHDLSfix('name', Sfix(0, 1, -17), initial=Sfix(0.3, 1, -17))
-        expect = 'Sfix(0.3000030517578125, 1, -17)'
+        expect = 'Sfix(0.29999542236328125, 1, -17)'
         assert dut._pyha_reset_value() == expect
 
         dut = VHDLSfix('name', Sfix(0, 2, -8), initial=Sfix(0.3))

@@ -6,7 +6,7 @@ import pytest
 import pyha
 from pyha.common.complex_sfix import ComplexSfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
+from pyha.common.sfix import Sfix, fixed_round, fixed_saturate
 from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
     assert_equals, Simulation, NoModelError
 
@@ -541,7 +541,7 @@ class TestInOutOrdering:
             def __init__(self):
                 self.v0 = Sfix(0.987, 0, -4)
                 self.v1 = Sfix(0.569, 0, -4)
-                self.v2 = Sfix(0.123, 0, -4)
+                self.v2 = Sfix(0.0625, 0, -4)
 
         class T(Hardware):
             def main(self, a):
@@ -550,7 +550,7 @@ class TestInOutOrdering:
         inputs = [Sub()] * 2
         dut = T()
         ret = simulate(dut, inputs)
-        assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.123] * 2], rtol=1e-1)
+        assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.0625] * 2], rtol=1e-1)
 
     def test_sub_sub(self):
         class SubSub(Hardware):
@@ -561,7 +561,7 @@ class TestInOutOrdering:
             def __init__(self):
                 self.s0 = SubSub()
                 self.s1 = SubSub()
-                self.v2 = Sfix(0.123, 0, -4)
+                self.v2 = Sfix(0.0625, 0, -4)
 
         class T(Hardware):
             def main(self, a):
@@ -570,7 +570,7 @@ class TestInOutOrdering:
         inputs = [Sub()] * 2
         dut = T()
         ret = simulate(dut, inputs)
-        assert_equals(ret, [[0.987] * 2, [0.987] * 2, [0.123] * 2], rtol=1e-1)
+        assert_equals(ret, [[0.987] * 2, [0.987] * 2, [0.0625] * 2], rtol=1e-1)
 
     def test_sub_sub_direct(self):
         class SubSub(Hardware):
@@ -690,15 +690,15 @@ class TestFloatToSfix:
     def test_basic(self):
         dut = self.D()
         dut._pyha_floats_to_fixed()
-        assert dut.reg == Sfix(0.5, 0, -17)
+        assert dut.reg == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
         assert dut.round.val == 9.1552734375e-05
         assert dut.saturation.val == 0.9999923706054688
 
-        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17)
+        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
         assert dut._pyha_next['round'].val == 9.1552734375e-05
         assert dut._pyha_next['saturation'].val == 0.9999923706054688
 
-        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17)
+        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
         assert dut._pyha_initial_self.round.val == 9.1552734375e-05
         assert dut._pyha_initial_self.saturation.val == 0.9999923706054688
 
@@ -717,11 +717,11 @@ class TestFloatToSfix:
     def test_list(self):
         dut = self.Listy()
         dut._pyha_floats_to_fixed()
-        assert dut.float_list[0] == Sfix(0.5, 0, -17)
+        assert dut.float_list[0] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
         assert dut.float_list[1].val == 9.1552734375e-05
         assert dut.float_list[2].val == 0.9999923706054688
 
-        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17)
+        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
         assert dut.float_list._pyha_next[1].val == 9.1552734375e-05
         assert dut.float_list._pyha_next[2].val == 0.9999923706054688
 

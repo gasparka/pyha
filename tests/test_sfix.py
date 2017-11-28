@@ -3,7 +3,7 @@ from decimal import *
 import numpy as np
 import pytest
 
-from pyha.common.sfix import Sfix, fixed_wrap, resize
+from pyha.common.sfix import Sfix, fixed_wrap, resize, fixed_saturate, fixed_round
 
 getcontext().prec = 128
 
@@ -16,16 +16,16 @@ def test_default():
 
 
 def test_init():
-    f = Sfix(0.123, 0, -8)
+    f = Sfix(0.123, 0, -8, round_style=fixed_round)
     assert f.val == 0.12109375  # round down
 
-    f = Sfix(0.124, 0, -8)
+    f = Sfix(0.124, 0, -8, round_style=fixed_round)
     assert f.val == 0.125  # round up
 
-    f = Sfix(1, 0, -8)
+    f = Sfix(1, 0, -8, overflow_style=fixed_saturate)
     assert f.val == 0.99609375  # saturates up
 
-    f = Sfix(-2, 0, -8)
+    f = Sfix(-2, 0, -8, overflow_style=fixed_saturate)
     assert f.val == -1  # saturates down
     assert f.left == 0
     assert f.right == -8
@@ -103,21 +103,6 @@ def test_arith():
     assert float(f) == full_prec
     assert f.left == 4
     assert f.right == -38
-
-
-def test_arith_too_precise():
-    a = Sfix(0.223, 0, -8)
-    b = Sfix(-0.098, 0, -18)
-    c = Sfix(0.731, 0, -17)
-    d = Sfix(0.201, 0, -6)
-    e = Sfix(0.01, 0, -12)
-    g = Sfix(0.01, 0, -18)
-    f = a * b * c * d * e * g
-
-    full_prec = Decimal(float(a)) * Decimal(float(b)) * Decimal(float(c)) * Decimal(float(d)) * Decimal(
-        float(e)) * Decimal(float(g))
-
-    assert float(f) != full_prec
 
 
 def test_sign_bit():

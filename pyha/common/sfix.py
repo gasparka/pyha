@@ -19,8 +19,6 @@ class Sfix:
     Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
     are defined for this class.
 
-    More info: https://www.dsprelated.com/showarticle/139.php
-
     :param val: initial value
     :param left: bits for integer part.
     :param right: bits for fractional part. This is negative number.
@@ -50,29 +48,6 @@ class Sfix:
 
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
-
-    # TODO: finish this, there is unit test for it
-    # @staticmethod
-    # def auto_size(val, bits):
-    #     """
-    #     Find optimal sfixed format for value
-    #
-    #     :param val: May be list, then format is optimal including all elements
-    #     :param bits:
-    #     :return:
-    #     """
-    #     # FIXME: int_bits possibly not correct, since we cannot reporesent max positive value, actuall maximum value is (max_int) - (frac_min)
-    #     # calculates for signed type
-    #     if type(val) is list:
-    #         maxabs = max(abs(x) for x in val)
-    #         int_bits = np.floor(np.log2(np.abs(maxabs))) + 1
-    #         fract_bits = -bits + int_bits + 1
-    #         ret = [Sfix(x, int_bits, fract_bits) for x in val]
-    #         return [Sfix(x, int_bits, fract_bits) for x in val]
-    #     else:
-    #         int_bits = np.floor(np.log2(np.abs(val))) + 1
-    #         fract_bits = -bits + int_bits + 1
-    #         return Sfix(val, int_bits, fract_bits)
 
 
     # @staticmethod
@@ -323,7 +298,8 @@ class Sfix:
         return -self.right + self.left + 1
 
     def __call__(self, x: float):
-        return Sfix(x, self.left, self.right)
+        return Sfix(x, self.left, self.right, self.overflow_style,
+                 self.round_style)
 
 
 def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
