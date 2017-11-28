@@ -251,11 +251,10 @@ class VHDLEnum(BaseVHDLType):
 
     def _pyha_typedef(self):
         name = self._pyha_type()
-        types = ','.join([x.name for x in type(self.current)])
-        return 'type {} is ({});'.format(name, types)
+        return 'type {} is range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'.format(name, len(type(self.current))-1)
 
     def _pyha_reset_value(self):
-        return self.initial.name
+        return self.initial.value
 
     def _pyha_convert_from_stdlogic(self, var_name, in_index_offset=0) -> str:
         raise NotImplementedError  # old solution interpeted as ints?
