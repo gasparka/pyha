@@ -394,9 +394,9 @@ class TestEnumModifications:
         dut.a()
 
         expect = \
-            'self.\\next\\.r := ENUMVALUE;\n' \
-            'r := ENUMVALUE;\n' \
-            'if r = ENUMVALUE then\n' \
+            'self.\\next\\.r := 0;\n' \
+            'r := 0;\n' \
+            'if r = 0 then\n' \
             '\n' \
             'end if;'
         conv = get_conversion(dut)
