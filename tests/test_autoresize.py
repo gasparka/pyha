@@ -297,7 +297,6 @@ class TestLazySfixList:
         assert dut.c.data[0].left == 0
         assert dut.c.data[0].right == -4
 
-
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
@@ -394,8 +393,8 @@ class TestAssignConstant:
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL, SIM_RTL])
 
-class TestLocalsSfix:
 
+class TestLocalsSfix:
     def test_no_resize(self):
         class A7B(Hardware):
             def main(self, arg):
@@ -405,15 +404,14 @@ class TestLocalsSfix:
                 assert b.right == -5
 
                 return arg
+
         x = [0.1, 0.2]
 
         dut = A7B()
         assert_sim_match(dut, None, x,
                          simulations=[SIM_HW_MODEL])
 
-
     def test_sim(self):
-
         class A7(Hardware):
             def main(self, arg):
                 b = Sfix(0.5, 0, -17)
@@ -423,6 +421,7 @@ class TestLocalsSfix:
                 c = a
 
                 return arg, a, b, c
+
         x = [0.1, 0.2]
 
         dut = A7()

@@ -64,17 +64,17 @@ package body PyhaUtil is
 
   function Sfix(a:real; left_index, right_index:integer) return sfixed is
   begin
-    return to_sfixed(a, left_index, right_index, guard_bits=>16);
+    return to_sfixed(a, left_index, right_index, guard_bits=>0);
   end function;
 
   function Sfix(a:integer; left_index, right_index:integer) return sfixed is
   begin
-    return to_sfixed(real(a), left_index, right_index, guard_bits=>16);
+    return to_sfixed(real(a), left_index, right_index, guard_bits=>0);
   end function;
 
   function Sfix(a:real; size_res:sfixed) return sfixed is
   begin
-    return to_sfixed(a, size_res, guard_bits=>16);
+    return to_sfixed(a, size_res, guard_bits=>0);
   end function;
 
   function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed is
