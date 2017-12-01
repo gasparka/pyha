@@ -3,17 +3,12 @@ import logging
 import numpy as np
 
 from pyha.common.context_managers import ContextManagerRefCounted
+from pyha.common.hwsim import Hardware
+from pyha.conversion.conversion_types import VHDLModule
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-fixed_truncate = 'fixed_truncate'
-fixed_round = 'fixed_round'
-
-fixed_saturate = 'fixed_saturate'
-fixed_wrap = 'fixed_wrap'
-
-# TODO: Verify stuff against VHDL library
 class Sfix:
     """
     Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
@@ -59,8 +54,8 @@ class Sfix:
     #     """
     #     Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_wrap,
-                 round_style=fixed_truncate, init_only=False):
+    def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
+                 round_style='truncate', init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
@@ -85,12 +80,12 @@ class Sfix:
         if init_only or Sfix._float_mode.enabled:
             return
 
-        if overflow_style is fixed_saturate:
+        if overflow_style is 'saturate':
             if self.overflows() and overflow_style:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style in fixed_wrap:  # TODO: add tests
+        elif overflow_style in 'wrap':
             self.quantize()
             self.wrap()
         else:
@@ -142,9 +137,8 @@ class Sfix:
     def quantize(self):
         fix = self.val / 2 ** self.right
 
-        if self.round_style is fixed_round:
+        if self.round_style is 'round':
             fix = round(fix)
-            # fix = np.round(fix)
         else:
             fix = int(fix)
 
@@ -169,7 +163,7 @@ class Sfix:
     def __int__(self):
         return int(np.floor(self.val))
 
-    def resize(self, left=0, right=0, type=None, overflow_style=fixed_saturate, round_style=fixed_round):
+    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate'):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
@@ -302,7 +296,7 @@ class Sfix:
                  self.round_style)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='wrap', round_style='truncate'):
     """
     Resize fixed point number.
 
@@ -377,3 +371,93 @@ def scalb(x: Sfix, i: int):
     """
     n = 2 ** i
     return Sfix(x.val * n, x.left + i, x.right + i)
+
+
+class ComplexSfixPy:
+    """
+    Use real and imag members to access underlying Sfix elements.
+
+    :param val:
+    :param left: left bound for both components
+    :param right: right bound for both components
+    :param overflow_style: fixed_saturate(default) or fixed_wrap
+
+    >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
+    >>> a
+    0.45+0.88j [0:-17]
+    >>> a.real
+    0.4499969482421875 [0:-17]
+    >>> a.imag
+    0.8799972534179688 [0:-17]
+
+    Another way to construct it:
+
+    >>> a = Sfix(-0.5, 0, -17)
+    >>> b = Sfix(0.5, 0, -17)
+    >>> ComplexSfixPy(a, b)
+    -0.50+0.50j [0:-17]
+
+
+    """
+
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style='wrap',
+                 round_style='truncate'):
+
+        if type(val) is Sfix and type(left) is Sfix:
+            self.real = val
+            self.imag = left
+        else:
+            self.real = Sfix(val.real, left, right, overflow_style, round_style)
+            self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
+
+    @property
+    def left(self):
+        assert self.real.left == self.imag.left
+        return self.real.left
+
+    @property
+    def right(self):
+        assert self.real.right == self.imag.right
+        return self.real.right
+
+    @property
+    def val(self):
+        return self.real.val + self.imag.val * 1j
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def __call__(self, x, **kwargs):
+        return ComplexSfix(x, self.left, self.right, **kwargs)
+
+    def __str__(self):
+        return '{:.5f}{}{:.5f}j [{}:{}]'.format(self.real.val, "" if self.imag.val < 0.0 else "+", self.imag.val, self.left, self.right)
+
+    def __repr__(self):
+        return str(self)
+
+    def has_same_bounds(self, other):
+        if self.left == other.left and self.right == other.right:
+            return True
+        return False
+
+
+class ComplexModule(VHDLModule):
+    def _pyha_to_python_value(self):
+        return self.current.val
+
+    def _pyha_deserialize(self, serial):
+        o = super()._pyha_deserialize(serial)
+        return o.real + o.imag * 1j
+
+
+class ComplexSfix(Hardware, ComplexSfixPy):
+    _pyha_converter = ComplexModule
+
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style='wrap', round_style='truncate'):
+        super().__init__(val, left, right, overflow_style, round_style)
+
+
+default_complex_sfix = ComplexSfix(0, 0, -17)

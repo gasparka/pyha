@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
-from pyha.conversion.conversion_types import conv_class
+from pyha.conversion.conversion_types import init_conversion_type
 
 COCOTB_MAKEFILE_TEMPLATE = """
 ###############################################################################
@@ -94,9 +94,9 @@ class CocotbAuto(object):
         indata = []
         for arguments in input_data:
             if len(arguments) == 1:
-                l = [conv_class('-', arguments[0], arguments[0])._pyha_serialize()]
+                l = [init_conversion_type('-', arguments[0], arguments[0])._pyha_serialize()]
             else:
-                l = [conv_class('-', arg, arg)._pyha_serialize() for arg in arguments]
+                l = [init_conversion_type('-', arg, arg)._pyha_serialize() for arg in arguments]
             indata.append(l)
 
         np.save(str(self.base_path / 'input.npy'), indata)

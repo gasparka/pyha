@@ -2,8 +2,8 @@ import textwrap
 
 import pytest
 
+from pyha.common.fixed_point import Sfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
 
 

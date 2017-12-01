@@ -3,9 +3,8 @@
 import numpy as np
 from scipy import signal
 
+from pyha.common.fixed_point import Sfix, resize, fixed_wrap, fixed_truncate
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, resize, fixed_wrap, fixed_truncate
-from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE
 
 
 class FIR(Hardware):
@@ -92,7 +91,7 @@ class FIR(Hardware):
         return signal.lfilter(self.TAPS, [1.0], x)
 
 
-simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_GATE]
+simulations = [MODEL, PYHA, GATE]
 
 
 def test_remezTT_TTTT():
@@ -102,7 +101,7 @@ def test_remezTT_TTTT():
     inp = np.random.uniform(-1, 1, 64)
 
     sims = simulate(dut, inp, simulations=simulations,
-                    dir_path='/home/gaspar/git/pyha/playground')
+                    conversion_path='/home/gaspar/git/pyha/playground')
     # assert_equals(sims)
 
 

@@ -3,11 +3,10 @@ from enum import Enum
 
 from redbaron import RedBaron
 
-from pyha.common.complex_sfix import ComplexSfix
+from pyha.common.fixed_point import Sfix, fixed_truncate, fixed_wrap, resize, ComplexSfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
-from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
+from pyha.conversion.redbaron_nodes import AutoResize, ImplicitNext, ForModification, set_convert_obj
 
 
 class TestDefNodeConv:

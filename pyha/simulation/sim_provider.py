@@ -34,9 +34,8 @@ class SimProvider:
         return src
 
     def main(self):
-        from pyha.simulation.simulation_interface import SIM_GATE
         src = self.get_conversion_sources()
-        if self.sim_type == SIM_GATE:
+        if self.sim_type == 'GATE':
             self.make_quartus_project()
             vho = self.make_quartus_netlist()
             src = [str(vho)]

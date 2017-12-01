@@ -1,9 +1,9 @@
 import numpy as np
 
+from pyha.common.fixed_point import Sfix, left_index, right_index
+from pyha.common.fixed_point import resize
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, left_index, right_index
-from pyha.common.sfix import resize
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.legacy import assert_sim_match
 
 
 # integers into resize functions must be constant or quartus fails
@@ -28,7 +28,7 @@ def test_bug():
     x = [0., 1., 2., 3., 4.]
     expected = [0., 0., 1., 2., 3.]
     assert_sim_match(mov, [Sfix(left=4, right=-18)], expected, x,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+                     simulations=['PYHA', 'RTL', 'GATE'])
 
 
 

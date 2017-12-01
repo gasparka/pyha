@@ -1,7 +1,7 @@
 from enum import Enum
 
+from pyha.common.fixed_point import Sfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
 from pyha.conversion.conversion_types import get_conversion_vars, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
     VHDLEnum, BaseVHDLType
 

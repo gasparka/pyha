@@ -1,8 +1,9 @@
 import textwrap
 
 import pytest
-from pyha.conversion.converter import convert
 from redbaron import RedBaron
+
+from pyha.conversion.redbaron_nodes import convert
 
 
 @pytest.fixture

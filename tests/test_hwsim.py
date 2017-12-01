@@ -1,7 +1,7 @@
 import time
 
+from pyha.common.fixed_point import Sfix
 from pyha.common.hwsim import Hardware, Meta, PyhaFunc
-from pyha.common.sfix import Sfix
 
 
 def test_metaclass_assigned():

@@ -8,7 +8,7 @@ from redbaron import RedBaron
 
 from pyha.common.util import tabber
 from pyha.conversion.conversion_types import VHDLModule, VHDLList
-from pyha.conversion.converter import convert, file_header
+from pyha.conversion.redbaron_nodes import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
 

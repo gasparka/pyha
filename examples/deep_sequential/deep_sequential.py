@@ -1,6 +1,6 @@
+from pyha.common.fixed_point import Sfix
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.simulation.legacy import assert_sim_match
 
 """ This example shows how multiple classes can be used in one sequential design.
 Everything is sequentially executed, you can use debugger to step around in code.
@@ -64,12 +64,12 @@ def test_sim_case2():
 
     x = [0.1, 0.2, 0.3, 0.4]  # inputs
     assert_sim_match(dut,
-                          [Sfix(left=0, right=-17)],  # inputs will be casted to this types
-                          None,  # expected result, if None assert all simulations are the same
-                          x,  # inputs
-                          simulations=[SIM_HW_MODEL,  # simulates in python
-                                       SIM_RTL,  # requires GHDL and CocoTB
-                                       SIM_GATE]  # requires Quartus and compiled libs
-                          , dir_path='/home/gaspar/git/pyha/examples/deep_sequential/conversion'
-                          # where to write conversion stuff
-                          )
+                     [Sfix(left=0, right=-17)],  # inputs will be casted to this types
+                     None,  # expected result, if None assert all simulations are the same
+                     x,  # inputs
+                     simulations=[PYHA,  # simulates in python
+                                  RTL,  # requires GHDL and CocoTB
+                                  GATE]  # requires Quartus and compiled libs
+                     , dir_path='/home/gaspar/git/pyha/examples/deep_sequential/conversion'
+                     # where to write conversion stuff
+                     )

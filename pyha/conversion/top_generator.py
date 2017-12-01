@@ -1,8 +1,8 @@
 import textwrap
 
 from pyha.common.util import tabber
-from pyha.conversion.conversion_types import VHDLModule, conv_class
-from pyha.conversion.converter import file_header
+from pyha.conversion.conversion_types import VHDLModule, init_conversion_type
+from pyha.conversion.redbaron_nodes import file_header
 
 
 class NotTrainedError(Exception):
@@ -32,11 +32,11 @@ class TopGenerator:
             raise NoOutputsError('Model has no outputs (main returns).')
 
     def get_object_args(self) -> list:
-        rets = [conv_class('-', val, val) for val in self.simulated_object.main.last_args]
+        rets = [init_conversion_type('-', val, val) for val in self.simulated_object.main.last_args]
         return rets
 
     def get_object_kwargs(self) -> list:
-        rets = [conv_class(key, val, val) for key, val in self.simulated_object.main.last_kwargs.items()]
+        rets = [init_conversion_type(key, val, val) for key, val in self.simulated_object.main.last_kwargs.items()]
         return rets
 
     def get_object_inputs(self) -> list:
@@ -47,9 +47,9 @@ class TopGenerator:
         if rets == None:
             return []
         if isinstance(rets, tuple):  # multiple returns
-            rets = [conv_class('-', val, val) for val in rets]
+            rets = [init_conversion_type('-', val, val) for val in rets]
         else:
-            rets = [conv_class('-', rets, rets)]
+            rets = [init_conversion_type('-', rets, rets)]
         return rets
 
     def make_entity_inputs(self) -> str:

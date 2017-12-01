@@ -3,7 +3,7 @@ from decimal import *
 import numpy as np
 import pytest
 
-from pyha.common.sfix import Sfix, fixed_wrap, resize, fixed_saturate, fixed_round
+from pyha.common.fixed_point import Sfix, fixed_wrap, resize, fixed_saturate, fixed_round
 
 getcontext().prec = 128
 

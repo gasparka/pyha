@@ -3,9 +3,9 @@ from enum import Enum
 import numpy as np
 from scipy import signal
 
+from pyha.common.fixed_point import Sfix, fixed_truncate, fixed_wrap
 from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, simulate, SIM_GATE
+from pyha.simulation.simulation_interface import simulate
 
 
 class Unit(Hardware):
@@ -42,7 +42,7 @@ def test_basic_share2():
 
     dut = Dut()
     inputs = [[0.1] * 256, [0.1] * 256]
-    ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+    ret = simulate(dut, *inputs, simulations=['PYHA', 'GATE'], conversion_path='/home/gaspar/git/pyha/playground')
 
 
 def rescale_taps(taps):
@@ -98,7 +98,7 @@ def test_fir_share():
     class Dut(Hardware):
         def __init__(self):
             # taps = signal.remez(8, [0, 0.1, 0.2, 0.5], [1, 0])
-            self.a = [FIR(np.random.rand(5)) for x in range(5)]
+            self.a = [FIR(np.random.rand(5)) for x in range(4)]
             # self.state = 0
             self.state = 0
 
@@ -118,7 +118,7 @@ def test_fir_share():
                 res = self.a[2].main(in0)
                 self.state = 4
             elif self.state == 4:
-                res = self.a[4].main(in0)
+                res = self.a[3].main(in0)
                 self.state = 0
 
             # res = self.a[i].main(in0)
@@ -131,4 +131,4 @@ def test_fir_share():
 
     dut = Dut()
     inputs = [[0.1] * 256]
-    ret = simulate(dut, *inputs, simulations=[SIM_HW_MODEL, SIM_GATE], dir_path='/home/gaspar/git/pyha/playground')
+    ret = simulate(dut, *inputs, simulations=['PYHA', 'RTL', 'GATE'], conversion_path='/home/gaspar/git/pyha/playground')
