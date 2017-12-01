@@ -3,11 +3,11 @@ from enum import Enum
 
 from redbaron import RedBaron
 
-from pyha.common.complex_sfix import ComplexSfix
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_truncate, fixed_wrap, resize
+from pyha.common.fixed_point import Sfix, resize
+from pyha.common.complex_fixed_point import ComplexSfix
+from pyha.common.core import Hardware
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
-from pyha.conversion.converter import AutoResize, ImplicitNext, ForModification, set_convert_obj
+from pyha.conversion.redbaron_mods import AutoResize, ImplicitNext, ForModification, set_convert_obj
 
 
 class TestDefNodeConv:
@@ -451,13 +451,13 @@ class TestAutoResize:
         class T1(Hardware):
             def __init__(self):
                 self.int_reg = 0
-                self.sfix_reg = Sfix(0.1, 2, -19, round_style=fixed_truncate)
+                self.sfix_reg = Sfix(0.1, 2, -19, round_style='truncate')
 
         class T0(Hardware):
             def __init__(self):
                 self.int_reg = 0
-                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style=fixed_wrap)
-                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style=fixed_wrap)
+                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style='wrap')
+                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style='wrap')
                 self.submod_reg = T1()
 
                 self.sfix_list = [Sfix()] * 2
@@ -519,12 +519,12 @@ class TestAutoResize:
                         'self.complex_reg.imag = a'
                         ]
 
-        expect_types = [Sfix(2.5, 5, -29, overflow_style=fixed_wrap, round_style=fixed_truncate),
-                        Sfix(0.1, 2, -19, overflow_style=fixed_wrap, round_style=fixed_truncate),
-                        Sfix(0, overflow_style=fixed_wrap, round_style=fixed_truncate),
-                        Sfix(0.1, 2, -19, overflow_style=fixed_wrap, round_style=fixed_truncate),
-                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap),
-                        Sfix(2.5, 5, -29, overflow_style=fixed_wrap)]
+        expect_types = [Sfix(2.5, 5, -29, overflow_style='wrap', round_style='truncate'),
+                        Sfix(0.1, 2, -19, overflow_style='wrap', round_style='truncate'),
+                        Sfix(0, overflow_style='wrap', round_style='truncate'),
+                        Sfix(0.1, 2, -19, overflow_style='wrap', round_style='truncate'),
+                        Sfix(2.5, 5, -29, overflow_style='wrap'),
+                        Sfix(2.5, 5, -29, overflow_style='wrap')]
 
         nodes = AutoResize.find(self.red_node)
         passed_nodes, passed_types = AutoResize.filter(nodes)

@@ -1,6 +1,6 @@
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, resize, fixed_truncate
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.common.fixed_point import Sfix, resize, fixed_truncate
+from pyha.common.core import Hardware
+from pyha.simulation.legacy import assert_sim_match
 
 
 class Demo(Hardware):
@@ -44,6 +44,5 @@ def test_demo():
     assert_sim_match(dut,
                      [Sfix(left=0, right=-17)],
                      None, inputs,
-                     simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      rtol=1e-4,
                      dir_path='/home/gaspar/git/pyha/examples/demo/conversion')

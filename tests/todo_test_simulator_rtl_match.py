@@ -1,27 +1,27 @@
 import numpy as np
 import pytest
 
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, right_index, left_index, resize, fixed_truncate, fixed_wrap
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, \
-    skipping_gate_simulations, skipping_rtl_simulations, skipping_hwmodel_simulations, assert_sim_match, \
-    debug_assert_sim_match
+from pyha.common.fixed_point import Sfix, right_index, left_index, resize
+from pyha.common.core import Hardware
+from pyha.simulation.legacy import assert_sim_match
 
 
 def assert_exact_match(model, types, *x):
-    if skipping_rtl_simulations() or skipping_hwmodel_simulations():
-        return
-    outs = debug_assert_sim_match(model, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL], types=types)
-    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    pytest.fail()
+    # if skipping_rtl_simulations() or skipping_hwmodel_simulations():
+    #     return
+    # outs = debug_assert_sim_match(model, [1], *x, simulations=[PYHA, RTL], types=types)
+    # np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
 
 def assert_exact_match_gate(model, types, *x):
-    if skipping_rtl_simulations() or skipping_gate_simulations():
-        return
+    pytest.fail()
+    # if skipping_rtl_simulations() or skipping_gate_simulations():
+    #     return
 
-    outs = debug_assert_sim_match(model, [1], *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE], types=types)
-    np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-    np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
+    # outs = debug_assert_sim_match(model, [1], *x, simulations=[PYHA, RTL, GATE], types=types)
+    # np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
+    # np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
 
 
 def test_shift_right():
@@ -228,7 +228,7 @@ def test_passtrough_boolean():
             return x
 
     x = [True, False, True, False]
-    assert_sim_match(T14(), [1], x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+    assert_sim_match(T14(), [1], x, simulations=[PYHA, RTL, GATE])
 
 
 def test_int_operations():

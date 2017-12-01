@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 from redbaron import RedBaron
 
 from pyha.common.util import tabber
-from pyha.conversion.conversion_types import VHDLModule, VHDLList
-from pyha.conversion.converter import convert, file_header
+from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList
+from pyha.conversion.redbaron_mods import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
 
@@ -50,9 +50,9 @@ class Conversion:
     in_progress = 0
 
     def __init__(self, obj, datamodel=None):
+        """ Recursively (if object has children 'Hardware' members) converts object to VHDL """
         self.obj = obj
         self.class_name = obj.__class__.__name__
-        print('Convert {}'.format(self.class_name))
         Conversion.in_progress += 1
         self.datamodel = datamodel
         self.is_root = datamodel is None
@@ -89,14 +89,12 @@ class Conversion:
             conv(self, node)
 
         self.red_node = get_objects_rednode(obj)
-        self.conv = convert(self.red_node, obj)
+        self.conv = convert(self.red_node, obj) # actual conversion happens here
 
         self.vhdl_conversion = str(self.conv)
         Conversion.converted_names += [self.datamodel._pyha_module_name()]
         Conversion.typedefs.extend(self.conv.build_typedefs())
         Conversion.in_progress -= 1
-
-
 
     @property
     def inputs(self) -> List[object]:

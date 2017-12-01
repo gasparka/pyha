@@ -4,11 +4,11 @@ from enum import Enum
 import pytest
 
 import pyha
-from pyha.common.complex_sfix import ComplexSfix
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_round, fixed_saturate
-from pyha.simulation.simulation_interface import SIM_HW_MODEL, SIM_RTL, SIM_GATE, assert_sim_match, SIM_MODEL, simulate, \
-    assert_equals, Simulation, NoModelError
+from pyha.common.fixed_point import Sfix
+from pyha.common.complex_fixed_point import ComplexSfix
+from pyha.common.core import Hardware
+from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import simulate, assert_equals, Simulation, NoModelError
 
 
 class TestConst:
@@ -70,8 +70,8 @@ class TestEnum:
 
         dut = T()
         inputs = [0.1] * 8
-        ret = simulate(dut, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                       dir_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs,
+                       conversion_path='/home/gaspar/git/pyha/playground')
         assert_equals(ret)
 
 
@@ -96,7 +96,7 @@ class TestStreaming:
 
         dut = A()
         inputs = [1, 2, 3]
-        assert_sim_match(dut, None, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, None, inputs, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestSubmodulesList:
@@ -161,7 +161,7 @@ class TestSubmodulesList:
         expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expected, *x, simulations=['PYHA', 'RTL', 'GATE'])
 
     def test_for(self):
         class A4(Hardware):
@@ -206,7 +206,7 @@ class TestRegisters:
         inputs = [1, 2, 3, 4]
         expect = [123, 1, 2, 3]
 
-        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=['PYHA', 'RTL', 'GATE'])
 
     def test_multi(self):
         class Register(Hardware):
@@ -225,7 +225,7 @@ class TestRegisters:
         inputs = [[0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4], [True, False, False, False]]
         expect = [[0.123, 0.1, 0.2, 0.3], [123, 1, 2, 3], [False, True, False, False]]
 
-        assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=['PYHA', 'RTL', 'GATE'])
 
     def test_sfix_lazy(self):
         class LazySfixReg(Hardware):
@@ -291,7 +291,7 @@ class TestRegisters:
                   [True, False, False, True, False, False],
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(dut, expect, *inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expect, *inputs, simulations=['PYHA', 'RTL', 'GATE'])
 
     def test_shiftreg_sfix_lazy(self):
         class ShiftReg(Hardware):
@@ -306,7 +306,7 @@ class TestRegisters:
 
         inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         expect = [0.5, 0.5, 0.5, 0.5, 0.1, 0.2]
-        sims = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert_equals(sims, expected=expect)
         print(sims)
 
@@ -323,7 +323,7 @@ class TestRegisters:
 
         inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         expect = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
-        sims = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         print(sims)
         assert_equals(sims, expected=expect)
 
@@ -348,7 +348,7 @@ class TestRegisters:
         inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
         expect = [Sub(4), Sub(3), Sub(999), Sub(9999)]
 
-        ret = simulate(dut, inputs, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        ret = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert_equals(ret, expect)
 
 
@@ -368,7 +368,7 @@ class TestMainAsModel:
         x = [1, 2, 3]
 
         dut = T()
-        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+        assert_sim_match(dut, None, x, simulations=['MODEL', 'PYHA'])
 
     def test_int_list(self):
         class T(Hardware):
@@ -383,7 +383,7 @@ class TestMainAsModel:
         x = [1, 2, 3]
 
         dut = T()
-        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+        assert_sim_match(dut, None, x, simulations=['MODEL', 'PYHA'])
 
     def test_counter_sfix(self):
         class T(Hardware):
@@ -397,7 +397,7 @@ class TestMainAsModel:
 
         x = [1] * 16
         dut = T()
-        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+        assert_sim_match(dut, None, x, simulations=['MODEL', 'PYHA'])
 
     def test_sfix_list(self):
         class T(Hardware):
@@ -412,7 +412,7 @@ class TestMainAsModel:
         x = [0.1, 0.2, 0.3, 0.4, 0.5]
 
         dut = T()
-        assert_sim_match(dut, None, x, simulations=[SIM_MODEL, SIM_HW_MODEL])
+        assert_sim_match(dut, None, x, simulations=['MODEL', 'PYHA'])
 
 
 class TestInterface:
@@ -650,7 +650,7 @@ class TestInOutOrdering:
 
 def test_hw_sim_resets():
     """ Registers should take initial values on each new simulation(call of main) invocation,
-    motivation is to provide same interface as with COCOTB based RTL simulation."""
+    motivation is to provide same interface as with COCOTB based 'RTL' simulation."""
 
     class Rst_Hw(Hardware):
         def __init__(self):
@@ -661,7 +661,7 @@ def test_hw_sim_resets():
             self.sfix_reg = in_sfix
             return self.sfix_reg
 
-    dut = Simulation(SIM_HW_MODEL, model=Rst_Hw())
+    dut = Simulation('PYHA', model=Rst_Hw())
     dut.main([0.1])
     first_out = float(dut.pure_output[0])
     assert first_out == 0.5
@@ -690,38 +690,38 @@ class TestFloatToSfix:
     def test_basic(self):
         dut = self.D()
         dut._pyha_floats_to_fixed()
-        assert dut.reg == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
+        assert dut.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.round.val == 9.1552734375e-05
         assert dut.saturation.val == 0.9999923706054688
 
-        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
+        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut._pyha_next['round'].val == 9.1552734375e-05
         assert dut._pyha_next['saturation'].val == 0.9999923706054688
 
-        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
+        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut._pyha_initial_self.round.val == 9.1552734375e-05
         assert dut._pyha_initial_self.saturation.val == 0.9999923706054688
 
     def test_basic_sim(self):
         dut = self.D()
         inp = [0]
-        r = simulate(dut, inp, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+        r = simulate(dut, inp, simulations=['MODEL', 'PYHA', 'RTL'])
 
         assert r['MODEL'] == [[0.5], [1.5], [9e-05]]
-        assert r['HW_MODEL'] == [[0.5], [0.9999923706054688], [9.1552734375e-05]]
+        assert r['PYHA'] == [[0.5], [0.9999923706054688], [9.1552734375e-05]]
         try:
-            assert r['HW_MODEL'] == r['RTL']
+            assert r['PYHA'] == r['RTL']
         except KeyError:
             pass
 
     def test_list(self):
         dut = self.Listy()
         dut._pyha_floats_to_fixed()
-        assert dut.float_list[0] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
+        assert dut.float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.float_list[1].val == 9.1552734375e-05
         assert dut.float_list[2].val == 0.9999923706054688
 
-        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17, round_style=fixed_round, overflow_style=fixed_saturate)
+        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.float_list._pyha_next[1].val == 9.1552734375e-05
         assert dut.float_list._pyha_next[2].val == 0.9999923706054688
 
@@ -747,25 +747,25 @@ def test_sim_no_model():
             pass
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_MODEL, None)
+        Simulation('MODEL', None)
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_HW_MODEL, NoMain(), None)
+        Simulation('PYHA', NoMain(), None)
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_GATE, NoMain(), None)
+        Simulation('GATE', NoMain(), None)
 
     with pytest.raises(NoModelError):
-        Simulation(SIM_RTL, NoMain(), None)
+        Simulation('RTL', NoMain(), None)
 
     # with pytest.raises(NoModelError):
     #     Simulation(SIM_MODEL, NoModelMain(), None)
 
     # this shall not raise as we are not simulating model
-    Simulation(SIM_HW_MODEL, NoModelMain(), None)
+    Simulation('PYHA', NoModelMain(), None)
 
     # ok, not using main
-    Simulation(SIM_MODEL, NoMain(), None)
+    Simulation('MODEL', NoMain(), None)
 
 
 def tst_conv2d(a, b):

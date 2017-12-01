@@ -7,13 +7,6 @@ from pyha.common.context_managers import ContextManagerRefCounted
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-fixed_truncate = 'fixed_truncate'
-fixed_round = 'fixed_round'
-
-fixed_saturate = 'fixed_saturate'
-fixed_wrap = 'fixed_wrap'
-
-# TODO: Verify stuff against VHDL library
 class Sfix:
     """
     Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
@@ -59,8 +52,8 @@ class Sfix:
     #     """
     #     Sfix._float_mode = x
 
-    def __init__(self, val=0.0, left=None, right=None, overflow_style=fixed_wrap,
-                 round_style=fixed_truncate, init_only=False):
+    def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
+                 round_style='truncate', init_only=False):
 
         self.round_style = round_style
         self.overflow_style = overflow_style
@@ -85,12 +78,12 @@ class Sfix:
         if init_only or Sfix._float_mode.enabled:
             return
 
-        if overflow_style is fixed_saturate:
+        if overflow_style is 'saturate':
             if self.overflows() and overflow_style:
                 self.saturate()
             else:
                 self.quantize()
-        elif overflow_style in fixed_wrap:  # TODO: add tests
+        elif overflow_style in 'wrap':
             self.quantize()
             self.wrap()
         else:
@@ -142,9 +135,8 @@ class Sfix:
     def quantize(self):
         fix = self.val / 2 ** self.right
 
-        if self.round_style is fixed_round:
+        if self.round_style is 'round':
             fix = round(fix)
-            # fix = np.round(fix)
         else:
             fix = int(fix)
 
@@ -169,7 +161,7 @@ class Sfix:
     def __int__(self):
         return int(np.floor(self.val))
 
-    def resize(self, left=0, right=0, type=None, overflow_style=fixed_saturate, round_style=fixed_round):
+    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate'):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
@@ -302,7 +294,7 @@ class Sfix:
                  self.round_style)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style=fixed_saturate, round_style=fixed_round):
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='wrap', round_style='truncate'):
     """
     Resize fixed point number.
 

@@ -1,5 +1,5 @@
 from examples.present.stage0 import Demo
-from pyha.common.hwsim import Hardware
+from pyha.common.core import Hardware
 from pyha.simulation.simulation_interface import *
 
 """ Demo massiive """
@@ -26,8 +26,8 @@ def test_demo():
     inputs = list(range(8))
 
     model = ArrayDemo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                    dir_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(model, coefs, inputs, simulations=[MODEL, PYHA, RTL, GATE],
+                    conversion_path='/home/gaspar/git/pyha/playground')
 
     print(sims['MODEL'])
     print(sims['HW_MODEL'])

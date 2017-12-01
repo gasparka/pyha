@@ -6,18 +6,14 @@ from copy import deepcopy, copy
 from six import iteritems, with_metaclass
 
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
-from pyha.common.sfix import Sfix, resize, fixed_round, fixed_saturate
+from pyha.common.fixed_point import Sfix, resize
 
 # functions that will not be decorated/converted/parsed
-
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 
-# Pyha related variables in the object __dict__
-PYHA_VARIABLES = (
-    '_pyha_constants', '_pyha_initial_self', '_pyha_submodules', '_pyha_instance_id', '_delay', '_pyha_updateable')
 
-default_sfix = Sfix(0, 0, -17, overflow_style=fixed_saturate,
-                 round_style=fixed_round)
+default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
+                    round_style='round')
 
 # default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +39,8 @@ def deepish_copy(org):
 
 
 class PyhaFunc:
+    """ All functions of a Pyha class will be wrapped in this object, calls to original function are done with 'profiler hack' in
+    order to save the local variables. """
     class TraceManager:
         """ Enables nested functions calls, thanks to ref counting """
         last_call_locals = {}
@@ -187,43 +185,9 @@ def auto_resize(target, value):
                   overflow_style=target.overflow_style)
 
 
-class SfixList(list):
-    # TODO: remove this!, should be PyhaList
-    """ On assign to element resize the value """
-
-    def __init__(self, seq, type):
-        super().__init__(seq)
-        self.type = type
-
-    def __setitem__(self, i, y):
-        y = auto_resize(self.type, y)
-
-        if self.type.left is None:
-            self.type.left = y.left
-
-        if self.type.right is None:
-            self.type.right = y.right
-
-        super().__setitem__(i, y)
-
-    def __getitem__(self, y):
-        r = super().__getitem__(y)
-        if isinstance(r, list):
-            return SfixList(r, self.type)
-        return r
-
-    def copy(self):
-        return SfixList(super().copy(), self.type)
-
-        # these may be needed to support shift reg resizes
-        # def __add__(self, other):
-        #    assert 0
-        #
-        # def __radd__(self, other):
-        #     pass
-
-
 class PyhaList(UserList):
+    """ All the lists in the design will be wrapped in this in order to
+     override __setitem__ for array element assigns, like a[1] = 1 """
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, data):
         super().__init__(data)
@@ -265,7 +229,7 @@ class PyhaList(UserList):
     def _pyha_floats_to_fixed(self):
         if not isinstance(self.data[0], float):
             return
-        if hasattr(self.data[0], '_pyha_update_self'): # is submodule
+        if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed()
         else:
@@ -309,7 +273,6 @@ class Hardware(with_metaclass(Meta)):
                 new = default_sfix(v)
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
-
 
         # update all childs
         for x in self._pyha_updateable:

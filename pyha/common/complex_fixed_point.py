@@ -1,37 +1,13 @@
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import fixed_saturate, fixed_round, Sfix, fixed_wrap, fixed_truncate
-from pyha.conversion.conversion_types import VHDLModule
+from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix
+from pyha.conversion.python_types_vhdl import VHDLModule
 
 
-class ComplexSfixPy:
-    """
-    Use real and imag members to access underlying Sfix elements.
+class _ComplexSfixPy:
+    """ Provide Python only functionality """
 
-    :param val:
-    :param left: left bound for both components
-    :param right: right bound for both components
-    :param overflow_style: fixed_saturate(default) or fixed_wrap
-
-    >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
-    >>> a
-    0.45+0.88j [0:-17]
-    >>> a.real
-    0.4499969482421875 [0:-17]
-    >>> a.imag
-    0.8799972534179688 [0:-17]
-
-    Another way to construct it:
-
-    >>> a = Sfix(-0.5, 0, -17)
-    >>> b = Sfix(0.5, 0, -17)
-    >>> ComplexSfixPy(a, b)
-    -0.50+0.50j [0:-17]
-
-
-    """
-
-    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_saturate,
-                 round_style=fixed_round):
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style='wrap',
+                 round_style='truncate'):
 
         if type(val) is Sfix and type(left) is Sfix:
             self.real = val
@@ -83,10 +59,34 @@ class ComplexModule(VHDLModule):
         return o.real + o.imag * 1j
 
 
-class ComplexSfix(Hardware, ComplexSfixPy):
+class ComplexSfix(Hardware, _ComplexSfixPy):
+    """
+    Complex type with 'real' and 'imag' elements, to access underlying Sfix elements.
+
+    :param val:
+    :param left: left bound for both components
+    :param right: right bound for both components
+    :param overflow_style: fixed_saturate(default) or fixed_wrap
+
+    >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
+    >>> a
+    0.45+0.88j [0:-17]
+    >>> a.real
+    0.4499969482421875 [0:-17]
+    >>> a.imag
+    0.8799972534179688 [0:-17]
+
+    Another way to construct it:
+
+    >>> a = Sfix(-0.5, 0, -17)
+    >>> b = Sfix(0.5, 0, -17)
+    >>> _ComplexSfixPy(a, b)
+    -0.50+0.50j [0:-17]
+
+    """
     _pyha_converter = ComplexModule
 
-    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style=fixed_wrap, round_style=fixed_truncate):
+    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style='wrap', round_style='truncate'):
         super().__init__(val, left, right, overflow_style, round_style)
 
 

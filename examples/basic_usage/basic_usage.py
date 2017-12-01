@@ -1,7 +1,7 @@
 import numpy as np
 
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, resize, fixed_truncate
+from pyha.common.fixed_point import Sfix, resize, fixed_truncate
+from pyha.common.core import Hardware
 
 
 class BigFir(Hardware):
@@ -34,7 +34,7 @@ class BigFir(Hardware):
 
 
 def test_basic():
-    from pyha.simulation.simulation_interface import SIM_MODEL, assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+    from pyha.simulation.legacy import assert_sim_match
     dut = BigFir(coef=0.5)
     inputs = [0.1, 0.2, 0.3, 0.2, 0.1]
     expect = [0.05, 0.1, 0.15, 0.1, 0.05]
@@ -42,6 +42,5 @@ def test_basic():
     assert_sim_match(dut,
                      [Sfix(left=0, right=-17)],
                      expect, inputs,
-                     simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
                      rtol=1e-4,
                      dir_path='/home/gaspar/git/pyha/examples/basic_usage/conversion')

@@ -6,8 +6,8 @@ from typing import List
 
 import numpy as np
 
-from pyha.common.hwsim import PyhaFunc, Hardware, PyhaList
-from pyha.common.sfix import Sfix
+from pyha.common.fixed_point import Sfix
+from pyha.common.core import PyhaFunc, Hardware, PyhaList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class BaseVHDLType:
         raise NotImplementedError()
 
     def _pyha_type_is_compatible(self, other) -> bool:
-        """ Test is ``other`` (same type as ``self``) is compatible in VHDL domain. Meaning that
+        """ Test if ``other`` (same type as ``self``) is compatible in VHDL domain. Meaning that
         all array types shall have same [start,end]. Recursive."""
         raise NotImplementedError()
 
@@ -275,7 +275,7 @@ class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial):
         super().__init__(var_name, current, initial)
 
-        self.elems = [conv_class('-', c, i) for c, i in zip(self.current, self.initial)]
+        self.elems = [init_vhdl_type('-', c, i) for c, i in zip(self.current, self.initial)]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
 
@@ -408,7 +408,7 @@ class VHDLModule(BaseVHDLType):
 
         super().__init__(var_name, current, initial)
 
-        self.elems = get_conversion_vars(self.current)
+        self.elems = get_vars_as_vhdl_types(self.current)
         self.elems = [x for x in self.elems if x is not None]
 
     def _pyha_instance_id(self):
@@ -546,7 +546,7 @@ class VHDLComplex(BaseVHDLType):
         return eq
 
 
-def conv_class(name, current_val, initial_val=None):
+def init_vhdl_type(name, current_val, initial_val=None):
     from pyha.conversion.conversion import Conversion
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val)
@@ -576,13 +576,13 @@ def conv_class(name, current_val, initial_val=None):
     elif isinstance(current_val, Enum):
         return VHDLEnum(name, current_val, initial_val)
     elif isinstance(current_val, list):  # this may happen for local variables or arguments
-        return conv_class(name, PyhaList(current_val), PyhaList(initial_val))
+        return init_vhdl_type(name, PyhaList(current_val), PyhaList(initial_val))
 
     print(type(current_val))
     assert 0
 
 
-def get_conversion_vars(obj: Hardware) -> List[BaseVHDLType]:
+def get_vars_as_vhdl_types(obj: Hardware) -> List[BaseVHDLType]:
     def filter_junk(x):
         return {k: v for k, v in x.items()
                 if not k.startswith('_pyha') and not k.startswith('__')
@@ -592,7 +592,7 @@ def get_conversion_vars(obj: Hardware) -> List[BaseVHDLType]:
     initial_vars = filter_junk(vars(obj._pyha_initial_self))
 
     # convert to conversion classes
-    ret = [conv_class(name, current_val, initial_val) for name, current_val, initial_val in
+    ret = [init_vhdl_type(name, current_val, initial_val) for name, current_val, initial_val in
            zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
 
     if ret == []:

@@ -1,6 +1,6 @@
 from scipy import signal
 
-from pyha.common.hwsim import Hardware
+from pyha.common.core import Hardware
 
 
 class ComplexFIR(Hardware):

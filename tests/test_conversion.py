@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
+from pyha.common.fixed_point import Sfix
+from pyha.common.core import Hardware
 from pyha.conversion.conversion import Conversion, get_objects_rednode
-from pyha.simulation.simulation_interface import assert_sim_match
+from pyha.simulation.legacy import assert_sim_match
 
 
 class T:

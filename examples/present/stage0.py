@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from pyha.common.hwsim import Hardware
+from pyha.common.core import Hardware
 from pyha.simulation.simulation_interface import *
 
 """ Algatuseks kasutame integer tüüpi, pärast tuleb fixed """
@@ -22,8 +22,8 @@ def test_demo():
     inputs = list(range(128))
 
     model = Demo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL, SIM_GATE],
-                    dir_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(model, coefs, inputs, simulations=[MODEL, PYHA, RTL, GATE],
+                    conversion_path='/home/gaspar/git/pyha/playground')
 
     plt.plot(sims['MODEL'])
     plt.plot(sims['HW_MODEL'])

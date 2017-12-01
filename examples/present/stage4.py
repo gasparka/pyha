@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from pyha.common.hwsim import Hardware
+from pyha.common.core import Hardware
 from pyha.simulation.simulation_interface import *
 
 """ Fixed point! Lazy fixed point... """
@@ -23,7 +23,7 @@ def test_demo():
     inputs = np.random.rand(8)
 
     model = Demo()
-    sims = simulate(model, coefs, inputs, simulations=[SIM_MODEL, SIM_HW_MODEL, SIM_RTL])
+    sims = simulate(model, coefs, inputs, simulations=[MODEL, PYHA, RTL])
 
     plt.plot(sims['MODEL'])
     plt.plot(sims['HW_MODEL'])

@@ -1,8 +1,8 @@
 from enum import Enum
 
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
-from pyha.conversion.conversion_types import get_conversion_vars, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
+from pyha.common.fixed_point import Sfix
+from pyha.common.core import Hardware
+from pyha.conversion.python_types_vhdl import get_vars_as_vhdl_types, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
     VHDLEnum, BaseVHDLType
 
 
@@ -121,7 +121,6 @@ class TestVHDLList:
         d = VHDLList('name', [1, 2], [1, 2])
         assert d._pyha_deserialize('0000000000000000000000000000000100000000000000000000000000000010') \
                == [1, 2]
-
 
 
 class TestVHDLInt:
@@ -404,7 +403,6 @@ class TestVHDLModule:
         assert pyt.f == 0.5
         assert pyt.fl == [0.5] * 2
 
-
         # def test_serialize(self):
         #     class A(HW):
         #         def __init__(self):
@@ -455,7 +453,7 @@ def test_get_conversion_vars_int():
     dut = T()
     dut.main(1)
     dut._pyha_update_self()
-    ret = get_conversion_vars(dut)
+    ret = get_vars_as_vhdl_types(dut)
 
     expect = [VHDLInt('i', 1, 0)]
 
@@ -468,7 +466,7 @@ def test_get_conversion_vars_int_list():
             self.i = [0, 1, 2]
 
     dut = T()
-    ret = get_conversion_vars(dut)
+    ret = get_vars_as_vhdl_types(dut)
 
     expect = [VHDLList('i', [0, 1, 2], [0, 1, 2])]
 

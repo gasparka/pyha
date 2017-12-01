@@ -1,7 +1,7 @@
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix
-from pyha.simulation.simulation_interface import assert_sim_match, SIM_HW_MODEL, SIM_RTL, SIM_GATE
+from pyha.common.fixed_point import Sfix
+from pyha.common.core import Hardware
+from pyha.simulation.legacy import assert_sim_match
 
 
 class TestBuiltins:
@@ -67,7 +67,7 @@ class TestBuiltins:
         expected = [[1, 5, 2], [True, False, True]]
 
         dut = self.T0()
-        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expected, *x, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestBuiltinsList:
@@ -132,7 +132,7 @@ class TestBuiltinsList:
         expected = [[3, 3, 3, 3, 3, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
-        assert_sim_match(dut, expected, *x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expected, *x, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestSfix:
@@ -166,7 +166,7 @@ class TestSfix:
         expected = [0.1, 0.1, 0.2]
 
         dut = self.T2()
-        assert_sim_match(dut, expected, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expected, x, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestSfixList:
@@ -203,7 +203,7 @@ class TestSfixList:
         expected = [0.2, 0.1, 0.1]
 
         dut = self.T3()
-        assert_sim_match(dut, expected, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, expected, x, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestSubmodule:
@@ -259,7 +259,7 @@ class TestSubmodule:
         x = [1, 2, 3]
 
         dut = self.T4()
-        assert_sim_match(dut, None, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, None, x, simulations=['PYHA', 'RTL', 'GATE'])
 
 
 class TestSubmoduleList:
@@ -328,4 +328,4 @@ class TestSubmoduleList:
         x = [1, 2, 3]
 
         dut = self.T5()
-        assert_sim_match(dut, None, x, simulations=[SIM_HW_MODEL, SIM_RTL, SIM_GATE])
+        assert_sim_match(dut, None, x, simulations=['PYHA', 'RTL', 'GATE'])

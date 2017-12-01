@@ -10,10 +10,10 @@ from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
 
 import pyha
-from pyha.common.hwsim import SKIP_FUNCTIONS
-from pyha.common.sfix import Sfix
+from pyha.common.fixed_point import Sfix
+from pyha.common.core import SKIP_FUNCTIONS
 from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.conversion_types import escape_reserved_vhdl, VHDLModule, conv_class, VHDLEnum, VHDLList
+from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -218,24 +218,24 @@ class DefNodeConv(NodeConv):
         # function arguments
         argnames = inspect.getfullargspec(self.data.func).args[1:]  # skip the first 'self'
         argvals = list(self.data.last_args)
-        args = [conv_class(name, val, val) for name, val in zip(argnames, argvals)]
+        args = [init_vhdl_type(name, val, val) for name, val in zip(argnames, argvals)]
         args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
 
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
         if self.data.last_return is not None:
             if isinstance(self.data.last_return, tuple):  # multiple returns
-                rets = [conv_class(f'ret_{i}', val, val)
+                rets = [init_vhdl_type(f'ret_{i}', val, val)
                         for i, val in enumerate(get_iterable(self.data.last_return))]
             else:
-                rets = [conv_class(f'ret_{0}', self.data.last_return, self.data.last_return)]
+                rets = [init_vhdl_type(f'ret_{0}', self.data.last_return, self.data.last_return)]
             rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
         return '; '.join(args + rets)
 
     def build_variables(self):
         argnames = inspect.getfullargspec(self.data.func).args
-        variables = [conv_class(name, val, val)
+        variables = [init_vhdl_type(name, val, val)
                      for name, val in self.data.locals.items()
                      if name not in argnames]
 
@@ -592,7 +592,7 @@ class ClassNodeConv(NodeConv):
         for function in self.value:
             if not isinstance(function, DefNodeConv):
                 continue
-            variables = [conv_class(name, val, val) for name, val in function.data.locals.items()]
+            variables = [init_vhdl_type(name, val, val) for name, val in function.data.locals.items()]
             typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return typedefs
@@ -806,7 +806,7 @@ class AutoResize:
                 # second term to pass marked nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
-                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, {var_t.overflow_style}, {var_t.round_style})'
+                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
 
         return pass_nodes
 
@@ -818,7 +818,7 @@ class SubmoduleDeepcopy:
         nodes = AutoResize.find(red_node)
 
         for x in nodes:
-            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
             if isinstance(target_type, VHDLModule):
                 x.replace(
                     f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
@@ -831,7 +831,7 @@ class SubmoduleListDeepcopy:
         nodes = AutoResize.find(red_node)
 
         for x in nodes:
-            target_type = conv_class('-', super_getattr(convert_obj, str(x.target)))
+            target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
             if isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
                 x.replace(
                     f'{target_type.elems[0]._pyha_module_name()}._pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
@@ -909,7 +909,7 @@ class CallModifications:
             call_args.insert(0, prefix)
             if prefix.dumps() not in ['self', 'self.next']:
                 var = super_getattr(convert_obj, prefix.dumps())
-                var = conv_class('-', var, var)
+                var = init_vhdl_type('-', var, var)
                 red_node.insert(0, var._pyha_module_name())
                 # v = VHDLType(str(prefix[-1]), red_node=prefix)
                 # red_node.insert(0, v.var_type)
@@ -993,8 +993,9 @@ class ForModification:
 
 
 class EnumModifications:
-    """ In python Enums must be referenced by type: EnumType.ENUMVALUE
-    VHDL does not allow  this, only ENUMVALUE must be written"""
+    """
+    Converts 'EnumType.ENUMVALUE' to integer value , see #154
+    """
 
     @staticmethod
     def apply(red_node):

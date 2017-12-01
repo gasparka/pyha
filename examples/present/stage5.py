@@ -1,11 +1,10 @@
 """ Real life example. FIR"""
+import numpy as np
 from scipy import signal
 
-import numpy as np
-
-from pyha.common.hwsim import Hardware
-from pyha.common.sfix import Sfix, fixed_saturate
-from pyha.simulation.simulation_interface import simulate, assert_equals, SIM_MODEL, SIM_HW_MODEL, SIM_RTL
+from pyha.common.fixed_point import Sfix, fixed_saturate
+from pyha.common.core import Hardware
+from pyha.simulation.simulation_interface import simulate, assert_equals, MODEL, PYHA, RTL
 
 """
 1. Näitan model_main ning teste...4 erinevat reshiimi.
@@ -58,7 +57,7 @@ class FIR(Hardware):
         return signal.lfilter(self.TAPS, [1.0], x)
 
 
-simulations = [SIM_MODEL, SIM_HW_MODEL, SIM_RTL]
+simulations = [MODEL, PYHA, RTL]
 
 
 def test_simple():

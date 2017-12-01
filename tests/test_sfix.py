@@ -3,7 +3,7 @@ from decimal import *
 import numpy as np
 import pytest
 
-from pyha.common.sfix import Sfix, fixed_wrap, resize, fixed_saturate, fixed_round
+from pyha.common.fixed_point import Sfix, resize
 
 getcontext().prec = 128
 
@@ -16,16 +16,16 @@ def test_default():
 
 
 def test_init():
-    f = Sfix(0.123, 0, -8, round_style=fixed_round)
+    f = Sfix(0.123, 0, -8, round_style='round')
     assert f.val == 0.12109375  # round down
 
-    f = Sfix(0.124, 0, -8, round_style=fixed_round)
+    f = Sfix(0.124, 0, -8, round_style='round')
     assert f.val == 0.125  # round up
 
-    f = Sfix(1, 0, -8, overflow_style=fixed_saturate)
+    f = Sfix(1, 0, -8, overflow_style='saturate')
     assert f.val == 0.99609375  # saturates up
 
-    f = Sfix(-2, 0, -8, overflow_style=fixed_saturate)
+    f = Sfix(-2, 0, -8, overflow_style='saturate')
     assert f.val == -1  # saturates down
     assert f.left == 0
     assert f.right == -8
@@ -45,10 +45,10 @@ def test_resize():
     assert fr.left == 0
     assert fr.right == -12
 
-    fr = f.resize(0, -6)
+    fr = f.resize(0, -6, round_style='round')
     assert float(fr) == 0.125
 
-    fr = f.resize(0, -3)
+    fr = f.resize(0, -3, round_style='round')
     assert float(fr) == 0.125
 
     fr = f.resize(0, -2)
@@ -459,7 +459,7 @@ class TestFloatMode:
 
     def test_no_wrap(self):
         with Sfix._float_mode:
-            f = Sfix(-1.5, 0, -8, overflow_style=fixed_wrap)
+            f = Sfix(-1.5, 0, -8, overflow_style='wrap')
             assert f.val == -1.5
             assert f.left == 0
             assert f.right == -8
