@@ -24,7 +24,7 @@ def file_header():
     return template.format(pyha.__version__, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
-class NodeConv:
+class NodeVHDL:
     def __init__(self, red_node, parent=None):
         self.red_node = red_node
         self.parent = parent
@@ -38,7 +38,7 @@ class NodeConv:
         self.iterator = None
 
         for x in red_node._dict_keys:
-            self.__dict__[x] = red_to_conv_hub(red_node.__dict__[x], caller=self)
+            self.__dict__[x] = redbaron_node_to_vhdl_node(red_node.__dict__[x], caller=self)
 
         for x in red_node._list_keys:
             if 'format' not in x:
@@ -51,7 +51,7 @@ class NodeConv:
                     if isinstance(xj, DefNode) and getattr(convert_obj, xj.name).calls == 0:
                         logger.warning(f'Class "{red_node.name}" function "{xj.name}" was NOT called during simulation, not converting it!')
                         continue
-                    self.__dict__[x].append(red_to_conv_hub(xj, caller=self))
+                    self.__dict__[x].append(redbaron_node_to_vhdl_node(xj, caller=self))
 
         for x in red_node._str_keys:
             self.__dict__[x] = red_node.__dict__[x]
@@ -60,20 +60,20 @@ class NodeConv:
         return str(self.red_node)
 
 
-class NameNodeConv(NodeConv):
+class NameNodeVHDL(NodeVHDL):
     def __str__(self):
         return escape_reserved_vhdl(self.red_node.value)
 
 
-class AtomtrailersNodeConv(NodeConv):
+class AtomtrailersNodeVHDL(NodeVHDL):
     def is_function_call(self):
-        return any(isinstance(x, CallNodeConv) for x in self.value)
+        return any(isinstance(x, CallNodeVHDL) for x in self.value)
 
     def __str__(self):
         ret = ''
         for i, x in enumerate(self.value):
             # add '.' infront if NameNode
-            new = '.{}' if isinstance(x, NameNodeConv) and i != 0 else '{}'
+            new = '.{}' if isinstance(x, NameNodeVHDL) and i != 0 else '{}'
 
             if x.value == 'len' and isinstance(x.red_node.next, CallNode):
                 continue
@@ -86,7 +86,7 @@ class AtomtrailersNodeConv(NodeConv):
         return ret
 
 
-class TupleNodeConv(NodeConv):
+class TupleNodeVHDL(NodeVHDL):
     def __iter__(self):
         return iter(self.value)
 
@@ -94,7 +94,7 @@ class TupleNodeConv(NodeConv):
         return ','.join(str(x) for x in self.value)
 
 
-class AssignmentNodeConv(NodeConv):
+class AssignmentNodeVHDL(NodeVHDL):
     def __str__(self):
         r = f'{self.target} := {self.value};'
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
@@ -105,7 +105,7 @@ class AssignmentNodeConv(NodeConv):
         return r
 
 
-class ReturnNodeConv(NodeConv):
+class ReturnNodeVHDL(NodeVHDL):
     def __str__(self):
         ret = []
         for i, value in enumerate(get_iterable(self.value)):
@@ -118,17 +118,17 @@ class ReturnNodeConv(NodeConv):
         return '\n'.join(ret)
 
 
-class ComparisonNodeConv(NodeConv):
+class ComparisonNodeVHDL(NodeVHDL):
     def __str__(self):
         return f'{self.first} {self.value} {self.second}'
 
 
-class BinaryOperatorNodeConv(ComparisonNodeConv):
+class BinaryOperatorNodeVHDL(ComparisonNodeVHDL):
     def __str__(self):
 
         # test if we are dealing with array appending ([a] + b)
         if self.value == '+':
-            if isinstance(self.first, ListNodeConv) or isinstance(self.second, ListNodeConv):
+            if isinstance(self.first, ListNodeVHDL) or isinstance(self.second, ListNodeVHDL):
                 return f'{self.first} & {self.second}'
         elif self.value == '//':
             return f'integer({self.first} / {self.second})'
@@ -146,16 +146,16 @@ class BinaryOperatorNodeConv(ComparisonNodeConv):
         return f'{self.first} {self.value} {self.second}'
 
 
-class BooleanOperatorNodeConv(ComparisonNodeConv):
+class BooleanOperatorNodeVHDL(ComparisonNodeVHDL):
     pass
 
 
-class AssociativeParenthesisNodeConv(NodeConv):
+class AssociativeParenthesisNodeVHDL(NodeVHDL):
     def __str__(self):
         return f'({self.value})'
 
 
-class ComparisonOperatorNodeConv(NodeConv):
+class ComparisonOperatorNodeVHDL(NodeVHDL):
     def __str__(self):
         if self.first == '==':
             return '='
@@ -165,31 +165,31 @@ class ComparisonOperatorNodeConv(NodeConv):
             return super().__str__()
 
 
-class IfelseblockNodeConv(NodeConv):
+class IfelseblockNodeVHDL(NodeVHDL):
     def __str__(self):
         body = '\n'.join(str(x) for x in self.value)
         return body + '\nend if;'
 
 
-class IfNodeConv(NodeConv):
+class IfNodeVHDL(NodeVHDL):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
         return f'if {self.test} then\n{body}'
 
 
-class ElseNodeConv(NodeConv):
+class ElseNodeVHDL(NodeVHDL):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
         return f'else\n{body}'
 
 
-class ElifNodeConv(NodeConv):
+class ElifNodeVHDL(NodeVHDL):
     def __str__(self):
         body = '\n'.join(tabber(str(x)) for x in self.value)
         return f'elsif {self.test} then\n{body}'
 
 
-class DefNodeConv(NodeConv):
+class DefNodeVHDL(NodeVHDL):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
@@ -203,12 +203,12 @@ class DefNodeConv(NodeConv):
 
         # collect multiline comment
         self.multiline_comment = ''
-        if isinstance(self.value[0], StringNodeConv):
+        if isinstance(self.value[0], StringNodeVHDL):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
         # remove last line,if it is \n
-        if isinstance(self.value[-1], EndlNodeConv):
+        if isinstance(self.value[-1], EndlNodeVHDL):
             del self.value[-1]
 
         self.arguments = self.build_arguments()
@@ -269,17 +269,17 @@ class DefNodeConv(NodeConv):
         return self.build_function()
 
 
-class DefArgumentNodeConv(NodeConv):
+class DefArgumentNodeVHDL(NodeVHDL):
     # this node is not used. arguments are inferred from datamodel!
     pass
 
 
-class PassNodeConv(NodeConv):
+class PassNodeVHDL(NodeVHDL):
     def __str__(self):
         return ''
 
 
-class CallNodeConv(NodeConv):
+class CallNodeVHDL(NodeVHDL):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
         is_assign = self.red_node.parent_find('assign')
@@ -288,7 +288,7 @@ class CallNodeConv(NodeConv):
         return base
 
 
-class CallArgumentNodeConv(NodeConv):
+class CallArgumentNodeVHDL(NodeVHDL):
     def __str__(self):
         # transform keyword arguments, = to =>
         if self.target is not None:
@@ -297,24 +297,24 @@ class CallArgumentNodeConv(NodeConv):
         return str(self.value)
 
 
-class IntNodeConv(NodeConv):
+class IntNodeVHDL(NodeVHDL):
     pass
 
 
-class FloatNodeConv(NodeConv):
+class FloatNodeVHDL(NodeVHDL):
     pass
 
 
-class UnitaryOperatorNodeConv(NodeConv):
+class UnitaryOperatorNodeVHDL(NodeVHDL):
     pass
 
 
-class AssertNodeConv(NodeConv):
+class AssertNodeVHDL(NodeVHDL):
     def __str__(self):
         return '--' + super().__str__()
 
 
-class PrintNodeConv(NodeConv):
+class PrintNodeVHDL(NodeVHDL):
     def __str__(self):
         if isinstance(self.red_node.value[0], TupleNode):
             raise Exception(f'{self.red_node} -> print only supported with one Sfix argument!')
@@ -322,7 +322,7 @@ class PrintNodeConv(NodeConv):
 
 
 
-class ListNodeConv(NodeConv):
+class ListNodeVHDL(NodeVHDL):
     def __str__(self):
         if len(self.value) == 1:
             return str(self.value[0])  # [a] -> a
@@ -331,24 +331,24 @@ class ListNodeConv(NodeConv):
             return ret
 
 
-class EndlNodeConv(NodeConv):
+class EndlNodeVHDL(NodeVHDL):
     def __str__(self):
         if isinstance(self.red_node.previous_rendered, CommentNode):
             return '--' + str(self.red_node.previous_rendered)[1:]
         return ''
 
 
-class HexaNodeConv(NodeConv):
+class HexaNodeVHDL(NodeVHDL):
     def __str__(self):
         return f'16#{self.value[2:]}#'
 
 
-class CommentNodeConv(NodeConv):
+class CommentNodeVHDL(NodeVHDL):
     def __str__(self):
         return '--' + self.value[1:]
 
 
-class StringNodeConv(NodeConv):
+class StringNodeVHDL(NodeVHDL):
     """ Multiline comments come here """
 
     def __str__(self):
@@ -361,7 +361,7 @@ class StringNodeConv(NodeConv):
 
 
 # this is mostly array indexing
-class GetitemNodeConv(NodeConv):
+class GetitemNodeVHDL(NodeVHDL):
     # turn python [] indexing to () indexing
 
     def get_index_target(self):
@@ -373,7 +373,7 @@ class GetitemNodeConv(NodeConv):
         return ret[1:]
 
     def is_negative_indexing(self, obj):
-        return isinstance(obj, UnitaryOperatorNodeConv) and int(str(obj)) < 0
+        return isinstance(obj, UnitaryOperatorNodeVHDL) and int(str(obj)) < 0
 
     def __str__(self):
         if self.is_negative_indexing(self.value):
@@ -383,7 +383,7 @@ class GetitemNodeConv(NodeConv):
         return f'({self.value})'
 
 
-class SliceNodeConv(GetitemNodeConv):
+class SliceNodeVHDL(GetitemNodeVHDL):
     def get_index_target(self):
         return '.'.join(str(x) for x in self.parent.parent.value[:-1])
 
@@ -404,7 +404,7 @@ class SliceNodeConv(GetitemNodeConv):
         return f'{lower} to {upper}'
 
 
-class ForNodeConv(NodeConv):
+class ForNodeVHDL(NodeVHDL):
     def __str__(self):
         template = textwrap.dedent("""\
                 for {ITERATOR} in {RANGE} loop
@@ -453,7 +453,7 @@ class ForNodeConv(NodeConv):
         assert 0
 
 
-class ClassNodeConv(NodeConv):
+class ClassNodeVHDL(NodeVHDL):
     def __init__(self, red_node, parent=None):
         super().__init__(red_node, parent)
 
@@ -464,7 +464,7 @@ class ClassNodeConv(NodeConv):
             self.data = None
         # collect multiline comment
         self.multiline_comment = ''
-        if len(self.value) and isinstance(self.value[0], StringNodeConv):
+        if len(self.value) and isinstance(self.value[0], StringNodeVHDL):
             self.multiline_comment = str(self.value[0])
             del self.value[0]
 
@@ -590,7 +590,7 @@ class ClassNodeConv(NodeConv):
 
         # local vars
         for function in self.value:
-            if not isinstance(function, DefNodeConv):
+            if not isinstance(function, DefNodeVHDL):
                 continue
             variables = [init_vhdl_type(name, val, val) for name, val in function.data.locals.items()]
             typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
@@ -620,7 +620,7 @@ class ClassNodeConv(NodeConv):
         proto += self.build_deepcopy(prototype_only=True) + '\n\n'
         proto += self.build_list_deepcopy(prototype_only=True) + '\n\n'
         proto += self.build_update_registers(prototype_only=True) + '\n\n'
-        proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeConv))
+        proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeVHDL))
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
@@ -652,7 +652,7 @@ class ClassNodeConv(NodeConv):
         sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
         sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
-        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeConv))
+        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeVHDL))
 
         return template.format(**sockets)
 
@@ -674,15 +674,15 @@ class ClassNodeConv(NodeConv):
         return template.format(**sockets)
 
 
-def red_to_conv_hub(red: Node, caller):
+def redbaron_node_to_vhdl_node(red: Node, caller):
     """ Convert RedBaron class to conversion class
-    For example: red:NameNode returns NameNodeConv class
+    For example: red:NameNode returns NameNodeVHDL class
     """
     import sys
 
     red_type = red.__class__.__name__
     try:
-        cls = getattr(sys.modules[__name__], red_type + 'Conv')
+        cls = getattr(sys.modules[__name__], red_type + 'VHDL')
     except AttributeError:
         if red_type == 'NoneType':
             return None
@@ -723,7 +723,7 @@ def convert(red: Node, obj=None):
         SubmoduleDeepcopy.apply(red)
         SubmoduleListDeepcopy.apply(red)
 
-    conv = red_to_conv_hub(red, caller=None)  # converts all nodes
+    conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
     return conv
 
