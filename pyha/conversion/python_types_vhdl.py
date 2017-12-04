@@ -5,9 +5,8 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
-from pyha.common.fixed_point import Sfix
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
+from pyha.common.fixed_point import Sfix
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -389,6 +388,8 @@ class VHDLList(BaseVHDLType):
             return False
 
         if len(self.elems) != len(other.elems):
+            l = logging.getLogger('_pyha_is_equal')
+            l.info('{} -> Fail, lists have different lengths: {} vs {}'.format(name, len(self.elems), len(other.elems)))
             return False
 
         r = []
