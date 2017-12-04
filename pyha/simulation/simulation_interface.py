@@ -9,11 +9,10 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-
-from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.fixed_point import Sfix
 from pyha.common.complex_fixed_point import default_complex_sfix
+from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.core import default_sfix
+from pyha.common.fixed_point import Sfix
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
@@ -212,7 +211,7 @@ class Simulation:
                 return np.array(r)
 
             if isinstance(r, tuple):
-                if isinstance(r[0], list):
+                if isinstance(r[0], (list, np.ndarray)):
                     # assume that no transpose needed ( model returns correct way )
                     return np.array(r)
                 return np.transpose(r)

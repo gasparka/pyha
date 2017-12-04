@@ -1,12 +1,11 @@
 import subprocess
 from enum import Enum
 
-import pytest
-
 import pyha
-from pyha.common.fixed_point import Sfix
+import pytest
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix
 from pyha.simulation.legacy import assert_sim_match
 from pyha.simulation.simulation_interface import simulate, assert_equals, Simulation, NoModelError
 
@@ -766,6 +765,23 @@ def test_sim_no_model():
 
     # ok, not using main
     Simulation('MODEL', NoMain(), None)
+
+
+def test_model_numpy_output():
+    """ Was bug when model returned numpy array it was incorrectly transposed """
+    import numpy as np
+    class Tst(Hardware):
+        def model_main(self, dummy):
+            a = np.random.rand(3)
+            b = np.random.rand(3)
+            return a, b
+
+    dut = Tst()
+    inputs = [0.234 + 0.92j]
+    sim_out = simulate(dut, inputs, simulations=['MODEL'])
+    assert len(sim_out['MODEL']) == 2
+    assert len(sim_out['MODEL'][0]) == 3
+    assert len(sim_out['MODEL'][1]) == 3
 
 
 def tst_conv2d(a, b):
