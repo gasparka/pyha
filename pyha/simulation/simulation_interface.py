@@ -276,6 +276,11 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
     def array_to_list(array):
         # https://github.com/numpy/numpy/issues/8052
         if isinstance(array, np.ndarray):
+            if isinstance(array[0], complex):
+                array = array.astype(complex)
+            elif isinstance(array[0], np.floating):
+                array = array.astype(float)
+
             return array_to_list(array.tolist())
         elif isinstance(array, list):
             return [array_to_list(item) for item in array]

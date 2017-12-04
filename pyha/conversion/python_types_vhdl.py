@@ -139,7 +139,7 @@ class BaseVHDLType:
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
             l = logging.getLogger('_pyha_is_equal')
-            l.info('{} {} != {}'.format(name, self.current, other.current))
+            l.error('{} {} != {}'.format(name, self.current, other.current))
         return eq
 
 
@@ -389,7 +389,7 @@ class VHDLList(BaseVHDLType):
 
         if len(self.elems) != len(other.elems):
             l = logging.getLogger('_pyha_is_equal')
-            l.info('{} -> Fail, lists have different lengths: {} vs {}'.format(name, len(self.elems), len(other.elems)))
+            l.error('{} -> Fail, lists have different lengths: {} vs {}'.format(name, len(self.elems), len(other.elems)))
             return False
 
         r = []
@@ -521,6 +521,11 @@ class VHDLModule(BaseVHDLType):
         if len(self.elems) != len(other.elems):
             return False
 
+        if len(self.elems) != len(other.elems):
+            l = logging.getLogger('_pyha_is_equal')
+            l.error('{} -> Fail, modules have different amount of elements: {} vs {}'.format(name, len(self.elems), len(other.elems)))
+            return False
+
         r = []
         for self_elem, other_elem in zip(self.elems, other.elems):
             ret = self_elem._pyha_is_equal(other_elem, '{}.{}'.format(type(self.current).__name__, self_elem._name), rtol, atol)
@@ -536,14 +541,16 @@ class VHDLFloat(BaseVHDLType):
 
 class VHDLComplex(BaseVHDLType):
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
-        if type(self.current) != type(other.current):
+        if not isinstance(other.current, type(self.current)):
+            l = logging.getLogger('_pyha_is_equal')
+            l.error('Complex values not equal bacause types differ!= {}'.format(name, self.current, other.current))
             return False
         eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
         eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
         eq = eq1 and eq2
         if not eq:
             l = logging.getLogger('_pyha_is_equal')
-            l.info('{} {} != {}'.format(name, self.current, other.current))
+            l.error('{} {} != {}'.format(name, self.current, other.current))
         return eq
 
 

@@ -530,6 +530,46 @@ class TestInterface:
         sim_out = simulate(dut, inputs, simulations=['MODEL'])
         assert sims_close(sim_out, expect)
 
+    def test_sims_close_numpy_type_complex(self):
+        """ Stuff failed when expected type was not 'Python' type. For example type was 'np.complex64', function
+         should convert numpy types to Python types"""
+        in_py = {'MODEL': [0.234 + 0.92j]}
+        ex_np = np.array([0.234 + 0.92j])
+        assert sims_close(in_py, ex_np)
+
+        ex_np = np.array([0.234 + 0.92j]).astype(np.complex128)
+        assert sims_close(in_py, ex_np)
+
+    def test_sims_close_numpy_type_float(self):
+        """ Stuff failed when expected type was not 'Python' type. For example type was 'np.complex64', function
+         should convert numpy types to Python types"""
+        in_py = {'MODEL': [0.234]}
+        ex_np = np.array([0.234])
+        assert sims_close(in_py, ex_np)
+
+        ex_np = np.array([0.234]).astype(np.float128)
+        assert sims_close(in_py, ex_np)
+
+    def test_sims_close_numpy_type_int(self):
+        """ Stuff failed when expected type was not 'Python' type. For example type was 'np.complex64', function
+         should convert numpy types to Python types"""
+        in_py = {'MODEL': [1]}
+        ex_np = np.array([1])
+        assert sims_close(in_py, ex_np)
+
+        ex_np = np.array([1]).astype(np.int32)
+        assert sims_close(in_py, ex_np)
+
+    def test_sims_close_numpy_type_bool(self):
+        """ Stuff failed when expected type was not 'Python' type. For example type was 'np.complex64', function
+         should convert numpy types to Python types"""
+        in_py = {'MODEL': [False]}
+        ex_np = np.array([False])
+        assert sims_close(in_py, ex_np)
+
+        ex_np = np.array([False]).astype(np.bool)
+        assert sims_close(in_py, ex_np)
+
 
 class TestComplexSfix:
     def test_py_implementation(self):
