@@ -273,6 +273,19 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
         else:
             expected = simulation_results['HW_MODEL']
 
+    def array_to_list(array):
+        # https://github.com/numpy/numpy/issues/8052
+        if isinstance(array, np.ndarray):
+            return array_to_list(array.tolist())
+        elif isinstance(array, list):
+            return [array_to_list(item) for item in array]
+        elif isinstance(array, tuple):
+            return tuple(array_to_list(item) for item in array)
+        else:
+            return array
+
+    expected = array_to_list(expected)
+
     expected = init_vhdl_type('root', expected, expected)
     for sim_name, sim_data in simulation_results.items():
         sim_data = init_vhdl_type('root', sim_data, sim_data)
@@ -281,6 +294,8 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
             l.info(f'{sim_name} OK!')
         else:
             l.info(f'{sim_name} FAILED!')
+
+        # quit()
         assert eq
 
 
