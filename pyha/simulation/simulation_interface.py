@@ -284,6 +284,15 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
             l.info(f'{sim_name} FAILED!')
         assert eq
 
+
+def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
+    try:
+        assert_equals(simulation_results, expected, rtol, atol)
+        return True
+    except:
+        return False
+
+
 def enforce_simulation_rules(simulations):
     logger = logging.getLogger(__name__)
     if simulations is None:
@@ -326,6 +335,5 @@ def enforce_simulation_rules(simulations):
         elif not have_quartus:
             logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
             simulations.remove('GATE')
-
 
     return simulations
