@@ -6,9 +6,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-
 import pyha
-from pyha import common
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
@@ -60,7 +58,7 @@ class VHDLSimulation:
         rules['VHDL_INPUT_VERSION'] = 'VHDL_2008'
         rules['VHDL_SHOW_LMF_MAPPING_MESSAGES'] = 'OFF'
 
-        common_path = Path(common.__file__).parent / 'vhdl_includes/fixed_pkg/'
+        common_path = Path(pyha.__path__[0]) / 'simulation/sim_include/vhdl_includes/fixed_pkg/'
         src = [common_path / 'fixed_pkg_c.vhd', common_path / 'fixed_float_types_c.vhd']
         src += self.get_conversion_sources()
 
