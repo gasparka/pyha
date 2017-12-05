@@ -36,7 +36,7 @@ class _ComplexSfixPy:
         return False
 
     def __call__(self, x, **kwargs):
-        return ComplexSfix(x, self.left, self.right, **kwargs)
+        return ComplexSfix(x, self.left, self.right, self.real.overflow_style, self.real.round_style)
 
     def __str__(self):
         return '{:.5f}{}{:.5f}j [{}:{}]'.format(self.real.val, "" if self.imag.val < 0.0 else "+", self.imag.val, self.left, self.right)
@@ -90,4 +90,4 @@ class ComplexSfix(Hardware, _ComplexSfixPy):
         super().__init__(val, left, right, overflow_style, round_style)
 
 
-default_complex_sfix = ComplexSfix(0, 0, -17)
+default_complex_sfix = ComplexSfix(0, 0, -17, overflow_style='saturate', round_style='round')

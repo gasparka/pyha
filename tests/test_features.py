@@ -570,6 +570,20 @@ class TestInterface:
         ex_np = np.array([False]).astype(np.bool)
         assert sims_close(in_py, ex_np)
 
+    def test_auto_complex_saturates(self):
+        """ Automatic conversion from Complex to ComplexSfix did not saturate """
+        inp = [1 + 1j, 1 - 1j, -1 + 1j, -1 - 1j]
+        expect = [1 + 1j, 1 - 1j, -1 + 1j, -1 - 1j]
+
+        class Tst(Hardware):
+            def main(self, cin):
+                return cin
+
+        dut = Tst()
+
+        sims = simulate(dut, inp, simulations=['PYHA'])
+        assert sims_close(sims, expect)
+
 
 class TestComplexSfix:
     def test_py_implementation(self):
