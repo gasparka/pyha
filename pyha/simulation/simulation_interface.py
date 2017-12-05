@@ -293,7 +293,7 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
 
     expected = init_vhdl_type('root', expected, expected)
     for sim_name, sim_data in simulation_results.items():
-        sim_data = sim_data[skip_first_n:]
+        sim_data = sim_data[skip_first_n:len(expected.elems)]
         sim_data = init_vhdl_type('root', sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
         if eq:
