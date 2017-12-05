@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-
 from pyha.common.context_managers import ContextManagerRefCounted
 
 logging.basicConfig(level=logging.INFO)
@@ -189,7 +188,7 @@ class Sfix:
 
     def __add__(self, other):
         if type(other) == float:
-            other = Sfix(other, self.left, self.right)
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
 
         left, right = self._size_add(other)
 
@@ -203,7 +202,7 @@ class Sfix:
 
     def __sub__(self, other):
         if type(other) == float:
-            other = Sfix(other, self.left, self.right)
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
 
         left, right = self._size_add(other)
 
@@ -214,7 +213,7 @@ class Sfix:
 
     def __mul__(self, other):
         if type(other) == float:
-            other = Sfix(other, self.left, self.right)
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
 
         if self.left is None and other.left is None:
             left = None
@@ -368,4 +367,4 @@ def scalb(x: Sfix, i: int):
     0.001953125 [-8:-25]
     """
     n = 2 ** i
-    return Sfix(x.val * n, x.left + i, x.right + i)
+    return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
