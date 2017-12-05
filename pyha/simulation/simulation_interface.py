@@ -59,7 +59,7 @@ def in_out_transpose(func):
 
         ret = func(self, *args, **kwargs)
 
-        if isinstance(ret[0], tuple):
+        if len(ret) and isinstance(ret[0], tuple):
             ret = [list(x) for x in zip(*ret)]  # transpose
         return ret
 
@@ -200,7 +200,7 @@ class Simulation:
         if self.simulation_type == 'MODEL':
 
             if self.main_as_model:
-                self.logger.info('Using "main" as model, turning off register delays and fixed point effects')
+                self.logger.info('No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
                 with RegisterBehaviour.force_disable():
                     with Sfix._float_mode:
                         r = self.as_model(*args)
@@ -254,7 +254,7 @@ def simulate(model, *x, simulations=None, conversion_path=None):
             for sim_type in simulations}
 
 
-def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
+def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """
     Assert that simulation results (for exampel SIM_MODEL and SIM_HW_MODEL) are equal(defined by rtol and atol).
 
@@ -289,10 +289,11 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
         else:
             return array
 
-    expected = array_to_list(expected)
+    expected = array_to_list(expected)[skip_first_n:]
 
     expected = init_vhdl_type('root', expected, expected)
     for sim_name, sim_data in simulation_results.items():
+        sim_data = sim_data[skip_first_n:]
         sim_data = init_vhdl_type('root', sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
         if eq:
@@ -304,9 +305,9 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
         assert eq
 
 
-def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4):
+def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     try:
-        assert_equals(simulation_results, expected, rtol, atol)
+        assert_equals(simulation_results, expected, rtol, atol, skip_first_n)
         return True
     except:
         return False
