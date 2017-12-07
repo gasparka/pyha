@@ -246,10 +246,8 @@ class Sfix:
         else:
             o = int(self.val / 2 ** self.right)
             o = (o >> other) * 2 ** self.right
-        return Sfix(o,
-                    self.left,
-                    self.right,
-                    init_only=True)
+        # THIS CAN WRAP!
+        return Sfix(o, self.left, self.right)
 
     def __lshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
@@ -257,10 +255,8 @@ class Sfix:
         else:
             o = int(self.val / 2 ** self.right)
             o = (o << other) * 2 ** self.right
-        return Sfix(o,
-                    self.left,
-                    self.right,
-                    init_only=True)
+        # THIS CAN WRAP!
+        return Sfix(o, self.left, self.right)
 
     def __abs__(self):
         return Sfix(abs(self.val),
