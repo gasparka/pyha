@@ -34,10 +34,6 @@ class Sfix:
 
     """
 
-    # original idea was to use float for internal computations, now it has turned out that\
-    # it is hard to match VHDL fixed point library outputs, thus in the future it may be better
-    # to implement stuff as integer arithmetic
-
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
 
@@ -133,11 +129,11 @@ class Sfix:
 
     def quantize(self):
         fix = self.val / 2 ** self.right
-
         if self.round_style is 'round':
             fix = round(fix)
         else:
-            fix = int(fix)
+            # this used to be int(fix), but this is a bug when fix is negative
+            fix = np.floor(fix)
 
         self.val = fix * 2 ** self.right
 

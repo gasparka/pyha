@@ -59,8 +59,11 @@ def in_out_transpose(func):
 
         ret = func(self, *args, **kwargs)
 
-        if len(ret) and isinstance(ret[0], tuple):
-            ret = [list(x) for x in zip(*ret)]  # transpose
+        try:
+            if isinstance(ret[0], tuple):
+                ret = [list(x) for x in zip(*ret)]  # transpose
+        except:
+            pass
         return ret
 
     return transposer_wrap
@@ -255,6 +258,10 @@ def simulate(model, *x, simulations=None, conversion_path=None, input_types=None
 
 
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
+    assert sims_close(simulation_results, expected, rtol, atol, skip_first_n)
+
+
+def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """
     Assert that simulation results (for exampel SIM_MODEL and SIM_HW_MODEL) are equal(defined by rtol and atol).
 
@@ -300,17 +307,11 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
             l.info(f'{sim_name} OK!')
         else:
             l.info(f'{sim_name} FAILED!')
+            return False
 
-        # quit()
-        assert eq
+    return True
 
 
-def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
-    try:
-        assert_equals(simulation_results, expected, rtol, atol, skip_first_n)
-        return True
-    except:
-        return False
 
 
 def enforce_simulation_rules(simulations):

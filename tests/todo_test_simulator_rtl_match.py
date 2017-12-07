@@ -7,7 +7,17 @@ from pyha.common.core import Hardware
 from pyha.simulation.legacy import assert_sim_match
 
 
-# def t
+def test_resize_truncate_saturate():
+    """ Check that truncation works same in Pyha and RTL """
+    class t5(Hardware):
+        def main(self, x):
+            ret = resize(x, 0, -4, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            return ret
+
+    x = (np.random.rand(1024*2*2*2) * 2) - 1
+    dut = t5()
+    sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def assert_exact_match(model, types, *x):
@@ -80,15 +90,18 @@ def test_sfix_sub():
     x1 = [1.2, -0.2, -2.3, 0.000123]
     assert_exact_match(t4(), [Sfix(left=4, right=-18)] * 2, x, x1)
 
-
+fixed_truncate = 'truncate'
+fixed_saturate = 'saturate'
 def test_resize_right():
     class t5(Hardware):
         def main(self, x):
-            ret = resize(x, 2, -4)
+            ret = resize(x, 2, -4, round_style=fixed_truncate, overflow_style=fixed_saturate)
             return ret
 
     x = [1.352, 0.5991, -1.123]
     assert_exact_match(t5(), [Sfix(left=2, right=-18)], x)
+
+
 
 
 def test_resize_left():
@@ -145,7 +158,7 @@ def test_sfix_constants(bits):
 @pytest.mark.slowtest
 @pytest.mark.parametrize('right', range(-1, -32, -1))
 @pytest.mark.parametrize('left', range(2))
-def test_sfix_wrapper(left, right):
+def test_sfix_wrap(left, right):
     class T9(Hardware):
         def __init__(self):
             self.phase_acc = Sfix()
@@ -252,25 +265,19 @@ def test_int_operations():
     assert_exact_match_gate(T15(), [int], x)
 
 
-def test_real_precison_bug():
-    """ This shows how RTL simulation can differ from HWSIM, because we should use integer math in Sfix class??"""
-    pytest.xfail('Not solved yet')
+def test_chain_multiplication():
+    """ Test that Pyha fixed point library can compute very precise intermediate results """
     class Bug(Hardware):
         def main(self, c):
-            m = resize(c.real * c.real * c.real, 0, -17, round_style=fixed_truncate)
-            return m
+            inter = c * c * c
+            m = resize(c * c * c, 0, -17, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            return m, inter
 
-    from numpy.random import rand
-
-    n = 128
-    inp = np.array([0]*n, dtype=np.complex)
-    inp.real = rand(n) * 2 - 1
-    inp.imag = rand(n) * 2 - 1
-
-    # inp = np.array([0.1 + 0.2j] * 16)
-
+    n = 1024
+    inp = np.random.rand(n) * 2 -1
     inp *= 0.01
 
     dut = Bug()
-    # plot_assert_sim_match(dut, None, inp, simulations=[SIM_HW_MODEL, SIM_RTL], dir_path='/home/gaspar/git/pyhacores/playground')
-    assert 0
+    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    print(sims)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
