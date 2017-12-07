@@ -207,6 +207,9 @@ class Sfix:
                     right,
                     init_only=True)
 
+    def __rsub__(self, other):
+        return self.__add__(other)
+
     def __mul__(self, other):
         if type(other) == float:
             other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
