@@ -801,9 +801,7 @@ class AutoResize:
         for node, var_t in zip(pass_nodes, pass_types):
 
             if isinstance(node.value, (FloatNode, IntNode)) \
-                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target,
-                                                                                   (FloatNode, IntNode))):
-                # second term to pass marked nodes, like -1. -0.34 etc
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (FloatNode, IntNode))): # second term to pass marked(-) nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
@@ -812,7 +810,7 @@ class AutoResize:
 
 
 class SubmoduleDeepcopy:
-    """ Conversts assign to submodule to '_pyha_deepcopy' call"""
+    """ Converts assign to submodule to '_pyha_deepcopy' call"""
     @staticmethod
     def apply(red_node):
         nodes = AutoResize.find(red_node)

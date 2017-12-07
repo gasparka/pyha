@@ -6,7 +6,8 @@ from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 from pyha.common.core import Hardware
 from pyha.simulation.legacy import assert_sim_match
 
-
+# in general GATE could be added here...but it takese ALOT of time and has NEVER (so far) been different compared to RTL
+SIMULATIONS = ['PYHA', 'RTL']
 def test_resize_truncate_saturate():
     """ Check that truncation works same in Pyha and RTL """
     class t5(Hardware):
@@ -151,8 +152,11 @@ def test_sfix_constants(bits):
 
             return a0, a1, a2
 
-    x = [0, 1, 2]
-    assert_exact_match(T8(bits), [int], x)
+    x = [0]
+    dut = T8(bits)
+    sims = simulate(dut, x, simulations=SIMULATIONS)
+    print(sims)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 @pytest.mark.slowtest
@@ -160,17 +164,18 @@ def test_sfix_constants(bits):
 @pytest.mark.parametrize('left', range(2))
 def test_sfix_wrap(left, right):
     class T9(Hardware):
-        def __init__(self):
-            self.phase_acc = Sfix()
+        def __init__(self, left, right):
+            self.phase_acc = Sfix(0, left, right)
             self.DELAY = 1
 
         def main(self, phase_inc):
-            self.phase_acc = resize(self.phase_acc + phase_inc, size_res=phase_inc, overflow_style=fixed_wrap,
-                                         round_style=fixed_truncate)
+            self.phase_acc = self.phase_acc + phase_inc
             return self.phase_acc
 
-    x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
-    assert_exact_match(T9(), [Sfix(0, left, right)], x)
+    x = (np.random.rand(1024) * 2) - 1
+    dut = T9(left, right)
+    sims = simulate(dut, x, simulations=SIMULATIONS, input_types=[Sfix(0, left, right)])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 @pytest.mark.slowtest
@@ -187,55 +192,26 @@ def test_sfix_add_shift_right_resize(shift_i):
     x = (np.random.rand(1024) * 2) - 1
     y = (np.random.rand(1024) * 2) - 1
     i = [shift_i] * len(x)
+    dut = T10()
+    # sims = simulate(dut, x, y, i, simulations=['PYHA', 'RTL'], input_types=[Sfix(0, left, right), Sfix(0, left, right), int])
+    # assert sims_close(sims, rtol=1e-9, atol=1e-9)
     assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
 
 
 @pytest.mark.slowtest
-@pytest.mark.parametrize('shift_i', range(8))
-def test_sfix_shift_right(shift_i):
-    right = -18
-    left = 2
-
-    class T12(Hardware):
-        def main(self, x, i):
-            ret = x >> i
-            return ret
-
-    x = (np.random.rand(1024) * 2 * 2) - 1
-    i = [shift_i] * len(x)
-    assert_exact_match(T12(), [Sfix(0, left, right), int], x, i)
-
-
-@pytest.mark.slowtest
-@pytest.mark.parametrize('shift_i', range(8))
-def test_sfix_shift_left(shift_i):
-    pytest.xfail('Over 5 fails, overflow is different, somehow this passes in Travis...')
-    right = -18
-    left = 6
-
+@pytest.mark.parametrize('shift_i', range(18))
+def test_sfix_shift(shift_i):
     class T13(Hardware):
         def main(self, x, i):
-            ret = x << i
-            return ret
+            left = x << i
+            right = x >> i
+            return left, right
 
-    x = (np.random.rand(1024) * 2 * 2) - 1
+    dut = T13()
+    x = (np.random.rand(1024) * 2) - 1
     i = [shift_i] * len(x)
-    assert_exact_match(T13(), [Sfix(0, left, right), int], x, i)
-
-
-def test_sfix_shift_left5():
-    pytest.xfail('Over 5 fails, overflow is different')
-    right = -18
-    left = 6
-
-    class T13(Hardware):
-        def main(self, x, i):
-            ret = x << i
-            return ret
-
-    x = (np.random.rand(8) * 2) - 1
-    i = [5] * len(x)
-    assert_exact_match(T13(), [Sfix(0, left, right), int], x, i)
+    sims = simulate(dut, x, i, simulations=['PYHA', 'RTL'])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_passtrough_boolean():
@@ -243,8 +219,10 @@ def test_passtrough_boolean():
         def main(self, x):
             return x
 
-    x = [True, False, True, False]
-    assert_sim_match(T14(), [1], x, simulations=[PYHA, RTL, GATE])
+    dut = T14()
+    inp = [True, False, True, False]
+    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_int_operations():
@@ -261,8 +239,10 @@ def test_int_operations():
 
             return rand, ror, rxor, rorbool1, rorbool2, rshift_right, rshift_left
 
-    x = np.random.randint(-2 ** 30, 2 ** 30, 2 ** 14)
-    assert_exact_match_gate(T15(), [int], x)
+    dut = T15()
+    inp = np.random.randint(-2 ** 30, 2 ** 30, 1024)
+    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_chain_multiplication():
@@ -273,11 +253,9 @@ def test_chain_multiplication():
             m = resize(c * c * c, 0, -17, round_style=fixed_truncate, overflow_style=fixed_saturate)
             return m, inter
 
-    n = 1024
-    inp = np.random.rand(n) * 2 -1
+    inp = np.random.rand(1024) * 2 -1
     inp *= 0.01
 
     dut = Bug()
     sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
-    print(sims)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
