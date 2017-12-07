@@ -235,7 +235,7 @@ class Simulation:
 # utility functions
 
 
-def simulate(model, *x, simulations=None, conversion_path=None):
+def simulate(model, *x, simulations=None, conversion_path=None, input_types=None):
     """
     Run simulations on model.
 
@@ -250,7 +250,7 @@ def simulate(model, *x, simulations=None, conversion_path=None):
     :param conversion_path: Where the conversion sources are written, if None uses temporary directory.
     """
     simulations = enforce_simulation_rules(simulations)
-    return {sim_type: Simulation(sim_type, model=model, dir_path=conversion_path).main(*x).tolist()
+    return {sim_type: Simulation(sim_type, model=model, dir_path=conversion_path, input_types=input_types).main(*x).tolist()
             for sim_type in simulations}
 
 
@@ -271,7 +271,7 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
         if 'MODEL' in simulation_results.keys():
             expected = simulation_results['MODEL']
         else:
-            expected = simulation_results['HW_MODEL']
+            expected = simulation_results['PYHA']
 
     def array_to_list(array):
         # https://github.com/numpy/numpy/issues/8052

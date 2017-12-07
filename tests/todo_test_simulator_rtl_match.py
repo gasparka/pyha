@@ -1,15 +1,18 @@
 import numpy as np
 import pytest
+from pyha import simulate, sims_close
 
 from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 from pyha.common.core import Hardware
 from pyha.simulation.legacy import assert_sim_match
 
 
+# def t
+
+
 def assert_exact_match(model, types, *x):
-    pytest.fail()
-    # if skipping_rtl_simulations() or skipping_hwmodel_simulations():
-    #     return
+    sims = simulate(model, *x, input_types=types, simulations=['PYHA', 'RTL'])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
     # outs = debug_assert_sim_match(model, [1], *x, simulations=[PYHA, RTL], types=types)
     # np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
 
