@@ -384,7 +384,7 @@ class TestAssignConstant:
 
             assert dut.c._pyha_next['imag'].left == 0
             assert dut.c._pyha_next['imag'].right == -17
-            assert dut.c._pyha_next['imag'].val == -0.55999755859375
+            assert dut.c._pyha_next['imag'].val == -0.56000518798828125
 
     def test_sim(self):
         x = [1, 2]

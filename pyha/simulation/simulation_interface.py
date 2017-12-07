@@ -13,6 +13,7 @@ from pyha.common.complex_fixed_point import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.core import default_sfix
 from pyha.common.fixed_point import Sfix
+from pyha.common.util import get_iterable
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
@@ -300,6 +301,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
 
     expected = init_vhdl_type('root', expected, expected)
     for sim_name, sim_data in simulation_results.items():
+        sim_data = get_iterable(sim_data)
         sim_data = sim_data[skip_first_n:][:len(expected.elems)]
         sim_data = init_vhdl_type('root', sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)

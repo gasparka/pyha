@@ -584,6 +584,16 @@ class TestInterface:
         sims = simulate(dut, inp, simulations=['PYHA'])
         assert sims_close(sims, expect)
 
+    def test_single_input(self):
+        class T13(Hardware):
+            def main(self, x):
+                return x
+
+        dut = T13()
+        x = [1.0]
+        sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 class TestComplexSfix:
     def test_py_implementation(self):
