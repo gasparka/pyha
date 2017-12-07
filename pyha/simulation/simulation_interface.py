@@ -300,6 +300,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
     expected = array_to_list(expected)[skip_first_n:]
 
     expected = init_vhdl_type('root', expected, expected)
+    result = True
     for sim_name, sim_data in simulation_results.items():
         sim_data = get_iterable(sim_data)
         sim_data = sim_data[skip_first_n:][:len(expected.elems)]
@@ -309,9 +310,9 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             l.info(f'{sim_name} OK!')
         else:
             l.info(f'{sim_name} FAILED!')
-            return False
+            result = False
 
-    return True
+    return result
 
 
 
