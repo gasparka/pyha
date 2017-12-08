@@ -4,38 +4,23 @@ from pyha import simulate, sims_close
 
 from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 from pyha.common.core import Hardware
-from pyha.simulation.legacy import assert_sim_match
 
 # in general GATE could be added here...but it takese ALOT of time and has NEVER (so far) been different compared to RTL
 SIMULATIONS = ['PYHA', 'RTL']
+
+
 def test_resize_truncate_saturate():
     """ Check that truncation works same in Pyha and RTL """
+
     class t5(Hardware):
         def main(self, x):
             ret = resize(x, 0, -4, round_style=fixed_truncate, overflow_style=fixed_saturate)
             return ret
 
-    x = (np.random.rand(1024*2*2*2) * 2) - 1
+    x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
     dut = t5()
-    sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, x, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def assert_exact_match(model, types, *x):
-    sims = simulate(model, *x, input_types=types, simulations=['PYHA', 'RTL'])
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-    # outs = debug_assert_sim_match(model, [1], *x, simulations=[PYHA, RTL], types=types)
-    # np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-
-
-def assert_exact_match_gate(model, types, *x):
-    pytest.fail()
-    # if skipping_rtl_simulations() or skipping_gate_simulations():
-    #     return
-
-    # outs = debug_assert_sim_match(model, [1], *x, simulations=[PYHA, RTL, GATE], types=types)
-    # np.testing.assert_allclose(outs[0], outs[1], rtol=1e-9)
-    # np.testing.assert_allclose(outs[0], outs[2], rtol=1e-9)
 
 
 def test_shift_right():
@@ -46,8 +31,12 @@ def test_shift_right():
 
     x = [2.5, 3.0, -0.54, -2.123]
 
-    assert_exact_match(t0(), [Sfix(left=4, right=-18), int], x, [1] * len(x))
-    assert_exact_match(t0(), [Sfix(left=4, right=-18), int], x, [2] * len(x))
+    dut = t0()
+    sims = simulate(dut, x, [1] * len(x), simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-18), int])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    sims = simulate(dut, x, [2] * len(x), simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-18), int])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_right_index():
@@ -56,8 +45,12 @@ def test_right_index():
             ret = right_index(x)
             return ret
 
-    assert_exact_match(t1(), [Sfix(left=4, right=-18)], [0., 0.])
-    assert_exact_match(t1(), [Sfix(left=4, right=-6)], [0., 0.])
+    dut = t1()
+    sims = simulate(dut, [0., 0.], simulations=SIMULATIONS)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    sims = simulate(dut, [0., 0.], simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-6)])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_left_index():
@@ -66,8 +59,12 @@ def test_left_index():
             ret = left_index(x)
             return ret
 
-    assert_exact_match(t2(), [Sfix(left=4, right=-18)], [0., 0.])
-    assert_exact_match(t2(), [Sfix(left=0, right=-18)], [0., 0.])
+    dut = t2()
+    sims = simulate(dut, [0., 0.], simulations=SIMULATIONS)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    sims = simulate(dut, [0., 0.], simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-6)])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_sfix_add():
@@ -78,7 +75,10 @@ def test_sfix_add():
 
     x = [0.5, -1.2, 1.9, 0.0052]
     x1 = [1.2, -0.2, -2.3, 0.000123]
-    assert_exact_match(t3(), [Sfix(left=4, right=-18)] * 2, x, x1)
+
+    dut = t3()
+    sims = simulate(dut, x, x1, simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-18)] * 2)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_sfix_sub():
@@ -89,10 +89,15 @@ def test_sfix_sub():
 
     x = [0.5, -1.2, 1.9, 0.0052]
     x1 = [1.2, -0.2, -2.3, 0.000123]
-    assert_exact_match(t4(), [Sfix(left=4, right=-18)] * 2, x, x1)
+    dut = t4()
+    sims = simulate(dut, x, x1, simulations=SIMULATIONS, input_types=[Sfix(left=4, right=-18)] * 2)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 fixed_truncate = 'truncate'
 fixed_saturate = 'saturate'
+
+
 def test_resize_right():
     class t5(Hardware):
         def main(self, x):
@@ -100,19 +105,21 @@ def test_resize_right():
             return ret
 
     x = [1.352, 0.5991, -1.123]
-    assert_exact_match(t5(), [Sfix(left=2, right=-18)], x)
+    dut = t5()
+    sims = simulate(dut, x, simulations=SIMULATIONS, input_types=[Sfix(left=2, right=-18)])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
-
-
-def test_resize_left():
+def test_resize_left_defaults():
     class t6(Hardware):
         def main(self, x):
             ret = resize(x, 0, -18)
             return ret
 
     x = [1.352, 3.0, -1.9]
-    assert_exact_match(t6(), [Sfix(left=2, right=-18)], x)
+    dut = t6()
+    sims = simulate(dut, x, simulations=SIMULATIONS, input_types=[Sfix(left=2, right=-18)])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_array_indexing():
@@ -124,7 +131,9 @@ def test_array_indexing():
             return self.a[i]
 
     x = [0, 1, 2, 3]
-    assert_exact_match(t7(), [int], x)
+    dut = t7()
+    sims = simulate(dut, x, simulations=SIMULATIONS)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     # test indexing by -1
     class t8(Hardware):
@@ -135,7 +144,9 @@ def test_array_indexing():
             return self.a[-1]
 
     x = [0, 1]
-    assert_exact_match(t8(), [int], x)
+    dut = t8()
+    sims = simulate(dut, x, simulations=SIMULATIONS)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 @pytest.mark.slowtest
@@ -155,7 +166,6 @@ def test_sfix_constants(bits):
     x = [0]
     dut = T8(bits)
     sims = simulate(dut, x, simulations=SIMULATIONS)
-    print(sims)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -186,16 +196,16 @@ def test_sfix_add_shift_right_resize(shift_i):
 
     class T10(Hardware):
         def main(self, x, y, i):
-            ret = resize(x - (y >> i), size_res=x)
+            ret = resize(x - (y >> i), size_res=x, round_style=fixed_truncate, overflow_style=fixed_saturate)
             return ret
 
     x = (np.random.rand(1024) * 2) - 1
     y = (np.random.rand(1024) * 2) - 1
     i = [shift_i] * len(x)
     dut = T10()
-    # sims = simulate(dut, x, y, i, simulations=['PYHA', 'RTL'], input_types=[Sfix(0, left, right), Sfix(0, left, right), int])
-    # assert sims_close(sims, rtol=1e-9, atol=1e-9)
-    assert_exact_match(T10(), [Sfix(0, left, right), Sfix(0, left, right), int], x, y, i)
+    sims = simulate(dut, x, y, i, simulations=SIMULATIONS,
+                    input_types=[Sfix(0, left, right), Sfix(0, left, right), int])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 @pytest.mark.slowtest
@@ -210,7 +220,7 @@ def test_sfix_shift(shift_i):
     dut = T13()
     x = (np.random.rand(1024) * 2) - 1
     i = [shift_i] * len(x)
-    sims = simulate(dut, x, i, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, x, i, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -221,7 +231,7 @@ def test_passtrough_boolean():
 
     dut = T14()
     inp = [True, False, True, False]
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inp, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -241,21 +251,22 @@ def test_int_operations():
 
     dut = T15()
     inp = np.random.randint(-2 ** 30, 2 ** 30, 1024)
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inp, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_chain_multiplication():
     """ Test that Pyha fixed point library can compute very precise intermediate results """
+
     class Bug(Hardware):
         def main(self, c):
             inter = c * c * c
             m = resize(c * c * c, 0, -17, round_style=fixed_truncate, overflow_style=fixed_saturate)
             return m, inter
 
-    inp = np.random.rand(1024) * 2 -1
+    inp = np.random.rand(1024) * 2 - 1
     inp *= 0.01
 
     dut = Bug()
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inp, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
