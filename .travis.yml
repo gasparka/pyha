@@ -14,7 +14,7 @@ install:
 
 script:
   - export PYHA_SKIP_QUARTUS_SIMS=1
-  - coverage run --source pyha -m py.test -m "not slowtest" tests
+  - coverage run --source pyha -m pytest
 
 after_success:
   - coveralls
