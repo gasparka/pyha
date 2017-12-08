@@ -17,6 +17,9 @@ from pyha.common.util import get_iterable
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class NoModelError(Exception):
     pass
@@ -80,14 +83,14 @@ def type_conversions(func):
             args = list(args)
             for i, arg in enumerate(args):
                 if isinstance(arg[0], float):
-                    self.logger.info(
+                    logger.info(
                         f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
                     t = default_sfix
                     args[i] = [t(x) for x in arg]
                 elif isinstance(arg[0], (complex, np.complex64)):
                     # assert 0
                     t = default_complex_sfix
-                    self.logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
+                    logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
                     args[i] = [t(x) for x in arg]
 
         ret = func(self, *args, **kwargs)
@@ -108,7 +111,6 @@ class Simulation:
         # if is CI, use temp dir
         dir_path = None if 'TRAVIS' in os.environ else dir_path
 
-        self.logger = logging.getLogger(__name__)
         self.dir_path = dir_path
         if self.dir_path is None:
             self.keep_me_alive = TemporaryDirectory()
@@ -184,7 +186,7 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
-        self.logger.info(f'Running {self.simulation_type} simulation!')
+        logger.info(f'Running {self.simulation_type} simulation!')
 
         if len(args) == 0 or args is (None,):
             raise InputTypesError(
@@ -204,7 +206,8 @@ class Simulation:
         if self.simulation_type == 'MODEL':
 
             if self.main_as_model:
-                self.logger.info('No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
+                logger.info(
+                    'No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
                 with RegisterBehaviour.force_disable():
                     with Sfix._float_mode:
                         r = self.as_model(*args)
@@ -254,8 +257,9 @@ def simulate(model, *x, simulations=None, conversion_path=None, input_types=None
     :param conversion_path: Where the conversion sources are written, if None uses temporary directory.
     """
     simulations = enforce_simulation_rules(simulations)
-    return {sim_type: Simulation(sim_type, model=model, dir_path=conversion_path, input_types=input_types).main(*x).tolist()
-            for sim_type in simulations}
+    return {
+    sim_type: Simulation(sim_type, model=model, dir_path=conversion_path, input_types=input_types).main(*x).tolist()
+    for sim_type in simulations}
 
 
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
@@ -274,7 +278,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
 
     :param atol: Tune this when numbers close to 0 are failing assertions.
     """
-    l = logging.getLogger('assert_equals()')
+    # l = logging.getLogger('assert_equals()')
     if expected is None:
         if 'MODEL' in simulation_results.keys():
             expected = simulation_results['MODEL']
@@ -304,17 +308,16 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
     for sim_name, sim_data in simulation_results.items():
         sim_data = get_iterable(sim_data)
         sim_data = sim_data[skip_first_n:][:len(expected.elems)]
-        sim_data = init_vhdl_type('root', sim_data, sim_data)
-        eq = sim_data._pyha_is_equal(expected, 'root', rtol, atol)
+        sim_data = init_vhdl_type(sim_name, sim_data, sim_data)
+        eq = sim_data._pyha_is_equal(expected, sim_name, rtol, atol)
         if eq:
-            l.info(f'{sim_name} OK!')
+            pass
+            logger.info(f'{sim_name} OK!')
         else:
-            l.info(f'{sim_name} FAILED!')
+            logger.info(f'{sim_name} FAILED!')
             result = False
 
     return result
-
-
 
 
 def enforce_simulation_rules(simulations):
