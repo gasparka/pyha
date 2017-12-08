@@ -2,7 +2,6 @@ from decimal import *
 
 import numpy as np
 import pytest
-
 from pyha.common.fixed_point import Sfix, resize
 
 getcontext().prec = 128
@@ -64,6 +63,22 @@ def test_add():
     assert c.right == -18
 
 
+def test_radd():
+    b = Sfix(0.1, 0, -17)
+    c = 0.1 + b
+    assert c.val == 0.1999969482421875
+
+    c = -0.1 + b
+    assert c.val == 0.0
+
+    b = Sfix(-0.1, 0, -17)
+    c = 0.1 + b
+    assert c.val == -7.62939453125e-06
+
+    c = -0.1 + b
+    assert c.val == -0.20000457763671875
+
+
 def test_sub():
     a = Sfix(0.223, 0, -8)
     b = Sfix(0.013, 0, -18)
@@ -71,6 +86,21 @@ def test_sub():
     assert float(c) == float(a) - float(b)
     assert c.left == 1
     assert c.right == -18
+
+def test_rsub():
+    b = Sfix(0.1, 0, -17)
+    c = 0.1 - b
+    assert c.val == 0.0
+
+    c = -0.1 - b
+    assert c.val == -0.1999969482421875
+
+    b = Sfix(-0.1, 0, -17)
+    c = 0.1 - b
+    assert c.val == 0.20000457763671875
+
+    c = -0.1 - b
+    assert c.val == 7.62939453125e-06
 
 
 def test_sub_overlow():

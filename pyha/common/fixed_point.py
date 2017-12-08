@@ -65,7 +65,7 @@ class Sfix:
         self.val = val
         self.init_val = val
 
-        if left is None or right is None:
+        if self.left is None or self.right is None:
             return
 
         assert self.left >= self.right
@@ -208,7 +208,9 @@ class Sfix:
                     init_only=True)
 
     def __rsub__(self, other):
-        return self.__add__(other)
+        if type(other) == float:
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
+        return other.__sub__(self)
 
     def __mul__(self, other):
         if type(other) == float:
