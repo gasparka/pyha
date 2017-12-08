@@ -290,7 +290,8 @@ class Sfix:
                  self.round_style)
 
 
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='wrap', round_style='truncate'):
+# default are 'saturate' and 'round' as this is the case in VHDL lib....
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='saturate', round_style='round'):
     """
     Resize fixed point number.
 
