@@ -13,7 +13,6 @@ install:
   - pip install codeclimate-test-reporter
 
 script:
-  - export PYHA_SKIP_QUARTUS_SIMS=1
   - coverage run --source pyha -m pytest
 
 after_success:
