@@ -4,3 +4,6 @@
 [submodule "pyhacores"]
 	path = pyhacores
 	url = https://github.com/gasparka/pyhacores
+[submodule "fphdl"]
+	path = fphdl
+	url = https://github.com/FPHDL/fphdl

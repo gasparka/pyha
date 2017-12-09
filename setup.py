@@ -32,7 +32,7 @@ setup(
 
     # package_dir={'':'pyha'},
     packages=find_packages(),
-    package_data={'pyha': ['common/vhdl_includes/pyha_util.vhd',
+    package_data={'pyha': ['common/vhdl_includes/pyha_util.vhdl',
                            'common/vhdl_includes/fixed_pkg/*',
                            'requirements.txt',
                            'cocotb/*']},

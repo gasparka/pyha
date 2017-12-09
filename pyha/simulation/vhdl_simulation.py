@@ -31,7 +31,7 @@ class VHDLSimulation:
         self.conv = Conversion(self.model)
 
     def get_conversion_sources(self):
-        src = [pyha.__path__[0] + '/simulation/sim_include/vhdl_includes/pyha_util.vhd']
+        src = [pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl']
         src += self.conv.write_vhdl_files(self.src_path)
         return src
 
@@ -41,7 +41,6 @@ class VHDLSimulation:
             self.make_quartus_project()
             vho = self.make_quartus_netlist()
             src = [str(vho)]
-            # src = ['/home/gaspar/git/pyha/playground/conv/simulation/modelsim/quartus_project.vho']
 
         return CocotbAuto(self.base_path, src, self.conv)
 
@@ -58,8 +57,8 @@ class VHDLSimulation:
         rules['VHDL_INPUT_VERSION'] = 'VHDL_2008'
         rules['VHDL_SHOW_LMF_MAPPING_MESSAGES'] = 'OFF'
 
-        common_path = Path(pyha.__path__[0]) / 'simulation/sim_include/vhdl_includes/fixed_pkg/'
-        src = [common_path / 'fixed_pkg_c.vhd', common_path / 'fixed_float_types_c.vhd']
+        fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
+        src = [fphdl_path / 'fixed_pkg_c.vhdl', fphdl_path / 'fixed_float_types_c.vhdl']
         src += self.get_conversion_sources()
 
         buffer = ""

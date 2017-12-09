@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-# from . import common
-# from . import simulation
-# from . import conversion
 from .common.fixed_point import Sfix, scalb
 from .common.complex_fixed_point import ComplexSfix
 from .common.core import Hardware
