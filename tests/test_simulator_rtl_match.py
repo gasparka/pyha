@@ -5,7 +5,7 @@ from pyha import simulate, sims_close
 from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 from pyha.common.core import Hardware
 
-# in general GATE could be added here...but it takese ALOT of time and has NEVER (so far) been different compared to RTL
+# in general GATE could be added here...but it takes ALOT of time
 SIMULATIONS = ['PYHA', 'RTL']
 
 
@@ -154,12 +154,12 @@ def test_array_indexing():
 def test_sfix_constants(bits):
     class T8(Hardware):
         def __init__(self, bits):
-            self.bits_const = bits
+            self.BITS = bits
 
         def main(self, i):
-            a0 = Sfix(3.141592653589793, 2, self.bits_const)
-            a1 = Sfix(1.0, 0, self.bits_const)
-            a2 = Sfix(1.0 / 1.646760, 0, self.bits_const)
+            a0 = Sfix(3.141592653589793, 2, self.BITS)
+            a1 = Sfix(1.0, 0, self.BITS)
+            a2 = Sfix(1.0 / 1.646760, 0, self.BITS)
 
             return a0, a1, a2
 
@@ -167,6 +167,24 @@ def test_sfix_constants(bits):
     dut = T8(bits)
     sims = simulate(dut, x, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_sfix_no_const_ref():
+    if 'GATE' in SIMULATIONS:
+        pytest.xfail('Quartus wants the "bits" parts to be CONTSANT')
+    class T8(Hardware):
+        def __init__(self, bits):
+            self.bits = bits
+
+        def main(self, i):
+            a0 = Sfix(3.141592653589793, 2, self.bits)
+            return a0
+
+    x = [0]
+    dut = T8(-5)
+    sims = simulate(dut, x, simulations=SIMULATIONS)
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 
 @pytest.mark.slowtest
