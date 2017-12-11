@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from pip.req import parse_requirements
-from setuptools import setup, find_packages
 
-# read the docs dont have 3.6 lol...
-# import sys
-# if sys.version_info < (3, 6):
-#     sys.exit('Sorry, Python < 3.6 is not supported')
+import os
+import sys
+
+from pip.req import parse_requirements
+from setuptools import setup
+
+if sys.version_info < (3, 6):
+    sys.exit('Sorry, Python < 3.6 is not supported')
 
 
 with open('README.rst') as readme_file:
@@ -17,13 +19,26 @@ with open('README.rst') as readme_file:
 install_reqs = parse_requirements('requirements.txt', session=False)
 requirements = [str(ir.req) for ir in install_reqs]
 
-test_requirements = [
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        if 'build' in path.split('/'):
+            continue
 
-]
+        if '.git' in path.split('/'):
+            continue
+        for filename in filenames:
+            paths.append(os.path.join('..', path, filename))
+    return paths
+
+
+extra_files = package_files('cocotb/')
+extra_files.extend(['../common/vhdl_includes/pyha_util.vhdl'])
+extra_files.extend(package_files('fphdl/'))
 
 setup(
     name='pyha',
-    version='0.0.4',
+    version='0.0.5',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
@@ -31,11 +46,8 @@ setup(
     url='https://github.com/petspats/pyha',
 
     # package_dir={'':'pyha'},
-    packages=find_packages(),
-    package_data={'pyha': ['common/vhdl_includes/pyha_util.vhdl',
-                           'common/vhdl_includes/fixed_pkg/*',
-                           'requirements.txt',
-                           'cocotb/*']},
+    packages=['pyha', 'pyhacores'],
+    package_data={'pyha': extra_files},
     # py_modules=["pyha"],
 
     include_package_data=True,
@@ -50,6 +62,4 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
     ],
-    test_suite='tests',
-    tests_require=test_requirements,
 )
