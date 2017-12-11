@@ -5,7 +5,7 @@ import os
 import sys
 
 from pip.req import parse_requirements
-from setuptools import setup
+from setuptools import setup, find_packages
 
 if sys.version_info < (3, 6):
     sys.exit('Sorry, Python < 3.6 is not supported')
@@ -34,21 +34,20 @@ def package_files(directory):
 
 extra_files = package_files('cocotb/')
 extra_files.extend(['../common/vhdl_includes/pyha_util.vhdl'])
+extra_files.extend(['/home/gaspar/git/pyha/pyha/simulation/sim_include/*'])
 extra_files.extend(package_files('fphdl/'))
 
 setup(
     name='pyha',
-    version='0.0.5',
+    version='0.0.5-2',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
     author_email='gkarm@live.com',
     url='https://github.com/petspats/pyha',
 
-    # package_dir={'':'pyha'},
-    packages=['pyha', 'pyhacores'],
+    packages=find_packages(),
     package_data={'pyha': extra_files},
-    # py_modules=["pyha"],
 
     include_package_data=True,
     install_requires=requirements,
