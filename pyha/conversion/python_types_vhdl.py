@@ -275,7 +275,7 @@ class VHDLList(BaseVHDLType):
 
         self.elems = [init_vhdl_type('-', c, i) for c, i in zip(self.current, self.initial)]
         self.elems = [x for x in self.elems if x is not None]
-        self.not_submodules_list = not isinstance(self.elems[0], VHDLModule)
+        self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
 
     def _pyha_arr_type_name(self):
         elem_type = self.elems[0]._pyha_type()
