@@ -227,6 +227,25 @@ class TestRegisters:
 
         assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=['PYHA', 'RTL', 'GATE'])
 
+    def test_complexsfix(self):
+        class Register(Hardware):
+            def __init__(self):
+                self.DELAY = 1
+                self.b = ComplexSfix(0, 0, -17)
+                self.a = ComplexSfix(0, 0, -17)
+
+            def main(self, nb):
+                self.b = nb
+                self.a.real = nb.real
+                self.a.imag = nb.imag
+                return self.b, self.a
+
+        dut = Register()
+        inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
+
+        sims = simulate(dut, inputs)
+        assert sims_close(sims)
+
     def test_sfix_lazy(self):
         class LazySfixReg(Hardware):
             def __init__(self):
@@ -625,6 +644,20 @@ class TestComplexSfix:
         ret = simulate(dut, inputs)
         assert_equals(ret, inputs)
 
+    def test_assign_local_input(self):
+        class Register(Hardware):
+            def main(self, x):
+                ret = x
+                ret.real = x.imag
+                ret.imag = x.real
+                return ret
+
+        dut = Register()
+        inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
+        assert sims_close(sims)
+
 
 class TestInOutOrdering:
     """ Had problems with the serialize/deserialise ordering, some stuff was flipped """
@@ -859,7 +892,6 @@ def test_sim_no_model():
 
     # ok, not using main
     Simulation('MODEL', NoMain(), None)
-
 
 # 2D CONV IDEA
 # def tst_conv2d(a, b):
