@@ -98,20 +98,17 @@ def plot_freqz(b):
     from scipy import signal
     w, h = signal.freqz(b)
 
-    fig = plt.figure()
+    fig, ax1 = plt.subplots(1, 1)
     plt.title('Digital filter frequency response')
-    ax1 = fig.add_subplot(111)
-
-    plt.plot(w / np.pi / 2, 20 * np.log10(abs(h)), 'b')
-    plt.ylabel('Amplitude [dB]', color='b')
-    plt.xlabel('Frequency')
-
+    ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+    ax1.set_ylabel('Amplitude [dB]', color='b')
+    ax1.set_xlabel('Frequency [rad/sample]')
     ax2 = ax1.twinx()
     angles = np.unwrap(np.angle(h))
-    plt.plot(w / np.pi / 2, angles, 'g')
-    plt.ylabel('Angle (radians)', color='g')
-    plt.grid()
-    plt.axis('tight')
+    ax2.plot(w, angles, 'g')
+    ax2.set_ylabel('Angle (radians)', color='g')
+    ax2.grid()
+    ax2.axis('tight')
     plt.show()
 
 
