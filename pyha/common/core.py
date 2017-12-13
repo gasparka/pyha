@@ -193,6 +193,9 @@ class PyhaList(UserList):
         self._pyha_next = deepcopy(data)
 
     def __setitem__(self, i, y):
+        """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
+        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_self' function.
+        """
         if hasattr(self.data[0], '_pyha_update_self'):
             # object already knows how to handle registers
             self[i] = y
@@ -217,6 +220,7 @@ class PyhaList(UserList):
                 self.data[i] = y
 
     def _pyha_update_self(self):
+        """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled():
             return
         if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
@@ -226,6 +230,7 @@ class PyhaList(UserList):
             self.data = self._pyha_next[:]
 
     def _pyha_floats_to_fixed(self):
+        """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed()
@@ -254,6 +259,7 @@ class Hardware(with_metaclass(Meta)):
         return result
 
     def _pyha_update_self(self):
+        """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled():
             return
         # update atoms
@@ -264,6 +270,7 @@ class Hardware(with_metaclass(Meta)):
             x._pyha_update_self()
 
     def _pyha_floats_to_fixed(self):
+        """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
         # update atoms
         for k, v in self.__dict__.items():
             if isinstance(v, float):
@@ -286,8 +293,7 @@ class Hardware(with_metaclass(Meta)):
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
-
-        Also implements the 'implicit next'/'signal assignments'
+        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_self' function.
         """
 
         if AutoResize.is_enabled():
