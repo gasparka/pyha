@@ -14,12 +14,13 @@ class ComplexFIR(Hardware):
         self.TAPS = np.asarray(taps).tolist()
 
     def main(self, x):
+        ret = x
         # print(x.real)
-        x.real = self.fir[0].main(x.real)
+        ret.real = self.fir[0].main(x.real)
         # print(x.real)
-        x.imag = self.fir[1].main(x.imag)
+        ret.imag = self.fir[1].main(x.imag)
         # x = self.fir[0].main(x)
-        return x
+        return ret
 
     def model_main(self, x):
         """ Golden output """
@@ -36,10 +37,10 @@ def test_remez16():
 
     sims = simulate(dut, inp, simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
 
-    import matplotlib.pyplot as plt
-    plt.plot(sims['MODEL'], label='MODEL')
-    plt.plot(sims['PYHA'], label='PYHA')
-    plt.plot(sims['RTL'], label='RTL')
-    plt.legend()
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.plot(sims['MODEL'], label='MODEL')
+    # plt.plot(sims['PYHA'], label='PYHA')
+    # plt.plot(sims['RTL'], label='RTL')
+    # plt.legend()
+    # plt.show()
     assert sims_close(sims)

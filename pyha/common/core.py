@@ -3,10 +3,9 @@ import sys
 from collections import UserList
 from copy import deepcopy, copy
 
-from six import iteritems, with_metaclass
-
 from pyha.common.context_managers import RegisterBehaviour, AutoResize
 from pyha.common.fixed_point import Sfix, resize
+from six import iteritems, with_metaclass
 
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
@@ -227,12 +226,12 @@ class PyhaList(UserList):
             self.data = self._pyha_next[:]
 
     def _pyha_floats_to_fixed(self):
-        if not isinstance(self.data[0], float):
-            return
         if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed()
         else:
+            if not isinstance(self.data[0], float):
+                return
             logger.warning(
                 f'List is of type [float] -> converted to [Sfix({default_sfix.left}, {default_sfix.right})]')
             new = [default_sfix(x) for x in self.data]

@@ -851,6 +851,41 @@ class TestFloatToSfix:
         assert dut.float_list._pyha_next[1].val == 9.1552734375e-05
         assert dut.float_list._pyha_next[2].val == 0.9999923706054688
 
+    def test_submodule(self):
+        """ Make sure submodules are affected """
+
+        class D0(Hardware):
+            def __init__(self):
+                self.reg = 0.5
+                self.float_list = [0.5, 0.25]
+
+        class D1(Hardware):
+            def __init__(self):
+                self.sub = D0()
+
+        dut = D1()
+        dut._pyha_floats_to_fixed()
+        assert dut.sub.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.sub.float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+
+    def test_submodule_list(self):
+        """ Had a bug where lists of submodules were not converted by floats to sfixed """
+
+        class D0(Hardware):
+            def __init__(self):
+                self.reg = 0.5
+                self.float_list = [0.5, 0.25]
+
+        class D1(Hardware):
+            def __init__(self):
+                self.sub_list = [D0(), D0()]
+
+        dut = D1()
+        dut._pyha_floats_to_fixed()
+        assert dut.sub_list[0].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.sub_list[1].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+
 
 def test_ghdl_version():
     ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
