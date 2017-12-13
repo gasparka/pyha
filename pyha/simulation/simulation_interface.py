@@ -10,7 +10,7 @@ from typing import List
 
 import numpy as np
 from pyha.common.complex_fixed_point import default_complex_sfix
-from pyha.common.context_managers import RegisterBehaviour
+from pyha.common.context_managers import RegisterBehaviour, SimulationRunning
 from pyha.common.core import default_sfix
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable
@@ -186,48 +186,49 @@ class Simulation:
         return ret
 
     def main(self, *args) -> np.array:
-        logger.info(f'Running {self.simulation_type} simulation!')
+        with SimulationRunning.enable():
+            logger.info(f'Running {self.simulation_type} simulation!')
 
-        if len(args) == 0 or args is (None,):
-            raise InputTypesError(
-                'Your model has 0 inputs (main() arguments), this is not supported at the moment -> add dummy input')
+            if len(args) == 0 or args is (None,):
+                raise InputTypesError(
+                    'Your model has 0 inputs (main() arguments), this is not supported at the moment -> add dummy input')
 
-        # fixme: remove this during type refactoring
-        #  test that there are no Sfix arguments
-        for x in args:
-            if type(x) is list:
-                if type(x[0]) is Sfix:
-                    raise InputTypesError(
-                        'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
+            # fixme: remove this during type refactoring
+            #  test that there are no Sfix arguments
+            for x in args:
+                if type(x) is list:
+                    if type(x[0]) is Sfix:
+                        raise InputTypesError(
+                            'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
 
-        if self.simulation_type in ('RTL', 'GATE') and self.cocosim is None:
-            self.cocosim = self.prepare_hw_simulation()
+            if self.simulation_type in ('RTL', 'GATE') and self.cocosim is None:
+                self.cocosim = self.prepare_hw_simulation()
 
-        if self.simulation_type == 'MODEL':
+            if self.simulation_type == 'MODEL':
 
-            if self.main_as_model:
-                logger.info(
-                    'No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
-                with RegisterBehaviour.force_disable():
-                    with Sfix._float_mode:
-                        r = self.as_model(*args)
-            else:
-                r = self.model.model_main(*args)
+                if self.main_as_model:
+                    logger.info(
+                        'No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
+                    with RegisterBehaviour.force_disable():
+                        with Sfix._float_mode:
+                            r = self.as_model(*args)
+                else:
+                    r = self.model.model_main(*args)
 
-            if r == []:
-                return np.array(r)
-
-            if isinstance(r, tuple):
-                if isinstance(r[0], (list, np.ndarray)):
-                    # assume that no transpose needed ( model returns correct way )
+                if r == []:
                     return np.array(r)
-                return np.transpose(r)
 
-            if isinstance(r, list) and isinstance(r[0], tuple):
-                return np.transpose(r)
-            return np.array(r)
-        else:
-            return self.hw_simulation(*args)
+                if isinstance(r, tuple):
+                    if isinstance(r[0], (list, np.ndarray)):
+                        # assume that no transpose needed ( model returns correct way )
+                        return np.array(r)
+                    return np.transpose(r)
+
+                if isinstance(r, list) and isinstance(r[0], tuple):
+                    return np.transpose(r)
+                return np.array(r)
+            else:
+                return self.hw_simulation(*args)
 
 
 ##############################################################################

@@ -3,7 +3,7 @@ import sys
 from collections import UserList
 from copy import deepcopy, copy
 
-from pyha.common.context_managers import RegisterBehaviour, AutoResize
+from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning
 from pyha.common.fixed_point import Sfix, resize
 from six import iteritems, with_metaclass
 
@@ -132,6 +132,9 @@ class Meta(type):
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
         ret._pyha_instance_id = cls.instance_count
+        # if this object was CREATED during simulation, so it must be local object (or input/output)
+        # anyways for local objects register and sfix behavour stuff must be disabled
+        ret._pyha_is_local = SimulationRunning.is_enabled()
         cls.instance_count += 1
         cls.instances = copy(cls.instances + [ret])
         # cls.instances[cls.__name__] = ret
@@ -260,7 +263,7 @@ class Hardware(with_metaclass(Meta)):
 
     def _pyha_update_self(self):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
-        if RegisterBehaviour.is_force_disabled():
+        if RegisterBehaviour.is_force_disabled() or self._pyha_is_local:
             return
         # update atoms
         self.__dict__.update(self._pyha_next)
@@ -296,11 +299,11 @@ class Hardware(with_metaclass(Meta)):
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_self' function.
         """
 
-        if AutoResize.is_enabled():
+        if AutoResize.is_enabled() and not self._pyha_is_local:
             target = getattr(self._pyha_initial_self, name)
             value = auto_resize(target, value)
 
-        if not RegisterBehaviour.is_enabled():
+        if not RegisterBehaviour.is_enabled() or self._pyha_is_local:
             self.__dict__[name] = value
             return
 

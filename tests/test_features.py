@@ -645,6 +645,7 @@ class TestComplexSfix:
         assert_equals(ret, inputs)
 
     def test_assign_local_input(self):
+        """ For local object (in this case the input) there should be no register or sfix effects enabled """
         class Register(Hardware):
             def main(self, x):
                 ret = x

@@ -404,7 +404,7 @@ class VHDLModule(BaseVHDLType):
             initial = current._pyha_initial_self
         else:
             current._pyha_initial_self = initial._pyha_initial_self
-        print(self, var_name)
+
         super().__init__(var_name, current, initial)
 
         self.elems = get_vars_as_vhdl_types(self.current)

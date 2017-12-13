@@ -32,16 +32,30 @@ class RegisterBehaviour:
 
 
 class AutoResize:
-        """ This controls the sfix automatic resize feature"""
-        _enable = ContextManagerRefCounted()
+    """ This controls the sfix automatic resize feature """
+    _enable = ContextManagerRefCounted()
 
-        @staticmethod
-        def enable():
-            return AutoResize._enable
+    @staticmethod
+    def enable():
+        return AutoResize._enable
 
-        @staticmethod
-        def is_enabled():
-            return AutoResize._enable.enabled
+    @staticmethod
+    def is_enabled():
+        return AutoResize._enable.enabled
+
+
+class SimulationRunning:
+    """ Indicates ongoing simulation, this is used to mark Hardware objects that are created as 'locals',
+    for locals the register and sfix autoresize effects are disabled."""
+    _enable = ContextManagerRefCounted()
+
+    @staticmethod
+    def enable():
+        return SimulationRunning._enable
+
+    @staticmethod
+    def is_enabled():
+        return SimulationRunning._enable.enabled
 
 
 
