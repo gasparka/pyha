@@ -404,7 +404,7 @@ class VHDLModule(BaseVHDLType):
             initial = current._pyha_initial_self
         else:
             current._pyha_initial_self = initial._pyha_initial_self
-
+        print(self, var_name)
         super().__init__(var_name, current, initial)
 
         self.elems = get_vars_as_vhdl_types(self.current)
@@ -557,6 +557,7 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == float:
         if Conversion.in_progress:
+            logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
 
         return VHDLFloat(name, current_val, initial_val)
@@ -567,6 +568,7 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
         if Conversion.in_progress and isinstance(current_val[0], float):
+            logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
             return None
 
         return VHDLList(name, current_val, initial_val)
