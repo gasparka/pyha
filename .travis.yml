@@ -2,8 +2,8 @@ language: python
 
 dist: trusty
 sudo: required
-
-python: 3.6.3
+group: deprecated-2017Q4  # with new we have some random errors
+python: 3.6
 
 install:
   - sudo sh scripts/install_ghdl.sh
@@ -28,4 +28,4 @@ deploy:
     branch: master
     tags: true
     distributions: sdist bdist_wheel
-    repo: petspats/pyha
+    repo: gasparka/pyha
