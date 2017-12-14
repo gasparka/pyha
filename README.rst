@@ -28,9 +28,10 @@ pyha
    :target: https://landscape.io/github/petspats/pyha/develop
    :alt: Code Health
 
-.. image:: https://codeclimate.com/github/petspats/pyha/badges/gpa.svg
-   :target: https://codeclimate.com/github/petspats/pyha
-   :alt: Code Climate
+..
+    .. image:: https://codeclimate.com/github/petspats/pyha/badges/gpa.svg
+       :target: https://codeclimate.com/github/petspats/pyha
+       :alt: Code Climate
 
 * Free software: Apache Software License 2.0
 * Documentation: https://pyha.readthedocs.io.
@@ -39,25 +40,23 @@ pyha
 Install
 =======
 
+Pyha requires Python >= 3.6 (default for Ubuntu 17.10 or `Anaconda`_)
+
 .. code-block:: bash
 
     pip install pyha
-
-.. warning::
-
-    Pyha requires Python >= 3.6, which is default for Ubuntu 17.10. Another good option is to use `Anaconda`_.
 
 
 For RTL simulation (optional)
 -----------------------------
 
-`Cocotb`_ dependencies:
+`Cocotb`_ (included with Pyha install) dependencies:
 
 .. code-block:: bash
 
     sudo apt-get install make gcc g++ swig
 
-You also need to install `GHDL`_ and **add it to the path**, for Ubuntu use:
+Install `GHDL`_ and **add it to the path**, for Ubuntu use:
 
 .. code-block:: bash
 
@@ -67,18 +66,13 @@ You also need to install `GHDL`_ and **add it to the path**, for Ubuntu use:
 For GATE simulation (optional)
 ------------------------------
 
-In addition to the RTL requirements, you need to install the `Intel Quartus`_ suite and add
-``/intelFPGA_lite/XXX/quartus/bin`` to path.
+In addition to the RTL requirements, you need to install the `Intel Quartus`_  and **add ``.../quartus/bin`` to path**.
 
-Lastly, run
+Compile Quartus libraries into ``GHDL_PATH/lib/ghdl/altera`` by running:
 
 .. code-block:: bash
 
     python /scripts/compile_quartus_lib.py
-
-This compiles Altera libraries into ``GHDL_PATH/lib/ghdl/altera``.
-
-
 
 .. _Intel Quartus: http://dl.altera.com/?edition=lite
 .. _GHDL: https://github.com/tgingold/ghdl
