@@ -238,7 +238,7 @@ class PyhaList(UserList):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
-                x._pyha_floats_to_fixed()
+                x._pyha_floats_to_fixed(silence)
         else:
             if not isinstance(self.data[0], float):
                 return
@@ -296,7 +296,6 @@ class Hardware(with_metaclass(Meta)):
             self._pyha_initial_self._pyha_floats_to_fixed(silence=True)
         except:
             pass
-        # self._pyha_initial_self = deepcopy(self)
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
