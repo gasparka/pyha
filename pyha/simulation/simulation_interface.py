@@ -147,7 +147,7 @@ class Simulation:
             Simulation.hw_instances[model.__class__.__name__] = model
 
     def prepare_hw_simulation(self):
-        # grab the already simulated model!
+        # grab the already simulated model from 'PYHA' simulation - this is used for all typeinfos
         self.model = Simulation.hw_instances[self.model.__class__.__name__]
         self.sim = VHDLSimulation(Path(self.dir_path), self.model, self.simulation_type)
         return self.sim.main()
@@ -156,9 +156,8 @@ class Simulation:
     @in_out_transpose
     @flush_pipeline
     def hw_simulation(self, *args):
-        self.model._pyha_floats_to_fixed()
-        # convert_float_to_fixed(self.model)
         # convert datamodel to Fixed...
+        self.model._pyha_floats_to_fixed(silence=self.simulation_type != 'PYHA')
         if self.simulation_type == 'PYHA':
             ret = self.run_hw_model(args)
         elif self.simulation_type in ['RTL', 'GATE']:
@@ -258,9 +257,12 @@ def simulate(model, *x, simulations=None, conversion_path=None, input_types=None
     :param conversion_path: Where the conversion sources are written, if None uses temporary directory.
     """
     simulations = enforce_simulation_rules(simulations)
-    return {
-    sim_type: Simulation(sim_type, model=model, dir_path=conversion_path, input_types=input_types).main(*x).tolist()
-    for sim_type in simulations}
+    ret = {sim_type: Simulation(sim_type, model=model,
+                                dir_path=conversion_path,
+                                input_types=input_types).main(*x).tolist()
+           for sim_type in simulations}
+    logger.info('Simulations completed!')
+    return ret
 
 
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
@@ -351,6 +353,12 @@ def enforce_simulation_rules(simulations):
             simulations.remove('RTL')
 
     if 'GATE' in simulations:
+        have_ghdl = True
+        try:
+            Path(shutil.which('ghdl'))
+        except:
+            have_ghdl = False
+
         have_quartus = True
         try:
             Path(shutil.which('quartus_map'))
@@ -362,6 +370,9 @@ def enforce_simulation_rules(simulations):
             simulations.remove('GATE')
         elif not have_quartus:
             logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
+            simulations.remove('GATE')
+        elif not have_ghdl:
+            logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
             simulations.remove('GATE')
 
     return simulations
