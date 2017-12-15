@@ -141,7 +141,7 @@ class Meta(type):
 
         for k, v in ret.__dict__.items():
             if isinstance(v, list):
-                ret.__dict__[k] = PyhaList(v)
+                ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
 
         # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
         ret._pyha_next = {}
@@ -191,8 +191,10 @@ class PyhaList(UserList):
     """ All the lists in the design will be wrapped in this in order to
      override __setitem__ for array element assigns, like a[1] = 1 """
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    def __init__(self, data):
+    def __init__(self, data, class_name, var_name):
         super().__init__(data)
+        self.var_name = var_name
+        self.class_name = class_name
         self._pyha_next = deepcopy(data)
 
     def __setitem__(self, i, y):
@@ -232,7 +234,7 @@ class PyhaList(UserList):
         else:
             self.data = self._pyha_next[:]
 
-    def _pyha_floats_to_fixed(self):
+    def _pyha_floats_to_fixed(self, silence=False):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
             for x in self.data:
@@ -240,8 +242,9 @@ class PyhaList(UserList):
         else:
             if not isinstance(self.data[0], float):
                 return
-            logger.warning(
-                f'List is of type [float] -> converted to [Sfix({default_sfix.left}, {default_sfix.right})]')
+            if not silence:
+                logger.warning(f'Class "{self.class_name}" variable "{self.var_name}" is List of float ->'
+                               f' converted to Sfix({default_sfix.left}, {default_sfix.right})')
             new = [default_sfix(x) for x in self.data]
             self.data = new
             self._pyha_next = deepcopy(new)
@@ -272,24 +275,25 @@ class Hardware(with_metaclass(Meta)):
         for x in self._pyha_updateable:
             x._pyha_update_self()
 
-    def _pyha_floats_to_fixed(self):
+    def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
         # update atoms
         for k, v in self.__dict__.items():
             if isinstance(v, float):
-                logger.info(
-                    f'Class "{self.__class__.__name__}" variable "{k}" is of type float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
+                if not silence:
+                    logger.info(
+                        f'Class "{self.__class__.__name__}" variable "{k}" is of type float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
                 new = default_sfix(v)
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
 
         # update all childs
         for x in self._pyha_updateable:
-            x._pyha_floats_to_fixed()
+            x._pyha_floats_to_fixed(silence)
 
         # update initial self
         try:
-            self._pyha_initial_self._pyha_floats_to_fixed()
+            self._pyha_initial_self._pyha_floats_to_fixed(silence=True)
         except:
             pass
         # self._pyha_initial_self = deepcopy(self)
