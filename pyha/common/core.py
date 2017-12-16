@@ -191,7 +191,7 @@ class PyhaList(UserList):
     """ All the lists in the design will be wrapped in this in order to
      override __setitem__ for array element assigns, like a[1] = 1 """
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
-    def __init__(self, data, class_name, var_name):
+    def __init__(self, data, class_name='None', var_name='None'):
         super().__init__(data)
         self.var_name = var_name
         self.class_name = class_name
