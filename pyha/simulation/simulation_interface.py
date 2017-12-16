@@ -287,12 +287,15 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
 
     :param atol: Tune this when numbers close to 0 are failing assertions.
     """
-    # l = logging.getLogger('assert_equals()')
+    logger.info(f'sims_close(rtol={rtol}, atol={atol})')
     if expected is None:
         if 'MODEL' in simulation_results.keys():
             expected = simulation_results['MODEL']
+            logger.info(f'Using "MODEL" as golden output')
         else:
             expected = simulation_results['PYHA']
+            logger.info(f'Using "PYHA" as golden output')
+
 
     def array_to_list(array):
         # https://github.com/numpy/numpy/issues/8052
