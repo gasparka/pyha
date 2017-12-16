@@ -269,6 +269,12 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
     assert sims_close(simulation_results, expected, rtol, atol, skip_first_n)
 
 
+def hardware_sims_equal(simulation_results):
+    # make a copy without the 'MODEL' simulation
+    sims = {k:v for k,v in simulation_results.items() if k != 'MODEL'}
+    return sims_close(sims, rtol=1e-8, atol=1e-8)
+
+
 def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """
     Assert that simulation results (for exampel SIM_MODEL and SIM_HW_MODEL) are equal(defined by rtol and atol).

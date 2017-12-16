@@ -6,7 +6,7 @@ from .common.complex_fixed_point import ComplexSfix
 from .common.core import Hardware
 
 
-from .simulation.simulation_interface import simulate, assert_equals, sims_close
+from .simulation.simulation_interface import simulate, assert_equals, sims_close, hardware_sims_equal
 
 __author__ = """"""
 __email__ = ''
