@@ -1,3 +1,4 @@
+from pyha import simulate, sims_close
 from pyha.common.context_managers import AutoResize
 from pyha.common.fixed_point import Sfix
 from pyha.common.complex_fixed_point import ComplexSfix
@@ -211,6 +212,23 @@ class TestComplex:
         dut = self.A2('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
                          simulations=['PYHA', 'RTL'])
+
+    def test_full_assign(self):
+        """ There shuld be no auto-resize when assigning fully """
+        class A2(Hardware):
+            def __init__(self, overflow_style, round_style):
+                self.a = ComplexSfix(0.0, 0, -4, overflow_style=overflow_style, round_style=round_style)
+                self.DELAY = 1
+
+            def main(self, a):
+                self.a = a
+                return self.a
+
+        x = [0.012 + 0.234j, -0.256 + 0.689]
+
+        dut = A2('saturate', 'round')
+        sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
 
 
 class TestLazySfix:
