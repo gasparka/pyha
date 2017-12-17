@@ -19,6 +19,7 @@ class VHDLSimulation:
 
         self.src_path = self.base_path / 'src'
         self.quartus_path = self.base_path / 'quartus'
+        self.src_util_path = self.src_path / 'util'
 
         if not self.src_path.exists():
             os.makedirs(self.src_path)
@@ -26,13 +27,35 @@ class VHDLSimulation:
         if not self.quartus_path.exists():
             os.makedirs(self.quartus_path)
 
+        if not self.src_util_path.exists():
+            os.makedirs(self.src_util_path)
 
         self.model = model
         self.conv = Conversion(self.model)
 
     def get_conversion_sources(self):
-        src = [pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl']
+        # NB! order of files added to src matters!
+
+        # copy pyha_util to src dir
+        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl', self.src_util_path / 'pyha_util.vhdl')
+        src = [self.src_util_path / 'pyha_util.vhdl']
+
+        # write typedefs file
+        src += [self.src_util_path / 'typedefs.vhdl']
+        with src[-1].open('w') as f:
+            f.write(self.conv.build_typedefs_package())
+
+        # add all conversion files as src
         src += self.conv.write_vhdl_files(self.src_path)
+
+
+        if self.sim_type == 'GATE':
+            # copy FPHDL dependencies to src - these are only neede by quartus
+            fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
+            shutil.copyfile(fphdl_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
+            shutil.copyfile(fphdl_path / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
+            src += [self.src_util_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl']
+
         return src
 
     def main(self):
@@ -57,9 +80,13 @@ class VHDLSimulation:
         rules['VHDL_INPUT_VERSION'] = 'VHDL_2008'
         rules['VHDL_SHOW_LMF_MAPPING_MESSAGES'] = 'OFF'
 
-        fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
-        src = [fphdl_path / 'fixed_pkg_c.vhdl', fphdl_path / 'fixed_float_types_c.vhdl']
-        src += self.get_conversion_sources()
+        # # copy FPHDL dependencies to src - these are only neede by quartus
+        # fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
+        # shutil.copyfile(str(fphdl_path / 'fixed_pkg_c.vhdl'), str(self.src_path / 'fixed_pkg_c.vhdl'))
+        # shutil.copyfile(str(fphdl_path / 'fixed_float_types_c.vhdl'), str(self.src_path / 'fixed_float_types_c.vhdl'))
+        #
+        # src = [self.src_path / 'fixed_pkg_c.vhdl', self.src_path / 'fixed_float_types_c.vhdl']
+        src = self.get_conversion_sources()
 
         buffer = ""
         for key, value in rules.items():
@@ -105,7 +132,8 @@ class CocotbAuto(object):
 
         # ill throw my computer out of the window counter: 8
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-        self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent) # on some computers required.. on some fucks up the build
+        self.environment["PYTHONHOME"] = str(
+            Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
@@ -175,7 +203,7 @@ class CocotbAuto(object):
             for i, row in enumerate(outp):
                 try:
                     outp[i] = tuple(outp[i])
-                except TypeError: # happend when outp[i] is single float
+                except TypeError:  # happend when outp[i] is single float
                     outp[i] = [outp[i]]
 
         return outp

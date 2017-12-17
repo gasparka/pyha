@@ -122,10 +122,6 @@ class Conversion:
             with paths[-1].open('w') as f:
                 f.write(self.top_vhdl.make())
 
-            paths.insert(0, base_dir / 'typedefs.vhd')
-            with paths[0].open('w') as f:
-                f.write(self.build_typedefs_package())
-
         Conversion.in_progress -= 1
         return paths
 

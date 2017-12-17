@@ -97,9 +97,8 @@ def test_get_objects_rednode_selective():
 def test_write_vhdl_files(dut, tmpdir):
     tmpdir = Path(str(tmpdir))
     files = dut.write_vhdl_files(tmpdir)
-    assert files[0] == tmpdir / 'typedefs.vhd' and files[0].is_file()
-    assert files[1] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
-    assert files[2] == tmpdir / 'top.vhd' and files[0].is_file()
+    assert files[0] == tmpdir / 'Dummy_0.vhd' and files[0].is_file()
+    assert files[1] == tmpdir / 'top.vhd' and files[0].is_file()
 
 
 def test_convert_submodule():
@@ -145,7 +144,7 @@ def test_convert_submodule_name_conflict():
     conv = Conversion(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
-    assert names == ['typedefs.vhd', 'A2_0.vhd', 'B2_0.vhd', 'top.vhd']
+    assert names == ['A2_0.vhd', 'B2_0.vhd', 'top.vhd']
 
 
 def test_typedefs():
