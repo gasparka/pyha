@@ -23,16 +23,6 @@ pyha
     :target: https://coveralls.io/github/gasparka/pyha?branch=develop
 
 
-..
-    .. image:: https://landscape.io/github/petspats/pyha/develop/landscape.svg?style=flat
-   :target: https://landscape.io/github/petspats/pyha/develop
-   :alt: Code Health
-
-..
-    .. image:: https://codeclimate.com/github/petspats/pyha/badges/gpa.svg
-       :target: https://codeclimate.com/github/petspats/pyha
-       :alt: Code Climate
-
 * Free software: Apache Software License 2.0
 * Documentation: https://pyha.readthedocs.io.
 

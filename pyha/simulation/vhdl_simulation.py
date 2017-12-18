@@ -2,10 +2,10 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import numpy as np
+
 import pyha
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
@@ -130,10 +130,11 @@ class CocotbAuto(object):
 
     def setup_environment(self):
 
-        # ill throw my computer out of the window counter: 8
+        # ill throw my computer out of the window counter: 9
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-        self.environment["PYTHONHOME"] = str(
-            Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
+
+        # self.environment["PYTHONHOME"] = str(
+        #     Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'

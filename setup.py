@@ -44,7 +44,7 @@ setup(
     long_description=readme,
     author="Gaspar Karm",
     author_email='gkarm@live.com',
-    url='https://github.com/petspats/pyha',
+    url='https://github.com/gasparka/pyha',
 
     packages=find_packages(),
     package_data={'pyha': extra_files},
