@@ -13,11 +13,12 @@ install:
   - pip install codeclimate-test-reporter
 
 script:
-  - coverage run --source pyha -m pytest
+  - echo $PYTHONHOME
+#  - coverage run --source pyha -m pytest
 
 after_success:
-  - coveralls
-  - codeclimate-test-reporter
+#  - coveralls
+#  - codeclimate-test-reporter
 
 deploy:
   provider: pypi

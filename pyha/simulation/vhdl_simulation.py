@@ -130,11 +130,17 @@ class CocotbAuto(object):
 
     def setup_environment(self):
 
-        # ill throw my computer out of the window counter: 9
+        # ill throw my computer out of the window counter: 10
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
+        # print(self.environment["PYTHONHOME"])
         # self.environment["PYTHONHOME"] = str(
         #     Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
+        # self.environment["PYTHONHOME"] = str(
+        #     Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
+        # from distutils.sysconfig import get_config_var
+        # self.environment["PYTHONHOME"] = get_config_var('prefix')
+        # print(self.environment["PYTHONHOME"])
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
