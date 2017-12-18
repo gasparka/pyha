@@ -39,7 +39,7 @@ extra_files.extend(package_files('fphdl/'))
 
 setup(
     name='pyha',
-    version='0.0.5',
+    version='0.0.6',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
