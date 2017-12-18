@@ -116,8 +116,14 @@ class VHDLSimulation:
 
         return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
+def is_virtual():
+    """ Return if we run in a virtual environtment. """
+    # Check supports venv && virtualenv
+    import sys
+    return (getattr(sys, 'base_prefix', sys.prefix) != sys.prefix or
+            hasattr(sys, 'real_prefix'))
 
-class CocotbAuto(object):
+class CocotbAuto:
     def __init__(self, base_path, src, conversion, sim_folder='coco_sim'):
         self.logger = logging.getLogger(__name__)
         self.conversion = conversion
@@ -133,14 +139,13 @@ class CocotbAuto(object):
         # ill throw my computer out of the window counter: 10
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
 
-        # print(self.environment["PYTHONHOME"])
-        # self.environment["PYTHONHOME"] = str(
-        #     Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
-        # self.environment["PYTHONHOME"] = str(
-        #     Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
-        # from distutils.sysconfig import get_config_var
-        # self.environment["PYTHONHOME"] = get_config_var('prefix')
-        # print(self.environment["PYTHONHOME"])
+        # this is some cocotb bullshit that sometimes causes troubles
+        # ill throw my computer out of the window counter: 10
+        import sys
+        if not is_virtual():        # inside virtualenv??
+            self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
+            print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
+                  f'this is COCOTB related bullshit) - it may actually break your build\n\n')
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
