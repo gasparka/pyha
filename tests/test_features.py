@@ -2,8 +2,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -70,8 +71,7 @@ class TestEnum:
 
         dut = T()
         inputs = [0.1] * 8
-        ret = simulate(dut, inputs,
-                       conversion_path='/home/gaspar/git/pyha/playground')
+        ret = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
         assert_equals(ret)
 
 

@@ -142,7 +142,7 @@ class CocotbAuto:
         # this is some cocotb bullshit that sometimes causes troubles
         # ill throw my computer out of the window counter: 10
         import sys
-        if not is_virtual():        # inside virtualenv??
+        if not is_virtual() or ('CI' in self.environment and self.environment['CI']):        # inside virtualenv??
             self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
             print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
                   f'this is COCOTB related bullshit) - it may actually break your build\n\n')
