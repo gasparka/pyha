@@ -1,3 +1,5 @@
+""" This file exsists mainly because i had troubles with circular imports """
+
 class ContextManagerRefCounted:
     def __init__(self):
         self.enabled = 0
@@ -58,4 +60,21 @@ class SimulationRunning:
         return SimulationRunning._enable.enabled
 
 
+class SimulationPath:
+    def __init__(self):
+        self.fifo = []
 
+    def __enter__(self):
+        pass
+
+    def __call__(self, name):
+        self.fifo.append(name)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.fifo.pop()
+
+    def __str__(self):
+        return '-'.join(x for x in self.fifo)
+
+SimPath = SimulationPath()

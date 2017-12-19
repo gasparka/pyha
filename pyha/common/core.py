@@ -3,7 +3,7 @@ import sys
 from collections import UserList
 from copy import deepcopy, copy
 
-from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning
+from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize
 from six import iteritems, with_metaclass
 
@@ -16,7 +16,7 @@ default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
 
 # default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('core')
 
 
 def deepish_copy(org):
@@ -106,11 +106,12 @@ class PyhaFunc:
         real_self = self.func.__self__
         self.calls += 1
 
-        # # CALL IS HERE!
-        with RegisterBehaviour.enable():
-            with AutoResize.enable():
-                ret = self.call_with_locals_discovery(*args, **kwargs)
-                # ret = self.func(*args, **kwargs)
+        # CALL IS HERE!
+        with SimPath(f'{self.class_name}.{self.function_name}()'):
+            with RegisterBehaviour.enable():
+                with AutoResize.enable():
+                    ret = self.call_with_locals_discovery(*args, **kwargs)
+                    # ret = self.func(*args, **kwargs)
 
         # ret = tuple(ret)
         # ret = (ret,)
@@ -206,7 +207,8 @@ class PyhaList(UserList):
             self[i] = y
         else:
             if isinstance(self.data[0], Sfix):
-                y = auto_resize(self.data[0], y)
+                with SimPath(f'{self.var_name}[{i}]='):
+                    y = auto_resize(self.data[0], y)
 
                 # lazy bounds feature, if bounds is None, take the bound from assgned value
                 if self.data[0].left is None:
@@ -243,8 +245,8 @@ class PyhaList(UserList):
             if not isinstance(self.data[0], float):
                 return
             if not silence:
-                logger.warning(f'Class "{self.class_name}" variable "{self.var_name}" is List of float ->'
-                               f' converted to Sfix({default_sfix.left}, {default_sfix.right})')
+                logger.warning(f'{self.class_name}.{self.var_name} is [float] ->'
+                               f' converted to [Sfix({default_sfix.left}, {default_sfix.right})]')
             new = [default_sfix(x) for x in self.data]
             self.data = new
             self._pyha_next = deepcopy(new)
@@ -282,7 +284,7 @@ class Hardware(with_metaclass(Meta)):
             if isinstance(v, float):
                 if not silence:
                     logger.info(
-                        f'Class "{self.__class__.__name__}" variable "{k}" is of type float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
+                        f'{self.__class__.__name__}.{k} is float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
                 new = default_sfix(v)
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
@@ -304,7 +306,8 @@ class Hardware(with_metaclass(Meta)):
 
         if AutoResize.is_enabled() and not self._pyha_is_local:
             target = getattr(self._pyha_initial_self, name)
-            value = auto_resize(target, value)
+            with SimPath(f'{name}='):
+                value = auto_resize(target, value)
 
         if not RegisterBehaviour.is_enabled() or self._pyha_is_local:
             self.__dict__[name] = value

@@ -1,10 +1,10 @@
 import logging
 
 import numpy as np
-from pyha.common.context_managers import ContextManagerRefCounted
+from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('Sfix')
 
 class Sfix:
     """
@@ -108,9 +108,6 @@ class Sfix:
         return self.val < self.min_representable() or \
                self.val > self.max_representable()
 
-    def is_lazy_init(self):
-        return self.left == 0 and self.right == 0
-
     def saturate(self):
         old = self.val
         if self.val > self.max_representable():
@@ -119,13 +116,17 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-        if not self.is_lazy_init() and not old == 1.0:
-            logger.warning(f'Saturation {old} -> {self.val}')
+
+        logger.warning(f'Saturation {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
 
     def wrap(self):
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
-        self.val = (self.val - fmin) % (fmax - fmin) + fmin
+        new_val = (self.val - fmin) % (fmax - fmin) + fmin
+        if self.overflows():
+            logger.error(f'Wrap {self.val:.4f} -> {new_val:.4f}\t[{SimPath}]')
+
+        self.val = new_val
 
     def quantize(self):
         fix = self.val / 2 ** self.right

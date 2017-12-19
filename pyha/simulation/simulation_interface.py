@@ -10,7 +10,7 @@ from typing import List
 
 import numpy as np
 from pyha.common.complex_fixed_point import default_complex_sfix
-from pyha.common.context_managers import RegisterBehaviour, SimulationRunning
+from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.core import default_sfix
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable
@@ -18,7 +18,7 @@ from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('simulation')
 
 
 class NoModelError(Exception):
@@ -82,16 +82,17 @@ def type_conversions(func):
         else:
             args = list(args)
             for i, arg in enumerate(args):
-                if isinstance(arg[0], float):
-                    logger.info(
-                        f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
-                    t = default_sfix
-                    args[i] = [t(x) for x in arg]
-                elif isinstance(arg[0], (complex, np.complex64)):
-                    # assert 0
-                    t = default_complex_sfix
-                    logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
-                    args[i] = [t(x) for x in arg]
+                with SimPath('inputs'):
+                    if isinstance(arg[0], float):
+                        logger.info(
+                            f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
+                        t = default_sfix
+                        args[i] = [t(x) for x in arg]
+                    elif isinstance(arg[0], (complex, np.complex64)):
+                        # assert 0
+                        t = default_complex_sfix
+                        logger.info(f'Converting complex inputs to ComplexSfix(left={t.left}, right={t.right})')
+                        args[i] = [t(x) for x in arg]
 
         ret = func(self, *args, **kwargs)
 
@@ -157,7 +158,8 @@ class Simulation:
     @flush_pipeline
     def hw_simulation(self, *args):
         # convert datamodel to Fixed...
-        self.model._pyha_floats_to_fixed(silence=self.simulation_type != 'PYHA')
+        with SimPath('float_to_sfix'):
+            self.model._pyha_floats_to_fixed(silence=self.simulation_type != 'PYHA')
         if self.simulation_type == 'PYHA':
             ret = self.run_hw_model(args)
         elif self.simulation_type in ['RTL', 'GATE']:
@@ -333,7 +335,6 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
 
 
 def enforce_simulation_rules(simulations):
-    logger = logging.getLogger(__name__)
     if simulations is None:
         simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
     # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.

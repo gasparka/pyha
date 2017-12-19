@@ -5,15 +5,14 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
-
 import pyha
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
+logger = logging.getLogger('simulation')
 
 class VHDLSimulation:
     def __init__(self, base_path, model, sim_type):
-        self.logger = logging.getLogger(__name__)
         self.sim_type = sim_type
         self.base_path = base_path
 
@@ -106,11 +105,11 @@ class VHDLSimulation:
             f.write('PROJECT_REVISION = "quartus_project"')
 
     def make_quartus_netlist(self):
-        self.logger.info('Running quartus map...will take time.')
+        logger.info('Running quartus map...will take time.')
         make_process = subprocess.call(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
         assert make_process == 0
 
-        self.logger.info('Running netlist writer.')
+        logger.info('Running netlist writer.')
         make_process = subprocess.call(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
         assert make_process == 0
 
@@ -125,7 +124,6 @@ def is_virtual():
 
 class CocotbAuto:
     def __init__(self, base_path, src, conversion, sim_folder='coco_sim'):
-        self.logger = logging.getLogger(__name__)
         self.conversion = conversion
         self.src = src
         self.base_path = base_path
@@ -180,7 +178,7 @@ class CocotbAuto:
         self.environment['OUTPUT_VARIABLES'] = str(len(self.conversion.outputs))
 
     def run(self, *input_data):
-        self.logger.info('Running COCOTB & GHDL simulation....')
+        logger.info('Running COCOTB & GHDL simulation....')
 
         indata = []
         for arguments in input_data:
