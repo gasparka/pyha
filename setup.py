@@ -33,8 +33,7 @@ def package_files(directory):
 
 
 extra_files = package_files('cocotb/')
-extra_files.extend(['../common/vhdl_includes/pyha_util.vhdl'])
-extra_files.extend(['/home/gaspar/git/pyha/pyha/simulation/sim_include/*'])
+extra_files.extend(package_files('pyha/simulation/sim_include/'))
 extra_files.extend(package_files('fphdl/'))
 
 setup(
