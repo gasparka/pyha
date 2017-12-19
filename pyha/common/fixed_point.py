@@ -1,10 +1,12 @@
 import logging
+import math
 
 import numpy as np
 from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('Sfix')
+logger = logging.getLogger('sfix')
+
 
 class Sfix:
     """
@@ -23,29 +25,10 @@ class Sfix:
     >>> Sfix(0.123, left=0, right=-7)
     0.125 [0:-7]
 
-    >>> Sfix(2.5, left=0, right=-17)
-    WARNING:pyha.common.sfix:Saturation 2.5 -> 0.9999923706054688
-    0.9999923706054688 [0:-17]
-    >>> Sfix(2.5, left=1, right=-17)
-    WARNING:pyha.common.sfix:Saturation 2.5 -> 1.9999923706054688
-    1.9999923706054688 [1:-17]
-    >>> Sfix(2.5, left=2, right=-17)
-    2.5 [2:-17]
-
     """
 
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
-
-
-    # @staticmethod
-    # def set_float_mode(x):
-    #     """
-    #     Can be used to turn off all quantization effects, useful for debugging.
-    #
-    #     :param x: True/False
-    #     """
-    #     Sfix._float_mode = x
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
                  round_style='truncate', init_only=False):
@@ -74,15 +57,16 @@ class Sfix:
             return
 
         if overflow_style is 'saturate':
-            if self.overflows() and overflow_style:
+            if self.overflows():
                 self.saturate()
             else:
                 self.quantize()
         elif overflow_style in 'wrap':
             self.quantize()
-            self.wrap()
+            if self.overflows():
+                self.wrap()
         else:
-            raise Exception('Wtf')
+            raise Exception(f'Unknown overflow style {overflow_style}')
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -117,15 +101,13 @@ class Sfix:
         else:
             assert False
 
-        logger.warning(f'Saturation {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
+        logger.warning(f'SATURATION {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
 
     def wrap(self):
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
-        if self.overflows():
-            logger.error(f'Wrap {self.val:.4f} -> {new_val:.4f}\t[{SimPath}]')
-
+        logger.error(f'WRAP {self.val:.4f} -> {new_val:.4f}\t[{SimPath}]')
         self.val = new_val
 
     def quantize(self):
@@ -134,16 +116,13 @@ class Sfix:
             fix = round(fix)
         else:
             # this used to be int(fix), but this is a bug when fix is negative
-            fix = np.floor(fix)
+            fix = math.floor(fix)
 
         self.val = fix * 2 ** self.right
 
     # TODO: test, rounding not needed?
     def fixed_value(self):
-        return int(np.round(self.val / 2 ** self.right))
-
-    # def from_fixed(self, val, right):
-    #     return (val * 2 ** self.outputs[i].right)
+        return int(round(self.val / 2 ** self.right))
 
     def __str__(self):
         return f'{str(self.val)} [{self.left}:{self.right}]'
@@ -155,7 +134,7 @@ class Sfix:
         return float(self.val)
 
     def __int__(self):
-        return int(np.floor(self.val))
+        return int(math.floor(self.val))
 
     def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate'):
         if type is not None:  # TODO: add tests
@@ -248,7 +227,7 @@ class Sfix:
 
     def __rshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
-            o = np.ldexp(self.val, -other)
+            o = math.ldexp(self.val, -other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o >> other) * 2 ** self.right
@@ -257,7 +236,7 @@ class Sfix:
 
     def __lshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
-            o = np.ldexp(self.val, other)
+            o = math.ldexp(self.val, other)
         else:
             o = int(self.val / 2 ** self.right)
             o = (o << other) * 2 ** self.right
@@ -288,7 +267,7 @@ class Sfix:
 
     def __call__(self, x: float):
         return Sfix(x, self.left, self.right, self.overflow_style,
-                 self.round_style)
+                    self.round_style)
 
 
 # default are 'saturate' and 'round' as this is the case in VHDL lib....
