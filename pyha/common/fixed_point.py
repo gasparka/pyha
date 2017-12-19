@@ -19,6 +19,7 @@ class Sfix:
     :param init_only: internal use only
     :param overflow_style: fixed_saturate(default) or fixed_wrap
     :param round_style: fixed_round(default) or fixed_truncate
+    :param wrap_is_ok: silences logging ERRORS about WRAP
 
     >>> Sfix(0.123, left=0, right=-17)
     0.1230010986328125 [0:-17]
@@ -31,8 +32,9 @@ class Sfix:
     _float_mode = ContextManagerRefCounted()
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate', init_only=False):
+                 round_style='truncate', init_only=False, wrap_is_ok=False):
 
+        self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
         self.overflow_style = overflow_style
 
@@ -100,14 +102,16 @@ class Sfix:
             self.val = self.min_representable()
         else:
             assert False
-
-        logger.warning(f'SATURATION {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
+        if f'{old:.5f}' != f'{self.val:.5f}': # only warn when saturation is significant, TODO: this expects numbers in [1, -1] range!
+            logger.warning(f'SATURATION {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
 
     def wrap(self):
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
-        logger.error(f'WRAP {self.val:.4f} -> {new_val:.4f}\t[{SimPath}]')
+        if not self.wrap_is_ok:
+            logger.error(f'WRAP {self.val:.5f} -> {new_val:.5f}\t[{SimPath}]')
+            # assert 0
         self.val = new_val
 
     def quantize(self):
@@ -136,11 +140,11 @@ class Sfix:
     def __int__(self):
         return int(math.floor(self.val))
 
-    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate'):
+    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
-        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
+        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
     def _size_add(self, other):
         """ Size rules for add/sub operation. Handles the 'None'(lazy) cases. """
@@ -271,7 +275,7 @@ class Sfix:
 
 
 # default are 'saturate' and 'round' as this is the case in VHDL lib....
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='saturate', round_style='round'):
+def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='saturate', round_style='round', wrap_is_ok=False):
     """
     Resize fixed point number.
 
@@ -300,9 +304,9 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='satu
         if size_res is not None:
             left_index = size_res.left
             right_index = size_res.right
-        return Sfix(fix, left_index, right_index, overflow_style=overflow_style, round_style=round_style)
+        return Sfix(fix, left_index, right_index, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
-    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style)
+    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
 
 def left_index(x: Sfix):

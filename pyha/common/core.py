@@ -185,7 +185,7 @@ def auto_resize(target, value):
     right = target.right if target.right is not None else value.right
 
     return resize(value, left, right, round_style=target.round_style,
-                  overflow_style=target.overflow_style)
+                  overflow_style=target.overflow_style, wrap_is_ok=target.wrap_is_ok)
 
 
 class PyhaList(UserList):
