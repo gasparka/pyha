@@ -149,13 +149,13 @@ class Meta(type):
         for k, v in ret.__dict__.items():
             if k == '__dict__' or k.startswith('_pyha'):
                 continue
-            if hasattr(v, '_pyha_update_self'):
+            if hasattr(v, '_pyha_update_registers'):
                 continue
             ret._pyha_next[k] = deepcopy(v)
 
         ret._pyha_updateable = []
         for k, v in ret.__dict__.items():
-            if hasattr(v, '_pyha_update_self'):
+            if hasattr(v, '_pyha_update_registers'):
                 ret._pyha_updateable.append(v)
 
         # save the initial self values - all registers and initial values will be derived from these values!
@@ -200,9 +200,9 @@ class PyhaList(UserList):
 
     def __setitem__(self, i, y):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
-        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_self' function.
+        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
-        if hasattr(self.data[0], '_pyha_update_self'):
+        if hasattr(self.data[0], '_pyha_update_registers'):
             # object already knows how to handle registers
             self[i] = y
         else:
@@ -226,19 +226,19 @@ class PyhaList(UserList):
             else:
                 self.data[i] = y
 
-    def _pyha_update_self(self):
+    def _pyha_update_registers(self):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled():
             return
-        if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
             for x in self.data:
-                x._pyha_update_self()
+                x._pyha_update_registers()
         else:
             self.data = self._pyha_next[:]
 
     def _pyha_floats_to_fixed(self, silence=False):
-        """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
-        if hasattr(self.data[0], '_pyha_update_self'):  # is submodule
+        """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed(silence)
         else:
@@ -266,8 +266,8 @@ class Hardware(with_metaclass(Meta)):
                 setattr(result, k, deepcopy(v, memo))
         return result
 
-    def _pyha_update_self(self):
-        """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
+    def _pyha_update_registers(self):
+        """ Update registers (everything in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled() or self._pyha_is_local:
             return
         # update atoms
@@ -275,7 +275,7 @@ class Hardware(with_metaclass(Meta)):
 
         # update all childs
         for x in self._pyha_updateable:
-            x._pyha_update_self()
+            x._pyha_update_registers()
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
@@ -301,7 +301,7 @@ class Hardware(with_metaclass(Meta)):
 
     def __setattr__(self, name, value):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
-        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_self' function.
+        Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
 
         if AutoResize.is_enabled() and not self._pyha_is_local:
@@ -317,7 +317,7 @@ class Hardware(with_metaclass(Meta)):
             # list assign
             # example: self.i = [i] + self.i[:-1]
             assert isinstance(self.__dict__[name], PyhaList)
-            if hasattr(self.__dict__[name][0], '_pyha_update_self'):
+            if hasattr(self.__dict__[name][0], '_pyha_update_registers'):
                 # list of submodules -> need to copy each value to submodule next
                 for elem, new in zip(self.__dict__[name], value):
                     # for deeper submodules, deepcopy was not necessary..

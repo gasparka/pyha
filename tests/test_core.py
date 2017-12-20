@@ -85,10 +85,10 @@ def test_float_register():
     assert dut.a == 1.0
     dut.main(2.0)
     assert dut.a == 1.0
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     assert dut.a == 2.0
     dut.main(3.0)
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     assert dut.a == 3.0
 
 
@@ -110,10 +110,10 @@ def test_submodule_float_register():
     dut = A()
     assert dut.b.a == 1.0
     dut.main(2.0)
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     assert dut.b.a == 2.0
     dut.main(3.0)
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     assert dut.b.a == 3.0
 
 
@@ -149,10 +149,10 @@ def test_list_register():
     assert dut.a == [1.0, 2.0, 3.0]
     dut.main(4.0)
     assert dut.a == [1.0, 2.0, 3.0]
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     dut.main(3.0)
     assert dut.a == [4.0, 1.0, 2.0]
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
 
 
 def test_list_cascade_register():
@@ -178,16 +178,16 @@ def test_list_cascade_register():
     dut.main(4.0)
 
     assert dut.l == [0.0, 0.0]
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     dut.main(3.0)
 
     assert dut.l == [3.0, 0.0]
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
 
     dut.main(2.0)
     assert dut.l == [2.0, 3.0]
     assert dut.a.a == [3.0, 4.0, 1.0]
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
 
 
 def test_initial_self():

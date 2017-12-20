@@ -176,7 +176,7 @@ class Simulation:
         ret = []
         for x in args:
             ret.append(deepcopy(self.model.main(*x)))  # deepcopy required or 'subsub' modules break
-            self.model._pyha_update_self()
+            self.model._pyha_update_registers()
         return ret
 
     @type_conversions

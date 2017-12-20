@@ -1,6 +1,6 @@
 from pyha.common.context_managers import RegisterBehaviour
-from pyha.common.fixed_point import Sfix
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix
 from pyha.simulation.legacy import assert_sim_match
 
 
@@ -17,7 +17,7 @@ class TestBuiltins:
 
     def test_basic(self):
         dut = self.T0()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 1
         assert dut._pyha_next['i'] == 1
@@ -31,7 +31,7 @@ class TestBuiltins:
         assert dut.b == True
         assert dut._pyha_next['b'] == False
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 2
         assert dut._pyha_next['i'] == 2
@@ -41,7 +41,7 @@ class TestBuiltins:
     def test_force_disable(self):
         with RegisterBehaviour.force_disable():
             dut = self.T0()
-            dut._pyha_update_self()
+            dut._pyha_update_registers()
 
             assert dut.i == 1
             assert dut._pyha_next['i'] == 1
@@ -55,7 +55,7 @@ class TestBuiltins:
             assert dut.b == False
             assert dut._pyha_next['b'] == True
 
-            dut._pyha_update_self()
+            dut._pyha_update_registers()
 
             assert dut.i == 2
             assert dut._pyha_next['i'] == 1
@@ -86,7 +86,7 @@ class TestBuiltinsList:
 
     def test_basic(self):
         dut = self.T1()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == [1, 2, 3]
         assert dut.i._pyha_next == [1, 2, 3]
@@ -102,7 +102,7 @@ class TestBuiltinsList:
         assert dut.b == [True, False, True]
         assert dut.b._pyha_next == [False, True, False]
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == [2, 2, 3]
         assert dut.i._pyha_next == [2, 2, 3]
@@ -112,7 +112,7 @@ class TestBuiltinsList:
     def test_force_disable(self):
         with RegisterBehaviour.force_disable():
             dut = self.T1()
-            dut._pyha_update_self()
+            dut._pyha_update_registers()
 
             assert dut.i == [1, 2, 3]
             assert dut.b == [True, False, True]
@@ -122,7 +122,7 @@ class TestBuiltinsList:
             assert dut.i == [2, 2, 3]
             assert dut.b == [False, True, False]
 
-            dut._pyha_update_self()
+            dut._pyha_update_registers()
 
             assert dut.i == [2, 2, 3]
             assert dut.b == [False, True, False]
@@ -146,7 +146,7 @@ class TestSfix:
 
     def test_basic(self):
         dut = self.T2()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == Sfix(0.1, 0, -17)
         assert dut._pyha_next['i'] == Sfix(0.1, 0, -17)
@@ -156,7 +156,7 @@ class TestSfix:
         assert dut.i == Sfix(0.1, 0, -17)
         assert dut._pyha_next['i'] == Sfix(0.5, 0, -17)
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == Sfix(0.5, 0, -17)
         assert dut._pyha_next['i'] == Sfix(0.5, 0, -17)
@@ -181,7 +181,7 @@ class TestSfixList:
 
     def test_basic(self):
         dut = self.T3()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         init = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
         assert dut.i == init
@@ -193,7 +193,7 @@ class TestSfixList:
         assert dut.i == init
         assert dut.i._pyha_next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
         assert dut.i._pyha_next == [Sfix(0.5, 0, -17), Sfix(0.1, 0, -17)]
@@ -228,7 +228,7 @@ class TestSubmodule:
 
     def test_basic(self):
         dut = self.T4()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 0
         assert dut.sub.i2 == 2
@@ -246,7 +246,7 @@ class TestSubmodule:
         assert dut.sub._pyha_next['i'] == 5
         assert dut.sub._pyha_next['i2'] == 5
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 1
         assert dut.sub.i2 == 5
@@ -285,7 +285,7 @@ class TestSubmoduleList:
 
     def test_basic(self):
         dut = self.T5()
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 0
         assert dut._pyha_next['i'] == 0
@@ -311,7 +311,7 @@ class TestSubmoduleList:
         assert dut.sub[1]._pyha_next['i'] == 1
         assert dut.sub[1]._pyha_next['i2'] == 15
 
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         assert dut.i == 1
         assert dut._pyha_next['i'] == 1

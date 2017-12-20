@@ -1,7 +1,7 @@
 from enum import Enum
 
-from pyha.common.fixed_point import Sfix
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix
 from pyha.conversion.python_types_vhdl import get_vars_as_vhdl_types, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
     VHDLEnum, BaseVHDLType
 
@@ -278,7 +278,7 @@ class TestVHDLModule:
 
         dut = A4()
         dut.main(Sfix(0.1, 0, -17))
-        dut._pyha_update_self()
+        dut._pyha_update_registers()
 
         dut = VHDLModule('name', dut, dut)
 
@@ -452,7 +452,7 @@ def test_get_conversion_vars_int():
 
     dut = T()
     dut.main(1)
-    dut._pyha_update_self()
+    dut._pyha_update_registers()
     ret = get_vars_as_vhdl_types(dut)
 
     expect = [VHDLInt('i', 1, 0)]
