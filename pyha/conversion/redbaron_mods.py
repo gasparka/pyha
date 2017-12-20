@@ -1,4 +1,17 @@
 import logging
+import textwrap
+from contextlib import suppress
+
+import pyha
+from parse import parse
+from pyha.common.core import SKIP_FUNCTIONS
+from pyha.common.fixed_point import Sfix
+from pyha.common.util import get_iterable, tabber, formatter
+from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import DotProxyList
+from redbaron.nodes import AtomtrailersNode
 import logging
 import textwrap
 from contextlib import suppress
@@ -43,9 +56,6 @@ class NodeVHDL:
             if 'format' not in x:
                 self.__dict__[x] = []
                 for xj in red_node.__dict__[x]:
-                    if isinstance(xj, DefNode) and xj.name in SKIP_FUNCTIONS:
-                        continue
-
                     # function is NOT simulated, dont convert it
                     if isinstance(xj, DefNode) and getattr(convert_obj, xj.name).calls == 0:
                         logger.warning(f'Class "{red_node.name}" function "{xj.name}" was NOT called during simulation, not converting it!')
@@ -710,14 +720,11 @@ def set_convert_obj(obj):
 def convert(red: Node, obj=None):
     set_convert_obj(obj)
 
-    # delete __init__, not converting this
-    with suppress(AttributeError):
-        f = red.find('def', name='__init__')
-        f.parent.remove(f)
-
-    # delete model_main, not converting this
-    with suppress(AttributeError):
-        f = red.find('def', name='model_main')
+    # delete all non convertable functions from redbaron AST
+    while True:
+        f = red.find('def', name=lambda x: x in SKIP_FUNCTIONS or x[:2] == '__' or x[:5] == '_pyha')
+        if not f:
+            break
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
