@@ -468,6 +468,12 @@ class VHDLModule(BaseVHDLType):
                    for self_elem, other_elem in zip(self.elems, other.elems))
 
     def _pyha_to_python_value(self):
+        # maybe class is overloading this?
+        try:
+            return self.current._pyha_to_python_value()
+        except:
+            pass
+
         ret = copy.copy(self.current)
         for elem in self.elems:
             setattr(ret, elem._name, elem._pyha_to_python_value())
@@ -510,7 +516,8 @@ class VHDLModule(BaseVHDLType):
             offset += elem._pyha_bitwidth()
             setattr(ret, elem._name, e)
 
-        return ret
+        tmp = type(self)(self._name, ret)
+        return tmp._pyha_to_python_value()
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
         if type(self.current) != type(other.current):
@@ -574,6 +581,7 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLList(name, current_val, initial_val)
     elif isinstance(current_val, Hardware):
         try:
+            # this is not used anywhere? gives option to overload converter module...
             return current_val._pyha_converter(name, current_val, initial_val)
         except:
             return VHDLModule(name, current_val, initial_val)

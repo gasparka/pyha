@@ -263,7 +263,7 @@ class TestRegisters:
         assert_sim_match(dut, expect, inputs, rtol=1e-4)
 
     def test_submodule(self):
-        """ Assign of submodules is specilly handled.. """
+        """ Assign of submodules is specially handled.. """
 
         class Sub(Hardware):
             def __init__(self, i=0):
@@ -630,8 +630,6 @@ class TestComplexSfix:
         a = ComplexSfix(0.699 + 0.012j, 0, -4)
         assert a.real.val == 0.6875
         assert a.imag.val == 0
-        assert a.left == 0
-        assert a.right == -4
 
     def test_in_out(self):
         class T(Hardware):
@@ -655,7 +653,7 @@ class TestComplexSfix:
         dut = Register()
         inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
 
-        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
+        sims = simulate(dut, inputs)
         assert sims_close(sims)
 
 
