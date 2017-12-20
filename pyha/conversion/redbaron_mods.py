@@ -1,19 +1,18 @@
-import datetime
+import logging
 import logging
 import textwrap
 from contextlib import suppress
 
+import pyha
 from parse import parse
+from pyha.common.core import SKIP_FUNCTIONS
+from pyha.common.fixed_point import Sfix
+from pyha.common.util import get_iterable, tabber, formatter
+from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
     IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
-
-import pyha
-from pyha.common.fixed_point import Sfix
-from pyha.common.core import SKIP_FUNCTIONS
-from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -258,7 +257,7 @@ class DefNodeVHDL(NodeVHDL):
         sockets = {'NAME': self.name,
                    'MULTILINE_COMMENT': self.multiline_comment,
                    'ARGUMENTS': args,
-                   'VARIABLES': tabber(self.variables),
+                   'VARIABLES': tabber(self.variables) if self.variables else '',
                    'BODY': tabber(self.build_body())}
 
         if prototype_only:
@@ -496,22 +495,24 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_deepcopy(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_deepcopy\\(self:inout self_t; other: in self_t) is
+            procedure pyha_deepcopy(self:inout self_t; other: in self_t) is
+                -- copy 'other' to 'self.next'. ':=' cannot be used as it would directly copy to 'self'
             begin
             {DATA}
             end procedure;""")
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_deepcopy() for x in self.data.elems]
+        data = [x.pyha_deepcopy() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_list_deepcopy(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_list_deepcopy\\(self:inout {DTYPE}; other: in {DTYPE}) is
+            procedure pyha_list_deepcopy(self:inout {DTYPE}; other: in {DTYPE}) is
+                -- run deepcopy for each list element
             begin
                 for i in self'range loop
-                    \\_pyha_deepcopy\\(self(i), other(i));
+                    pyha_deepcopy(self(i), other(i));
                 end loop;
             end procedure;""")
 
@@ -523,10 +524,11 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_reset(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self:inout self_t) is
+            procedure pyha_reset(self:inout self_t) is
+                -- executed on reset signal. Reset values are determined from initial values of Python variables.
             begin
             {DATA}
-                \\_pyha_update_registers\\(self);
+                pyha_update_registers(self);
             end procedure;""")
 
         if prototype_only:
@@ -536,7 +538,8 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_reset_constants(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self:inout self_t) is
+            procedure pyha_reset_constants(self:inout self_t) is
+                -- reset CONSTANTS, executed before 'main'. Helps synthesis tools to determine constants.
             begin
             {DATA}
             end procedure;""")
@@ -548,7 +551,8 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_update_registers(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self:inout self_t) is
+            procedure pyha_update_registers(self:inout self_t) is
+                -- loads 'next' values to registers, executed on clock rising edge
             begin
             {DATA}
             end procedure;""")
@@ -560,7 +564,9 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_init(self, prototype_only=False):
         template = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self:inout self_t) is
+            procedure pyha_init_next(self:inout self_t) is
+                -- sets all .next's to current register values, executed before 'main'. 
+                -- thanks to this, '.next' variables are always written before read, so they can never be registers
             begin
             {DATA}
             end procedure;""")
@@ -614,13 +620,14 @@ class ClassNodeVHDL(NodeVHDL):
         sockets['NAME'] = self.data._pyha_module_name()
         sockets['SELF_T'] = tabber(self.build_data_structs())
 
-        proto = self.build_init(prototype_only=True) + '\n\n'
-        proto += self.build_reset_constants(prototype_only=True) + '\n\n'
-        proto += self.build_reset(prototype_only=True) + '\n\n'
-        proto += self.build_deepcopy(prototype_only=True) + '\n\n'
-        proto += self.build_list_deepcopy(prototype_only=True) + '\n\n'
-        proto += self.build_update_registers(prototype_only=True) + '\n\n'
-        proto += '\n\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeVHDL))
+        proto = '\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeVHDL))
+        proto += '\n\n-- internal pyha functions\n'
+        proto += self.build_update_registers(prototype_only=True) + '\n'
+        proto += self.build_reset(prototype_only=True) + '\n'
+        proto += self.build_init(prototype_only=True) + '\n'
+        proto += self.build_reset_constants(prototype_only=True) + '\n'
+        proto += self.build_deepcopy(prototype_only=True) + '\n'
+        proto += self.build_list_deepcopy(prototype_only=True) + '\n'
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
@@ -628,19 +635,20 @@ class ClassNodeVHDL(NodeVHDL):
     def build_package_body(self):
         template = textwrap.dedent("""\
             package body {NAME} is
-            {INIT_SELF}
-
-            {CONSTANT_SELF}
-
+            {USER_FUNCTIONS}
+            
             {RESET_SELF}
+            
+            {UPDATE_SELF}
+            
+            {INIT_SELF}
+            
+            {CONSTANT_SELF}
             
             {DEEPCOPY}
             
             {DEEPCOPY_LIST}
 
-            {UPDATE_SELF}
-
-            {OTHER_FUNCTIONS}
             end package body;""")
 
         sockets = {}
@@ -652,7 +660,7 @@ class ClassNodeVHDL(NodeVHDL):
         sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
         sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
-        sockets['OTHER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeVHDL))
+        sockets['USER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeVHDL))
 
         return template.format(**sockets)
 
@@ -810,7 +818,7 @@ class AutoResize:
 
 
 class SubmoduleDeepcopy:
-    """ Converts assign to submodule to '_pyha_deepcopy' call"""
+    """ Converts assign to submodule to 'pyha_deepcopy' call"""
     @staticmethod
     def apply(red_node):
         nodes = AutoResize.find(red_node)
@@ -819,7 +827,7 @@ class SubmoduleDeepcopy:
             target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
             if isinstance(target_type, VHDLModule):
                 x.replace(
-                    f'{target_type._pyha_module_name()}._pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+                    f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 
 class SubmoduleListDeepcopy:
@@ -832,7 +840,7 @@ class SubmoduleListDeepcopy:
             target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
             if isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
                 x.replace(
-                    f'{target_type.elems[0]._pyha_module_name()}._pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+                    f'{target_type.elems[0]._pyha_module_name()}.pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 
 class ImplicitNext:

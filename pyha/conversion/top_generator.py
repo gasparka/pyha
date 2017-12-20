@@ -136,7 +136,7 @@ class TopGenerator:
                     function init_regs return {DUT_NAME}.self_t is
                         variable self: {DUT_NAME}.self_t;
                     begin
-                          {DUT_NAME}.\_pyha_reset\(self);
+                          {DUT_NAME}.pyha_reset(self);
                           return self;
                     end function;
 
@@ -157,8 +157,8 @@ class TopGenerator:
                 {INPUT_TYPE_CONVERSIONS}
 
                         --call the main entry
-                        {DUT_NAME}.\\_pyha_init\\(self_var);
-                        {DUT_NAME}.\\_pyha_reset_constants\\(self_var);
+                        {DUT_NAME}.pyha_init_next(self_var);
+                        {DUT_NAME}.pyha_reset_constants(self_var);
                         {DUT_NAME}.main(self_var, {CALL_ARGUMENTS});
 
                         --convert normal types to slv
@@ -166,13 +166,12 @@ class TopGenerator:
 
 
                         if (not rst_n) then
-                            {DUT_NAME}.\\_pyha_reset\\(self_var);
+                            {DUT_NAME}.pyha_reset(self_var);
                             self <= self_var;
                         elsif rising_edge(clk) then
                             -- look #153 if you want enable
                             --if enable then
-                                {DUT_NAME}.\\_pyha_update_registers\\(self_var);
-                                {DUT_NAME}.\\_pyha_reset_constants\\(self_var);
+                                {DUT_NAME}.pyha_update_registers(self_var);
                                 self <= self_var;
                             --end if;
                         end if;

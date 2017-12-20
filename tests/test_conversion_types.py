@@ -45,16 +45,16 @@ class TestVHDLList:
         expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
         assert expect == self.dut._pyha_init()
 
-        expect = 'T_0.\\_pyha_init\\(self.\\out\\(0));\n' \
-                 'T_0.\\_pyha_init\\(self.\\out\\(1));'
+        expect = 'T_0.pyha_init_next(self.\\out\\(0));\n' \
+                 'T_0.pyha_init_next(self.\\out\\(1));'
         assert expect == self.dut_sub._pyha_init()
 
     def test_pyha_update_registers(self):
         expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
         assert expect == self.dut._pyha_update_registers()
 
-        expect = 'T_0.\\_pyha_update_registers\\(self.\\out\\(0));\n' \
-                 'T_0.\\_pyha_update_registers\\(self.\\out\\(1));'
+        expect = 'T_0.pyha_update_registers(self.\\out\\(0));\n' \
+                 'T_0.pyha_update_registers(self.\\out\\(1));'
         assert expect == self.dut_sub._pyha_update_registers()
 
     def test_pyha_reset(self):
@@ -217,11 +217,11 @@ class TestVHDLModule:
         assert self.dut._pyha_type() == expect
 
     def test_pyha_init(self):
-        expect = 'T_0.\\_pyha_init\\(self.name);'
+        expect = 'T_0.pyha_init_next(self.name);'
         assert self.dut._pyha_init() == expect
 
     def test_pyha_update_registers(self):
-        expect = 'T_0.\\_pyha_update_registers\\(self.name);'
+        expect = 'T_0.pyha_update_registers(self.name);'
         assert self.dut._pyha_update_registers() == expect
 
     def test_pyha_reset(self):

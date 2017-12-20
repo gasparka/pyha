@@ -1,9 +1,8 @@
 import textwrap
 
 import pytest
-
-from pyha.common.fixed_point import Sfix
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
 
 
@@ -171,7 +170,7 @@ def test_simple_full(simple_obj):
                         function init_regs return Simple_0.self_t is
                             variable self: Simple_0.self_t;
                         begin
-                              Simple_0.\_pyha_reset\(self);
+                              Simple_0.pyha_reset(self);
                               return self;
                         end function;
 
@@ -192,8 +191,8 @@ def test_simple_full(simple_obj):
                             var_in0 := to_integer(signed(in0(31 downto 0)));
 
                             --call the main entry
-                            Simple_0.\_pyha_init\(self_var);
-                            Simple_0.\_pyha_reset_constants\(self_var);
+                            Simple_0.pyha_init_next(self_var);
+                            Simple_0.pyha_reset_constants(self_var);
                             Simple_0.main(self_var, var_in0, ret_0=>var_out0);
 
                             --convert normal types to slv
@@ -201,13 +200,12 @@ def test_simple_full(simple_obj):
 
 
                             if (not rst_n) then
-                                Simple_0.\_pyha_reset\(self_var);
+                                Simple_0.pyha_reset(self_var);
                                 self <= self_var;
                             elsif rising_edge(clk) then
                                 -- look #153 if you want enable
                                 --if enable then
-                                    Simple_0.\_pyha_update_registers\(self_var);
-                                    Simple_0.\_pyha_reset_constants\(self_var);
+                                    Simple_0.pyha_update_registers(self_var);
                                     self <= self_var;
                                 --end if;
                             end if;

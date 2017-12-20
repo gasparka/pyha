@@ -91,7 +91,7 @@ class BaseVHDLType:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
-    def _pyha_deepcopy(self, prefix='self') -> str:
+    def pyha_deepcopy(self, prefix='self') -> str:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
 
@@ -299,7 +299,7 @@ class VHDLList(BaseVHDLType):
         if self.not_submodules_list:
             return super()._pyha_init()
 
-        inits = ['{}.\\_pyha_init\\(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
+        inits = ['{}.pyha_init_next(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
                  for i in range(len(self.current))]
         return '\n'.join(inits)
 
@@ -307,7 +307,7 @@ class VHDLList(BaseVHDLType):
         if self.not_submodules_list:
             return super()._pyha_update_registers()
 
-        inits = ['{}.\\_pyha_update_registers\\(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
+        inits = ['{}.pyha_update_registers(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
                  for i in range(len(self.current))]
         return '\n'.join(inits)
 
@@ -323,7 +323,7 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self') -> str:
+    def pyha_deepcopy(self, prefix='self') -> str:
         name = self._pyha_name()
         if self.not_submodules_list:
             return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
@@ -331,7 +331,7 @@ class VHDLList(BaseVHDLType):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = '{}.{}({})'.format(prefix, name, i)
-            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub.pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -433,10 +433,10 @@ class VHDLModule(BaseVHDLType):
         return '{}_list_t'.format(elem_type)
 
     def _pyha_init(self) -> str:
-        return '{}.\\_pyha_init\\(self.{});'.format(self._pyha_module_name(), self._pyha_name())
+        return '{}.pyha_init_next(self.{});'.format(self._pyha_module_name(), self._pyha_name())
 
     def _pyha_update_registers(self):
-        return '{}.\\_pyha_update_registers\\(self.{});'.format(self._pyha_module_name(), self._pyha_name())
+        return '{}.pyha_update_registers(self.{});'.format(self._pyha_module_name(), self._pyha_name())
 
     def _pyha_reset(self, prefix='self'):
         ret = ''
@@ -447,13 +447,13 @@ class VHDLModule(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self'):
+    def pyha_deepcopy(self, prefix='self'):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
             if self._name != '-':
                 tmp_prefix = '{}.{}'.format(prefix, self._pyha_name())
-            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub.pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:

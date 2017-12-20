@@ -1,13 +1,12 @@
 import textwrap
 from enum import Enum
 
-from redbaron import RedBaron
-
-from pyha.common.fixed_point import Sfix, resize
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.redbaron_mods import AutoResize, ImplicitNext, ForModification, set_convert_obj
+from redbaron import RedBaron
 
 
 class TestDefNodeConv:
@@ -181,19 +180,21 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_init\\(self:inout self_t) is
+            procedure pyha_init_next(self:inout self_t) is
+                -- sets all .next's to current register values, executed before 'main'. 
+                -- thanks to this, '.next' variables are always written before read, so they can never be registers
             begin
                 self.\\next\\.a := self.a;
                 self.\\next\\.al := self.al;
-                A_0.\\_pyha_init\\(self.sub);
-                A_0.\\_pyha_init\\(self.subl(0));
-                A_0.\\_pyha_init\\(self.subl(1));
+                A_0.pyha_init_next(self.sub);
+                A_0.pyha_init_next(self.subl(0));
+                A_0.pyha_init_next(self.subl(1));
             end procedure;""")
 
         dut = get_conversion(T())
         assert expect == str(dut.build_init())
 
-        expect = 'procedure \\_pyha_init\\(self:inout self_t);'
+        expect = 'procedure pyha_init_next(self:inout self_t);'
         assert expect == str(dut.build_init(prototype_only=True))
 
     def test_build_update_self(self):
@@ -209,19 +210,20 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_update_registers\\(self:inout self_t) is
+            procedure pyha_update_registers(self:inout self_t) is
+                -- loads 'next' values to registers, executed on clock rising edge
             begin
                 self.a := self.\\next\\.a;
                 self.al := self.\\next\\.al;
-                A_0.\\_pyha_update_registers\\(self.sub);
-                A_0.\\_pyha_update_registers\\(self.subl(0));
-                A_0.\\_pyha_update_registers\\(self.subl(1));
+                A_0.pyha_update_registers(self.sub);
+                A_0.pyha_update_registers(self.subl(0));
+                A_0.pyha_update_registers(self.subl(1));
             end procedure;""")
 
         dut = get_conversion(T())
         assert expect == str(dut.build_update_registers())
 
-        expect = 'procedure \\_pyha_update_registers\\(self:inout self_t);'
+        expect = 'procedure pyha_update_registers(self:inout self_t);'
         assert expect == str(dut.build_update_registers(prototype_only=True))
 
     def test_build_reset(self):
@@ -237,20 +239,21 @@ class TestClassNodeConv:
                 self.subl = [self.sub] * 2
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset\\(self:inout self_t) is
+            procedure pyha_reset(self:inout self_t) is
+                -- executed on reset signal. Reset values are determined from initial values of Python variables.
             begin
                 self.\\next\\.a := 0;
                 self.\\next\\.al := (0, 1);
                 self.sub.\\next\\.r := 123;
                 self.subl(0).\\next\\.r := 123;
                 self.subl(1).\\next\\.r := 123;
-                \\_pyha_update_registers\\(self);
+                pyha_update_registers(self);
             end procedure;""")
 
         dut = get_conversion(T())
         assert expect == str(dut.build_reset())
 
-        expect = 'procedure \\_pyha_reset\\(self:inout self_t);'
+        expect = 'procedure pyha_reset(self:inout self_t);'
         assert expect == str(dut.build_reset(prototype_only=True))
 
     def test_build_reset_constants(self):
@@ -262,7 +265,8 @@ class TestClassNodeConv:
                 self.AL = [0, 1]
 
         expect = textwrap.dedent("""\
-            procedure \\_pyha_reset_constants\\(self:inout self_t) is
+            procedure pyha_reset_constants(self:inout self_t) is
+                -- reset CONSTANTS, executed before 'main'. Helps synthesis tools to determine constants.
             begin
                 self.A := 0;
                 self.AL := (0, 1);
@@ -271,7 +275,7 @@ class TestClassNodeConv:
         dut = get_conversion(T())
         assert expect == str(dut.build_reset_constants())
 
-        expect = 'procedure \\_pyha_reset_constants\\(self:inout self_t);'
+        expect = 'procedure pyha_reset_constants(self:inout self_t);'
         assert expect == str(dut.build_reset_constants(prototype_only=True))
 
     def test_multiline_comments(self):
@@ -307,35 +311,30 @@ class TestClassNodeConv:
         assert expect == str(dut.get_function('main'))
 
         expect = textwrap.dedent("""\
-            -- class
-            -- doc
-            package B0_0 is
-                type next_t is record
-                    much_dummy_very_wow: integer;
-                end record;
+-- class
+-- doc
+package B0_0 is
+    type next_t is record
+        much_dummy_very_wow: integer;
+    end record;
 
-                type self_t is record
-                    much_dummy_very_wow: integer;
-                    \\next\\: next_t;
-                end record;
-                type B0_0_self_t_list_t is array (natural range <>) of B0_0.self_t;
+    type self_t is record
+        much_dummy_very_wow: integer;
+        \\next\\: next_t;
+    end record;
+    type B0_0_self_t_list_t is array (natural range <>) of B0_0.self_t;
 
-                procedure \_pyha_init\(self:inout self_t);
+    procedure main(self:inout self_t);
+    procedure func2(self:inout self_t);
 
-                procedure \_pyha_reset_constants\(self:inout self_t);
-
-                procedure \_pyha_reset\(self:inout self_t);
-                
-                procedure \_pyha_deepcopy\(self:inout self_t; other: in self_t);
-
-                procedure \_pyha_list_deepcopy\(self:inout B0_0_self_t_list_t; other: in B0_0_self_t_list_t);
-                
-                procedure \_pyha_update_registers\(self:inout self_t);
-
-                procedure main(self:inout self_t);
-
-                procedure func2(self:inout self_t);
-            end package;""")
+    -- internal pyha functions
+    procedure pyha_update_registers(self:inout self_t);
+    procedure pyha_reset(self:inout self_t);
+    procedure pyha_init_next(self:inout self_t);
+    procedure pyha_reset_constants(self:inout self_t);
+    procedure pyha_deepcopy(self:inout self_t; other: in self_t);
+    procedure pyha_list_deepcopy(self:inout B0_0_self_t_list_t; other: in B0_0_self_t_list_t);
+end package;""")
 
         assert expect == dut.build_package_header()
 
