@@ -918,7 +918,6 @@ class TestPitfalls:
         with pytest.raises(Exception):
             sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
 
-
     def test_object_assignment_183(self):
         """ In Python it goes by pointer but VHDL always makes copy., see #183 """
 
@@ -930,7 +929,7 @@ class TestPitfalls:
                 return tmp
 
         dut = Register()
-        inputs = [0.1 + 0.2*1j, 0.2 + 0.5*1j]
+        inputs = [0.1 + 0.2 * 1j, 0.2 + 0.5 * 1j]
 
         sims = simulate(dut, inputs)
         with pytest.raises(Exception):
