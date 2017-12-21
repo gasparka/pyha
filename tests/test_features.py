@@ -919,6 +919,24 @@ class TestPitfalls:
             sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
 
 
+    def test_object_assignment_183(self):
+        """ In Python it goes by pointer but VHDL always makes copy., see #183 """
+
+        class Register(Hardware):
+            def main(self, x):
+                tmp = x
+                tmp.real = x.imag
+                tmp.imag = x.real
+                return tmp
+
+        dut = Register()
+        inputs = [0.1 + 0.2*1j, 0.2 + 0.5*1j]
+
+        sims = simulate(dut, inputs)
+        with pytest.raises(Exception):
+            assert sims_close(sims)
+
+
 def test_ghdl_version():
     ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
     assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
