@@ -960,7 +960,6 @@ def test_hexanode(converter):
     assert expect == str(conv)
 
 
-
 class TestDefNodeConv:
     def test_build_arguments(self):
         class T(Hardware):
@@ -1356,6 +1355,84 @@ class TestEnumModifications:
 
 
 class TestCallModifications:
+
+    def test_no_return(self):
+        'self.b(x) -> b(self, x);'
+        'self.sub.f() -> Sub_0.f(self.sub);'
+        pass
+
+    def test_return_local(self):
+        """
+        loc = self.b(x) ->
+
+        b(self, x, ret_0=>ret_0);
+        loc := ret_0;
+        """
+        pass
+
+    def test_return_register(self):
+        """
+        self.r = self.sub.f() ->
+
+        Sub_0.f(self.sub, ret_0=>ret_0);
+        self.r := ret_0;
+        """
+        pass
+
+    def test_return_register_different_type(self):
+        """
+        self.r = self.sub.f() ->
+
+        Sub_0.f(self.sub, ret_0=>ret_0);
+        self.r := ret_0;
+
+        NB! test when f() returns different type than self.r (is resized to different type)
+        """
+        pass
+
+    def test_return_multi(self):
+        """
+        self.r, self.rr = self.sub.f() ->
+
+        Sub_0.f(self.sub, ret_0=>ret_0, ret_1=>ret_1);
+        self.r := ret_0;
+        self.rr := ret_1;
+        """
+        pass
+
+    def test_ignored_functions(self):
+        """ No action for resize() and Sfix() also len()?"""
+        pass
+
+    def test_multi_expression(self):
+        """
+        loc = self.b(x) + 0.1 ->
+
+        b(self, x, ret_0=>ret_0);
+        loc := ret_0 + 0.1;
+        """
+        pass
+
+    def test_expression_two_calls(self):
+        """
+        loc = self.b(x) + self.b(x) ->
+
+        b(self, x, ret_0=>ret_0);
+        b(self, x, ret_0=>ret_1);
+        loc := ret_0 + ret_1;
+        """
+        pass
+
+    def test_call_is_argument(self):
+        """
+        loc = self.b(self.b(x))->
+
+        b(self, x, ret_0=>ret_0);
+        b(self, ret_0, ret_0=>ret_1);
+        loc := ret_1;
+        """
+        pass
+
     def test_convert_call(self):
         class Sub(Hardware):
             def f(self):
@@ -1556,5 +1633,3 @@ class TestImplicitNext:
         red = RedBaron(code)
         ImplicitNext.apply(red)
         assert red.dumps() == expect
-
-
