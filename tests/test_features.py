@@ -2,8 +2,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -643,11 +644,12 @@ class TestComplexSfix:
 
     def test_assign_local_input(self):
         """ For local object (in this case the input) there should be no register or sfix effects enabled """
+
         class Register(Hardware):
             def main(self, x):
                 ret = x
-                ret.real = x.imag
-                ret.imag = x.real
+                ret.real = x.real
+                ret.imag = x.imag
                 return ret
 
         dut = Register()
@@ -655,6 +657,22 @@ class TestComplexSfix:
 
         sims = simulate(dut, inputs)
         assert sims_close(sims)
+
+    # def test_assign_local_input_add(self):
+    #     """ For local object (in this case the input) there should be no register or sfix effects enabled """
+    #
+    #     class Register(Hardware):
+    #         def main(self, x):
+    #             ret = x
+    #             ret.real = x.real + 0.1
+    #             ret.imag = x.imag + 0.1
+    #             return ret
+    #
+    #     dut = Register()
+    #     inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
+    #
+    #     sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    #     assert sims_close(sims)
 
 
 class TestInOutOrdering:
@@ -883,6 +901,22 @@ class TestFloatToSfix:
         assert dut.sub_list[0].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.sub_list[1].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+
+
+class TestPitfalls:
+    def test_assign_to_input_182(self):
+        """ Fails because inputs in VHDL are INPUTS, cannot be assigned, see #182 """
+
+        class Register(Hardware):
+            def main(self, x):
+                x = x + 0.1
+                return x
+
+        dut = Register()
+        inputs = [0.1, 0.2]
+
+        with pytest.raises(Exception):
+            sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
 
 
 def test_ghdl_version():
