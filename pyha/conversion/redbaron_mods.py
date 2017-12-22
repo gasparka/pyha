@@ -717,6 +717,7 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
+    red = RemoveCopyDeepcopy.apply(red)
     red = CallModifications.apply(red)
     red = MultiAssign.apply(red)
     red = LazyOperand.apply(red)
@@ -757,6 +758,29 @@ def super_getattr(obj, attr):
             obj = getattr(obj, part)
 
     return obj
+
+
+
+class RemoveCopyDeepcopy:
+    """ in VHDL everything is deepcopy by default
+    """
+
+    @staticmethod
+    def apply(red_node):
+        nodes = red_node.find_all('call')
+
+        for call in nodes:
+            call_index = call.previous.index_on_parent
+            if call_index != 0:  # not just copy().. maybe self.copy() etc...
+                continue
+
+            if call.previous.value not in ['copy', 'deepcopy']:
+                continue
+
+            call.parent.replace(call.value.dumps())
+            # call.replace(f'{call.target} = {call.target} {call.operator} {call.value}')
+
+        return red_node
 
 
 class MultiAssign:

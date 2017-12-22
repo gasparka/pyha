@@ -1213,6 +1213,56 @@ def test_laxy_operands():
     assert sims_close(sims)
 
 
+from copy import copy, deepcopy
+
+
+class TestRemoveCopyDeepcopy:
+    def test_copy(self):
+        class T(Hardware):
+            def main(self, inp):
+                tmp = copy(inp)
+                tmp.real = inp.imag
+                tmp.imag = inp.real
+
+                return tmp
+
+        dut = T()
+
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_deepcopy(self):
+        class T(Hardware):
+            def main(self, inp):
+                tmp = deepcopy(inp)
+                tmp.real = inp.imag
+                tmp.imag = inp.real
+
+                return tmp
+
+        dut = T()
+
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_keeps_local_copy(self):
+        class T(Hardware):
+
+            def copy(self):
+                return 1
+
+            def main(self, inp):
+                return self.copy()
+
+        dut = T()
+
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+
 class TestPitfalls:
     def test_assign_to_input_182(self):
         """ Fails because inputs in VHDL are INPUTS, cannot be assigned, see #182 """
