@@ -12,20 +12,6 @@ from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, Comment
     IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
 from redbaron.base_nodes import DotProxyList
 from redbaron.nodes import AtomtrailersNode
-import logging
-import textwrap
-from contextlib import suppress
-
-import pyha
-from parse import parse
-from pyha.common.core import SKIP_FUNCTIONS
-from pyha.common.fixed_point import Sfix
-from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -105,12 +91,16 @@ class TupleNodeVHDL(NodeVHDL):
 
 class AssignmentNodeVHDL(NodeVHDL):
     def __str__(self):
-        r = f'{self.target} := {self.value};'
+        r = ''
         if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
-            raise Exception(f'{r} -> multi assignment not supported!')
+            # multiple assignment: a,b = 1, 2
+            for target, value in zip(self.target, self.value):
+                r += f'{target} := {value};\n'
 
-        if self.red_node.operator != '':
+        elif self.red_node.operator != '':
             raise Exception('{} -> cannot convert +=, -=, /=, *= :(')
+        else:
+            r = f'{self.target} := {self.value};'
         return r
 
 
@@ -291,7 +281,16 @@ class PassNodeVHDL(NodeVHDL):
 class CallNodeVHDL(NodeVHDL):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
-        is_assign = self.red_node.parent_find('assign')
+
+        # find if this call is part of assignment node?
+        p = self.red_node.parent
+        is_assign = False
+        while p is not None:
+            if type(p) == AssignmentNode:
+                is_assign = True
+                break
+            p = p.parent
+
         if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
             base += ';'
         return base
@@ -728,11 +727,11 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
+    red = CallModifications.apply(red)
     if obj is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
     red = ForModification.apply(red)
-    red = CallModifications.apply(red)
     if obj is not None:
         AutoResize.apply(red)
         SubmoduleDeepcopy.apply(red)
@@ -887,6 +886,92 @@ class ImplicitNext:
 
 
 class CallModifications:
+
+    @staticmethod
+    def neww(red_node):
+
+        is_hack = False
+
+        # make sure each created variable is unique by appending this number and incrementing
+        tmp_var_count = 0
+
+        # loop over all atomtrailers, call is always a member of this
+        atomtrailers = red_node.find_all('atomtrailers')
+        for i, atom in enumerate(atomtrailers): # reversed is for the case when one call is argument to other
+            if is_hack: # when parsed out of order call
+                atom = atomtrailers[i - 1]
+                call = atom.call
+                is_hack = False
+            else:
+                call = atom.call # this actually points to the stuff between ()
+
+            if call is None: # this atomtrailer has no function call
+                continue
+
+            if call.call is not None: # one of the arguments is a call -> process it first (i expect it is next in the list)
+                atom = atomtrailers[i+1]
+                call = atom.call
+                is_hack = True
+
+                if call is None: # this atomtrailer has no function call
+                    continue
+
+            call_index = call.previous.index_on_parent
+            if call_index == 0: # input is something like x() -> len(), Sfix() ....
+                continue
+
+            # get the TARGET function object from datamodel
+            target_func_name = atom.copy()
+            del target_func_name[call_index+1:]
+            target_func_obj = super_getattr(convert_obj, str(target_func_name))
+
+            # set prefix as first argument (self)
+            # self.d(a) -> d(self, a)
+            prefix = atom.copy()
+            del prefix[call_index:]
+            del atom[:call_index]
+            call.insert(0, prefix)
+
+            # get the SOURCE (where call is going on) function object from datamodel
+            def_parent = atom.parent_find('def')
+            source_func_name = f'self.{def_parent.name}'
+            source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+            # if call is not to local class function
+            # self.moving_average.main(x) -> MODULE_NAME.main(self.moving_average, x)
+            if str(prefix) != 'self':
+                var = super_getattr(convert_obj, str(prefix))
+                var = init_vhdl_type('-', var, var)
+                red_node.insert(0, var._pyha_module_name())
+
+            if target_func_obj.last_return is None:
+                continue # function is not returning stuff -> this is simple
+            else:
+
+                # add return variables to function locals, so that they will be converted to VHDL variables
+                ret_vars = []
+                for x in get_iterable(target_func_obj.last_return):
+                    name = f'pyha_ret_{tmp_var_count}'
+                    ret_vars.append(name)
+                    source_func_obj.locals[name] = x # add var to SOURCE function
+                    tmp_var_count += 1
+
+                    # add return variable to arguments
+                    call.append(name)
+                    # call.value[-1].target = f'ret_{j}'
+
+
+                # need to add new source line before the CURRENT line..search for the node with linenodes
+                line_node = atom
+                while type(line_node.next) != EndlNode:
+                    line_node = line_node.parent
+
+                # add function call BEFORE the CURRENT line
+                line_node.parent.insert(line_node.index_on_parent, atom.copy())
+                atom.replace(','.join(ret_vars))
+
+        return red_node
+
     @staticmethod
     def transform_prefix(red_node):
         """
@@ -977,8 +1062,9 @@ class CallModifications:
 
     @staticmethod
     def apply(red_node):
-        red_node = CallModifications.transform_returns(red_node)
-        red_node = CallModifications.transform_prefix(red_node)
+        red_node = CallModifications.neww(red_node)
+        # red_node = CallModifications.transform_returns(red_node)
+        # red_node = CallModifications.transform_prefix(red_node)
         return red_node
 
 

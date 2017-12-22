@@ -2,9 +2,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -901,6 +900,299 @@ class TestFloatToSfix:
         assert dut.sub_list[0].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.sub_list[1].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
         assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+
+
+class TestCallModifications:
+    """ Test various ways of calling functions.. """
+
+    def test_simple(self):
+        """
+        self.b(x) -> b(self, x);
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = 0
+                self.DELAY = 1
+
+            def f(self, inp):
+                self.a = inp
+
+            def main(self, inp):
+                self.f(inp)
+                return self.a
+
+        dut = T()
+
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6], simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_simple_submod(self):
+        """
+        self.sub.main(x) -> MODULE_NAME.main(self.sub, x);
+        """
+
+        class Tsub(Hardware):
+            def __init__(self):
+                self.a = 0
+
+            def main(self, inp):
+                self.a = inp
+
+        class T(Hardware):
+            def __init__(self):
+                self.sub = Tsub()
+                self.DELAY = 1
+
+            def main(self, inp):
+                self.sub.main(inp)
+                return self.sub.a
+
+        dut = T()
+
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6], simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_direct_return(self):
+        """
+        return self.b(x) ->
+
+        b(self, x, pyha_ret_0);
+        ret_0 := pyha_ret_0;
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = 0
+                self.DELAY = 1
+
+            def f(self, inp):
+                self.a = inp
+                return self.a
+
+            def main(self, inp):
+                return self.f(inp)
+
+        dut = T()
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_return_to_local(self):
+        """
+        a = self.b(x) ->
+
+        b(self, x, ret_0);
+        a := ret_0;
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = 0
+                self.DELAY = 1
+
+            def f(self, inp):
+                self.a = inp
+                return self.a
+
+            def main(self, inp):
+                ret = self.f(inp)
+                return ret
+
+        dut = T()
+
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_return_to_self_resize(self):
+        """
+
+        self.a = self.b(x) ->
+
+        b(self, x, ret_0);
+        self.a := resize(ret_0, ...);
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                self.DELAY = 1
+
+            def f(self, inp):
+                return inp + 0.1
+
+            def main(self, inp):
+                self.a = self.f(inp)
+                return self.a
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_return_to_self_resize_complex(self):
+        """
+        Same as above but for Complex type...may have deepcopy issues
+        This has issues...
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = ComplexSfix(0, 0, -28)
+                self.DELAY = 1
+
+            def f(self, inp):
+                self.a.imag = inp.real + 0.1
+                self.a.real = inp.imag + 0.1
+                return self.a
+
+            def main(self, inp):
+                r = self.f(inp)
+                return r
+
+        dut = T()
+
+        sims = simulate(dut, [0.1 + 0.2j, 0.2 - 0.98j], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_expression_complex(self):
+        """
+        self.a = self.b(x) + 0.1 ->
+
+        b(self, x, ret_0);
+        self.a := resize(ret_0 + 0.1, ...);
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                self.DELAY = 1
+
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                self.a = self.f(inp) + 0.1
+                return self.a
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_call_is_argument(self):
+        """
+        self.a = self.b(self.b(0)) ->
+
+        b(self, x, ret_0);
+        b(self, ret_0, ret_1);
+        self.a := resize(ret_1, ...);
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                self.DELAY = 1
+
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                self.a = self.f(self.f(inp))
+                return self.a
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_multi_call(self):
+        """
+        self.a = self.b(x) + self.b(x) ->
+
+        b(self, x, ret_0);
+        b(self, x, ret_1);
+        self.a := resize(ret_0 + 0.1, ...);
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                self.DELAY = 1
+
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                self.a = self.f(inp) + self.f(inp)
+                return self.a
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_multi_return_local(self):
+        """
+        a, b = self.b(x)->
+
+        b(self, x, ret_0, ret_1);
+        a := ret_0;
+        b := ret_1;
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                # self.DELAY = 1
+
+            def f(self, inp):
+                return inp + 0.1, inp + 0.2 + 0.4
+
+            def main(self, inp):
+                a, b = self.f(inp)
+                return a, b
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+
+    def test_multi_return_register(self):
+        """
+        a, b = self.b(x)->
+
+        b(self, x, ret_0, ret_1);
+        a := ret_0;
+        b := ret_1;
+        """
+
+        class T(Hardware):
+            def __init__(self):
+                self.a = Sfix(0, 0, -28)
+                self.b = Sfix(0, 0, -18)
+                self.DELAY = 1
+
+            def f(self, inp):
+                return inp + 0.1, inp + 0.2 + 0.4
+
+            def main(self, inp):
+                self.a, self.b = self.f(inp)
+                return self.a, self.b
+
+        dut = T()
+
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                        simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
 
 
 class TestPitfalls:
