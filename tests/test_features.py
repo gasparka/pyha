@@ -1165,7 +1165,6 @@ class TestCallModifications:
                         simulations=['MODEL', 'PYHA', 'RTL'])
         assert sims_close(sims)
 
-
     def test_multi_return_register(self):
         """
         a, b = self.b(x)->
@@ -1182,7 +1181,7 @@ class TestCallModifications:
                 self.DELAY = 1
 
             def f(self, inp):
-                return inp + 0.1, inp + 0.2 + 0.4
+                return inp + 0.1, inp + 0.2 + 0.1
 
             def main(self, inp):
                 self.a, self.b = self.f(inp)
@@ -1193,6 +1192,25 @@ class TestCallModifications:
         sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
                         simulations=['MODEL', 'PYHA', 'RTL'])
         assert sims_close(sims)
+
+
+def test_laxy_operands():
+    class T(Hardware):
+        def __init__(self):
+            self.a = Sfix(0, 0, -28)
+            self.b = Sfix(0, 0, -18)
+            self.DELAY = 1
+
+        def main(self, inp):
+            self.a += 0.1
+            self.b *= self.a
+            return self.a, self.b
+
+    dut = T()
+
+    sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
+                    simulations=['MODEL', 'PYHA', 'RTL'])
+    assert sims_close(sims)
 
 
 class TestPitfalls:

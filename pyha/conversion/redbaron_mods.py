@@ -44,7 +44,8 @@ class NodeVHDL:
                 for xj in red_node.__dict__[x]:
                     # function is NOT simulated, dont convert it
                     if isinstance(xj, DefNode) and getattr(convert_obj, xj.name).calls == 0:
-                        logger.warning(f'Class "{red_node.name}" function "{xj.name}" was NOT called during simulation, not converting it!')
+                        logger.warning(
+                            f'Class "{red_node.name}" function "{xj.name}" was NOT called during simulation, not converting it!')
                         continue
                     self.__dict__[x].append(redbaron_node_to_vhdl_node(xj, caller=self))
 
@@ -91,17 +92,7 @@ class TupleNodeVHDL(NodeVHDL):
 
 class AssignmentNodeVHDL(NodeVHDL):
     def __str__(self):
-        r = ''
-        if isinstance(self.red_node.target, TupleNode) or isinstance(self.red_node.value, TupleNode):
-            # multiple assignment: a,b = 1, 2
-            for target, value in zip(self.target, self.value):
-                r += f'{target} := {value};\n'
-
-        elif self.red_node.operator != '':
-            raise Exception('{} -> cannot convert +=, -=, /=, *= :(')
-        else:
-            r = f'{self.target} := {self.value};'
-        return r
+        return f'{self.target} := {self.value};'
 
 
 class ReturnNodeVHDL(NodeVHDL):
@@ -327,7 +318,6 @@ class PrintNodeVHDL(NodeVHDL):
         if isinstance(self.red_node.value[0], TupleNode):
             raise Exception(f'{self.red_node} -> print only supported with one Sfix argument!')
         return f"report to_string{self.value[0]};"
-
 
 
 class ListNodeVHDL(NodeVHDL):
@@ -728,6 +718,8 @@ def convert(red: Node, obj=None):
 
     # run RedBaron based conversions before parsing
     red = CallModifications.apply(red)
+    red = MultiAssign.apply(red)
+    red = LazyOperand.apply(red)
     if obj is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
@@ -751,7 +743,6 @@ def convert(red: Node, obj=None):
 
 
 def super_getattr(obj, attr):
-
     for part in attr.split('.'):
         if part == 'self' or part == 'next':
             continue
@@ -766,6 +757,44 @@ def super_getattr(obj, attr):
             obj = getattr(obj, part)
 
     return obj
+
+
+class MultiAssign:
+    """ Multi target assigns to single target:
+    a, b, c = 1, 2, 3 ->
+    a = 1
+    b = 2
+    c = 3
+    """
+
+    @staticmethod
+    def apply(red_node):
+        nodes = red_node.find_all('assign', target=lambda x: isinstance(x, TupleNode))
+
+        for x in nodes:
+            for i, (target, value) in enumerate(zip(x.target, x.value)):
+                if i == len(x.target) - 1:
+                    x.replace(f'{target} = {value}')
+                else:
+                    x.parent.insert(x.index_on_parent, f'{target} = {value}')
+
+        return red_node
+
+
+class LazyOperand:
+    """ *=, += .. etc:
+    a *= b ->
+    a = a * b
+    """
+
+    @staticmethod
+    def apply(red_node):
+        nodes = red_node.find_all('assign', operator=lambda x: x != '')
+
+        for x in nodes:
+            x.replace(f'{x.target} = {x.target} {x.operator} {x.value}')
+
+        return red_node
 
 
 class AutoResize:
@@ -815,7 +844,8 @@ class AutoResize:
         for node, var_t in zip(pass_nodes, pass_types):
 
             if isinstance(node.value, (FloatNode, IntNode)) \
-                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (FloatNode, IntNode))): # second term to pass marked(-) nodes, like -1. -0.34 etc
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
+                    FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
@@ -825,6 +855,7 @@ class AutoResize:
 
 class SubmoduleDeepcopy:
     """ Converts assign to submodule to 'pyha_deepcopy' call"""
+
     @staticmethod
     def apply(red_node):
         nodes = AutoResize.find(red_node)
@@ -897,32 +928,32 @@ class CallModifications:
 
         # loop over all atomtrailers, call is always a member of this
         atomtrailers = red_node.find_all('atomtrailers')
-        for i, atom in enumerate(atomtrailers): # reversed is for the case when one call is argument to other
-            if is_hack: # when parsed out of order call
+        for i, atom in enumerate(atomtrailers):  # reversed is for the case when one call is argument to other
+            if is_hack:  # when parsed out of order call
                 atom = atomtrailers[i - 1]
                 call = atom.call
                 is_hack = False
             else:
-                call = atom.call # this actually points to the stuff between ()
+                call = atom.call  # this actually points to the stuff between ()
 
-            if call is None: # this atomtrailer has no function call
+            if call is None:  # this atomtrailer has no function call
                 continue
 
-            if call.call is not None: # one of the arguments is a call -> process it first (i expect it is next in the list)
-                atom = atomtrailers[i+1]
+            if call.call is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
+                atom = atomtrailers[i + 1]
                 call = atom.call
                 is_hack = True
 
-                if call is None: # this atomtrailer has no function call
+                if call is None:  # this atomtrailer has no function call
                     continue
 
             call_index = call.previous.index_on_parent
-            if call_index == 0: # input is something like x() -> len(), Sfix() ....
+            if call_index == 0:  # input is something like x() -> len(), Sfix() ....
                 continue
 
             # get the TARGET function object from datamodel
             target_func_name = atom.copy()
-            del target_func_name[call_index+1:]
+            del target_func_name[call_index + 1:]
             target_func_obj = super_getattr(convert_obj, str(target_func_name))
 
             # set prefix as first argument (self)
@@ -945,7 +976,7 @@ class CallModifications:
                 red_node.insert(0, var._pyha_module_name())
 
             if target_func_obj.last_return is None:
-                continue # function is not returning stuff -> this is simple
+                continue  # function is not returning stuff -> this is simple
             else:
 
                 # add return variables to function locals, so that they will be converted to VHDL variables
@@ -953,13 +984,12 @@ class CallModifications:
                 for x in get_iterable(target_func_obj.last_return):
                     name = f'pyha_ret_{tmp_var_count}'
                     ret_vars.append(name)
-                    source_func_obj.locals[name] = x # add var to SOURCE function
+                    source_func_obj.locals[name] = x  # add var to SOURCE function
                     tmp_var_count += 1
 
                     # add return variable to arguments
                     call.append(name)
                     # call.value[-1].target = f'ret_{j}'
-
 
                 # need to add new source line before the CURRENT line..search for the node with linenodes
                 line_node = atom
