@@ -433,13 +433,18 @@ class TestCallModifications:
         dut = T()
         dut.a(1)
 
-        expect = 'b(self, x);\n' \
-                 'Sub_0.f(self.sub);\n' \
-                 'b(self, x, ret_0=>loc);\n' \
-                 'Sub_0.f(self.sub, ret_0=>self.\\next\\.r);\n' \
-                 'f := resize(Sfix(1, 1, -15), 0, -15);\n' \
-                 'multi(self, x, ret_0=>self.\\next\\.arr(0), ret_1=>self.\\next\\.arr(1));\n'\
-                 "lol := self.arr(self.arr'length - 1);"
+        expect = \
+            'b(self, x, pyha_ret_0);\n' \
+            'Sub_0.f(self.sub, pyha_ret_1);\n' \
+            'b(self, x, pyha_ret_2);\n' \
+            'loc := pyha_ret_2;\n' \
+            'Sub_0.f(self.sub, pyha_ret_3);\n' \
+            'self.\\next\\.r := pyha_ret_3;\n' \
+            'f := resize(Sfix(1, 1, -15), 0, -15);\n' \
+            'multi(self, x, pyha_ret_4, pyha_ret_5);\n' \
+            'self.\\next\\.arr(0) := pyha_ret_4;\n' \
+            'self.\\next\\.arr(1) := pyha_ret_5;\n' \
+            "lol := self.arr(self.arr'length - 1);"
         conv = get_conversion(dut)
         func = conv.get_function('a')
         assert expect == func.build_body()
@@ -543,7 +548,6 @@ class TestAutoResize:
         nodes = AutoResize.apply(self.red_node)
         assert expect_nodes == [str(x) for x in nodes]
 
-
         # todo:
         # * auto resize on function calls that return to self.next ??
         # * what if is already resized??
@@ -605,4 +609,3 @@ class TestImplicitNext:
         red = RedBaron(code)
         ImplicitNext.apply(red)
         assert red.dumps() == expect
-

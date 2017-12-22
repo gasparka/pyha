@@ -8,10 +8,9 @@ from pyha.common.core import SKIP_FUNCTIONS
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, AssertNode, FloatNode, \
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
     IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import DotProxyList
-from redbaron.nodes import AtomtrailersNode
+from redbaron.base_nodes import LineProxyList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -718,14 +717,13 @@ def convert(red: Node, obj=None):
 
     # run RedBaron based conversions before parsing
     red = RemoveCopyDeepcopy.apply(red)
+    red = ForModification.apply(red)
     red = CallModifications.apply(red)
     red = MultiAssign.apply(red)
     red = LazyOperand.apply(red)
     if obj is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
-    red = ForModification.apply(red)
-    if obj is not None:
         AutoResize.apply(red)
         SubmoduleDeepcopy.apply(red)
         SubmoduleListDeepcopy.apply(red)
@@ -997,7 +995,7 @@ class CallModifications:
             if str(prefix) != 'self':
                 var = super_getattr(convert_obj, str(prefix))
                 var = init_vhdl_type('-', var, var)
-                red_node.insert(0, var._pyha_module_name())
+                atom.insert(0, var._pyha_module_name())
 
             if target_func_obj.last_return is None:
                 continue  # function is not returning stuff -> this is simple
@@ -1017,108 +1015,26 @@ class CallModifications:
 
                 # need to add new source line before the CURRENT line..search for the node with linenodes
                 line_node = atom
-                while type(line_node.next) != EndlNode:
+                while True:
+                    if type(line_node.next) == EndlNode:
+                        break
+                    if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
+                        if not (hasattr(line_node.parent, 'test') and (line_node.parent.test == atom # if WE are the if contition, skip
+                                                                       or line_node.parent.test == atom.parent)): # if WE are the if contition (part of condition)
+                            break
+
                     line_node = line_node.parent
 
                 # add function call BEFORE the CURRENT line
-                line_node.parent.insert(line_node.index_on_parent, atom.copy())
-                atom.replace(','.join(ret_vars))
+                if line_node != atom: # equality means that value is not assigned to anything
+                    line_node.parent.insert(line_node.index_on_parent, atom.copy())
+                    atom.replace(','.join(ret_vars))
 
-        return red_node
-
-    @staticmethod
-    def transform_prefix(red_node):
-        """
-        Main work is to add 'self' argument to function call
-        self.d(a) -> d(self, a)
-
-        If function owner is not exactly 'self' then 'unknown_type' is prepended.
-        self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
-
-        self.d(a) -> d(self, a)
-        self.next.d(a) -> d(self.next, a)
-        local.d() -> type.d(local)
-        self.local.d() -> type.d(self.local)
-
-        """
-
-        def modify_call(red_node):
-            call_args = red_node.find('call')
-            i = call_args.previous.index_on_parent
-            if i == 0:
-                return red_node  # input is something like a()
-
-            if isinstance(red_node.parent, AssertNode):
-                return red_node
-            prefix = red_node.copy()
-            del prefix[i:]
-            del red_node[:i]
-
-            # this happens when 'redbaron_pyfor_to_vhdl' does some node replacements
-            if isinstance(prefix.value, DotProxyList) and len(prefix) == 1:
-                prefix = prefix[0]
-
-            call_args.insert(0, prefix)
-            if prefix.dumps() not in ['self', 'self.next']:
-                var = super_getattr(convert_obj, prefix.dumps())
-                var = init_vhdl_type('-', var, var)
-                red_node.insert(0, var._pyha_module_name())
-                # v = VHDLType(str(prefix[-1]), red_node=prefix)
-                # red_node.insert(0, v.var_type)
-
-        atoms = red_node.find_all('atomtrailers')
-        for i, x in enumerate(atoms):
-            if x.call is not None:
-                modify_call(x)
-
-        return red_node
-
-    @staticmethod
-    def transform_returns(red_node):
-        """
-        Convert function calls, that return into variable into VHDL format.
-        b = self.a(a) ->
-            self.a(a, ret_0=b)
-
-        self.next.b[0], self.next.b[1] = self.a(self.a) ->
-            self.a(self.a, ret_0=self.next.b[0], ret_1=self.next.b[1])
-
-        """
-
-        def modify_call(x: AssignmentNode):
-            try:
-                if str(x.value[0]) != 'self':  # most likely call to 'resize' no operatons needed
-                    if str(x.value[0][0]) != 'self':  # this is some shit that happnes after 'for' transforms
-                        return x
-            except:
-                return x
-
-            call = x.call
-            # dont run this function for calls to len()
-            if call.previous.value == 'len':
-                return x
-
-            if len(x.target) == 1 or isinstance(x.target, AtomtrailersNode):
-                call.append(str(x.target))
-                call.value[-1].target = 'ret_0'
-            else:
-                for j, argx in enumerate(x.target):
-                    call.append(str(argx))
-                    call.value[-1].target = f'ret_{j}'
-            return x.value
-
-        assigns = red_node.find_all('assign')
-        for x in assigns:
-            if x.call is not None:
-                new = modify_call(x.copy())
-                x.replace(new)
         return red_node
 
     @staticmethod
     def apply(red_node):
         red_node = CallModifications.neww(red_node)
-        # red_node = CallModifications.transform_returns(red_node)
-        # red_node = CallModifications.transform_prefix(red_node)
         return red_node
 
 

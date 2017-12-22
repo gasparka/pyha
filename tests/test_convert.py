@@ -1,9 +1,8 @@
 import textwrap
 
 import pytest
-from redbaron import RedBaron
-
 from pyha.conversion.redbaron_mods import convert
+from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -63,34 +62,6 @@ def test_assign(converter):
     code = 'a = b'
     conv = converter(code)
     assert str(conv) == 'a := b;'
-
-
-def test_assign_add_raises(converter):
-    code = 'a += b'
-    with pytest.raises(Exception):
-        conv = converter(code)
-        str(conv)
-
-
-def test_assign_sub_raises(converter):
-    code = 'a -= b'
-    with pytest.raises(Exception):
-        conv = converter(code)
-        str(conv)
-
-
-def test_assign_div_raises(converter):
-    code = 'a /= b'
-    with pytest.raises(Exception):
-        conv = converter(code)
-        str(conv)
-
-
-def test_assign_mul_raises(converter):
-    code = 'a *= b'
-    with pytest.raises(Exception):
-        conv = converter(code)
-        str(conv)
 
 
 def test_assign_trailers(converter):
@@ -217,13 +188,6 @@ def test_assign_associative_boolean(converter):
     code = 'a = b == c and (val < b or val > a)'
     conv = converter(code)
     assert str(conv) == 'a := b = c and (val < b or val > a);'
-
-
-def test_assign_multi(converter):
-    code = 'a, b, c = d, e, f'
-    with pytest.raises(Exception):
-        conv = converter(code)
-        print(str(conv))
 
 
 def test_if_single_body(converter):

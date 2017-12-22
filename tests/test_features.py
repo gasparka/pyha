@@ -950,7 +950,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [1, 2, 3, 4, 5, 6], simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6])
         assert sims_close(sims)
 
     def test_direct_return(self):
@@ -974,8 +974,7 @@ class TestCallModifications:
                 return self.f(inp)
 
         dut = T()
-        sims = simulate(dut, [1, 2, 3, 4, 5, 6], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6])
         assert sims_close(sims)
 
     def test_return_to_local(self):
@@ -1001,8 +1000,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [1, 2, 3, 4, 5, 6], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6])
         assert sims_close(sims)
 
     def test_return_to_self_resize(self):
@@ -1028,8 +1026,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
         assert sims_close(sims)
 
     def test_return_to_self_resize_complex(self):
@@ -1054,8 +1051,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1 + 0.2j, 0.2 - 0.98j], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j, 0.2 - 0.98j])
         assert sims_close(sims)
 
     def test_expression_complex(self):
@@ -1080,8 +1076,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
         assert sims_close(sims)
 
     def test_call_is_argument(self):
@@ -1107,8 +1102,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
         assert sims_close(sims)
 
     def test_multi_call(self):
@@ -1134,8 +1128,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
         assert sims_close(sims)
 
     def test_multi_return_local(self):
@@ -1161,8 +1154,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
         assert sims_close(sims)
 
     def test_multi_return_register(self):
@@ -1189,12 +1181,96 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
+        assert sims_close(sims)
+
+    def test_is_if_argument(self):
+        class T(Hardware):
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                if self.f(inp) == 1:
+                    return 1
+                elif self.f(inp) == 2:
+                    return 2
+                else:
+                    return 0
+
+        dut = T()
+
+        sims = simulate(dut, [0, 1, 1, 0, 2, 3, 1])
+        assert sims_close(sims)
+
+    def test_is_in_if_body(self):
+        class T(Hardware):
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                if inp == 1:
+                    return self.f(inp)
+                else:
+                    a = 5
+                    return self.f(inp)
+
+        dut = T()
+
+        sims = simulate(dut, [0, 1, 1, 0, 2, 3, 1])
+        assert sims_close(sims)
+
+    def test_is_in_for_body(self):
+        class T(Hardware):
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                for i in range(10):
+                    a = self.f(inp)
+                return a
+
+        dut = T()
+
+        sims = simulate(dut, [0, 1, 1, 0, 2, 3, 1])
+        assert sims_close(sims)
+
+    def test_is_in_for_body_if_cond(self):
+        class T(Hardware):
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                for i in range(10):
+                    if self.f(inp) == 1:
+                        return 1
+                return 0
+
+        dut = T()
+
+        sims = simulate(dut, [0, 1, 1, 0, 2, 3, 1])
+        assert sims_close(sims)
+
+    def test_if_nested(self):
+        class T(Hardware):
+            def f(self, inp):
+                return inp
+
+            def main(self, inp):
+                for i in range(10):
+                    if True:
+                        if self.f(inp) == 1:
+                            return 1
+                        elif self.f(inp) == 2:
+                            return 2
+                return 0
+
+        dut = T()
+
+        sims = simulate(dut, [0, 1, 1, 0, 2, 3, 1])
         assert sims_close(sims)
 
 
-def test_laxy_operands():
+def test_lazy_operands():
     class T(Hardware):
         def __init__(self):
             self.a = Sfix(0, 0, -28)
@@ -1208,8 +1284,7 @@ def test_laxy_operands():
 
     dut = T()
 
-    sims = simulate(dut, [0.1, 0.2, 0.3, 0.4], conversion_path='/home/gaspar/git/pyha/playground',
-                    simulations=['MODEL', 'PYHA', 'RTL'])
+    sims = simulate(dut, [0.1, 0.2, 0.3, 0.4])
     assert sims_close(sims)
 
 
@@ -1228,8 +1303,7 @@ class TestRemoveCopyDeepcopy:
 
         dut = T()
 
-        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j])
         assert sims_close(sims)
 
     def test_deepcopy(self):
@@ -1243,8 +1317,7 @@ class TestRemoveCopyDeepcopy:
 
         dut = T()
 
-        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j])
         assert sims_close(sims)
 
     def test_keeps_local_copy(self):
@@ -1258,8 +1331,7 @@ class TestRemoveCopyDeepcopy:
 
         dut = T()
 
-        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], conversion_path='/home/gaspar/git/pyha/playground',
-                        simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j])
         assert sims_close(sims)
 
 
