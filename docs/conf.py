@@ -33,9 +33,9 @@ sys.path.insert(0, os.path.abspath('/home/gaspar/git/pyha'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'sphinx.ext.autodoc',
+    'sphinx.ext.autodoc',
     'sphinx.ext.todo',
-    # 'sphinxcontrib.fulltoc',
+    'sphinxcontrib.fulltoc',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive'
 ]

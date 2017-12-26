@@ -10,21 +10,63 @@ logger = logging.getLogger('sfix')
 
 class Sfix:
     """
-    Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
-    are defined for this class.
+    Signed fixed-point type. Default (optimal for FPGA hardware) fixed-point format in Pyha is ``Sfix(left=0, right=-17)``, which is an 18 bit format (17 fractional bits + sign).
+    It represents values in range [-1, 1] -+``(2**0)`` with resolution of 0.0000076 ``(2**-17)``.
 
-    :param val: initial value
-    :param left: bits for integer part.
-    :param right: bits for fractional part. This is negative number.
-    :param init_only: internal use only
-    :param overflow_style: fixed_saturate(default) or fixed_wrap
-    :param round_style: fixed_round(default) or fixed_truncate
+    :param val: initial value (reset value in hardware)
+    :param left: bits for integer part. Maximum representable value is ``2**left``
+    :param right: bits for fractional part. Minimum representable value or resulution is ``2**right``, note that ``right`` is almost always negative number.
+    :param overflow_style: 'wrap' (default) or 'saturate'.
+
+        Wrap:
+
+        >>> Sfix(1.25, left=0, right=-17)
+        ERROR:sfix:WRAP 1.25000 -> -0.75000	[]
+        -0.75 [0:-17]
+
+        Saturation:
+
+        >>> Sfix(1.25, left=0, right=-17, overflow_style='saturate')
+        WARNING:sfix:SATURATION 1.25000 -> 0.99999	[]
+        0.9999923706054688 [0:-17]
+
+
+    :param round_style: truncate (default) or 'round' (quite expensive)
     :param wrap_is_ok: silences logging ERRORS about WRAP
+    :param init_only: internal use only
+
+
+    Examples:
 
     >>> Sfix(0.123, left=0, right=-17)
     0.1230010986328125 [0:-17]
     >>> Sfix(0.123, left=0, right=-7)
     0.125 [0:-7]
+
+    Bit growth:
+    ==========
+
+
+    >>> a = Sfix(0.123, left=0, right=-17)
+    >>> a
+    0.12299346923828125 [0:-17]
+
+    Addition:
+
+    >>> a + a
+    0.2459869384765625 [1:-17]
+
+    >>> a + a + a
+    0.36898040771484375 [2:-17]
+
+
+    Multiplication:
+
+    >>> a * a
+    0.015127393475268036 [1:-34]
+
+    >>> a * a * a
+    0.0018605706040557557 [2:-51]
 
     """
 

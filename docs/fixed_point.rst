@@ -1,49 +1,15 @@
 Fixed-point
 ===========
 
-Pyha maps fixed-point operations almost directly to `VHDL fixed point library`_
+Pyha maps fixed-point operations directly to `VHDL fixed point library`_
 
 .. _VHDL fixed point library: https://github.com/FPHDL/fphdl
 
 
-.. py:class:: pyha.common.sfix.Sfix(val=0.0, left=0, right=0, init_only=False, overflow_style='fixed_saturate', round_style='fixed_round')
-
-    Signed fixed point type, like to_sfixed() in VHDL. Basic arithmetic operations
-    are defined for this class.
-
-    More info: https://www.dsprelated.com/showarticle/139.php
-
-    :param val: initial value
-    :param left: bits for integer part.
-    :param right: bits for fractional part. This is negative number.
-    :param init_only: internal use only
-    :param overflow_style: fixed_saturate(default) or fixed_wrap
-    :param round_style: fixed_round(default) or fixed_truncate
-
-    >>> Sfix(0.123, left=0, right=-17)
-    0.1230010986328125 [0:-17]
-    >>> Sfix(0.123, left=0, right=-7)
-    0.125 [0:-7]
-
-    >>> Sfix(2.5, left=0, right=-17)
-    WARNING:pyha.common.sfix:Saturation 2.5 -> 0.9999923706054688
-    0.9999923706054688 [0:-17]
-    >>> Sfix(2.5, left=1, right=-17)
-    WARNING:pyha.common.sfix:Saturation 2.5 -> 1.9999923706054688
-    1.9999923706054688 [1:-17]
-    >>> Sfix(2.5, left=2, right=-17)
-    2.5 [2:-17]
-
-.. py:staticmethod:: set_float_mode(x)
-
-    Can be used to turn off all quantization effects, useful for debugging.
-
-    :param x: True/False
-
-..
-    RTD wont support Python 3.6 yet!
-    automodule:: pyha.common.sfix
+.. automodule:: pyha
     :members: Sfix
+
+
 
 
 Complex numbers
