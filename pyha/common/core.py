@@ -304,6 +304,10 @@ class Hardware(with_metaclass(Meta)):
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
 
+        if not hasattr(self, '_pyha_is_local'): # this happend in some deepcopy situations..
+            self.__dict__[name] = value
+            return
+
         if AutoResize.is_enabled() and not self._pyha_is_local:
             target = getattr(self._pyha_initial_self, name)
             with SimPath(f'{name}='):
