@@ -778,7 +778,7 @@ class ResizeMods:
             if call_index != 0:  # not just resize().. maybe self.resize() etc...
                 continue
 
-            if call.previous.value != 'resize':
+            if call.previous.value not in ['resize', 'Sfix']:
                 continue
 
             args = red_node.find_all('call_argument')

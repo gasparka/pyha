@@ -1,12 +1,13 @@
 import textwrap
 from enum import Enum
 
+from redbaron import RedBaron
+
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
 from pyha.conversion.redbaron_mods import AutoResize, ImplicitNext, ForModification, set_convert_obj
-from redbaron import RedBaron
 
 
 class TestDefNodeConv:
@@ -440,7 +441,7 @@ class TestCallModifications:
             'loc := pyha_ret_2;\n' \
             'Sub_0.f(self.sub, pyha_ret_3);\n' \
             'self.\\next\\.r := pyha_ret_3;\n' \
-            'f := resize(Sfix(1, 1, -15), 0, -15);\n' \
+            'f := resize(Sfix(1, 1, -15), 0, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate);\n' \
             'multi(self, x, pyha_ret_4, pyha_ret_5);\n' \
             'self.\\next\\.arr(0) := pyha_ret_4;\n' \
             'self.\\next\\.arr(1) := pyha_ret_5;\n' \

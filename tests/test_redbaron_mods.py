@@ -306,7 +306,7 @@ def test_call_resize(converter):
             resize(self.counter, 0, -17)""")
 
     expect = textwrap.dedent("""\
-            resize(self.counter, 0, -17)""")
+            resize(self.counter, 0, -17, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
     conv = converter(code)
     assert expect == str(conv)
 
@@ -316,7 +316,7 @@ def test_call_resize_size_res(converter):
             resize(self.counter, size_res=self.next.a)""")
 
     expect = textwrap.dedent("""\
-            resize(self.counter, size_res=>self.\\next\\.a)""")
+            resize(self.counter, size_res=>self.\\next\\.a, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
     conv = converter(code)
     assert expect == str(conv)
 
@@ -370,7 +370,7 @@ def test_call_sfix(converter):
             Sfix(0.95, 0, -17)""")
 
     expect = textwrap.dedent("""\
-            Sfix(0.95, 0, -17)""")
+            Sfix(0.95, 0, -17, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
     conv = converter(code)
     assert expect == str(conv)
 
@@ -390,7 +390,7 @@ def test_call_resize_sfix_combined(converter):
             counter_small = resize(Sfix(0, 0, -self.scalebits + 1), size_res=a)""")
 
     expect = textwrap.dedent("""\
-            counter_small := resize(Sfix(0, 0, -self.scalebits + 1), size_res=>a);""")
+            counter_small := resize(Sfix(0, 0, -self.scalebits + 1, overflow_style=>fixed_wrap, round_style=>fixed_truncate), size_res=>a, overflow_style=>fixed_wrap, round_style=>fixed_truncate);""")
     conv = converter(code)
     assert expect == str(conv)
 

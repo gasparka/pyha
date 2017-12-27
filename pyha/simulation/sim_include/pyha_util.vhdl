@@ -14,11 +14,21 @@ package PyhaUtil is
   function left_index(x: sfixed) return integer;
   function right_index(x: sfixed) return integer;
   function \>>\(x: sfixed; n: integer) return sfixed;
-  function Sfix(a:real; left_index, right_index:integer) return sfixed;
-  function Sfix(a:integer; left_index, right_index:integer) return sfixed;
-  function Sfix(a:real; size_res:sfixed) return sfixed;
+  function Sfix(a:real; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
 
-  function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed;
+  function Sfix(a:integer; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
+
+  function Sfix(a:real; size_res:sfixed;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
+
+  function Sfix(a:std_logic_vector; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
 
   function logic_to_bool(x: std_logic_vector(0 downto 0)) return boolean;
   function bool_to_logic(x: boolean) return std_logic_vector;
@@ -62,22 +72,30 @@ package body PyhaUtil is
     return outp;
   end function;
 
-  function Sfix(a:real; left_index, right_index:integer) return sfixed is
+  function Sfix(a:real; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
-    return to_sfixed(a, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap);
+    return to_sfixed(a, left_index, right_index, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
   end function;
 
-  function Sfix(a:integer; left_index, right_index:integer) return sfixed is
+  function Sfix(a:integer; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
-    return to_sfixed(real(a), left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap);
+    return to_sfixed(real(a), left_index, right_index, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
   end function;
 
-  function Sfix(a:real; size_res:sfixed) return sfixed is
+  function Sfix(a:real; size_res:sfixed;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
-    return to_sfixed(a, size_res, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap);
+    return to_sfixed(a, size_res, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
   end function;
 
-  function Sfix(a:std_logic_vector; left_index, right_index:integer) return sfixed is
+  function Sfix(a:std_logic_vector; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
     return to_sfixed(a, left_index, right_index);
   end function;
