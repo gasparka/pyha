@@ -28,7 +28,11 @@ def get_objects_rednode(obj):
         parent = getattr(parent, name)
 
     # get sourcecode of the parent
-    parent_code = inspect.getsourcelines(parent)[0]
+    try:
+        parent_code = inspect.getsourcelines(parent)[0]
+    except TypeError:
+        raise Exception(f'Could not fetch "{obj.__name__}" source code. Is it defined in a file? Defining in REPL or '
+                        f'Notebook wont work :(')
 
     # monkeypatch the inspect module to use 'parent code' as input for searching the class code (else it searches full file)
     with patch('inspect.linecache.getlines', MagicMock(return_value=parent_code)):
