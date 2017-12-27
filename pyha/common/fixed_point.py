@@ -2,6 +2,7 @@ import logging
 import math
 
 import numpy as np
+
 from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
@@ -10,8 +11,8 @@ logger = logging.getLogger('sfix')
 
 class Sfix:
     """
-    Signed fixed-point type. Default (optimal for FPGA hardware) fixed-point format in Pyha is ``Sfix(left=0, right=-17)``, which is an 18 bit format (17 fractional bits + sign).
-    It represents values in range [-1, 1] -+``(2**0)`` with resolution of 0.0000076 ``(2**-17)``.
+    Signed fixed-point type. Default fixed-point format in Pyha is ``Sfix(left=0, right=-17)`` (17 fractional bits + sign).
+    It represents values in range [-1, 1] ``(2**0)`` with resolution of 0.0000076 ``(2**-17)``.
 
     :param val: initial value (reset value in hardware)
     :param left: bits for integer part. Maximum representable value is ``2**left``
@@ -31,8 +32,8 @@ class Sfix:
         0.9999923706054688 [0:-17]
 
 
-    :param round_style: truncate (default) or 'round' (quite expensive)
-    :param wrap_is_ok: silences logging ERRORS about WRAP
+    :param round_style: 'truncate' (default) or 'round'
+    :param wrap_is_ok: silences logging about WRAP
     :param init_only: internal use only
 
 
@@ -43,15 +44,19 @@ class Sfix:
     >>> Sfix(0.123, left=0, right=-7)
     0.125 [0:-7]
 
-    Bit growth:
-    ==========
+    Sfix class can be switched into the 'float mode', which disables quantization/saturation/wrap effects.
+    This is useful to quickly test your design with full precision.
 
+    >>> with Sfix._float_mode:
+    >>>     a = Sfix(0.123, left=0, right=-7)
+    >>> a
+    0.123 [0:-7]
+
+    Arithmetic operations on Sfix values ara always full precision, meaning that they come with bit-growth:
 
     >>> a = Sfix(0.123, left=0, right=-17)
     >>> a
     0.12299346923828125 [0:-17]
-
-    Addition:
 
     >>> a + a
     0.2459869384765625 [1:-17]
@@ -59,14 +64,18 @@ class Sfix:
     >>> a + a + a
     0.36898040771484375 [2:-17]
 
-
-    Multiplication:
-
     >>> a * a
     0.015127393475268036 [1:-34]
 
     >>> a * a * a
     0.0018605706040557557 [2:-51]
+
+    ``resize`` can be used to return values to optimal format:
+
+    >>> resize(a * a * a, left=0, right=-17)
+    0.001861572265625 [0:-17]
+
+    Pyha registers of Sfix type will be automatically resized to initial type on all assigments.
 
     """
 
@@ -317,16 +326,17 @@ class Sfix:
 
 
 # default are 'saturate' and 'round' as this is the case in VHDL lib....
-def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='saturate', round_style='round', wrap_is_ok=False):
+def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False) -> Sfix:
     """
     Resize fixed point number.
 
     :param fix: Sfix object to resize
-    :param left_index: new left bound
-    :param right_index: new right bound
+    :param left: new left bound
+    :param right: new right bound
     :param size_res: provide another Sfix object as size reference
-    :param overflow_style: fixed_saturate(default) or fixed_wrap
-    :param round_style: fixed_round(default) or fixed_truncate
+    :param overflow_style: 'wrap' or 'saturate'
+    :param round_style: 'truncate' or 'round'
+    :param wrap_is_ok: silences logging about WRAP
     :return: New resized Sfix object
 
     >>> a = Sfix(0.89, left=0, right=-17)
@@ -344,16 +354,15 @@ def resize(fix, left_index=0, right_index=0, size_res=None, overflow_style='satu
     """
     if isinstance(fix, (float, int)):
         if size_res is not None:
-            left_index = size_res.left
-            right_index = size_res.right
-        return Sfix(fix, left_index, right_index, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+            left = size_res.left
+            right = size_res.right
+        return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
-    return fix.resize(left_index, right_index, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+    return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
 
-def left_index(x: Sfix):
+def left_index(x: Sfix) -> int:
     """
-    Use this in convertible code
 
     :return: left bound
 
@@ -365,9 +374,8 @@ def left_index(x: Sfix):
     return x.left
 
 
-def right_index(x: Sfix):
+def right_index(x: Sfix) -> int:
     """
-    Use this in convertible code
 
     :return: right bound
 
@@ -378,9 +386,10 @@ def right_index(x: Sfix):
     return x.right
 
 
-def scalb(x: Sfix, i: int):
+def scalb(x: Sfix, i: int) -> Sfix:
     """
-    Shift decimal point by i, basically it performs shift operation without losing precison
+    Shift decimal point by ``i``, changing the fixed point format. ``>>`` and ``<<`` operators are also usable but unlike ``scalb``,
+    they keep the fixed point format, thus resulting in precision loss or even wrap.
 
     >>> a = Sfix(0.5, 0, -17)
     >>> a

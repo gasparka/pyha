@@ -1,13 +1,38 @@
+Builtins
+========
+
+Integers and Booleans are fully usable in synthesisable Pyha code. Integers are mostly
+synthesised into 32-bit logic.
+
+Lists are well supported, any Pyha object or builtin can be an list member. Lists can be used as registers, function inputs/outputs and
+simulation top level inputs/outputs. Example of ``bool`` shift-register.
+
+
+.. code-block:: python
+
+    class ShiftReg(Hardware):
+        def __init__(self):
+            self.shr = [False] * 4
+
+        def main(self, x):
+            self.shr = [x] + self.shr[:-1] # throw away last element and add new element as first
+            return self.shr # return the whole list
+
+
+
 Fixed-point
 ===========
 
-Pyha maps fixed-point operations directly to `VHDL fixed point library`_
+Pyha maps fixed-point operations directly to `VHDL fixed point library`_.
 
-.. _VHDL fixed point library: https://github.com/FPHDL/fphdl
+.. _VHDL fixed point library: https://github.com/FPHDL/fphdl/blob/master/Fixed_ug.pdf
 
 
 .. automodule:: pyha
     :members: Sfix
+
+.. automodule:: pyha
+    :members: resize, left_index, right_index, scalb
 
 
 
