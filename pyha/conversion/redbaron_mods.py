@@ -717,7 +717,7 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
-    red = SfixStyles.apply(red)
+    red = ResizeMods.apply(red)
     red = RemoveCopyDeepcopy.apply(red)
     red = ForModification.apply(red)
     red = CallModifications.apply(red)
@@ -760,34 +760,58 @@ def super_getattr(obj, attr):
     return obj
 
 
-class SfixStyles:
+class ResizeMods:
     """ Replace 'wrap' -> fixed_wrap
         'saturate' -> fixed_saturate
         'truncate' -> fixed_truncate
         'round' -> fixed_round
+
+        Force default fixed_wrap and fixed_truncate.
     """
 
     @staticmethod
     def apply(red_node):
-        nodes = red_node.find_all('string', value="'wrap'")
+        nodes = red_node.find_all('call')
 
-        for x in nodes:
-            x.replace('fixed_wrap')
+        for call in nodes:
+            call_index = call.previous.index_on_parent
+            if call_index != 0:  # not just resize().. maybe self.resize() etc...
+                continue
 
-        nodes = red_node.find_all('string', value="'saturate'")
+            if call.previous.value != 'resize':
+                continue
 
-        for x in nodes:
-            x.replace('fixed_saturate')
+            args = red_node.find_all('call_argument')
+            overflow_kword_found = False
+            round_kword_found = False
+            for arg in args:
+                if str(arg.value) == "'wrap'":
+                    arg.value = 'fixed_wrap'
+                    arg.target = 'overflow_style'
+                    overflow_kword_found = True
 
-        nodes = red_node.find_all('string', value="'truncate'")
+                if str(arg.value) == "'saturate'":
+                    arg.value = 'fixed_saturate'
+                    arg.target = 'overflow_style'
+                    overflow_kword_found = True
 
-        for x in nodes:
-            x.replace('fixed_truncate')
+                if str(arg.value) == "'truncate'":
+                    arg.value = 'fixed_truncate'
+                    arg.target = 'round_style'
+                    round_kword_found = True
 
-        nodes = red_node.find_all('string', value="'round'")
+                if str(arg.value) == "'round'":
+                    arg.value = 'fixed_round'
+                    arg.target = 'round_style'
 
-        for x in nodes:
-            x.replace('fixed_round')
+                    round_kword_found = True
+
+            # force defaults if not set
+            if not overflow_kword_found:
+                call.append(f'overflow_style=fixed_wrap')
+
+            if not round_kword_found:
+                call.append(f'round_style=fixed_truncate')
 
         return red_node
 

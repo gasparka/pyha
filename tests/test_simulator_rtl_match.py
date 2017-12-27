@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from pyha import simulate, sims_close
 
-from pyha.common.fixed_point import Sfix, right_index, left_index, resize
+from pyha import simulate, sims_close
 from pyha.common.core import Hardware
+from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 
 # in general GATE could be added here...but it takes ALOT of time
 SIMULATIONS = ['PYHA', 'RTL']
@@ -14,7 +14,7 @@ def test_resize_truncate_saturate():
 
     class t5(Hardware):
         def main(self, x):
-            ret = resize(x, 0, -4, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            ret = resize(x, 0, -4, round_style='truncate', overflow_style='saturate')
             return ret
 
     x = (np.random.rand(1024 * 2 * 2 * 2) * 2) - 1
@@ -94,14 +94,10 @@ def test_sfix_sub():
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
-fixed_truncate = 'truncate'
-fixed_saturate = 'saturate'
-
-
 def test_resize_right():
     class t5(Hardware):
         def main(self, x):
-            ret = resize(x, 2, -4, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            ret = resize(x, 2, -4, round_style='truncate', overflow_style='saturate')
             return ret
 
     x = [1.352, 0.5991, -1.123]
@@ -214,7 +210,7 @@ def test_sfix_add_shift_right_resize(shift_i):
 
     class T10(Hardware):
         def main(self, x, y, i):
-            ret = resize(x - (y >> i), size_res=x, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            ret = resize(x - (y >> i), size_res=x, round_style='truncate', overflow_style='saturate')
             return ret
 
     x = (np.random.rand(1024) * 2) - 1
@@ -279,7 +275,7 @@ def test_chain_multiplication():
     class Bug(Hardware):
         def main(self, c):
             inter = c * c * c
-            m = resize(c * c * c, 0, -17, round_style=fixed_truncate, overflow_style=fixed_saturate)
+            m = resize(c * c * c, 0, -17, round_style='truncate', overflow_style='saturate')
             return m, inter
 
     inp = np.random.rand(1024) * 2 - 1

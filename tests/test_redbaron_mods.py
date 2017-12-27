@@ -331,6 +331,40 @@ def test_call_resize_keyword_params(converter):
     assert expect == str(conv)
 
 
+def test_call_resize_default_styles(converter):
+    code = textwrap.dedent("""\
+            resize(self.counter, size_res=a)""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, size_res=>a, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = textwrap.dedent("""\
+            resize(self.counter, 0, -17, 'wrap')""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, 0, -17, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = textwrap.dedent("""\
+            resize(self.counter, 0, -17, 'wrap', 'round')""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, 0, -17, overflow_style=>fixed_wrap, round_style=>fixed_round)""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+    code = textwrap.dedent("""\
+            resize(self.counter, 0, -17, 'wrap', round_style='round')""")
+
+    expect = textwrap.dedent("""\
+            resize(self.counter, 0, -17, overflow_style=>fixed_wrap, round_style=>fixed_round)""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_call_sfix(converter):
     code = textwrap.dedent("""\
             Sfix(0.95, 0, -17)""")
