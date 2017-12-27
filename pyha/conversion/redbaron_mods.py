@@ -2,15 +2,16 @@ import logging
 import textwrap
 from contextlib import suppress
 
-import pyha
 from parse import parse
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import LineProxyList
+
+import pyha
 from pyha.common.core import SKIP_FUNCTIONS
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import LineProxyList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -716,6 +717,7 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
+    red = SfixStyles.apply(red)
     red = RemoveCopyDeepcopy.apply(red)
     red = ForModification.apply(red)
     red = CallModifications.apply(red)
@@ -758,9 +760,40 @@ def super_getattr(obj, attr):
     return obj
 
 
+class SfixStyles:
+    """ Replace 'wrap' -> fixed_wrap
+        'saturate' -> fixed_saturate
+        'truncate' -> fixed_truncate
+        'round' -> fixed_round
+    """
+
+    @staticmethod
+    def apply(red_node):
+        nodes = red_node.find_all('string', value="'wrap'")
+
+        for x in nodes:
+            x.replace('fixed_wrap')
+
+        nodes = red_node.find_all('string', value="'saturate'")
+
+        for x in nodes:
+            x.replace('fixed_saturate')
+
+        nodes = red_node.find_all('string', value="'truncate'")
+
+        for x in nodes:
+            x.replace('fixed_truncate')
+
+        nodes = red_node.find_all('string', value="'round'")
+
+        for x in nodes:
+            x.replace('fixed_round')
+
+        return red_node
+
 
 class RemoveCopyDeepcopy:
-    """ in VHDL everything is deepcopy by default
+    """ Remove copy() and deepcopy() calls, in VHDL everything is deepcopy by default
     """
 
     @staticmethod
@@ -776,7 +809,6 @@ class RemoveCopyDeepcopy:
                 continue
 
             call.parent.replace(call.value.dumps())
-            # call.replace(f'{call.target} = {call.target} {call.operator} {call.value}')
 
         return red_node
 
@@ -1019,14 +1051,15 @@ class CallModifications:
                     if type(line_node.next) == EndlNode:
                         break
                     if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
-                        if not (hasattr(line_node.parent, 'test') and (line_node.parent.test == atom # if WE are the if contition, skip
-                                                                       or line_node.parent.test == atom.parent)): # if WE are the if contition (part of condition)
+                        if not (hasattr(line_node.parent, 'test') and (
+                                line_node.parent.test == atom  # if WE are the if contition, skip
+                                or line_node.parent.test == atom.parent)):  # if WE are the if contition (part of condition)
                             break
 
                     line_node = line_node.parent
 
                 # add function call BEFORE the CURRENT line
-                if line_node != atom: # equality means that value is not assigned to anything
+                if line_node != atom:  # equality means that value is not assigned to anything
                     line_node.parent.insert(line_node.index_on_parent, atom.copy())
                     atom.replace(','.join(ret_vars))
 

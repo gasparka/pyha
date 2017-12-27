@@ -1,8 +1,9 @@
 import textwrap
 
 import pytest
-from pyha.conversion.redbaron_mods import convert
 from redbaron import RedBaron
+
+from pyha.conversion.redbaron_mods import convert
 
 
 @pytest.fixture
@@ -322,7 +323,7 @@ def test_call_resize_size_res(converter):
 
 def test_call_resize_keyword_params(converter):
     code = textwrap.dedent("""\
-            resize(self.counter, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
+            resize(self.counter, size_res=a, overflow_style='saturate', round_style='round')""")
 
     expect = textwrap.dedent("""\
             resize(self.counter, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
@@ -342,10 +343,10 @@ def test_call_sfix(converter):
 
 def test_call_sfix_keyword_params(converter):
     code = textwrap.dedent("""\
-            Sfix(0.95, size_res=a, overflow_style=fixed_saturate, round_style=fixed_round)""")
+            Sfix(0.95, size_res=a, overflow_style='wrap', round_style='truncate')""")
 
     expect = textwrap.dedent("""\
-            Sfix(0.95, size_res=>a, overflow_style=>fixed_saturate, round_style=>fixed_round)""")
+            Sfix(0.95, size_res=>a, overflow_style=>fixed_wrap, round_style=>fixed_truncate)""")
     conv = converter(code)
     assert expect == str(conv)
 
