@@ -264,10 +264,9 @@ def simulate(model, *x, simulations=None, conversion_path=None, input_types=None
     :param model: Object derived from ``Hardware``. Must have ``main`` function with input/outputs.
     :param *x: Inputs to the 'main' function.
     :param simulations: Simulations to run:
-    - 'MODEL': passes all data to the reserved ``model_main`` function.
-    .. note:: If ``model_main`` does not exsist, it ties to use the ``main`` function by turning off register effects and fixed point.
-    - 'PYHA': runs the Python simulation with ``main``.
-    - 'RTL': converts to VHDL and runs RTL simulation via GHDL and Cocotb
+    - 'MODEL': passes all data to the ``model_main`` function. If ``model_main`` does not exsist, uses the ``main`` function by turning off register effects and fixed point.
+    - 'PYHA': runs the Python simulation.
+    - 'RTL': converts to VHDL and runs RTL simulation with GHDL and Cocotb
     - 'GATE': runs VHDL sources trough Quartus and simulates the generated netlist
     .. note:: By default, runs all simulations. 'PYHA' simulation must always run before 'RTL' or 'GATE'. 'RTL' and 'GATE' simulations may be omitted if GHDL/Quartus toolset is not found!
     :param conversion_path: Where the VHDL sources are written, default is temporary directory.
