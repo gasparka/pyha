@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
+
 from pyha.common.complex_fixed_point import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.core import default_sfix
@@ -99,8 +100,8 @@ def type_conversions(func):
         # convert outputs to python types (ex. Sfix -> float)
         if self.simulation_type in ['MODEL', 'PYHA']:
             ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
-        return np.array(ret)
-
+        # return np.asarray(ret, dtype=object)
+        return ret
     return type_enforcement_wrap
 
 
@@ -216,18 +217,10 @@ class Simulation:
                 else:
                     r = self.model.model_main(*args)
 
-                if r == []:
-                    return np.array(r)
-
+                r = np_to_py(r)
                 if isinstance(r, tuple):
-                    if isinstance(r[0], (list, np.ndarray)):
-                        # assume that no transpose needed ( model returns correct way )
-                        return np.array(r)
-                    return np.transpose(r)
-
-                if isinstance(r, list) and isinstance(r[0], tuple):
-                    return np.transpose(r)
-                return np.array(r)
+                    return list(r)
+                return r
             else:
                 return self.hw_simulation(*args)
 
@@ -244,24 +237,49 @@ class Simulation:
 # utility functions
 
 
+def np_to_py(array):
+    """ Convert numpy stuff to python, ie types and [] """
+    # https://github.com/numpy/numpy/issues/8052
+    if isinstance(array, np.ndarray):
+        if isinstance(array[0], complex):
+            array = array.astype(complex)
+        elif isinstance(array[0], np.floating):
+            array = array.astype(float)
+
+        return np_to_py(array.tolist())
+    elif isinstance(array, list):
+        return [np_to_py(item) for item in array]
+    elif isinstance(array, tuple):
+        return tuple(np_to_py(item) for item in array)
+    elif isinstance(array, np.float):
+        return float(array)
+    else:
+        return array
+
+
 def simulate(model, *x, simulations=None, conversion_path=None, input_types=None):
     """
     Run simulations on model.
 
-    :param model: Instance of top level class (the 'main' function will be called)
-    :param x: Inputs to the 'main' function.
+    :param model: Object derived from ``Hardware``. Must have ``main`` function with input/outputs.
+    :param *x: Inputs to the 'main' function.
     :param simulations: Simulations to run:
-    - SIM_MODEL: runs model ('model_main')
-    - SIM_HW_MODEL: runs Python simulation of ('main'), simulating hardware effects
-    - SIM_RTL: converts to VHDL and runs RTL simulation via GHDL and Cocotb
-    - SIM_GATE: runs sources trough Quartus and simulates the generated netlist
-    .. note:: If None(default), runs all simulations. SIM_HW_MODEL must be run if SIM_RTL or SIM_GATE are going to run.
-    :param conversion_path: Where the conversion sources are written, if None uses temporary directory.
+    - 'MODEL': passes all data to the reserved ``model_main`` function.
+    .. note:: If ``model_main`` does not exsist, it ties to use the ``main`` function by turning off register effects and fixed point.
+    - 'PYHA': runs the Python simulation with ``main``.
+    - 'RTL': converts to VHDL and runs RTL simulation via GHDL and Cocotb
+    - 'GATE': runs VHDL sources trough Quartus and simulates the generated netlist
+    .. note:: By default, runs all simulations. 'PYHA' simulation must always run before 'RTL' or 'GATE'. 'RTL' and 'GATE' simulations may be omitted if GHDL/Quartus toolset is not found!
+    :param conversion_path: Where the VHDL sources are written, default is temporary directory.
+    :param input_types: Force inputs types
+
+
+
     """
     simulations = enforce_simulation_rules(simulations)
     ret = {sim_type: Simulation(sim_type, model=model,
                                 dir_path=conversion_path,
-                                input_types=input_types).main(*x).tolist()
+                                input_types=input_types).main(*x)
            for sim_type in simulations}
     logger.info('Simulations completed!')
     return ret
@@ -298,24 +316,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             expected = simulation_results['PYHA']
             logger.info(f'Using "PYHA" as golden output')
 
-
-    def array_to_list(array):
-        # https://github.com/numpy/numpy/issues/8052
-        if isinstance(array, np.ndarray):
-            if isinstance(array[0], complex):
-                array = array.astype(complex)
-            elif isinstance(array[0], np.floating):
-                array = array.astype(float)
-
-            return array_to_list(array.tolist())
-        elif isinstance(array, list):
-            return [array_to_list(item) for item in array]
-        elif isinstance(array, tuple):
-            return tuple(array_to_list(item) for item in array)
-        else:
-            return array
-
-    expected = array_to_list(expected)[skip_first_n:]
+    expected = np_to_py(expected)[skip_first_n:]
 
     expected = init_vhdl_type('root', expected, expected)
     result = True

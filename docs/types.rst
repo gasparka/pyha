@@ -27,6 +27,8 @@ Example of ``bool`` shift-register:
 
 
 
+TODO: CONSTANTS
+
 Fixed-point
 -----------
 

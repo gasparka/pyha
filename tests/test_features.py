@@ -265,7 +265,7 @@ class TestRegisters:
         dut = Register()
         inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
 
-        sims = simulate(dut, inputs)
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'])
         assert sims_close(sims)
 
     def test_sfix_lazy(self):
@@ -283,6 +283,8 @@ class TestRegisters:
         inputs = [0.1, 0.2, 0.3, 0.4]
         expect = [0.1, 0.2, 0.3, 0.4]
 
+        sims = simulate(dut, inputs)
+        assert sims_close(sims, expect, rtol=1e-4)
         assert_sim_match(dut, expect, inputs, rtol=1e-4)
 
     def test_submodule(self):
@@ -464,6 +466,34 @@ class TestInterface:
 
         dut = T()
         assert_sim_match(dut, range(4), range(4))
+
+    def test_return_types(self):
+        class T(Hardware):
+            def main(self, i):
+                return i
+
+        outs = simulate(T(), [1, 2], simulations=['PYHA', 'RTL'])
+        assert type(outs['PYHA'][0]) == int
+        assert type(outs['RTL'][0]) == int
+
+        outs = simulate(T(), [True, False], simulations=['PYHA', 'RTL'])
+        assert type(outs['PYHA'][0]) == bool
+        assert type(outs['RTL'][0]) == bool
+
+    def test_return_types_two(self):
+        """ Bug was that when one attr was 'float' it forced conversion of all outputs to float. """
+        class T(Hardware):
+            def main(self, i, j):
+                return i, j
+
+        outs = simulate(T(), [1, 2], [0.1, 0.2], simulations=['MODEL', 'PYHA', 'RTL'])
+        assert type(outs['PYHA'][0][0]) == int
+        assert type(outs['RTL'][0][0]) == int
+        assert type(outs['MODEL'][0][0]) == int
+
+        assert type(outs['PYHA'][1][0]) == float
+        assert type(outs['RTL'][1][0]) == float
+        assert type(outs['MODEL'][1][0]) == float
 
     def test_multi(self):
         class T(Hardware):

@@ -5,6 +5,7 @@ from math import isclose
 from typing import List
 
 import numpy as np
+
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -165,7 +166,7 @@ class VHDLInt(BaseVHDLType):
         return True
 
     def _pyha_to_python_value(self):
-        return self.current
+        return int(self.current)
 
     def _pyha_serialize(self):
         return to_twoscomplement(32, self.current)
@@ -197,7 +198,7 @@ class VHDLBool(BaseVHDLType):
         return True
 
     def _pyha_to_python_value(self):
-        return self.current
+        return bool(self.current)
 
     def _pyha_serialize(self):
         return '1' if self.current else '0'
@@ -590,6 +591,8 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLEnum(name, current_val, initial_val)
     elif isinstance(current_val, list):  # this may happen for local variables or arguments
         return init_vhdl_type(name, PyhaList(current_val), PyhaList(initial_val))
+    elif isinstance(current_val, np.ndarray):  # this may happen for data that is coming from 'MODEL' simulation
+        return init_vhdl_type(name, PyhaList(current_val.tolist()), PyhaList(initial_val.tolist()))
 
     print(type(current_val))
     assert 0
