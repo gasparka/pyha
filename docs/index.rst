@@ -6,9 +6,8 @@ Welcome to Pyha's documentation!
 
 
     intro
-
     installation
-    fixed_point
+    types
+    simulation
     basic_usage
     examples
-    tutorial_register

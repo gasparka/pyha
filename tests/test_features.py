@@ -2,8 +2,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -31,6 +32,10 @@ class TheEnum(Enum):
     ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
 
 
+class States(Enum):
+    S0, S1 = range(2)
+
+
 class TestEnum:
     def test_basic(self):
         class T(Hardware):
@@ -49,6 +54,24 @@ class TestEnum:
         x = list(range(16))
         expected = list(range(16))
         assert_sim_match(dut, expected, x)
+
+    def test_doc_statemachine(self):
+        class T(Hardware):
+            def __init__(self):
+                self.state = States.S0
+
+            def main(self, a):
+                if self.state == States.S0:
+                    self.state = States.S1
+                    return 0
+                elif self.state == States.S1:
+                    self.state = States.S0
+                    return a
+
+        dut = T()
+        inputs = [1] * 4
+        ret = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'])
+        assert_equals(ret)
 
     def test_statemachine(self):
         class T(Hardware):

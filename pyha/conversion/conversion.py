@@ -31,6 +31,8 @@ def get_objects_rednode(obj):
     try:
         parent_code = inspect.getsourcelines(parent)[0]
     except TypeError:
+        # This is due to the Inspect needing to open a file...
+        # could be a bit relaxed with https://github.com/uqfoundation/dill/issues?utf8=%E2%9C%93&q=getsource, but this only works in regular REPL, not Ipython nor Notebook...
         raise Exception(f'Could not fetch "{obj.__name__}" source code. Is it defined in a file? Defining in REPL or '
                         f'Notebook wont work :(')
 

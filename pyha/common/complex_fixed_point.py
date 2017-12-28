@@ -4,12 +4,13 @@ from pyha.common.fixed_point import Sfix
 
 class ComplexSfix(Hardware):
     """
-    Complex type with 'real' and 'imag' elements for underlying Sfix elements.
+    Complex number with ``.real`` and ``.imag`` elements. Default type is ``ComplexSfix(left=0, right=-17)``, Python ``complex`` values will be converte to this.
 
     :param val:
     :param left: left bound for both components
     :param right: right bound for both components
-    :param overflow_style: fixed_saturate(default) or fixed_wrap
+    :param overflow_style: 'wrap' (default) or 'saturate'.
+    :param round_style: 'truncate' (default) or 'round'
 
     >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
     >>> a
