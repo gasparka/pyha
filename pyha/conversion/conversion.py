@@ -1,4 +1,6 @@
 import inspect
+import logging
+import tempfile
 import textwrap
 from pathlib import Path
 from typing import List
@@ -10,6 +12,9 @@ from pyha.common.util import tabber
 from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList
 from pyha.conversion.redbaron_mods import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('conversion')
 
 
 def get_objects_rednode(obj):
@@ -27,21 +32,53 @@ def get_objects_rednode(obj):
             break
         parent = getattr(parent, name)
 
-    # get sourcecode of the parent
     try:
-        parent_code = inspect.getsourcelines(parent)[0]
-    except TypeError:
+        # try to find the source code with traditional means by using inspect, this may faile as it requires class to be defined in a file (not true fro REPL or Notebook)
+        # if fails use IPYTHON history
+        try:
+            parent_code = inspect.getsourcelines(parent)[0]
+
+            # monkeypatch the inspect module to use 'parent code' as input for searching the class code (else it searches full file)
+            with patch('inspect.linecache.getlines', MagicMock(return_value=parent_code)):
+                source = textwrap.dedent(inspect.getsource(obj.__class__))
+
+            red_list = RedBaron(source)
+            return red_list[0]
+
+        except TypeError:
+            # try finding the class from local IPYTHON input history
+            from IPython import get_ipython
+            ipython = get_ipython()
+            ipython.run_cell_magic("capture", "out_var", "%history")
+            out_var = str(ipython.ev('out_var'))
+
+            # filter up to the last occurance of class def
+            import re
+            lines = str(out_var).splitlines()
+            pat = re.compile(r'^(\s*)class\s*' + obj.__class__.__name__ + r'\b')
+
+            last_match = -1
+            for i in range(len(lines)):
+                match = pat.match(lines[i])
+                if match:
+                    last_match = i
+
+            if last_match == -1:
+                raise Exception('Class was not found at all...')
+            out_var = '\n'.join(lines[last_match:])
+
+            with tempfile.NamedTemporaryFile(mode='w+') as temp:
+                temp.write(out_var)
+                temp.flush()
+                with patch('inspect.getfile', MagicMock(return_value=temp.name)):
+                    source = textwrap.dedent(inspect.getsource(obj.__class__))
+                    red_list = RedBaron(source)
+                    logger.warning(f'Found "{obj.__class__.__name__}" source from IPython history!')
+                    return red_list[0]
+    except:
         # This is due to the Inspect needing to open a file...
         # could be a bit relaxed with https://github.com/uqfoundation/dill/issues?utf8=%E2%9C%93&q=getsource, but this only works in regular REPL, not Ipython nor Notebook...
-        raise Exception(f'Could not fetch "{obj.__name__}" source code. Is it defined in a file? Defining in REPL or '
-                        f'Notebook wont work :(')
-
-    # monkeypatch the inspect module to use 'parent code' as input for searching the class code (else it searches full file)
-    with patch('inspect.linecache.getlines', MagicMock(return_value=parent_code)):
-        source = textwrap.dedent(inspect.getsource(obj.__class__))
-
-    red_list = RedBaron(source)
-    return red_list[0]
+        raise Exception(f'Could not fetch "{obj.__class__}" source code (also tried loading from IPython history).')
 
 
 def get_conversion(obj):
@@ -95,7 +132,7 @@ class Conversion:
             conv(self, node)
 
         self.red_node = get_objects_rednode(obj)
-        self.conv = convert(self.red_node, obj) # actual conversion happens here
+        self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
         self.vhdl_conversion = str(self.conv)
         Conversion.converted_names += [self.datamodel._pyha_module_name()]

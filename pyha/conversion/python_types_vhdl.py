@@ -10,7 +10,7 @@ from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('conversion')
 
 
 def escape_reserved_vhdl(x: str) -> str:
@@ -565,7 +565,7 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLBool(name, current_val, initial_val)
     elif type(current_val) == float:
         if Conversion.in_progress:
-            logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
+            # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
 
         return VHDLFloat(name, current_val, initial_val)
@@ -576,7 +576,7 @@ def init_vhdl_type(name, current_val, initial_val=None):
         return VHDLSfix(name, current_val, initial_val)
     elif type(current_val) == PyhaList:
         if Conversion.in_progress and isinstance(current_val[0], float):
-            logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
+            # logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
             return None
 
         return VHDLList(name, current_val, initial_val)
