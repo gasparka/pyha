@@ -212,7 +212,8 @@ def test_element_with_none_bound():
 
     dut = DUT()
     inp = [0.1, 0.2, 0.3]
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    with pytest.raises(Exception):
+        sims = simulate(dut, inp, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
 
 # from pyhacores.filter import FIR
 # from scipy import signal

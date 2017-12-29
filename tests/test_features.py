@@ -755,6 +755,7 @@ class TestInOutOrdering:
         inputs = [Sub()] * 2
         dut = T()
         ret = simulate(dut, inputs)
+        print(ret)
         assert_equals(ret, [[0.987] * 2, [0.569] * 2, [0.0625] * 2], rtol=1e-1)
 
     def test_sub_sub(self):
