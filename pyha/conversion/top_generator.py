@@ -23,13 +23,13 @@ class TopGenerator:
 
         # 0 or 1 calls wont propagate register outputs
         if self.simulated_object.main.calls == 0:
-            raise NotTrainedError('Object must be trained > 1 times.')
+            raise NotTrainedError('Top level object must be trained (executed) > 1 times.')
 
         if len(self.get_object_inputs()) == 0:
-            raise NoInputsError('Model has no inputs (arguments to main).')
+            raise NoInputsError('Top level "main" has no inputs (arguments to main).')
 
         if len(self.get_object_return()) == 0:
-            raise NoOutputsError('Model has no outputs (main returns).')
+            raise NoOutputsError('Top level "main" has no outputs (return values).')
 
     def get_object_args(self) -> list:
         rets = [init_vhdl_type('-', val, val) for val in self.simulated_object.main.last_args]

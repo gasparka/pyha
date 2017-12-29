@@ -9,7 +9,6 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-
 from pyha.common.complex_fixed_point import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.core import default_sfix
@@ -98,8 +97,11 @@ def type_conversions(func):
         ret = func(self, *args, **kwargs)
 
         # convert outputs to python types (ex. Sfix -> float)
-        if self.simulation_type in ['MODEL', 'PYHA']:
-            ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
+        try:
+            if self.simulation_type in ['MODEL', 'PYHA']:
+                ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
+        except AttributeError: # when ret is [None, None, ...]
+            return ret
         # return np.asarray(ret, dtype=object)
         return ret
     return type_enforcement_wrap

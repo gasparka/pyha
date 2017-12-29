@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
-
 import pyha
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
@@ -193,9 +192,8 @@ class CocotbAuto:
 
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
-            pass
         except subprocess.CalledProcessError as err:
-            raise Exception('GHDL failed to build!')
+            raise Exception('Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
 
         out = np.load(str(self.base_path / 'output.npy'))
         outp = out.astype(object).T

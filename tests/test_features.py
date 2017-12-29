@@ -2,12 +2,12 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
+from pyha.conversion.top_generator import NoOutputsError
 from pyha.simulation.legacy import assert_sim_match
 from pyha.simulation.simulation_interface import simulate, assert_equals, Simulation, NoModelError, sims_close
 
@@ -664,6 +664,17 @@ class TestInterface:
         x = [1.0]
         sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+    def test_no_output(self):
+        class T13(Hardware):
+            def main(self, x):
+                pass
+
+        dut = T13()
+        x = [1.0]
+        with pytest.raises(NoOutputsError):
+            sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
 
 
 class TestComplexSfix:

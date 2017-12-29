@@ -2,6 +2,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from pyha import simulate
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.conversion import Conversion, get_objects_rednode
@@ -190,3 +191,83 @@ def test_typedefs():
 
     defs = conv.build_typedefs_package()
     assert expect == defs[defs.find('\n') + 1:]
+
+
+def test_element_with_none_bound():
+    class Child(Hardware):
+        def __init__(self):
+            self.reg = Sfix()
+
+        def main(self, a):
+            self.reg = a
+
+    class DUT(Hardware):
+        def __init__(self):
+            self.child1 = Child()
+            self.child2 = Child()
+
+        def main(self, a):
+            self.child1.main(a)
+            return a
+
+    dut = DUT()
+    inp = [0.1, 0.2, 0.3]
+    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+
+# from pyhacores.filter import FIR
+# from scipy import signal
+# import numpy as np
+# class ComplexFIR(Hardware):
+#     def __init__(self, taps):
+#         # registers
+#         self.fir = [FIR(taps),
+#                     # FIR(taps)
+#                     ]
+#
+#         # constants (written in CAPS)
+#         self.DELAY = self.fir[0].DELAY
+#         self.TAPS = np.asarray(taps).tolist()
+#
+#     def main(self, x):
+#         out = x
+#         out.real = self.fir[0].main(x.real)
+#         # out.imag = self.fir[1].main(x.imag)
+#         return out
+#
+#     def model_main(self, x_full):
+#         """ Golden output """
+#         from scipy.signal import lfilter
+#         return lfilter(self.TAPS, [1.0], x_full)
+#
+# # class ComplexFIR(Hardware):
+# #     def __init__(self, taps):
+# #         # registers
+# #         self.fir = [FIR(taps), FIR(taps)]
+# #         self.outreg = ComplexSfix()
+# #
+# #         # constants (written in CAPS)
+# #         self.DELAY = self.fir[0].DELAY
+# #         self.TAPS = np.asarray(taps).tolist()
+# #
+# #     def main(self, x):
+# #         # out = x
+# #         # out.real = self.fir[0].main(x.real)
+# #         # out.imag = self.fir[1].main(x.imag)
+# #         # return out
+# #         self.outreg.real = self.fir[0].main(x.real)
+# #         self.outreg.imag = self.fir[1].main(x.imag)
+# #         return self.outreg
+# #
+# #     def model_main(self, x):
+# #         """ Golden output """
+# #         return signal.lfilter(self.TAPS, [1.0], x)
+#
+# def test_demo():
+#     taps = signal.remez(8, [0, 0.1, 0.2, 0.5], [1, 0])
+#     dut = ComplexFIR(taps)
+#     input = [0.1 + 0.1j, 0.2 + 0.2j, 0.3 + 0.3j]
+#
+#     sims = simulate(dut, input,
+#                     simulations=['MODEL', 'PYHA', 'RTL'],
+#                     conversion_path='/home/gaspar/git/pyha_demo_project/conversion_src'
+#                     )

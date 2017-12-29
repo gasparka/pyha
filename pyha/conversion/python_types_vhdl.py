@@ -5,7 +5,6 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -52,15 +51,23 @@ def to_twoscomplement(bits, value):
 
 
 class BaseVHDLType:
-    def __init__(self, var_name, current, initial=None):
+    def __init__(self, var_name, current, initial=None, parent=None):
         initial = initial if initial is not None else current
+        self.parent = parent
         self._name = var_name
         self.initial = initial
         self.current = current
 
     def __eq__(self, other):
         if type(other) is type(self):
-            return self.__dict__ == other.__dict__
+            # had infinite recursion problems
+            tmp1 = self.__dict__
+            del tmp1['parent']
+
+            tmp2 = other.__dict__
+            del tmp2['parent']
+
+            return tmp1 == tmp2
         return False
 
     def _pyha_name(self) -> str:
@@ -208,13 +215,35 @@ class VHDLBool(BaseVHDLType):
 
 
 class VHDLSfix(BaseVHDLType):
+
+    def __log_none_bounds(self):
+
+        def get_full_var_name():
+            ret = []
+            node = self
+            while node:
+                new = node._name if node._name != '-' else 'self'
+                ret += [new]
+                if new[0] != '[':
+                    ret += ['.']
+                node = node.parent
+
+            return ''.join(reversed(ret))[1:]
+
+        if not hasattr(self, '__has_logged'):
+            setattr(self, '__has_logged', True)
+            if self.current.left is None or self.current.right is None:
+                logger.error(f'{get_full_var_name()} = {self._pyha_reset_value()} -> bounds must be resolved in PYHA simulation!')
+
     def _pyha_type(self):
+        self.__log_none_bounds()
         return 'sfixed({} downto {})'.format(self.current.left, self.current.right)
 
     def _pyha_bitwidth(self) -> int:
         return len(self.current)
 
     def _pyha_reset_value(self):
+        self.__log_none_bounds()
         return 'Sfix({}, {}, {})'.format(self.initial.val, self.current.left, self.current.right)
 
     def _pyha_stdlogic_type(self) -> str:
@@ -271,10 +300,10 @@ class VHDLEnum(BaseVHDLType):
 
 
 class VHDLList(BaseVHDLType):
-    def __init__(self, var_name, current, initial):
-        super().__init__(var_name, current, initial)
+    def __init__(self, var_name, current, initial, parent=None):
+        super().__init__(var_name, current, initial, parent)
 
-        self.elems = [init_vhdl_type('-', c, i) for c, i in zip(self.current, self.initial)]
+        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in enumerate(zip(self.current, self.initial))]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
 
@@ -400,15 +429,15 @@ class VHDLList(BaseVHDLType):
 
 
 class VHDLModule(BaseVHDLType):
-    def __init__(self, var_name, current, initial=None):
+    def __init__(self, var_name, current, initial=None, parent=None):
         if initial is None:
             initial = current._pyha_initial_self
         else:
             current._pyha_initial_self = initial._pyha_initial_self
 
-        super().__init__(var_name, current, initial)
+        super().__init__(var_name, current, initial, parent)
 
-        self.elems = get_vars_as_vhdl_types(self.current)
+        self.elems = get_vars_as_vhdl_types(self.current, parent=self)
         self.elems = [x for x in self.elems if x is not None]
 
     def _pyha_instance_id(self):
@@ -444,7 +473,9 @@ class VHDLModule(BaseVHDLType):
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
             if self._name != '-':
-                tmp_prefix = '{}.{}'.format(prefix, self._pyha_name())
+                tmp_prefix = f'{prefix}'
+                if self._name[0] != '[':
+                    tmp_prefix += f'.{self._pyha_name()}'
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
@@ -453,7 +484,9 @@ class VHDLModule(BaseVHDLType):
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
             if self._name != '-':
-                tmp_prefix = '{}.{}'.format(prefix, self._pyha_name())
+                tmp_prefix = f'{prefix}'
+                if self._name[0] != '[':
+                    tmp_prefix += f'.{self._pyha_name()}'
             ret += sub.pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
@@ -557,48 +590,50 @@ class VHDLComplex(BaseVHDLType):
         return eq
 
 
-def init_vhdl_type(name, current_val, initial_val=None):
+def init_vhdl_type(name, current_val, initial_val=None, parent=None):
     from pyha.conversion.conversion import Conversion
     if type(current_val) == int or type(current_val) == np.int64:
-        return VHDLInt(name, current_val, initial_val)
+        return VHDLInt(name, current_val, initial_val, parent)
     elif type(current_val) == bool or type(current_val) == np.bool_:
-        return VHDLBool(name, current_val, initial_val)
+        return VHDLBool(name, current_val, initial_val, parent)
     elif type(current_val) == float:
         if Conversion.in_progress:
             # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
 
-        return VHDLFloat(name, current_val, initial_val)
+        return VHDLFloat(name, current_val, initial_val, parent)
 
     elif isinstance(current_val, complex):
-        return VHDLComplex(name, current_val, initial_val)
+        return VHDLComplex(name, current_val, initial_val, parent)
     elif type(current_val) == Sfix:
-        return VHDLSfix(name, current_val, initial_val)
+        return VHDLSfix(name, current_val, initial_val, parent)
     elif type(current_val) == PyhaList:
         if Conversion.in_progress and isinstance(current_val[0], float):
             # logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
             return None
 
-        return VHDLList(name, current_val, initial_val)
+        return VHDLList(name, current_val, initial_val, parent)
     elif isinstance(current_val, Hardware):
         try:
             # this is not used anywhere? gives option to overload converter module...
-            return current_val._pyha_converter(name, current_val, initial_val)
+            return current_val._pyha_converter(name, current_val, initial_val, parent)
         except:
-            return VHDLModule(name, current_val, initial_val)
+            return VHDLModule(name, current_val, initial_val, parent)
 
     elif isinstance(current_val, Enum):
-        return VHDLEnum(name, current_val, initial_val)
+        return VHDLEnum(name, current_val, initial_val, parent)
     elif isinstance(current_val, list):  # this may happen for local variables or arguments
-        return init_vhdl_type(name, PyhaList(current_val), PyhaList(initial_val))
+        return init_vhdl_type(name, PyhaList(current_val), PyhaList(initial_val), parent)
     elif isinstance(current_val, np.ndarray):  # this may happen for data that is coming from 'MODEL' simulation
-        return init_vhdl_type(name, PyhaList(current_val.tolist()), PyhaList(initial_val.tolist()))
+        return init_vhdl_type(name, PyhaList(current_val.tolist()), PyhaList(initial_val.tolist()), parent)
+    elif current_val is None:
+        return None
 
     print(type(current_val))
     assert 0
 
 
-def get_vars_as_vhdl_types(obj: Hardware) -> List[BaseVHDLType]:
+def get_vars_as_vhdl_types(obj: Hardware, parent=None) -> List[BaseVHDLType]:
     def filter_junk(x):
         return {k: v for k, v in x.items()
                 if not k.startswith('_pyha') and not k.startswith('__')
@@ -608,7 +643,7 @@ def get_vars_as_vhdl_types(obj: Hardware) -> List[BaseVHDLType]:
     initial_vars = filter_junk(vars(obj._pyha_initial_self))
 
     # convert to conversion classes
-    ret = [init_vhdl_type(name, current_val, initial_val) for name, current_val, initial_val in
+    ret = [init_vhdl_type(name, current_val, initial_val, parent) for name, current_val, initial_val in
            zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
 
     if ret == []:
