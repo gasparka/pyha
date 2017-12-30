@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+import os
 import pytest
 from pyha import simulate
 from pyha.common.core import Hardware
@@ -212,8 +213,11 @@ def test_element_with_none_bound():
 
     dut = DUT()
     inp = [0.1, 0.2, 0.3]
+
+    if 'PYHA_SKIP_RTL' in os.environ:
+        pytest.skip()
     with pytest.raises(Exception):
-        sims = simulate(dut, inp, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
 
 # from pyhacores.filter import FIR
 # from scipy import signal

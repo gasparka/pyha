@@ -1,6 +1,7 @@
 import subprocess
 from enum import Enum
 
+import os
 import numpy as np
 import pyha
 import pytest
@@ -472,6 +473,9 @@ class TestInterface:
             def main(self, i):
                 return i
 
+        if 'PYHA_SKIP_RTL' in os.environ:
+            pytest.skip()
+
         outs = simulate(T(), [1, 2], simulations=['PYHA', 'RTL'])
         assert type(outs['PYHA'][0]) == int
         assert type(outs['RTL'][0]) == int
@@ -485,6 +489,9 @@ class TestInterface:
         class T(Hardware):
             def main(self, i, j):
                 return i, j
+
+        if 'PYHA_SKIP_RTL' in os.environ:
+            pytest.skip()
 
         outs = simulate(T(), [1, 2], [0.1, 0.2], simulations=['MODEL', 'PYHA', 'RTL'])
         assert type(outs['PYHA'][0][0]) == int
@@ -673,6 +680,10 @@ class TestInterface:
 
         dut = T13()
         x = [1.0]
+
+        if 'PYHA_SKIP_RTL' in os.environ:
+            pytest.skip()
+
         with pytest.raises(NoOutputsError):
             sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
 
@@ -1412,6 +1423,9 @@ class TestPitfalls:
         dut = Register()
         inputs = [0.1, 0.2]
 
+        if 'PYHA_SKIP_RTL' in os.environ:
+            pytest.skip()
+
         with pytest.raises(Exception):
             sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
 
@@ -1427,6 +1441,9 @@ class TestPitfalls:
 
         dut = Register()
         inputs = [0.1 + 0.2 * 1j, 0.2 + 0.5 * 1j]
+
+        if 'PYHA_SKIP_RTL' in os.environ:
+            pytest.skip()
 
         sims = simulate(dut, inputs)
         with pytest.raises(Exception):
