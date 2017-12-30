@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
+from pyha.common.context_managers import ContextManagerRefCounted
 from redbaron import RedBaron
 
 from pyha.common.util import tabber
@@ -90,54 +91,53 @@ def get_conversion(obj):
 class Conversion:
     converted_names = []
     typedefs = []
-    in_progress = 0
+    in_progress = ContextManagerRefCounted()
 
     def __init__(self, obj, datamodel=None):
         """ Recursively (if object has children 'Hardware' members) converts object to VHDL """
-        self.obj = obj
-        self.class_name = obj.__class__.__name__
-        Conversion.in_progress += 1
-        self.datamodel = datamodel
-        self.is_root = datamodel is None
-        if self.is_root:
-            Conversion.converted_names = []
-            Conversion.typedefs = []
-            self.datamodel = VHDLModule('-', obj)
+        with Conversion.in_progress:
+            self.obj = obj
+            self.class_name = obj.__class__.__name__
+            self.datamodel = datamodel
+            self.is_root = datamodel is None
+            if self.is_root:
+                Conversion.converted_names = []
+                Conversion.typedefs = []
+                self.datamodel = VHDLModule('-', obj)
 
-        # recursively convert all child modules
-        self.childs = []
+            # recursively convert all child modules
+            self.childs = []
 
-        def conv(self, node):
-            if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                if node.elems[0]._pyha_module_name() in self.converted_names:
-                    return
-                self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
-            elif isinstance(node, VHDLModule):
-                if node._pyha_module_name() in self.converted_names:
-                    return
-                self.childs.append(Conversion(node.current, node))
+            def conv(self, node):
+                if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
+                    if node.elems[0]._pyha_module_name() in self.converted_names:
+                        return
+                    self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+                elif isinstance(node, VHDLModule):
+                    if node._pyha_module_name() in self.converted_names:
+                        return
+                    self.childs.append(Conversion(node.current, node))
 
-        if self.is_root:
-            self.top_vhdl = TopGenerator(obj)
+            if self.is_root:
+                self.top_vhdl = TopGenerator(obj)
 
-            # maybe some input/output is a convertable module?
-            for node in self.inputs:
+                # maybe some input/output is a convertable module?
+                for node in self.inputs:
+                    conv(self, node)
+
+                for node in self.outputs:
+                    conv(self, node)
+
+            # convert instance elements before the instance itself, recursive
+            for node in self.datamodel.elems:
                 conv(self, node)
 
-            for node in self.outputs:
-                conv(self, node)
+            self.red_node = get_objects_rednode(obj)
+            self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
-        # convert instance elements before the instance itself, recursive
-        for node in self.datamodel.elems:
-            conv(self, node)
-
-        self.red_node = get_objects_rednode(obj)
-        self.conv = convert(self.red_node, obj)  # actual conversion happens here
-
-        self.vhdl_conversion = str(self.conv)
-        Conversion.converted_names += [self.datamodel._pyha_module_name()]
-        Conversion.typedefs.extend(self.conv.build_typedefs())
-        Conversion.in_progress -= 1
+            self.vhdl_conversion = str(self.conv)
+            Conversion.converted_names += [self.datamodel._pyha_module_name()]
+            Conversion.typedefs.extend(self.conv.build_typedefs())
 
     @property
     def inputs(self) -> List[object]:
@@ -148,25 +148,22 @@ class Conversion:
         return self.top_vhdl.get_object_return()
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
-        Conversion.in_progress += 1
-        # todo: makedirs
-        paths = []
-        for x in self.childs:
-            paths.extend(x.write_vhdl_files(base_dir))  # recusion here
+        with Conversion.in_progress:
+            paths = []
+            for x in self.childs:
+                paths.extend(x.write_vhdl_files(base_dir))  # recusion here
 
-        # paths.append(base_dir / '{}.vhd'.format(self.class_name))
-        paths.append(base_dir / '{}.vhd'.format(self.datamodel._pyha_module_name()))
-        with paths[-1].open('w') as f:
-            f.write(str(self.vhdl_conversion))
-
-        # add top_generator file
-        if self.is_root:
-            paths.append(base_dir / 'top.vhd')
+            paths.append(base_dir / '{}.vhd'.format(self.datamodel._pyha_module_name()))
             with paths[-1].open('w') as f:
-                f.write(self.top_vhdl.make())
+                f.write(str(self.vhdl_conversion))
 
-        Conversion.in_progress -= 1
-        return paths
+            # add top_generator file
+            if self.is_root:
+                paths.append(base_dir / 'top.vhd')
+                with paths[-1].open('w') as f:
+                    f.write(self.top_vhdl.make())
+
+            return paths
 
     def build_typedefs_package(self):
         template = textwrap.dedent("""\

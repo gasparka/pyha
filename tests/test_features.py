@@ -486,6 +486,7 @@ class TestInterface:
 
     def test_return_types_two(self):
         """ Bug was that when one attr was 'float' it forced conversion of all outputs to float. """
+
         class T(Hardware):
             def main(self, i, j):
                 return i, j
@@ -671,7 +672,6 @@ class TestInterface:
         x = [1.0]
         sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
 
     def test_no_output(self):
         class T13(Hardware):

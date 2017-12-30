@@ -597,7 +597,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val, parent)
     elif type(current_val) == float:
-        if Conversion.in_progress:
+        if Conversion.in_progress.enabled:
             # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
 
@@ -608,8 +608,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val, parent)
     elif type(current_val) == PyhaList:
-        print(current_val)
-        if Conversion.in_progress and isinstance(current_val[0], float):
+        if Conversion.in_progress.enabled and isinstance(current_val[0], float):
             # logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
             return None
 
