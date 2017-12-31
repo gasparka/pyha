@@ -150,6 +150,12 @@ class Sfix:
         else:
             assert False
         if f'{old:.5f}' != f'{self.val:.5f}': # only warn when saturation is significant, TODO: this expects numbers in [1, -1] range!
+            if SimPath != 'inputs':
+                try:
+                    import pydevd
+                    pydevd.settrace()
+                except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
+                    pass
             logger.warning(f'SATURATION {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
 
     def wrap(self):
@@ -157,8 +163,13 @@ class Sfix:
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
         if not self.wrap_is_ok:
+            if SimPath != 'inputs':
+                try:
+                    import pydevd
+                    pydevd.settrace()
+                except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
+                    pass
             logger.error(f'WRAP {self.val:.5f} -> {new_val:.5f}\t[{SimPath}]')
-            # assert 0
         self.val = new_val
 
     def quantize(self):
