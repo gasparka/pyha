@@ -150,7 +150,7 @@ class Sfix:
         else:
             assert False
         if f'{old:.5f}' != f'{self.val:.5f}': # only warn when saturation is significant, TODO: this expects numbers in [1, -1] range!
-            if SimPath != 'inputs':
+            if str(SimPath) != 'inputs':
                 try:
                     import pydevd
                     pydevd.settrace()
@@ -163,7 +163,7 @@ class Sfix:
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
         if not self.wrap_is_ok:
-            if SimPath != 'inputs':
+            if str(SimPath) != 'inputs':
                 try:
                     import pydevd
                     pydevd.settrace()
