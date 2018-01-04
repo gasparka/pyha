@@ -142,7 +142,7 @@ class Simulation:
             raise NoModelError('Trying to run simulation but "model" is None')
 
         if not hasattr(self.model, 'main') and self.simulation_type in ['PYHA', 'RTL', 'GATE']:
-            raise NoModelError('Your model has no "main" function')
+            raise NoModelError(f'Trying to run simulation: {self.simulation_type}, but your model has no "main" function!')
 
         self.main_as_model = not hasattr(self.model, 'model_main') and self.simulation_type is 'MODEL'
 
