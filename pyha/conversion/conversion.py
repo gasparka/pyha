@@ -6,11 +6,12 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
-from pyha.common.context_managers import ContextManagerRefCounted
 from redbaron import RedBaron
 
+from pyha.common.context_managers import ContextManagerRefCounted
+from pyha.common.core import PyhaFunc, Hardware
 from pyha.common.util import tabber
-from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList
+from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList, init_vhdl_type
 from pyha.conversion.redbaron_mods import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
@@ -127,6 +128,14 @@ class Conversion:
 
                 for node in self.outputs:
                     conv(self, node)
+
+            # iterate all functions and discover local variables that may need to be converted
+            for x in self.obj.__dict__.values():
+                if isinstance(x, PyhaFunc):
+                    for key, val in x.locals.items():
+                        if isinstance(val, Hardware):
+                            node = init_vhdl_type(key, val)
+                            conv(self, node)
 
             # convert instance elements before the instance itself, recursive
             for node in self.datamodel.elems:
