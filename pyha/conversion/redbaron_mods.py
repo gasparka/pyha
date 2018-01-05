@@ -997,7 +997,31 @@ class ImplicitNext:
 class CallModifications:
 
     @staticmethod
-    def neww(red_node):
+    def regular_functions(red_node):
+        """
+        Converts Python style function calls to VHDL style:
+        self.d(a) -> d(self, a)
+
+        If function owner is not exactly 'self' then 'unknown_type' is prepended.
+        self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+
+        self.d(a) -> d(self, a)
+        self.next.d(a) -> d(self.next, a)
+        local.d() -> type.d(local)
+        self.local.d() -> type.d(self.local)
+
+        If return then:
+
+        b = self.a(arg) ->
+
+            variable pyha_ret_0: type;
+
+            a(self, arg, pyha_ret_0);
+            b := pyha_ret_0;
+
+        Handling call inside call is limited to depth 1.
+
+        """
 
         is_hack = False
 
@@ -1091,7 +1115,7 @@ class CallModifications:
 
     @staticmethod
     def apply(red_node):
-        red_node = CallModifications.neww(red_node)
+        red_node = CallModifications.regular_functions(red_node)
         return red_node
 
 
