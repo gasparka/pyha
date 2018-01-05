@@ -329,6 +329,7 @@ package B0_0 is
     procedure func2(self:inout self_t);
 
     -- internal pyha functions
+    function B0(much_dummy_very_wow: integer) return self_t;
     procedure pyha_update_registers(self:inout self_t);
     procedure pyha_reset(self:inout self_t);
     procedure pyha_init_next(self:inout self_t);

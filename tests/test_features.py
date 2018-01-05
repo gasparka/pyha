@@ -1,16 +1,128 @@
+import os
 import subprocess
 from enum import Enum
 
-import os
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex_fixed_point import ComplexSfix
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import NoOutputsError
 from pyha.simulation.legacy import assert_sim_match
 from pyha.simulation.simulation_interface import simulate, assert_equals, Simulation, NoModelError, sims_close
+
+
+class TestLocalInstance:
+    def test_complex(self):
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                b = Sfix(1.0, 0, -17, overflow_style='saturate')
+                r = ComplexSfix(a, b)
+                return r
+
+        dut = T()
+        inputs = [0, 1, 2]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL', 'GATE'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_reserved_name(self):
+        class Register(Hardware):
+            def __init__(self, first):
+                self.first = first
+
+            def __call__(self, first):
+                return self(first)
+
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                r = Register(a)
+                return r
+
+        dut = T()
+        inputs = [0, 1, 2]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL', 'GATE'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_nested(self):
+        class Pair(Hardware):
+            def __init__(self, first, second):
+                self.first = first
+                self.second = second
+
+            def __call__(self, first, second):
+                return Pair(first, second)
+
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                b = Sfix(0.1, 0, -17, overflow_style='saturate')
+                r = ComplexSfix(a, b)
+
+                p = Pair(r, r)
+                return p
+
+        dut = T()
+        inputs = [0, 1, 2]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_more_nested(self):
+        """ This failed as converter did: type1.type2.ComplexSfix(), problem was because there are two types wiht ComplexSfix """
+
+        class Pair(Hardware):
+            def __init__(self, first, second):
+                self.first = first
+                self.second = second
+
+            def __call__(self, first, second):
+                return Pair(first, second)
+
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                b = Sfix(0.1, 0, -17, overflow_style='saturate')
+                r = ComplexSfix(a, b)
+
+                a2 = Sfix(0.0, 0, -28)
+                b2 = Sfix(0.1, 0, -28)
+                r2 = ComplexSfix(a2, b2)
+
+                p = Pair(r, r2)
+                return p
+
+        dut = T()
+        inputs = [0, 1, 2]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_complex_purely_local(self):
+        """ This needs to make new conversion for 'r' - it is only used as local type """
+
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -18)
+                b = Sfix(0.1, 0, -18, overflow_style='saturate')
+                r = ComplexSfix(a, b)
+                return dummy
+
+        dut = T()
+        inputs = [0, 1, 2]
+
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
 
 
 class TestConst:
@@ -266,7 +378,8 @@ class TestRegisters:
         dut = Register()
         inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
 
-        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
         assert sims_close(sims)
 
     def test_sfix_lazy(self):
