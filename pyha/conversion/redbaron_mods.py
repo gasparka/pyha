@@ -229,7 +229,7 @@ class DefNodeVHDL(NodeVHDL):
                      for name, val in self.data.locals.items()
                      if name not in argnames]
 
-        variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables]
+        variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables if x is not None]
         return '\n'.join(variables)
 
     def build_body(self):
@@ -548,6 +548,7 @@ class ClassNodeVHDL(NodeVHDL):
         data = [x._pyha_reset_constants() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
+
     def build_update_registers(self, prototype_only=False):
         template = textwrap.dedent("""\
             procedure pyha_update_registers(self:inout self_t) is
@@ -575,6 +576,27 @@ class ClassNodeVHDL(NodeVHDL):
         data = [x._pyha_init() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
+    def build_constructor(self, prototype_only=False):
+        template = textwrap.dedent("""\
+            function {NAME}{ARGS} return self_t is
+                -- limited constructor
+                variable self: self_t;
+            begin
+                pyha_reset_constants(self);
+            {DATA}
+                return self;
+            end function;""")
+
+        data = [x._pyha_constructor() for x in self.data.elems]
+        args = '; '.join([x._pyha_constructor_arg() for x in self.data.elems if x._pyha_constructor_arg() != ''])
+        if args != '':
+            args = f'({args[:-2]})' if args[-2:] == '; ' else f'({args})'
+        ret = template.format(NAME=escape_reserved_vhdl(self.name), ARGS=args, DATA=formatter(data))
+
+        if prototype_only:
+            return ret.splitlines()[0][:-3] + ';'
+        return ret
+
     def build_data_structs(self):
         template = textwrap.dedent("""\
             type next_t is record
@@ -598,7 +620,7 @@ class ClassNodeVHDL(NodeVHDL):
             if not isinstance(function, DefNodeVHDL):
                 continue
             variables = [init_vhdl_type(name, val, val) for name, val in function.data.locals.items()]
-            typedefs += [x._pyha_typedef() for x in variables if x._pyha_typedef() is not None]
+            typedefs += [x._pyha_typedef() for x in variables if x is not None and x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return typedefs
 
@@ -621,6 +643,7 @@ class ClassNodeVHDL(NodeVHDL):
 
         proto = '\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeVHDL))
         proto += '\n\n-- internal pyha functions\n'
+        proto += self.build_constructor(prototype_only=True) + '\n'
         proto += self.build_update_registers(prototype_only=True) + '\n'
         proto += self.build_reset(prototype_only=True) + '\n'
         proto += self.build_init(prototype_only=True) + '\n'
@@ -635,6 +658,8 @@ class ClassNodeVHDL(NodeVHDL):
         template = textwrap.dedent("""\
             package body {NAME} is
             {USER_FUNCTIONS}
+            
+            {CONSTRUCTOR}
             
             {RESET_SELF}
             
@@ -653,6 +678,7 @@ class ClassNodeVHDL(NodeVHDL):
         sockets = {}
         sockets['NAME'] = self.data._pyha_module_name()
 
+        sockets['CONSTRUCTOR'] = tabber(self.build_constructor())
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
@@ -679,6 +705,7 @@ class ClassNodeVHDL(NodeVHDL):
         sockets['PACKAGE_HEADER'] = self.build_package_header()
         sockets['PACKAGE_BODY'] = self.build_package_body()
         return template.format(**sockets)
+
 
 
 def redbaron_node_to_vhdl_node(red: Node, caller):
@@ -1139,12 +1166,20 @@ class CallModifications:
                 continue
 
             # get the SOURCE (where call is going on) function object from datamodel
-            def_parent = atom.parent_find('def')
+            try:
+                def_parent = atom.parent_find('def')
+            except AttributeError: # this happens for nodes that already are parsed by some redbaron mod...actually a bug but not important
+                continue
+
+            if def_parent == None:
+                continue
+
             source_func_name = f'self.{def_parent.name}'
             source_func_obj = super_getattr(convert_obj, str(source_func_name))
 
+            assign_parent = atom.parent_find('assign')
             for name, val in source_func_obj.locals.items():
-                if type(val).__name__ == call_name:
+                if type(val).__name__ == call_name and str(assign_parent.target) == name:
                     var = init_vhdl_type('-', val, val)
                     atom.insert(0, var._pyha_module_name())
 

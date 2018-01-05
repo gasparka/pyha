@@ -1,10 +1,12 @@
 import copy
+import inspect
 import logging
 from enum import Enum
 from math import isclose
 from typing import List
 
 import numpy as np
+
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -83,10 +85,28 @@ class BaseVHDLType:
         name = self._pyha_name()
         return 'self.\\next\\.{} := self.{};'.format(name, name)
 
-    def _pyha_update_registers(self):
+    def is_const(self):
         # for constants (UPPERCASE NAME) dont update
         tmp = self._name.replace('_', '')
-        if tmp.isupper():
+        return True if tmp.isupper() else False
+
+    def _pyha_constructor(self):
+        if self.is_const():
+            return ''
+
+        name = self._pyha_name()
+        return 'self.{} := {};'.format(name, name)
+
+    def _pyha_constructor_arg(self):
+        if self.is_const():
+            return ''
+
+        name = self._pyha_name()
+        return '{}: {}'.format(name, self._pyha_type())
+
+    def _pyha_update_registers(self):
+        # for constants (UPPERCASE NAME) dont update
+        if self.is_const():
             return ''
 
         name = self._pyha_name()
@@ -139,14 +159,15 @@ class BaseVHDLType:
         raise NotImplementedError()
 
     def _pyha_to_python_value(self):
-        raise NotImplementedError()
+        return self.current
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
         if type(self.current) != type(other.current):
             return False
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
-            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current, abs(self.current - other.current)))
+            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current,
+                                                               abs(self.current - other.current)))
         return eq
 
 
@@ -161,11 +182,12 @@ class VHDLInt(BaseVHDLType):
         return 'std_logic_vector(31 downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
         return '{} := to_integer(signed({}));\n'.format(out_var_name, in_name)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return '{}({} downto {}) <= std_logic_vector(to_signed({}, 32));\n'.format(out_name, 31 + out_index_offset, 0 + out_index_offset, in_name)
+        return '{}({} downto {}) <= std_logic_vector(to_signed({}, 32));\n'.format(out_name, 31 + out_index_offset,
+                                                                                   0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -193,11 +215,12 @@ class VHDLBool(BaseVHDLType):
         return 'std_logic_vector(0 downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
         return '{} := logic_to_bool({});\n'.format(out_var_name, in_name)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return '{}({} downto {}) <= bool_to_logic({});\n'.format(out_name, 0 + out_index_offset, 0 + out_index_offset, in_name)
+        return '{}({} downto {}) <= bool_to_logic({});\n'.format(out_name, 0 + out_index_offset, 0 + out_index_offset,
+                                                                 in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -233,7 +256,8 @@ class VHDLSfix(BaseVHDLType):
         if not hasattr(self, '__has_logged'):
             setattr(self, '__has_logged', True)
             if self.current.left is None or self.current.right is None:
-                logger.error(f'{get_full_var_name()} = {self._pyha_reset_value()} -> bounds must be resolved in PYHA simulation!')
+                logger.error(
+                    f'{get_full_var_name()} = {self._pyha_reset_value()} -> bounds must be resolved in PYHA simulation!')
 
     def _pyha_type(self):
         self.__log_none_bounds()
@@ -250,11 +274,12 @@ class VHDLSfix(BaseVHDLType):
         return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
-        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset+self._pyha_bitwidth()-1, in_index_offset)
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
         return '{} := Sfix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
-        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() -1 + out_index_offset, 0 + out_index_offset, in_name)
+        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
+                                                          0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
@@ -279,7 +304,8 @@ class VHDLEnum(BaseVHDLType):
 
     def _pyha_typedef(self):
         name = self._pyha_type()
-        return 'type {} is range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'.format(name, len(type(self.current))-1)
+        return 'type {} is range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'.format(name, len(
+            type(self.current)) - 1)
 
     def _pyha_reset_value(self):
         return self.initial.value
@@ -303,7 +329,8 @@ class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial, parent=None):
         super().__init__(var_name, current, initial, parent)
 
-        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in enumerate(zip(self.current, self.initial))]
+        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in
+                      enumerate(zip(self.current, self.initial))]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
 
@@ -322,7 +349,8 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_typedef(self):
         if self.not_submodules_list:
-            return 'type {} is array (natural range <>) of {};'.format(self._pyha_arr_type_name(), self.elems[0]._pyha_type())
+            return 'type {} is array (natural range <>) of {};'.format(self._pyha_arr_type_name(),
+                                                                       self.elems[0]._pyha_type())
         return None  # arrays of submodules are already defined in each submodule package!
 
     def _pyha_init(self):
@@ -337,8 +365,9 @@ class VHDLList(BaseVHDLType):
         if self.not_submodules_list:
             return super()._pyha_update_registers()
 
-        inits = ['{}.pyha_update_registers(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
-                 for i in range(len(self.current))]
+        inits = [
+            '{}.pyha_update_registers(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
+            for i in range(len(self.current))]
         return '\n'.join(inits)
 
     def _pyha_reset(self, prefix='self') -> str:
@@ -379,14 +408,14 @@ class VHDLList(BaseVHDLType):
         return sum([x._pyha_bitwidth() for x in self.elems])
 
     def _pyha_stdlogic_type(self) -> str:
-        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth()-1)
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth() - 1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
         total_width = self._pyha_bitwidth()
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
-            prefix = '{}({})'.format(out_var_name, len(self.elems) - i -1)
+            prefix = '{}({})'.format(out_var_name, len(self.elems) - i - 1)
             ret += sub._pyha_convert_from_stdlogic(prefix, in_var_name, in_index_offset)  # recursive
             in_index_offset += elem_width
         return ret
@@ -397,7 +426,7 @@ class VHDLList(BaseVHDLType):
         elem_width = total_width // len(self.elems)
         for i, sub in enumerate(self.elems):
             prefix = '{}'.format(out_name)
-            tmp_in_name = '{}({})'.format(in_name, len(self.elems) - i -1)
+            tmp_in_name = '{}({})'.format(in_name, len(self.elems) - i - 1)
             ret += sub._pyha_convert_to_stdlogic(prefix, tmp_in_name, out_index_offset + elem_width * i)  # recursive
         return ret
 
@@ -417,7 +446,8 @@ class VHDLList(BaseVHDLType):
             return False
 
         if len(self.elems) != len(other.elems):
-            logger.error('{} -> Fail, lists have different lengths: {} vs {}'.format(name, len(self.elems), len(other.elems)))
+            logger.error(
+                '{} -> Fail, lists have different lengths: {} vs {}'.format(name, len(self.elems), len(other.elems)))
             return False
 
         r = []
@@ -518,7 +548,7 @@ class VHDLModule(BaseVHDLType):
         return sum([x._pyha_bitwidth() for x in self.elems])
 
     def _pyha_stdlogic_type(self) -> str:
-        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth()-1)
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth() - 1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         ret = ''
@@ -561,12 +591,14 @@ class VHDLModule(BaseVHDLType):
             return False
 
         if len(self.elems) != len(other.elems):
-            logger.error('{} -> Fail, modules have different amount of elements: {} vs {}'.format(name, len(self.elems), len(other.elems)))
+            logger.error('{} -> Fail, modules have different amount of elements: {} vs {}'.format(name, len(self.elems),
+                                                                                                  len(other.elems)))
             return False
 
         r = []
         for self_elem, other_elem in zip(self.elems, other.elems):
-            ret = self_elem._pyha_is_equal(other_elem, '{}.{}'.format(type(self.current).__name__, self_elem._name), rtol, atol)
+            ret = self_elem._pyha_is_equal(other_elem, '{}.{}'.format(type(self.current).__name__, self_elem._name),
+                                           rtol, atol)
             r.append(ret)
 
         return all(r)
@@ -627,6 +659,8 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
     elif isinstance(current_val, np.ndarray):  # this may happen for data that is coming from 'MODEL' simulation
         return init_vhdl_type(name, PyhaList(current_val.tolist()), PyhaList(initial_val.tolist()), parent)
     elif current_val is None:
+        return None
+    elif inspect.isclass(current_val): # this may happend for local variables, when using nested class or something
         return None
 
     print(type(current_val))
