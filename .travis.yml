@@ -13,7 +13,7 @@ install:
   - pip install codeclimate-test-reporter
 
 script:
-  - coverage run --source pyha -m pytest
+  - coverage run --omit pyha/simulation/legacy.py pyha/simulation/sim_include/cocotb_simulation_top.py  --source pyha -m pytest
 
 after_success:
   - coveralls
