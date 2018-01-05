@@ -1114,8 +1114,46 @@ class CallModifications:
         return red_node
 
     @staticmethod
+    def local_object_constructors(red_node):
+        """
+        Local object declaration to VHDL style:
+        a = Complex(i, q) ->
+
+            a := type.Complex(i, q)
+        """
+
+        # loop over all atomtrailers, call is always a member of this
+        atomtrailers = red_node.find_all('atomtrailers')
+        for i, atom in enumerate(atomtrailers):  # reversed is for the case when one call is argument to other
+            call = atom.call  # this actually points to the stuff between ()
+
+            if call is None:  # this atomtrailer has no function call
+                continue
+
+            call_index = call.previous.index_on_parent
+            if call_index != 0:  # call is something more complex, like self.call()
+                continue
+
+            call_name = call.previous.value
+            if call_name == 'Sfix':
+                continue
+
+            # get the SOURCE (where call is going on) function object from datamodel
+            def_parent = atom.parent_find('def')
+            source_func_name = f'self.{def_parent.name}'
+            source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+            for name, val in source_func_obj.locals.items():
+                if type(val).__name__ == call_name:
+                    var = init_vhdl_type('-', val, val)
+                    atom.insert(0, var._pyha_module_name())
+
+        return red_node
+
+    @staticmethod
     def apply(red_node):
         red_node = CallModifications.regular_functions(red_node)
+        red_node = CallModifications.local_object_constructors(red_node)
         return red_node
 
 
