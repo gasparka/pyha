@@ -375,6 +375,26 @@ def test_call_sfix(converter):
     assert expect == str(conv)
 
 
+def test_call_sfix_one(converter):
+    code = textwrap.dedent("""\
+            Sfix(0.95, 0, -17, overflow_style='saturate')""")
+
+    expect = textwrap.dedent("""\
+            Sfix(0.95, 0, -17, overflow_style=>fixed_saturate, round_style=>fixed_truncate)""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_call_sfix_one_assign(converter):
+    code = textwrap.dedent("""\
+            b = Sfix(1.0, 0, -17, overflow_style='saturate')""")
+
+    expect = textwrap.dedent("""\
+            b := Sfix(1.0, 0, -17, overflow_style=>fixed_saturate, round_style=>fixed_truncate);""")
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_call_sfix_keyword_params(converter):
     code = textwrap.dedent("""\
             Sfix(0.95, size_res=a, overflow_style='wrap', round_style='truncate')""")

@@ -781,7 +781,7 @@ class ResizeMods:
             if call.previous.value not in ['resize', 'Sfix']:
                 continue
 
-            args = red_node.find_all('call_argument')
+            args = call.find_all('call_argument')
             overflow_kword_found = False
             round_kword_found = False
             for arg in args:
