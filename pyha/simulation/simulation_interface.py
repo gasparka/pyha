@@ -84,13 +84,13 @@ def type_conversions(func):
                 with SimPath('inputs'):
                     if isinstance(arg[0], float):
                         logger.info(
-                            f'Converting float inputs to Sfix(left={default_sfix.left}, right={default_sfix.right})')
+                            f'Converting float inputs to Sfix [{default_sfix.left}:{default_sfix.right}]')
                         t = default_sfix
                         args[i] = [t(x) for x in arg]
                     elif isinstance(arg[0], (complex, np.complex64)):
                         # assert 0
                         t = default_complex_sfix
-                        logger.info(f'Converting complex inputs to ComplexSfix(left={t.real.left}, right={t.real.right})')
+                        logger.info(f'Converting complex inputs to ComplexSfix [{t.real.left}:{t.real.right}]')
                         args[i] = [t(x) for x in arg]
 
         ret = func(self, *args, **kwargs)

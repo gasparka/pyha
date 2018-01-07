@@ -156,7 +156,7 @@ class Sfix:
                     pydevd.settrace()
                 except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
                     pass
-            logger.warning(f'SATURATION {old:.5f} -> {self.val:.5f}\t[{SimPath}]')
+            logger.warning(f'SATURATION {old:g} -> {self.val:g}\t[{SimPath}]')
 
     def wrap(self):
         fmin = self.min_representable()
@@ -169,7 +169,7 @@ class Sfix:
                     pydevd.settrace()
                 except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
                     pass
-            logger.error(f'WRAP {self.val:.5f} -> {new_val:.5f}\t[{SimPath}]')
+            logger.error(f'WRAP {self.val:g} -> {new_val:g}\t[{SimPath}]')
         self.val = new_val
 
     def quantize(self):
@@ -187,7 +187,7 @@ class Sfix:
         return int(round(self.val / 2 ** self.right))
 
     def __str__(self):
-        return f'{str(self.val)} [{self.left}:{self.right}]'
+        return f'{self.val:g} [{self.left}:{self.right}]'
 
     def __repr__(self):
         return self.__str__()

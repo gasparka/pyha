@@ -1044,15 +1044,15 @@ class TestFloatToSfix:
     def test_basic(self):
         dut = self.D()
         dut._pyha_floats_to_fixed()
-        assert dut.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.reg == Sfix(0.5, 0, -17)
         assert dut.round.val == 9.1552734375e-05
         assert dut.saturation.val == 0.9999923706054688
 
-        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut._pyha_next['reg'] == Sfix(0.5, 0, -17)
         assert dut._pyha_next['round'].val == 9.1552734375e-05
         assert dut._pyha_next['saturation'].val == 0.9999923706054688
 
-        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut._pyha_initial_self.reg == Sfix(0.5, 0, -17)
         assert dut._pyha_initial_self.round.val == 9.1552734375e-05
         assert dut._pyha_initial_self.saturation.val == 0.9999923706054688
 
@@ -1071,11 +1071,11 @@ class TestFloatToSfix:
     def test_list(self):
         dut = self.Listy()
         dut._pyha_floats_to_fixed()
-        assert dut.float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.float_list[0] == Sfix(0.5, 0, -17)
         assert dut.float_list[1].val == 9.1552734375e-05
         assert dut.float_list[2].val == 0.9999923706054688
 
-        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.float_list._pyha_next[0] == Sfix(0.5, 0, -17)
         assert dut.float_list._pyha_next[1].val == 9.1552734375e-05
         assert dut.float_list._pyha_next[2].val == 0.9999923706054688
 
@@ -1093,8 +1093,8 @@ class TestFloatToSfix:
 
         dut = D1()
         dut._pyha_floats_to_fixed()
-        assert dut.sub.reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
-        assert dut.sub.float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.sub.reg == Sfix(0.5, 0, -17)
+        assert dut.sub.float_list[0] == Sfix(0.5, 0, -17)
 
     def test_submodule_list(self):
         """ Had a bug where lists of submodules were not converted by floats to sfixed """
@@ -1110,9 +1110,9 @@ class TestFloatToSfix:
 
         dut = D1()
         dut._pyha_floats_to_fixed()
-        assert dut.sub_list[0].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
-        assert dut.sub_list[1].reg == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
-        assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17, round_style='round', overflow_style='saturate')
+        assert dut.sub_list[0].reg == Sfix(0.5, 0, -17)
+        assert dut.sub_list[1].reg == Sfix(0.5, 0, -17)
+        assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17)
 
 
 class TestCallModifications:

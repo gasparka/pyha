@@ -32,7 +32,7 @@ def test_init():
 
 def test_converts():
     f = Sfix(0.123, 0, -8)
-    assert str(f) == '0.12109375 [0:-8]'
+    assert str(f) == '0.121094 [0:-8]'
     assert float(f) == 0.12109375
 
 

@@ -222,10 +222,17 @@ class PyhaList(UserList):
         else:
             if not isinstance(self.data[0], float):
                 return
+
+            new = []
+            for x in self.data:
+                item = default_sfix(x)
+                item.round_style = 'truncate'
+                item.overflow_style = 'wrap'
+                new.append(item)
+
             if not silence:
-                logger.warning(f'{self.class_name}.{self.var_name} is [float] ->'
-                               f' converted to [Sfix({default_sfix.left}, {default_sfix.right})]')
-            new = [default_sfix(x) for x in self.data]
+                logger.info(
+                    f'Converted {self.class_name}.{self.var_name} = {self.data} -> {new}')
             self.data = new
             self._pyha_next = deepcopy(new)
 
@@ -260,10 +267,13 @@ class Hardware(with_metaclass(Meta)):
         # update atoms
         for k, v in self.__dict__.items():
             if isinstance(v, float):
+                new = default_sfix(v)
+                new.round_style = 'truncate'
+                new.overflow_style = 'wrap'
+
                 if not silence:
                     logger.info(
-                        f'{self.__class__.__name__}.{k} is float -> converted to Sfix({default_sfix.left}, {default_sfix.right})')
-                new = default_sfix(v)
+                        f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
 
