@@ -11,8 +11,8 @@ logger = logging.getLogger('sfix')
 
 class Sfix:
     """
-    Signed fixed-point type. Default fixed-point format in Pyha is ``Sfix(left=0, right=-17)`` (17 fractional bits + sign).
-    It represents values in range [-1, 1] ``(2**0)`` with resolution of 0.0000076 ``(2**-17)``.
+    Signed fixed-point type. Default fixed-point format in Pyha is ``Sfix(left=0, right=-17)`` (17 fractional bits + sign)
+    , representing values in range [-1, 1] ``(2**0)`` with resolution of 0.0000076 ``(2**-17)``.
 
     :param val: initial value (reset value in hardware)
     :param left: bits for integer part. Maximum representable value is ``2**left``
@@ -52,7 +52,7 @@ class Sfix:
     >>> a
     0.123 [0:-7]
 
-    Arithmetic operations on Sfix values ara always full precision, meaning that they come with bit-growth:
+    Arithmetic operations on Sfix values ara always full precision, meaning that they include bit-growth:
 
     >>> a = Sfix(0.123, left=0, right=-17)
     >>> a

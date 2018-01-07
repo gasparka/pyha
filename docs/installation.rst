@@ -2,68 +2,52 @@
 Installation
 ============
 
-.. note:: Pyha works only on Python 3.6 and currently is developed/tested on Ubuntu 14/16.
-
-To install pyha:
+Pyha requires Python >= 3.6 (default for Ubuntu 17.10 or `Anaconda`_)
 
 .. code-block:: bash
 
     pip install pyha
 
-
-RTL-level simulations
----------------------
-
-GHDL and Cocotb are required to run RTL simulations.
-
-Install GHDL:
+Or from sources:
 
 .. code-block:: bash
 
-    wget https://github.com/tgingold/ghdl/releases/download/2016-09-14/ghdl-0.34dev-mcode-2016-09-14.tgz -O /tmp/ghdl.tar.gz
-    mkdir ghdl
-    tar -C ghdl -xvf /tmp/ghdl.tar.gz
-
-    # add GHDL to path
-    echo export PATH=$PWD/ghdl/bin/:$PATH >> ~/.bashrc
-    source ~/.bashrc
-
-Cocotb must be installed from fork (it includes some Python3.6 overwrites).
-Install Cocotb:
-
-.. code-block:: bash
-
-    sudo apt-get install git make gcc g++ swig
-    git clone https://github.com/petspats/cocotb
-
-    # set COCOTB path
-    echo export COCOTB=$PWD/cocotb >> ~/.bashrc
-    source ~/.bashrc
+    git clone --recursive https://github.com/gasparka/pyha
+    cd pyha
+    pip install -e .
+    pytest              # optionally run the test suite
 
 
-GATE-level simulations
-----------------------
 
-Install `Intel Quartus`_ ,make sure that you enable Cyclone IV support.
+For RTL simulation (optional)
+-----------------------------
 
-After installing, you can build GHDL support libraries:
+`Cocotb`_ (included with Pyha) dependencies:
 
 .. code-block:: bash
 
-    python scripts/compile_quartus_lib.py
+    sudo apt-get install make gcc g++ swig
 
-It is normal that is 'fails':
+Install `GHDL`_ and **add it to the path**, for Ubuntu:
 
 .. code-block:: bash
 
-    --------------------------------------------------------------------------------
-    Compiling Altera Quartus libraries [FAILED]
+    sh /scripts/install_ghdl.sh
+
+
+For GATE simulation (optional)
+------------------------------
+
+In addition to the RTL requirements, install the `Intel Quartus`_ with support for Cyclone IV and **add** ``.../quartus/bin`` to path.
+
+Compile Quartus libraries into ``GHDL_PATH/lib/ghdl/altera`` by running:
+
+.. code-block:: bash
+
+    python /scripts/compile_quartus_lib.py
+    # expected output: Compiling Altera Quartus libraries [FAILED]
 
 .. _Intel Quartus: http://dl.altera.com/?edition=lite
-
-
-At this point you can **optionally** run tests, be warned that it takes up to 30 minutes.
-
-.. code-block:: bash
-
-    pytest tests/
+.. _GHDL: https://github.com/tgingold/ghdl
+.. _Cocotb: https://github.com/potentialventures/cocotb
+.. _Anaconda: https://www.anaconda.com/download/

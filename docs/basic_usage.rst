@@ -1,8 +1,9 @@
 Tutorial:Basic usage
 ====================
 
-In this tutorial we will write a simple fixed point multiplier.
-It serves as a basic example of turning DSP models into HDL in sensible and testable way.
+In this tutorial we will write a simple fixed-point multiplier with output register.
+
+.. It serves as a basic example of turning DSP models into HDL in sensible and testable way.
 
 
 `Source code <https://github.com/petspats/pyha/blob/develop/examples/basic_usage/basic_usage.py>`__
@@ -12,6 +13,8 @@ It serves as a basic example of turning DSP models into HDL in sensible and test
 
 Model and unit-tests
 --------------------
+
+Before worrying about the hardware we
 
 Lets follow the model and test-driven development, it goes like this:
 

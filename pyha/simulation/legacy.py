@@ -23,18 +23,6 @@ from pyha.simulation.simulation_interface import enforce_simulation_rules, Simul
 #     plt.show()
 
 
-def debug_assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-05, atol=1e-9, dir_path=None,
-                           fuck_it=False, **kwards):
-    """ Instead of asserting anything return outputs of each simulation """
-    simulations = enforce_simulation_rules(simulations)
-    outs = []
-    for sim_type in simulations:
-        dut = Simulation(sim_type, model=model, input_types=types, dir_path=dir_path)
-        hw_y = dut.main(*x)
-        outs.append(hw_y)
-    return outs
-
-
 def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2 ** -17) * 4, dir_path=None,
                      skip_first=0):
     """

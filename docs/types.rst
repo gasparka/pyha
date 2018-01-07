@@ -2,15 +2,13 @@
 Types
 =====
 
-Document usable types in Pyha.
-
 Builtins
 --------
 
-Integers and Booleans are fully usable in synthesisable Pyha code. Integers are likely to be
+Integers and Booleans are fully synthesisable. Integers are likely to be
 synthesised into 32-bit logic, thought there may be optimizations.
 
-Lists are well supported, any Pyha object or builtin can be an list member. Lists can be used as registers, function inputs/outputs and
+Any Pyha object or builtin can be an list member. Lists can be used as registers, function inputs/outputs and
 simulation top level inputs/outputs.
 
 Example of ``bool`` shift-register:
@@ -27,7 +25,21 @@ Example of ``bool`` shift-register:
 
 
 
-TODO: CONSTANTS
+
+Constants
+---------
+
+Constants can be defined by writing the variable name in UPPERCASE. In general constants have no
+effect in Python simulations but can result in great resource savings in hardware.
+
+Example:
+
+.. code-block:: python
+
+    class Dut(Hardware):
+        def __init__(self):
+            self.regular = 1
+            self.CONSTANT = 1
 
 Fixed-point
 -----------
@@ -94,8 +106,7 @@ Enums are generally used to build state-machines, below is an dummy example:
 User defined types
 ------------------
 
-User can make new types by deriving a class from ``Hardware``. User types are fully supported, i.e. they can be used as registers, inputs/outputs to simulation etc.
-Limitation is that they cannot be initiated into local variable (see example below).
+User can make new types by deriving a class from ``Hardware``. User types can be used as registers, inputs/outputs to simulation etc.
 
 .. code-block:: python
 
@@ -111,13 +122,12 @@ Limitation is that they cannot be initiated into local variable (see example bel
             self.sum = Point(0, 0)
 
         def main(self, a):
-            local_var = Point(0, 1) # local instances are currently not working, see #184
             self.sum.x = a.x
             self.sum.y = a.y
             return self.sum
 
 
 
-    inp = [Point(1, 2), Point(3, 4)]
+    inp = [Point(1, 2), Point(3, 4)] # use Point() as input to simulation
     dut = PointAcc()
     sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
