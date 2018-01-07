@@ -6,8 +6,7 @@ Welcome to Pyha's documentation!
 
 
     installation
+    examples
     types
     simulation
     examples
-    .. basic_usage
-        intro

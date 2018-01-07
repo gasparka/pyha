@@ -2,13 +2,14 @@
 Types
 =====
 
+Information about synthesisable types.
+
 Builtins
 --------
 
-Integers and Booleans are fully synthesisable. Integers are likely to be
-synthesised into 32-bit logic, thought there may be optimizations.
+Integers are synthesised into 32-bit logic, thought there may be optimizations. Booleans are fully usable.
 
-Any Pyha object or builtin can be an list member. Lists can be used as registers, function inputs/outputs and
+Any Pyha object or builtin can be an list element. Lists can be used as registers, function inputs/outputs and
 simulation top level inputs/outputs.
 
 Example of ``bool`` shift-register:
@@ -29,8 +30,8 @@ Example of ``bool`` shift-register:
 Constants
 ---------
 
-Constants can be defined by writing the variable name in UPPERCASE. In general constants have no
-effect in Python simulations but can result in great resource savings in hardware.
+Constants are defined by writing the variable name in **UPPERCASE**, this has no
+effect in Python simulations, but usually results in great resource savings in hardware.
 
 Example:
 
@@ -66,23 +67,24 @@ Complex numbers
 Floats
 ------
 
-Float registers are converted automatically into fixed-point representation, by default ``Sfix(left=0, right=-17, overflow_style='saturate', round_style='round')``.
+Floats can be used when performing arithmetic/comparison with fixed-point numbers, in this case they are first converted to the type of the other fixed-point operand.
 
-TODO: convert only CONSTANTS to 'saturate', 'round' ?
 
+Float registers are converted automatically into fixed-point representation, by default ``Sfix(0.0, left=0, right=-17)``.
+Constants are converted with saturation and rounding enabled.
 .. code-block:: python
 
     class Dut(Hardware):
         def __init__(self):
-            self.reg = 0.1 # will be converted to ``Sfix(left=0, right=-17, 'saturate', 'round')``
-
-Floats can also be added/compared against fixed-point numbers, in this case they are first converted to the type of other operand.
+            self.reg = 0.1   # will be converted to "Sfix(left=0, right=-17)"
+            self.CONST = 0.1 # will be converted to "Sfix(left=0, right=-17, 'saturate', 'round')"
 
 
 Enums (state machines)
 ----------------------
 
-Enums are generally used to build state-machines, below is an dummy example:
+Use Enums to build state machines.
+Example:
 
 .. code-block:: python
 
@@ -106,7 +108,8 @@ Enums are generally used to build state-machines, below is an dummy example:
 User defined types
 ------------------
 
-User can make new types by deriving a class from ``Hardware``. User types can be used as registers, inputs/outputs to simulation etc.
+User defined types can be used as registers, inputs/outputs to simulation etc..
+Example:
 
 .. code-block:: python
 
