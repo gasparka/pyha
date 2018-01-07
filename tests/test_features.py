@@ -29,6 +29,35 @@ class TestLocalInstance:
         sims = simulate(dut, inputs)
         assert sims_close(sims)
 
+    def test_return(self):
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                b = Sfix(1.0, 0, -17, overflow_style='saturate')
+                return ComplexSfix(a, b)
+
+        dut = T()
+        inputs = [0.0 + 0.0j, 0.1 + 0.1j, 0.2 + 0.2j]
+
+        sims = simulate(dut, inputs)
+        assert sims_close(sims)
+
+    def test_return_multi(self):
+        class T(Hardware):
+            def main(self, dummy):
+                a = Sfix(0.0, 0, -17)
+                b = Sfix(0.1, 0, -17)
+
+                aa = Sfix(0.0, 0, -27)
+                bb = Sfix(0.1, 0, -27)
+                return a, ComplexSfix(a, b), ComplexSfix(aa, bb)
+
+        dut = T()
+        inputs = [0.0 + 0.0j, 0.1 + 0.1j, 0.2 + 0.2j]
+
+        sims = simulate(dut, inputs)
+        assert sims_close(sims)
+
     def test_reserved_name(self):
         class Register(Hardware):
             def __init__(self, first):

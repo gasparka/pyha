@@ -38,7 +38,7 @@ Install `GHDL`_ and **add it to the path**, for Ubuntu:
 For GATE simulation (optional)
 ------------------------------
 
-In addition to the RTL requirements, install the `Intel Quartus`_ with support for Cyclone IV and **add** ``.../quartus/bin`` to path.
+In addition to the RTL requirements, install the `Intel Quartus`_ with support for Cyclone IV and **add** ``INSTALL_DIR/quartus/bin`` to path.
 
 Compile Quartus libraries into ``GHDL_PATH/lib/ghdl/altera`` by running:
 
