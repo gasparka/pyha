@@ -1,3 +1,4 @@
+# pragma: no cover
 import cocotb
 import numpy as np
 from cocotb.binary import BinaryValue
@@ -7,7 +8,7 @@ from cocotb.triggers import RisingEdge, Timer
 
 
 @cocotb.coroutine
-def reset(dut, duration=10000):
+def reset(dut, duration=10000): # pragma: no cover
     dut.log.debug("Resetting DUT")
     dut.rst_n = 0
     yield Timer(duration)
@@ -17,7 +18,7 @@ def reset(dut, duration=10000):
 
 
 @cocotb.coroutine
-def run_dut(dut, in_data, out_count):
+def run_dut(dut, in_data, out_count): # pragma: no cover
     # dut.enable = 1
     # dut.in0 = 0
     cocotb.fork(Clock(dut.clk, 5000).start())
@@ -52,7 +53,7 @@ def run_dut(dut, in_data, out_count):
 
 
 @cocotb.test()
-def test_main(dut):
+def test_main(dut): # pragma: no cover
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')
 
