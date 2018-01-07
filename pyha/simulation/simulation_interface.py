@@ -11,8 +11,7 @@ from typing import List
 import numpy as np
 from pyha.common.complex_fixed_point import default_complex_sfix
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
-from pyha.common.core import default_sfix
-from pyha.common.fixed_point import Sfix
+from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation

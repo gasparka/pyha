@@ -4,42 +4,19 @@ from collections import UserList
 from copy import deepcopy, copy
 
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
-from pyha.common.fixed_point import Sfix, resize
-from six import iteritems, with_metaclass
+from pyha.common.fixed_point import Sfix, resize, default_sfix
+from six import with_metaclass
 
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
-
-
-default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
-                    round_style='round')
-
-# default_complex_sfix = ComplexSfix(0 + 0j, 0, -17)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('core')
-
-
-def deepish_copy(org):
-    """
-    https://writeonly.wordpress.com/2009/05/07/deepcopy-is-a-pig-for-simple-data/
-    much, much faster than deepcopy, for a dict of the simple python types.
-    """
-    out = dict().fromkeys(org)
-    for k, v in iteritems(org):
-        try:
-            out[k] = v.copy()  # dicts, sets
-        except AttributeError:
-            try:
-                out[k] = v[:]  # lists, tuples, strings, unicode
-            except TypeError:
-                out[k] = v  # ints
-
-    return out
 
 
 class PyhaFunc:
     """ All functions of a Pyha class will be wrapped in this object, calls to original function are done with 'profiler hack' in
     order to save the local variables. """
+
     class TraceManager:
         """ Enables nested functions calls, thanks to ref counting """
         last_call_locals = {}
@@ -191,6 +168,7 @@ def auto_resize(target, value):
 class PyhaList(UserList):
     """ All the lists in the design will be wrapped in this in order to
      override __setitem__ for array element assigns, like a[1] = 1 """
+
     # TODO: Conversion should select only one element. Help select this, may some elements are not fully simulated.
     def __init__(self, data, class_name='None', var_name='None'):
         super().__init__(data)
@@ -304,7 +282,7 @@ class Hardware(with_metaclass(Meta)):
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
 
-        if not hasattr(self, '_pyha_is_local'): # this happend in some deepcopy situations..
+        if not hasattr(self, '_pyha_is_local'):  # this happend in some deepcopy situations..
             self.__dict__[name] = value
             return
 

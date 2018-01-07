@@ -408,3 +408,7 @@ def scalb(x: Sfix, i: int) -> Sfix:
     """
     n = 2 ** i
     return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
+
+
+default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
+                    round_style='round')
