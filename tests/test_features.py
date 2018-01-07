@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 import pyha
-from pyha.common.complex_fixed_point import ComplexSfix
+from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import NoOutputsError
@@ -20,7 +20,7 @@ class TestLocalInstance:
             def main(self, dummy):
                 a = Sfix(0.0, 0, -17)
                 b = Sfix(1.0, 0, -17, overflow_style='saturate')
-                r = ComplexSfix(a, b)
+                r = Complex(a, b)
                 return r
 
         dut = T()
@@ -34,7 +34,7 @@ class TestLocalInstance:
             def main(self, dummy):
                 a = Sfix(0.0, 0, -17)
                 b = Sfix(1.0, 0, -17, overflow_style='saturate')
-                return ComplexSfix(a, b)
+                return Complex(a, b)
 
         dut = T()
         inputs = [0.0 + 0.0j, 0.1 + 0.1j, 0.2 + 0.2j]
@@ -50,7 +50,7 @@ class TestLocalInstance:
 
                 aa = Sfix(0.0, 0, -27)
                 bb = Sfix(0.1, 0, -27)
-                return a, ComplexSfix(a, b), ComplexSfix(aa, bb)
+                return a, Complex(a, b), Complex(aa, bb)
 
         dut = T()
         inputs = [0.0 + 0.0j, 0.1 + 0.1j, 0.2 + 0.2j]
@@ -92,7 +92,7 @@ class TestLocalInstance:
             def main(self, dummy):
                 a = Sfix(0.0, 0, -17)
                 b = Sfix(0.1, 0, -17, overflow_style='saturate')
-                r = ComplexSfix(a, b)
+                r = Complex(a, b)
 
                 p = Pair(r, r)
                 return p
@@ -118,11 +118,11 @@ class TestLocalInstance:
             def main(self, dummy):
                 a = Sfix(0.0, 0, -17)
                 b = Sfix(0.1, 0, -17, overflow_style='saturate')
-                r = ComplexSfix(a, b)
+                r = Complex(a, b)
 
                 a2 = Sfix(0.0, 0, -28)
                 b2 = Sfix(0.1, 0, -28)
-                r2 = ComplexSfix(a2, b2)
+                r2 = Complex(a2, b2)
 
                 p = Pair(r, r2)
                 return p
@@ -140,7 +140,7 @@ class TestLocalInstance:
             def main(self, dummy):
                 a = Sfix(0.0, 0, -18)
                 b = Sfix(0.1, 0, -18, overflow_style='saturate')
-                r = ComplexSfix(a, b)
+                r = Complex(a, b)
                 return dummy
 
         dut = T()
@@ -391,8 +391,8 @@ class TestRegisters:
         class Register(Hardware):
             def __init__(self):
                 self.DELAY = 1
-                self.b = ComplexSfix(0, 0, -17)
-                self.a = ComplexSfix(0, 0, -17)
+                self.b = Complex(0, 0, -17)
+                self.a = Complex(0, 0, -17)
 
             def main(self, nb):
                 self.b = nb
@@ -827,19 +827,19 @@ class TestInterface:
 
 class TestComplexSfix:
     def test_py_implementation(self):
-        a = ComplexSfix()
+        a = Complex()
         assert a.real == Sfix(0.0)
         assert a.imag == Sfix(0.0)
 
-        a = ComplexSfix(0)
+        a = Complex(0)
         assert a.real == Sfix(0.0)
         assert a.imag == Sfix(0.0)
 
-        a = ComplexSfix(0.5 + 1.2j, 1, -12)
+        a = Complex(0.5 + 1.2j, 1, -12)
         assert a.real == Sfix(0.5, 1, -12)
         assert a.imag == Sfix(1.2, 1, -12)
 
-        a = ComplexSfix(0.699 + 0.012j, 0, -4)
+        a = Complex(0.699 + 0.012j, 0, -4)
         assert a.real.val == 0.6875
         assert a.imag.val == 0
 
@@ -1250,7 +1250,7 @@ class TestCallModifications:
 
         class T(Hardware):
             def __init__(self):
-                self.a = ComplexSfix(0, 0, -28)
+                self.a = Complex(0, 0, -28)
                 self.DELAY = 1
 
             def f(self, inp):

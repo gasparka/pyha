@@ -3,7 +3,7 @@ from pyha.conversion.redbaron_mods import convert
 import textwrap
 from enum import Enum
 from redbaron import RedBaron
-from pyha.common.complex_fixed_point import ComplexSfix
+from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, resize
 from pyha.conversion.conversion import get_objects_rednode, get_conversion
@@ -1431,7 +1431,7 @@ class TestAutoResize:
         class T0(Hardware):
             def __init__(self):
                 self.int_reg = 0
-                self.complex_reg = ComplexSfix(2.5 + 2.5j, 5, -29, overflow_style='wrap')
+                self.complex_reg = Complex(2.5 + 2.5j, 5, -29, overflow_style='wrap')
                 self.sfix_reg = Sfix(2.5, 5, -29, overflow_style='wrap')
                 self.submod_reg = T1()
 

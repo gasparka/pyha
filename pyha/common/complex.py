@@ -2,9 +2,9 @@ from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 
 
-class ComplexSfix(Hardware):
+class Complex(Hardware):
     """
-    Complex number with ``.real`` and ``.imag`` elements. Default type is ``ComplexSfix(left=0, right=-17)``, Python ``complex`` values will be converte to this.
+    Complex number with ``.real`` and ``.imag`` elements. Default type is ``Complex(left=0, right=-17)``.
 
     :param val:
     :param left: left bound for both components
@@ -12,7 +12,7 @@ class ComplexSfix(Hardware):
     :param overflow_style: 'wrap' (default) or 'saturate'.
     :param round_style: 'truncate' (default) or 'round'
 
-    >>> a = ComplexSfix(0.45 + 0.88j, left=0, right=-17)
+    >>> a = Complex(0.45 + 0.88j, left=0, right=-17)
     >>> a
     0.45+0.88j [0:-17]
     >>> a.real
@@ -20,11 +20,11 @@ class ComplexSfix(Hardware):
     >>> a.imag
     0.8799972534179688 [0:-17]
 
-    Another way to construct it:
+    Another way to construct it :
 
     >>> a = Sfix(-0.5, 0, -17)
     >>> b = Sfix(0.5, 0, -17)
-    >>> ComplexSfix(a, b)
+    >>> Complex(a, b)
     -0.50+0.50j [0:-17]
 
     """
@@ -48,7 +48,7 @@ class ComplexSfix(Hardware):
         return False
 
     def __call__(self, x):
-        return ComplexSfix(x, self.real.left, self.real.right, self.real.overflow_style, self.real.round_style)
+        return Complex(x, self.real.left, self.real.right, self.real.overflow_style, self.real.round_style)
 
     def __str__(self):
         return '{} [{}:{}]'.format(complex(self), self.real.left, self.real.right)
@@ -60,4 +60,4 @@ class ComplexSfix(Hardware):
         return complex(self)
 
 
-default_complex_sfix = ComplexSfix(0, 0, -17, overflow_style='saturate', round_style='round')
+default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')

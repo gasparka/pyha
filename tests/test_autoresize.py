@@ -1,7 +1,7 @@
 from pyha import simulate, sims_close
 from pyha.common.context_managers import AutoResize
 from pyha.common.fixed_point import Sfix
-from pyha.common.complex_fixed_point import ComplexSfix
+from pyha.common.complex import Complex
 from pyha.common.core import Hardware, PyhaList
 from pyha.simulation.legacy import assert_sim_match
 
@@ -158,7 +158,7 @@ class TestSfixList:
 class TestComplex:
     class A2(Hardware):
         def __init__(self, overflow_style, round_style):
-            self.a = ComplexSfix(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
+            self.a = Complex(0, 0, -4, overflow_style=overflow_style, round_style=round_style)
             self.DELAY = 1
 
         def main(self, a):
@@ -217,7 +217,7 @@ class TestComplex:
         """ There shuld be no auto-resize when assigning fully """
         class A2(Hardware):
             def __init__(self, overflow_style, round_style):
-                self.a = ComplexSfix(0.0, 0, -4, overflow_style=overflow_style, round_style=round_style)
+                self.a = Complex(0.0, 0, -4, overflow_style=overflow_style, round_style=round_style)
                 self.DELAY = 1
 
             def main(self, a):
@@ -325,9 +325,9 @@ class TestLazySfixList:
 class TestLazyComplexSfix:
     class A5(Hardware):
         def __init__(self):
-            self.a = ComplexSfix()
-            self.b = ComplexSfix(left=1)
-            self.c = ComplexSfix(right=-4)
+            self.a = Complex()
+            self.b = Complex(left=1)
+            self.c = Complex(right=-4)
 
             self.DELAY = 1
 
@@ -371,7 +371,7 @@ class TestAssignConstant:
             self.a = Sfix(0, 0, -17)
             self.b = Sfix(0, 2, -17)
 
-            self.c = ComplexSfix(0, 0, -17)
+            self.c = Complex(0, 0, -17)
             self.DELAY = 1
 
         def main(self, a):

@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import numpy as np
-from pyha.common.complex_fixed_point import default_complex_sfix
+from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable
@@ -89,7 +89,7 @@ def type_conversions(func):
                         args[i] = [t(x) for x in arg]
                     elif isinstance(arg[0], (complex, np.complex64)):
                         # assert 0
-                        t = default_complex_sfix
+                        t = default_complex
                         logger.info(f'Converting complex inputs to ComplexSfix [{t.real.left}:{t.real.right}]')
                         args[i] = [t(x) for x in arg]
 
