@@ -1,13 +1,12 @@
-# pragma: no cover
-import cocotb
-import numpy as np
-from cocotb.binary import BinaryValue
-from cocotb.clock import Clock
-from cocotb.result import ReturnValue
-from cocotb.triggers import RisingEdge, Timer
+import cocotb                                   # pragma: no cover
+import numpy as np                              # pragma: no cover
+from cocotb.binary import BinaryValue           # pragma: no cover
+from cocotb.clock import Clock                  # pragma: no cover
+from cocotb.result import ReturnValue           # pragma: no cover
+from cocotb.triggers import RisingEdge, Timer   # pragma: no cover
 
 
-@cocotb.coroutine
+@cocotb.coroutine               # pragma: no cover
 def reset(dut, duration=10000): # pragma: no cover
     dut.log.debug("Resetting DUT")
     dut.rst_n = 0
@@ -17,8 +16,8 @@ def reset(dut, duration=10000): # pragma: no cover
     dut.log.debug("Out of reset")
 
 
-@cocotb.coroutine
-def run_dut(dut, in_data, out_count): # pragma: no cover
+@cocotb.coroutine                       # pragma: no cover
+def run_dut(dut, in_data, out_count):   # pragma: no cover
     # dut.enable = 1
     # dut.in0 = 0
     cocotb.fork(Clock(dut.clk, 5000).start())
@@ -52,7 +51,7 @@ def run_dut(dut, in_data, out_count): # pragma: no cover
     raise ReturnValue(ret)
 
 
-@cocotb.test()
+@cocotb.test()      # pragma: no cover
 def test_main(dut): # pragma: no cover
     import os
     in_data = np.load(os.getcwd() + '/../input.npy')

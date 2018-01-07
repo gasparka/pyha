@@ -61,7 +61,7 @@ def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-
             #     hw_y = hw_y.astype(type(expected[0]))
             np.testing.assert_allclose(np.array(expected[skip_first:]), np.array(hw_y[skip_first:len(expected)]), rtol, atol=atol)
             l.info('########### Pass! ###########')
-        except AssertionError as e:
+        except AssertionError as e: # pragma: no cover
             l.error('##############################################################')
             l.error('##############################################################')
             l.error(f'\t\t"{sim_type}" failed')
