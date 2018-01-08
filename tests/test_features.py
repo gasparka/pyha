@@ -3,9 +3,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -1595,7 +1594,7 @@ def test_ghdl_version():
 def test_cocotb_version():
     version_file = pyha.__path__[0] + '/../cocotb/version'
     with open(version_file, 'r') as f:
-        assert 'VERSION=1.0\n' == f.read()
+        assert 'VERSION=1.0.1\n' == f.read()
 
 
 def test_sim_no_model():
