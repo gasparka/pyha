@@ -1,6 +1,6 @@
 redbaron==0.6.3
 scipy==1.0.0
-numpy==1.13.3
+numpy==1.14.0
 scipy==1.0.0
 pytest==3.3.2
 parse==1.8.2
