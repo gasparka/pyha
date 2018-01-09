@@ -9,4 +9,3 @@ Welcome to Pyha's documentation!
     examples
     types
     simulation
-    examples

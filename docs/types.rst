@@ -7,10 +7,11 @@ Information about synthesisable types.
 Builtins
 --------
 
-Integers are synthesised into 32-bit logic, thought there may be optimizations. Booleans are fully usable.
+Integers are synthesised into 32-bit logic, thought there may be optimizations. Variable bit-width integers can be implemented with the ``Sfix`` class.
+Booleans are fully usable.
 
-Any Pyha object or builtin can be an list element. Lists can be used as registers, function inputs/outputs and
-simulation top level inputs/outputs.
+Any Pyha object or builtin can be used in a list. Lists can be used as registers, function inputs/outputs or
+simulation top-level inputs/outputs.
 
 Example of ``bool`` shift-register:
 
@@ -31,7 +32,7 @@ Constants
 ---------
 
 Constants are defined by writing the variable name in **UPPERCASE**, this has no
-effect in Python simulations, but usually results in great resource savings in hardware.
+effect in Python simulations, but usually saves resources in hardware.
 
 Example:
 
@@ -44,8 +45,6 @@ Example:
 
 Fixed-point
 -----------
-
-Pyha maps fixed-point operations directly to `VHDL fixed point library`_.
 
 .. _VHDL fixed point library: https://github.com/FPHDL/fphdl/blob/master/Fixed_ug.pdf
 
@@ -60,9 +59,8 @@ Pyha maps fixed-point operations directly to `VHDL fixed point library`_.
 Complex numbers
 ---------------
 
-
 .. automodule:: pyha
-    :members: ComplexSfix
+    :members: Complex
 
 Floats
 ------
@@ -70,14 +68,13 @@ Floats
 Floats can be used when performing arithmetic/comparison with fixed-point numbers, in this case they are first converted to the type of the other fixed-point operand.
 
 
-Float registers are converted automatically into fixed-point representation, by default ``Sfix(0.0, left=0, right=-17)``.
-Constants are converted with saturation and rounding enabled.
+Float registers are converted automatically into fixed-point representation, by default ``Sfix(left=0, right=-17)``.
+
 .. code-block:: python
 
     class Dut(Hardware):
         def __init__(self):
-            self.reg = 0.1   # will be converted to "Sfix(left=0, right=-17)"
-            self.CONST = 0.1 # will be converted to "Sfix(left=0, right=-17, 'saturate', 'round')"
+            self.reg = 0.1   # will be converted to "Sfix(0.1, 0, -17)"
 
 
 Enums (state machines)
@@ -93,7 +90,7 @@ Example:
 
     class T(Hardware):
         def __init__(self):
-            self.state = States.S0
+            self.state = States.S0 # state register
 
         def main(self, a):
             if self.state == States.S0:
@@ -109,6 +106,7 @@ User defined types
 ------------------
 
 User defined types can be used as registers, inputs/outputs to simulation etc..
+
 Example:
 
 .. code-block:: python

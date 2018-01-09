@@ -2,7 +2,6 @@ import logging
 import math
 
 import numpy as np
-
 from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
@@ -44,13 +43,13 @@ class Sfix:
     >>> Sfix(0.123, left=0, right=-7)
     0.125 [0:-7]
 
-    Sfix class can be switched into the 'float mode', which disables quantization/saturation/wrap effects.
+    Sfix class can be switched into 'float mode', which disables quantization/saturation/wrap effects.
     This is useful to quickly test your design with full precision.
 
     >>> with Sfix._float_mode:
-    >>>     a = Sfix(0.123, left=0, right=-7)
+    >>>     a = Sfix(0.123123, left=0, right=-7)
     >>> a
-    0.123 [0:-7]
+    0.123123 [0:-7]
 
     Arithmetic operations on Sfix values ara always full precision, meaning that they include bit-growth:
 
@@ -66,12 +65,12 @@ class Sfix:
     >>> a * a * a
     0.0018605706040557557 [2:-51]
 
-    ``resize`` can be used to return values to optimal format:
+    ``resize`` can be used to force values into other format:
 
     >>> resize(a * a * a, left=0, right=-17)
     0.001861572265625 [0:-17]
 
-    Pyha registers of Sfix type will be automatically resized to initial type on all assigments.
+    Pyha registers of Sfix type will be automatically resized to initial type on all assignments.
 
     """
 
@@ -395,8 +394,7 @@ def right_index(x: Sfix) -> int:
 
 def scalb(x: Sfix, i: int) -> Sfix:
     """
-    Shift decimal point by ``i``, changing the fixed point format. ``>>`` and ``<<`` operators are also usable but unlike ``scalb``,
-    they keep the fixed point format, thus resulting in precision loss or even wrap.
+    This is like ``>>``/``<<``, but without precision loss i.e. it changes the fixed-point format.
 
     >>> a = Sfix(0.5, 0, -17)
     >>> a

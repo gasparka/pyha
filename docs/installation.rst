@@ -19,8 +19,8 @@ Or from sources:
 
 
 
-For RTL simulation (optional)
------------------------------
+RTL simulation (optional)
+-------------------------
 
 `Cocotb`_ (included with Pyha) dependencies:
 
@@ -28,17 +28,17 @@ For RTL simulation (optional)
 
     sudo apt-get install make gcc g++ swig
 
-Install `GHDL`_ and **add it to the path**, for Ubuntu:
+Install `GHDL`_ and **add it to the path**. On Ubuntu run:
 
 .. code-block:: bash
 
     sh /scripts/install_ghdl.sh
 
 
-For GATE simulation (optional)
-------------------------------
+GATE simulation (optional)
+--------------------------
 
-In addition to the RTL requirements, install the `Intel Quartus`_ with support for Cyclone IV and **add** ``INSTALL_DIR/quartus/bin`` to path.
+In addition to the RTL simulation requirements, install the `Intel Quartus`_ with support for Cyclone IV and **add** ``INSTALL_DIR/quartus/bin`` to path.
 
 Compile Quartus libraries into ``GHDL_PATH/lib/ghdl/altera`` by running:
 

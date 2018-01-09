@@ -20,7 +20,7 @@ class Complex(Hardware):
     >>> a.imag
     0.8799972534179688 [0:-17]
 
-    Another way to construct it :
+    Another way to construct:
 
     >>> a = Sfix(-0.5, 0, -17)
     >>> b = Sfix(0.5, 0, -17)

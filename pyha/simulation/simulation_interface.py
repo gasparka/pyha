@@ -264,16 +264,38 @@ def simulate(model, *x, simulations=None, conversion_path=None, input_types=None
 
     :param model: Object derived from ``Hardware``. Must have ``main`` function with input/outputs.
     :param *x: Inputs to the 'main' function.
-    :param simulations: Simulations to run:
-    - 'MODEL': passes all data to the ``model_main`` function. If ``model_main`` does not exsist, uses the ``main`` function by turning off register effects and fixed point.
-    - 'PYHA': runs the Python simulation.
-    - 'RTL': converts to VHDL and runs RTL simulation with GHDL and Cocotb
-    - 'GATE': runs VHDL sources trough Quartus and simulates the generated netlist
-    .. note:: By default, runs all simulations. 'PYHA' simulation must always run before 'RTL' or 'GATE'. 'RTL' and 'GATE' simulations may be omitted if GHDL/Quartus toolset is not found!
     :param conversion_path: Where the VHDL sources are written, default is temporary directory.
-    :param input_types: Force inputs types
+    :param input_types: Force inputs types, default for floats is Sfix[0:-17].
+    :param simulations: List of simulations to execute:
+    * ``'MODEL'`` passes inputs directly to ``model_main`` function. If ``model_main`` does not exist, uses the ``main`` function by turning off register- and fixed point effects.
+    * ``'PYHA'`` cycle accurate simulator in Python domain, debuggable.
+    * ``'RTL'`` converts sources to VHDL and runs RTL simulation by using GHDL simulator.
+    * ``'GATE'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
 
+    :returns: Dict of output lists for each simulation. Select the output like ``out['MODEL']``.
+    Example:
 
+    .. code-block:: python
+
+        # simple pass-through module
+        class T(Hardware):
+            def main(self, a, b):
+                return a, b
+
+        outs = simulate(T(),         # object to simulate
+                [1,     2,      3],  # inputs to 'a'
+                [0.1,   0.2,    0.3],# input to 'b'. Note: Pyha converts floats to Sfix
+                simulations=['MODEL', 'PYHA', 'RTL', 'GATE'] # list of simulations to run
+        )
+
+        # contents of 'out':
+        # Note: returned Sfix values are converted back to float
+        {
+        'MODEL':[[1, 2, 3], [0.1,                 0.2,                0.3]],
+        'PYHA': [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]],
+        'RTL':  [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]],
+        'GATE': [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]]
+        }
 
     """
     simulations = enforce_simulation_rules(simulations)
@@ -290,6 +312,12 @@ def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17)
 
 
 def hardware_sims_equal(simulation_results):
+    """
+    Strictly compare that hardware simulations (PYHA, RTL, GATE) are exactly equal.
+
+    :param simulation_results: Output of 'simulate' function
+    :returns: True if equal
+    """
     # make a copy without the 'MODEL' simulation
     sims = {k:v for k,v in simulation_results.items() if k != 'MODEL'}
     return sims_close(sims, rtol=1e-16, atol=1e-16)
@@ -297,15 +325,14 @@ def hardware_sims_equal(simulation_results):
 
 def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """
-    Assert that simulation results (for exampel SIM_MODEL and SIM_HW_MODEL) are equal(defined by rtol and atol).
+    Compare the results of ``simulate`` function.
 
     :param simulation_results: Output of 'simulate' function
-    :param expected: 'Golden output' to compare against. If none uses the output of 'SIM_MODEL' or 'SIM_HW_MODEL'.
-    :param rtol: Simulations must match 'expected' to:
-        rtol=1e-1 ~ 1 digit after comma
-        rtol=1e-2 ~ 2 digits after comma ...
-
-    :param atol: Tune this when numbers close to 0 are failing assertions.
+    :param expected: 'Golden output' to compare against. If None uses the output of ``MODEL`` or ``PYHA``.
+    :param rtol: 1e-1 = 10% accuracy, 1e-2= 1% accuracy...
+    :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1].
+    :param skip_first_n: Skip comparing first N elements
+    :returns: True if equal(defined by rtol and atol)
     """
     logger.info(f'sims_close(rtol={rtol}, atol={atol})')
     if expected is None:
