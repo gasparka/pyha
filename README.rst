@@ -25,6 +25,4 @@ pyha
 
 * Free software: Apache Software License 2.0
 * Documentation: https://pyha.readthedocs.io.
-
-
-.. include:: docs/installation.rst
+* Install: TODO
