@@ -19,6 +19,9 @@ with open('README.rst') as readme_file:
 install_reqs = parse_requirements('requirements.txt', session=False)
 requirements = [str(ir.req) for ir in install_reqs]
 
+extra_reqs = parse_requirements('requirements_dev.txt', session=False)
+extra_reqs = [str(ir.req) for ir in extra_reqs]
+
 def package_files(directory):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
@@ -47,6 +50,8 @@ setup(
 
     packages=find_packages(),
     package_data={'pyha': extra_files},
+
+    extras_require={'dev': [extra_reqs]},
 
     include_package_data=True,
     install_requires=requirements,
