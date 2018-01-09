@@ -36,7 +36,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
-    'sphinxcontrib.fulltoc',
+    #'sphinxcontrib.fulltoc',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive'
 ]
