@@ -51,7 +51,7 @@ class Complex(Hardware):
         return Complex(x, self.real.left, self.real.right, self.real.overflow_style, self.real.round_style)
 
     def __str__(self):
-        return '{} [{}:{}]'.format(complex(self), self.real.left, self.real.right)
+        return '{:g} [{}:{}]'.format(complex(self), self.real.left, self.real.right)
 
     def __repr__(self):
         return str(self)

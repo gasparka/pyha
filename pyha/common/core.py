@@ -3,9 +3,10 @@ import sys
 from collections import UserList
 from copy import deepcopy, copy
 
+from six import with_metaclass
+
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
-from six import with_metaclass
 
 # functions that will not be decorated/converted/parsed
 SKIP_FUNCTIONS = ('__init__', 'model_main')
@@ -231,8 +232,11 @@ class PyhaList(UserList):
                 new.append(item)
 
             if not silence:
+                import pandas as pd
+                pd.options.display.max_rows = 32
+                l = pd.DataFrame({'float': self.data, 'fixed': new})
                 logger.info(
-                    f'Converted {self.class_name}.{self.var_name} = {self.data} -> {new}')
+                    f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
             self._pyha_next = deepcopy(new)
 
