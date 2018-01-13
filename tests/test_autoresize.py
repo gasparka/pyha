@@ -304,17 +304,6 @@ class TestLazySfixList:
             assert dut.c._pyha_next[0].right == -4
             assert dut.c._pyha_next[0].val == 0.0625
 
-    def test_type_build(self):
-        """ Fill Nones in initial type """
-        dut = self.A4()
-        assert_sim_match(dut, None, [0.1, 0.2, 0.3], simulations=['PYHA'])
-        assert dut.a.data[0].left == 0
-        assert dut.a.data[0].right == -17
-        assert dut.b.data[0].left == 1
-        assert dut.b.data[0].right == -17
-        assert dut.c.data[0].left == 0
-        assert dut.c.data[0].right == -4
-
     def test_sim(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 

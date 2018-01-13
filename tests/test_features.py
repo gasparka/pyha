@@ -1058,9 +1058,23 @@ class TestFloatToSfix:
     def test_basic_sim(self):
         dut = self.D()
         inp = [0]
-        r = simulate(dut, inp, simulations=['MODEL', 'PYHA', 'RTL'])
+        r = simulate(dut, inp, simulations=['MODEL_PYHA', 'PYHA', 'RTL'])
 
-        assert r['MODEL'] == [[0.5], [1.5], [9e-05]]
+        assert r['MODEL_PYHA'] == [[0.5], [1.5], [9e-05]]
+        assert r['PYHA'] == [[0.5], [0.9999923706054688], [9.1552734375e-05]]
+        try:
+            assert r['PYHA'] == r['RTL']
+        except KeyError:
+            pass
+
+    def test_object_reuse(self):
+        """ Make sure object is returned to initial state after .. """
+        dut = self.D()
+        inp = [0]
+        r = simulate(dut, inp, simulations=['MODEL_PYHA', 'PYHA', 'RTL'])
+        r = simulate(dut, inp, simulations=['MODEL_PYHA', 'PYHA', 'RTL'])
+
+        assert r['MODEL_PYHA'] == [[0.5], [1.5], [9e-05]]
         assert r['PYHA'] == [[0.5], [0.9999923706054688], [9.1552734375e-05]]
         try:
             assert r['PYHA'] == r['RTL']

@@ -242,19 +242,6 @@ class PyhaList(UserList):
 
 
 class Hardware(with_metaclass(Meta)):
-    def __deepcopy__(self, memo):
-        """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
-        cls = self.__class__
-        result = cls.__new__(cls)
-        memo[id(self)] = result
-        for k, v in self.__dict__.items():
-            # todo: maybe this also works for 'next'
-            if k == '_pyha_initial_self':  # dont waste time on endless deepcopy
-                setattr(result, k, copy(v))
-            else:
-                setattr(result, k, deepcopy(v, memo))
-        return result
-
     def _pyha_update_registers(self):
         """ Update registers (everything in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled() or self._pyha_is_local:

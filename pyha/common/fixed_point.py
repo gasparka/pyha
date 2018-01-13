@@ -149,12 +149,12 @@ class Sfix:
         else:
             assert False
         if f'{old:.5f}' != f'{self.val:.5f}': # only warn when saturation is significant, TODO: this expects numbers in [1, -1] range!
-            if str(SimPath) != 'inputs':
-                try:
-                    import pydevd
-                    pydevd.settrace()
-                except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
-                    pass
+            # if str(SimPath) != 'inputs':
+            #     try:
+            #         import pydevd
+            #         pydevd.settrace()
+            #     except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
+            #         pass
             logger.warning(f'SATURATION {old:g} -> {self.val:g}\t[{SimPath}]')
 
     def wrap(self):
