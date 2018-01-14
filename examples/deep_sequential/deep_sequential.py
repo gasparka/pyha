@@ -1,6 +1,6 @@
 from pyha.common.fixed_point import Sfix
 from pyha.common.core import Hardware
-from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 """ This example shows how multiple classes can be used in one sequential design.
 Everything is sequentially executed, you can use debugger to step around in code.

@@ -1,6 +1,6 @@
 from pyha.common.fixed_point import Sfix, resize, fixed_truncate
 from pyha.common.core import Hardware
-from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 class Demo(Hardware):

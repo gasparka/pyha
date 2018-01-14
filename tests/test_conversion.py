@@ -7,7 +7,7 @@ from pyha import simulate
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.conversion import Conversion, get_objects_rednode
-from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 class T:

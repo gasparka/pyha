@@ -11,6 +11,7 @@ from pyha.conversion.python_types_vhdl import init_vhdl_type
 
 logger = logging.getLogger('simulation')
 
+
 class VHDLSimulation:
     def __init__(self, base_path, model, sim_type):
         self.sim_type = sim_type
@@ -32,11 +33,20 @@ class VHDLSimulation:
         self.model = model
         self.conv = Conversion(self.model)
 
+        src = self.get_conversion_sources()
+        if self.sim_type == 'GATE':
+            self.make_quartus_project()
+            vho = self.make_quartus_netlist()
+            src = [str(vho)]
+
+        self.cocoauto = CocotbAuto(self.base_path, src, self.conv)
+
     def get_conversion_sources(self):
         # NB! order of files added to src matters!
 
         # copy pyha_util to src dir
-        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl', self.src_util_path / 'pyha_util.vhdl')
+        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl',
+                        self.src_util_path / 'pyha_util.vhdl')
         src = [self.src_util_path / 'pyha_util.vhdl']
 
         # write typedefs file
@@ -47,7 +57,6 @@ class VHDLSimulation:
         # add all conversion files as src
         src += self.conv.write_vhdl_files(self.src_path)
 
-
         if self.sim_type == 'GATE':
             # copy FPHDL dependencies to src - these are only neede by quartus
             fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
@@ -57,14 +66,8 @@ class VHDLSimulation:
 
         return src
 
-    def main(self):
-        src = self.get_conversion_sources()
-        if self.sim_type == 'GATE':
-            self.make_quartus_project()
-            vho = self.make_quartus_netlist()
-            src = [str(vho)]
-
-        return CocotbAuto(self.base_path, src, self.conv)
+    def main(self, *input_data):
+        return self.cocoauto.run(*input_data)
 
     def make_quartus_project(self):
         rules = {}
@@ -79,12 +82,6 @@ class VHDLSimulation:
         rules['VHDL_INPUT_VERSION'] = 'VHDL_2008'
         rules['VHDL_SHOW_LMF_MAPPING_MESSAGES'] = 'OFF'
 
-        # # copy FPHDL dependencies to src - these are only neede by quartus
-        # fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
-        # shutil.copyfile(str(fphdl_path / 'fixed_pkg_c.vhdl'), str(self.src_path / 'fixed_pkg_c.vhdl'))
-        # shutil.copyfile(str(fphdl_path / 'fixed_float_types_c.vhdl'), str(self.src_path / 'fixed_float_types_c.vhdl'))
-        #
-        # src = [self.src_path / 'fixed_pkg_c.vhdl', self.src_path / 'fixed_float_types_c.vhdl']
         src = self.get_conversion_sources()
 
         buffer = ""
@@ -115,12 +112,14 @@ class VHDLSimulation:
 
         return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
+
 def is_virtual():
     """ Return if we run in a virtual environtment. """
     # Check supports venv && virtualenv
     import sys
     return (getattr(sys, 'base_prefix', sys.prefix) != sys.prefix or
             hasattr(sys, 'real_prefix'))
+
 
 class CocotbAuto:
     def __init__(self, base_path, src, conversion, sim_folder='coco_sim'):
@@ -140,8 +139,9 @@ class CocotbAuto:
         # this is some cocotb bullshit that sometimes causes troubles
         # ill throw my computer out of the window counter: 10
         import sys
-        if not is_virtual() or ('CI' in self.environment and self.environment['CI']):        # inside virtualenv??
-            self.environment["PYTHONHOME"] = str(Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
+        if not is_virtual() or ('CI' in self.environment and self.environment['CI']):  # inside virtualenv??
+            self.environment["PYTHONHOME"] = str(
+                Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
             print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
                   f'this is COCOTB related bullshit) - it may actually break your build\n\n')
 
@@ -152,12 +152,8 @@ class CocotbAuto:
         self.environment['GHDL_ARGS'] = '--std=08'
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
-            try:
-                ghdl_path = Path(shutil.which('ghdl'))
-            except:
-                raise Exception('You dont have GHDL in PATH!')
+            ghdl_path = Path(shutil.which('ghdl'))
             altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
-            # altera_libs = pyha.__path__[0] + '/common/vhdl_includes/altera'
             self.environment['GHDL_ARGS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
@@ -193,7 +189,8 @@ class CocotbAuto:
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
         except subprocess.CalledProcessError as err:
-            raise Exception('Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
+            raise Exception(
+                'Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
 
         out = np.load(str(self.base_path / 'output.npy'))
         outp = out.astype(object).T

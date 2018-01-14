@@ -162,8 +162,6 @@ class BaseVHDLType:
         return self.current
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
-        if type(self.current) != type(other.current):
-            return False
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
             logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current,
@@ -478,7 +476,7 @@ class VHDLModule(BaseVHDLType):
 
         # types that get full bounds during simulation can end up here
         self.current.instances.append(self.current)
-        return len(self.current.instances)
+        return len(self.current.instances)-1
 
     def _pyha_module_name(self):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())

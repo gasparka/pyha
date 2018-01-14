@@ -9,8 +9,8 @@ from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import NoOutputsError
-from pyha.simulation.legacy import assert_sim_match
-from pyha.simulation.simulation_interface import simulate, assert_equals, Simulation, NoModelError, sims_close
+from pyha.simulation.simulation_interface import simulate, assert_equals, sims_close, \
+    assert_sim_match
 
 
 class TestLocalInstance:
@@ -79,6 +79,7 @@ class TestLocalInstance:
 
     def test_nested(self):
         """ This failed as Pair was added as local variable to main() """
+
         class Pair(Hardware):
             def __init__(self, first, second):
                 self.first = first
@@ -602,7 +603,7 @@ class TestInterface:
                 return i
 
         dut = T()
-        assert_sim_match(dut, range(4), range(4))
+        assert_sim_match(dut, list(range(4)), list(range(4)))
 
     def test_return_types(self):
         class T(Hardware):
@@ -630,14 +631,14 @@ class TestInterface:
         if 'PYHA_SKIP_RTL' in os.environ:
             pytest.skip()
 
-        outs = simulate(T(), [1, 2], [0.1, 0.2], simulations=['MODEL', 'PYHA', 'RTL'])
+        outs = simulate(T(), [1, 2], [0.1, 0.2], simulations=['MODEL_PYHA', 'PYHA', 'RTL'])
         assert type(outs['PYHA'][0][0]) == int
         assert type(outs['RTL'][0][0]) == int
-        assert type(outs['MODEL'][0][0]) == int
+        assert type(outs['MODEL_PYHA'][0][0]) == int
 
         assert type(outs['PYHA'][1][0]) == float
         assert type(outs['RTL'][1][0]) == float
-        assert type(outs['MODEL'][1][0]) == float
+        assert type(outs['MODEL_PYHA'][1][0]) == float
 
     def test_multi(self):
         class T(Hardware):
@@ -823,6 +824,17 @@ class TestInterface:
         with pytest.raises(NoOutputsError):
             sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
 
+    def test_input_sfix(self):
+        class T13(Hardware):
+            def main(self, x):
+                return x
+
+        dut = T13()
+        x = [Sfix(0.1, 0, -8), Sfix(0.2, 0, -8)]
+
+        sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, expected=x)
+
 
 class TestComplexSfix:
     def test_py_implementation(self):
@@ -999,30 +1011,6 @@ class TestInOutOrdering:
         dut = T2()
         ret = simulate(dut, inputs)
         assert_equals(ret)
-
-
-def test_hw_sim_resets():
-    """ Registers should take initial values on each new simulation(call of main) invocation,
-    motivation is to provide same interface as with COCOTB based 'RTL' simulation."""
-
-    class Rst_Hw(Hardware):
-        def __init__(self):
-            self.sfix_reg = Sfix(0.5, 0, -18)
-            self.DELAY = 1
-
-        def main(self, in_sfix):
-            self.sfix_reg = in_sfix
-            return self.sfix_reg
-
-    dut = Simulation('PYHA', model=Rst_Hw())
-    dut.main([0.1])
-    first_out = float(dut.pure_output[0])
-    assert first_out == 0.5
-
-    # make new simulation, registers must reset
-    dut.main([0.1])
-    first_out = float(dut.pure_output[0])
-    assert first_out == 0.5
 
 
 class TestFloatToSfix:
@@ -1609,37 +1597,6 @@ def test_cocotb_version():
     version_file = pyha.__path__[0] + '/../cocotb/version'
     with open(version_file, 'r') as f:
         assert 'VERSION=1.0.1\n' == f.read()
-
-
-def test_sim_no_model():
-    class NoMain(Hardware):
-        def model_main(self):
-            pass
-
-    class NoModelMain(Hardware):
-        def main(self):
-            pass
-
-    with pytest.raises(NoModelError):
-        Simulation('MODEL', None)
-
-    with pytest.raises(NoModelError):
-        Simulation('PYHA', NoMain(), None)
-
-    with pytest.raises(NoModelError):
-        Simulation('GATE', NoMain(), None)
-
-    with pytest.raises(NoModelError):
-        Simulation('RTL', NoMain(), None)
-
-    # with pytest.raises(NoModelError):
-    #     Simulation(SIM_MODEL, NoModelMain(), None)
-
-    # this shall not raise as we are not simulating model
-    Simulation('PYHA', NoModelMain(), None)
-
-    # ok, not using main
-    Simulation('MODEL', NoMain(), None)
 
 # 2D CONV IDEA
 # def tst_conv2d(a, b):

@@ -3,7 +3,7 @@ from pyha.common.context_managers import AutoResize
 from pyha.common.fixed_point import Sfix
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware, PyhaList
-from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 class TestSfix:

@@ -3,10 +3,8 @@ import os
 import shutil
 from contextlib import suppress
 from copy import deepcopy
-from functools import wraps
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
 
 import numpy as np
 from pyha.common.complex import default_complex
@@ -17,235 +15,12 @@ from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('simulation')
-
-
-class NoModelError(Exception):
-    pass
-
-
-class InputTypesError(Exception):
-    pass
-
-
-def flush_pipeline(func):
-    """ For inputs: adds 'x.get_delay()' dummy samples, to flush out pipeline values
-    For outputs: removes the first 'x.get_delay()' samples, as these are initial pipeline values """
-
-    @wraps(func)
-    def flush_pipeline_wrap(self, *args, **kwargs):
-        delay = 0
-        with suppress(AttributeError):  # no get_delay()
-            delay = self.model.DELAY
-        if delay == 0:
-            return func(self, *args, **kwargs)
-
-        args = list(args)
-
-        for i in range(delay):
-            args.append(args[0])
-
-        ret = func(self, *args, **kwargs)
-        ret = ret[delay:]
-        return ret
-
-    return flush_pipeline_wrap
-
-
-def in_out_transpose(func):
-    """ Transpose input before call and output after call """
-
-    @wraps(func)
-    def transposer_wrap(self, *args, **kwargs):
-        # numpy cannot be used as it loses type info (converts everything to float)
-        args = [x for x in zip(*args)]  # transpose
-
-        ret = func(self, *args, **kwargs)
-
-        try:
-            if isinstance(ret[0], tuple):
-                ret = [list(x) for x in zip(*ret)]  # transpose
-        except:
-            pass
-        return ret
-
-    return transposer_wrap
-
-
-def type_conversions(func):
-    @wraps(func)
-    def type_enforcement_wrap(self, *args, **kwargs):
-        # force input types
-        if self.input_types is not None:
-            args = [[to_type(x) for x in data] for data, to_type in zip(args, self.input_types)]
-        else:
-            args = list(args)
-            for i, arg in enumerate(args):
-                with SimPath('inputs'):
-                    if isinstance(arg[0], float):
-                        logger.info(
-                            f'Converting float inputs to Sfix [{default_sfix.left}:{default_sfix.right}]')
-                        t = default_sfix
-                        args[i] = [t(x) for x in arg]
-                    elif isinstance(arg[0], (complex, np.complex64)):
-                        # assert 0
-                        t = default_complex
-                        logger.info(f'Converting complex inputs to ComplexSfix [{t.real.left}:{t.real.right}]')
-                        args[i] = [t(x) for x in arg]
-
-        ret = func(self, *args, **kwargs)
-
-        # convert outputs to python types (ex. Sfix -> float)
-        try:
-            if self.simulation_type in ['MODEL', 'PYHA']:
-                ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
-        except AttributeError:  # when ret is [None, None, ...]
-            return ret
-        # return np.asarray(ret, dtype=object)
-        return ret
-
-    return type_enforcement_wrap
-
-
-class AutoSfix:
-    def __init__(self, obj):
-        self.obj = obj
-        self.original_model_ptr = self.obj.model
-        self.fifo = []
-
-    def __enter__(self):
-        with SimPath('float_to_sfix'):
-            tmp = deepcopy(self.obj.model)
-            tmp._pyha_floats_to_fixed(silence=self.obj.simulation_type != 'PYHA')
-            self.obj.model = tmp
-
-    def __exit__(self, type, value, traceback):
-        pass
-        # self.obj.model = self.original_model_ptr
-
-
-class Simulation:
-    hw_instances = {}
-
-    def __init__(self, simulation_type, model=None, input_types: List[object] = None, dir_path=None):
-
-        # if is CI, use temp dir
-        dir_path = None if 'TRAVIS' in os.environ else dir_path
-
-        self.dir_path = dir_path
-        if self.dir_path is None:
-            self.keep_me_alive = TemporaryDirectory()
-            self.dir_path = self.keep_me_alive.name
-        else:
-            self.dir_path = str(Path(self.dir_path).expanduser())
-            if not Path(self.dir_path).exists():
-                os.makedirs(self.dir_path)
-
-        self.input_types = []
-        self.model = None
-        self.sim = None
-        self.cocosim = None
-        self.simulation_type = simulation_type
-
-        # direct output from dut call will be written here( without type conversions, pipeline fixes..)
-        self.pure_output = []
-        # if model is not None:
-        self.init(model, input_types)
-
-    def init(self, model=None, input_types: List[object] = None):
-        self.model = model
-        self.input_types = input_types
-        if self.model is None:
-            raise NoModelError('Trying to run simulation but "model" is None')
-
-        if not hasattr(self.model, 'main') and self.simulation_type in ['PYHA', 'RTL', 'GATE']:
-            raise NoModelError(
-                f'Trying to run simulation: {self.simulation_type}, but your model has no "main" function!')
-
-        self.main_as_model = not hasattr(self.model, 'model_main') and self.simulation_type is 'MODEL'
-
-        # save ht HW model for conversion
-        if self.simulation_type == 'PYHA':
-            Simulation.hw_instances[model.__class__.__name__] = model
-
-    def prepare_hw_simulation(self):
-        # grab the already simulated model from 'PYHA' simulation - this is used for all typeinfos
-        self.model = Simulation.hw_instances[self.model.__class__.__name__]
-        self.sim = VHDLSimulation(Path(self.dir_path), self.model, self.simulation_type)
-        return self.sim.main()
-
-    @type_conversions
-    @in_out_transpose
-    @flush_pipeline
-    def hw_simulation(self, *args):
-
-        with AutoSfix(self):
-            if self.simulation_type == 'PYHA':
-                ret = self.run_hw_model(args)
-            elif self.simulation_type in ['RTL', 'GATE']:
-                ret = self.cocosim.run(*args)
-            else:
-                assert 0
-
-        self.pure_output = ret
-        return ret
-
-    def run_hw_model(self, args):
-        # reset registers, in order to match COCOTB RTL simulation behaviour
-        self.model.__dict__.update(deepcopy(self.model._pyha_initial_self).__dict__)
-        ret = []
-        for x in args:
-            ret.append(deepcopy(self.model.main(*x)))  # deepcopy required or 'subsub' modules break
-            self.model._pyha_update_registers()
-        return ret
-
-    @type_conversions
-    @in_out_transpose
-    def as_model(self, *args):
-        ret = self.run_hw_model(args)
-        self.pure_output = ret
-        return ret
-
-    def main(self, *args) -> np.array:
-        with SimulationRunning.enable():
-            logger.info(f'Running {self.simulation_type} simulation!')
-
-            if len(args) == 0 or args is (None,):
-                raise InputTypesError(
-                    'Your model has 0 inputs (main() arguments), this is not supported at the moment -> add dummy input')
-
-            # fixme: remove this during type refactoring
-            #  test that there are no Sfix arguments
-            for x in args:
-                if type(x) is list:
-                    if type(x[0]) is Sfix:
-                        raise InputTypesError(
-                            'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
-
-            if self.simulation_type in ('RTL', 'GATE') and self.cocosim is None:
-                self.cocosim = self.prepare_hw_simulation()
-
-            if self.simulation_type == 'MODEL':
-
-                if self.main_as_model:
-                    logger.info(
-                        'No "model_main()" found -> using "main" as model, turning off register delays and fixed point effects')
-                    with RegisterBehaviour.force_disable():
-                        with Sfix._float_mode:
-                            r = self.as_model(*args)
-                else:
-                    r = self.model.model_main(*args)
-
-                r = np_to_py(r)
-                if isinstance(r, tuple):
-                    return list(r)
-                return r
-            else:
-                return self.hw_simulation(*args)
-
+logger = logging.getLogger('sim')
 
 def np_to_py(array):
-    """ Convert numpy stuff to python, ie types and [] """
+    """ Convert numpy to python recursively.
+    For example float32 to float and ndarray to []
+    """
     # https://github.com/numpy/numpy/issues/8052
     if isinstance(array, np.ndarray):
         if isinstance(array[0], complex):
@@ -286,55 +61,38 @@ def convert_input_types(args, to_types=None, silence=False):
 
 
 def transpose(args):
-    return [x for x in zip(*args)]  # transpose
+    return [x for x in zip(*args)]
 
 
-def simulate_vhdl(model, args, conversion_path, simulation):
-    def have_ghdl():
-        try:
-            Path(shutil.which('ghdl'))
-            return True
-        except:
-            return False
-
-    def have_quartus():
-        try:
-            Path(shutil.which('quartus_map'))
-            return True
-        except:
-            return False
-
-    if simulation == 'RTL':
-        logger.info(f'Running "RTL" simulation...')
-
-        if 'PYHA_SKIP_RTL' in os.environ:
-            logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-            return
-        elif not have_ghdl():
-            logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-            return
-    elif simulation == 'GATE':
-        logger.info(f'Running "GATE" simulation...')
-
-        if 'PYHA_SKIP_GATE' in os.environ:
-            logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-            return
-        elif not have_quartus:
-            logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
-            return
-        elif not have_ghdl:
-            logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
-            return
-
-    vhdl_sim = VHDLSimulation(Path(conversion_path), model, simulation).main()
-    ret = vhdl_sim.run(*args)
-
+def have_ghdl():
     try:
-        if isinstance(ret[0], tuple):
-            ret = [list(x) for x in zip(*ret)]  # transpose
+        Path(shutil.which('ghdl'))
+        return True
     except:
+        return False
+
+
+def have_quartus():
+    try:
+        Path(shutil.which('quartus_map'))
+        return True
+    except:
+        return False
+
+
+def shape_outputs(delay_compensate, ret):
+    # skip the initial pipeline outputs
+    try:
+        ret = ret[delay_compensate:]
+    except TypeError: # this happened when ret is single element
         pass
 
+    # transpose
+    try:
+        if isinstance(ret[0], tuple):
+            ret = [list(x) for x in zip(*ret)]
+    except:
+        pass
     return ret
 
 
@@ -379,10 +137,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     """
 
-    delay_compensate = 0
-    with suppress(AttributeError):
-        delay_compensate = model.DELAY
-
     if simulations is None:
         if hasattr(model, 'model_main'):
             simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
@@ -397,17 +151,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         if not Path(conversion_path).exists():
             os.makedirs(conversion_path)
 
-    if len(args) == 0 or args is (None,):
-        raise InputTypesError(
-            'Your model has 0 inputs (main() arguments), this is not supported at the moment -> add dummy input')
-
-    # fixme: remove this during type refactoring
-    #  test that there are no Sfix arguments
-    # for x in args:
-    #     if type(x) is list:
-    #         if type(x[0]) is Sfix:
-    #             raise InputTypesError(
-    #                 'You are passing Sfix values to your model, pass float instead (will be converted to sfix automatically)!')
     out = {}
     model = deepcopy(model)  # make sure we dont mess up original model
     with SimulationRunning.enable():
@@ -439,64 +182,77 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     for x in tmpargs:
                         ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
                         tmpmodel._pyha_update_registers()
-                    try:
-                        if isinstance(ret[0], tuple):
-                            ret = [list(x) for x in zip(*ret)]  # transpose
-                    except:
-                        pass
+
+                    ret = shape_outputs(0, ret)
                     # convert outputs to Python types, for example fixed to floats
                     ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
 
             out['MODEL_PYHA'] = ret
 
-        if 'PYHA' in simulations:
-            logger.info(f'Running "PYHA" simulation...')
+        # prepare inputs and model for hardware simulations
+        if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
             model._pyha_floats_to_fixed()
             args = convert_input_types(args, input_types)
             args = transpose(args)
 
-            for i in range(delay_compensate): # add samples to flush the pipeline
+            delay_compensate = 0
+            with suppress(AttributeError):
+                delay_compensate = model.DELAY
+
+            for i in range(delay_compensate):  # add samples to flush the pipeline
                 args.append(args[0])
 
+        if 'PYHA' in simulations:
+            logger.info(f'Running "PYHA" simulation...')
+            tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
+
             ret = []
-            for x in args:
+            for x in tmpargs:
                 ret.append(deepcopy(model.main(*x)))  # deepcopy required or 'subsub' modules break
                 model._pyha_update_registers()
 
-            ret = ret[delay_compensate:]
+            ret = shape_outputs(delay_compensate, ret)
+
             try:
-                if isinstance(ret[0], tuple):
-                    ret = [list(x) for x in zip(*ret)]  # transpose
-            except:
+                # convert outputs to Python types, for example fixed to floats
+                ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
+            except AttributeError:
                 pass
-            # convert outputs to Python types, for example fixed to floats
-            ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
 
             out['PYHA'] = ret
 
-        # From this point on we assume ARGS and MODEL have been transformed in the PYHA block
+        # From this point on we assume ARGS and MODEL have been transformed
         if 'RTL' in simulations:
             if 'PYHA' not in simulations:
                 raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
-            ret = simulate_vhdl(model, args, conversion_path, 'RTL')
-            if ret:
-                out['RTL'] = ret[delay_compensate:]
+            elif 'PYHA_SKIP_RTL' in os.environ:
+                logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+            elif not have_ghdl():
+                logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+            else:
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
+                ret = vhdl_sim.main(*args)
+
+                out['RTL'] = shape_outputs(delay_compensate, ret)
 
         if 'GATE' in simulations:
             if 'PYHA' not in simulations:
                 raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
+            elif 'PYHA_SKIP_GATE' in os.environ:
+                logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
+            elif not have_quartus():
+                logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
+            elif not have_ghdl():
+                logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
+            else:
 
-            ret = simulate_vhdl(model, args, conversion_path, 'GATE')
-            if ret:
-                out['GATE'] = ret[delay_compensate:]
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
+                ret = vhdl_sim.main(*args)
+
+                out['GATE'] = shape_outputs(delay_compensate, ret)
 
     logger.info('Simulations completed!')
     return out
-
-
-def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
-    """ Legacy """
-    assert sims_close(simulation_results, expected, rtol, atol, skip_first_n)
 
 
 def hardware_sims_equal(simulation_results):
@@ -507,7 +263,7 @@ def hardware_sims_equal(simulation_results):
     :returns: True if equal
     """
     # make a copy without the 'MODEL' simulation
-    sims = {k: v for k, v in simulation_results.items() if k != 'MODEL'}
+    sims = {k: v for k, v in simulation_results.items() if k != 'MODEL' and k != 'MODEL_PYHA'}
     return sims_close(sims, rtol=1e-16, atol=1e-16)
 
 
@@ -553,55 +309,13 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
     return result
 
 
-def enforce_simulation_rules(simulations):
-    if simulations is None:
-        simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
-    # force simulation rules, for example SIM_RTL cannot be run without SIM_HW_MODEL, that needs to be ran first.
-    assert simulations in [['MODEL'],
-                           ['MODEL', 'PYHA'],
-                           ['MODEL', 'PYHA', 'RTL'],
-                           ['MODEL', 'PYHA', 'GATE'],
-                           ['PYHA'],
-                           ['PYHA', 'RTL'],
-                           ['MODEL', 'PYHA', 'RTL', 'GATE'],
-                           ['PYHA', 'RTL', 'GATE'],
-                           ['PYHA', 'GATE']]
+def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
+    """ Legacy """
+    assert sims_close(simulation_results, expected, rtol, atol, skip_first_n)
 
-    if 'RTL' in simulations:
-        have_ghdl = True
-        try:
-            Path(shutil.which('ghdl'))
-        except:
-            have_ghdl = False
 
-        if 'PYHA_SKIP_RTL' in os.environ:
-            logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-            simulations.remove('RTL')
-        elif not have_ghdl:
-            logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-            simulations.remove('RTL')
-
-    if 'GATE' in simulations:
-        have_ghdl = True
-        try:
-            Path(shutil.which('ghdl'))
-        except:
-            have_ghdl = False
-
-        have_quartus = True
-        try:
-            Path(shutil.which('quartus_map'))
-        except:
-            have_quartus = False
-
-        if 'PYHA_SKIP_GATE' in os.environ:
-            logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-            simulations.remove('GATE')
-        elif not have_quartus:
-            logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
-            simulations.remove('GATE')
-        elif not have_ghdl:
-            logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
-            simulations.remove('GATE')
-
-    return simulations
+def assert_sim_match(model, expected, *x, types=None, simulations=None, rtol=1e-04, atol=(2 ** -17) * 4, dir_path=None,
+                     skip_first=0):
+    """ Legacy """
+    sims = simulate(model, *x, simulations=simulations, conversion_path=dir_path, input_types=types)
+    assert sims_close(sims, expected, atol=atol, rtol=rtol, skip_first_n=skip_first)

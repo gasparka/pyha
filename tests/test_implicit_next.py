@@ -1,7 +1,7 @@
 from pyha.common.context_managers import RegisterBehaviour
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
-from pyha.simulation.legacy import assert_sim_match
+from pyha.simulation.simulation_interface import assert_sim_match
 
 
 class TestBuiltins:
