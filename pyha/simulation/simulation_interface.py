@@ -80,7 +80,7 @@ def have_quartus():
         return False
 
 
-def shape_outputs(delay_compensate, ret):
+def process_outputs(delay_compensate, ret):
     # skip the initial pipeline outputs
     try:
         ret = ret[delay_compensate:]
@@ -183,7 +183,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
                         tmpmodel._pyha_update_registers()
 
-                    ret = shape_outputs(0, ret)
+                    ret = process_outputs(0, ret)
                     # convert outputs to Python types, for example fixed to floats
                     ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
 
@@ -211,7 +211,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 ret.append(deepcopy(model.main(*x)))  # deepcopy required or 'subsub' modules break
                 model._pyha_update_registers()
 
-            ret = shape_outputs(delay_compensate, ret)
+            ret = process_outputs(delay_compensate, ret)
 
             try:
                 # convert outputs to Python types, for example fixed to floats
@@ -233,7 +233,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
                 ret = vhdl_sim.main(*args)
 
-                out['RTL'] = shape_outputs(delay_compensate, ret)
+                out['RTL'] = process_outputs(delay_compensate, ret)
 
         if 'GATE' in simulations:
             if 'PYHA' not in simulations:
@@ -249,7 +249,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
-                out['GATE'] = shape_outputs(delay_compensate, ret)
+                out['GATE'] = process_outputs(delay_compensate, ret)
 
     logger.info('Simulations completed!')
     return out
