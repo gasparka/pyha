@@ -5,11 +5,12 @@ import subprocess
 from pathlib import Path
 
 import numpy as np
+
 import pyha
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
-logger = logging.getLogger('simulation')
+logger = logging.getLogger('sim')
 
 
 class VHDLSimulation:

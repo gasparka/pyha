@@ -7,12 +7,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
+import pandas as pd
+
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
+
+pd.options.display.max_rows = 32
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
@@ -40,24 +44,34 @@ def np_to_py(array):
 
 
 def convert_input_types(args, to_types=None, silence=False):
-    if to_types is not None:
-        args = [[to_type(x) for x in data] for data, to_type in zip(args, to_types)]
-    else:
-        args = list(args)
-        with SimPath('inputs'):
-            for i, arg in enumerate(args):
-                if isinstance(arg[0], float):
-                    if not silence:
-                        logger.info(f'Converting float inputs to Sfix [{default_sfix.left}:{default_sfix.right}]')
-                    t = default_sfix
-                    args[i] = [t(x) for x in arg]
-                elif isinstance(arg[0], (complex, np.complex64)):
-                    t = default_complex
-                    if not silence:
-                        logger.info(f'Converting complex inputs to Complex [{t.real.left}:{t.real.right}]')
-                    args[i] = [t(x) for x in arg]
+    if not silence:
+        logger.info(f'Converting simulation inputs to hardware types...')
+
+    def convert_arg(default_type, arg, i):
+        args_orig = deepcopy(args[i])
+        t = default_type
+        if to_types is not None:
+            t = to_types[i]
+        ret = [t(x) for x in arg]
+        if not silence:
+            l = pd.DataFrame({'original': args_orig, 'converted': ret})
+            logger.info(f'Converted {i}. input:\n {l}')
+        return ret
+
+    args = list(args)
+    with SimPath('inputs'):
+        for i, arg in enumerate(args):
+            if isinstance(arg[0], float):
+                args[i] = convert_arg(default_sfix, arg, i)
+
+            elif isinstance(arg[0], (complex, np.complexfloating)):
+                args[i] = convert_arg(default_complex, arg, i)
+
+            elif to_types is not None:
+                args[i] = convert_arg(None, arg, i)
 
     return args
+
 
 
 def transpose(args):
@@ -166,6 +180,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     r = list(r)
 
                 out['MODEL'] = r
+                logger.info(f'OK!')
 
         if 'MODEL_PYHA' in simulations:
             logger.info(f'Running "MODEL_PYHA" simulation...')
@@ -188,9 +203,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
 
             out['MODEL_PYHA'] = ret
+            logger.info(f'OK!')
 
         # prepare inputs and model for hardware simulations
         if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
+            logger.info(f'Converting model to hardware types ...')
             model._pyha_floats_to_fixed()
             args = convert_input_types(args, input_types)
             args = transpose(args)
@@ -220,9 +237,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 pass
 
             out['PYHA'] = ret
+            logger.info(f'OK!')
 
         # From this point on we assume ARGS and MODEL have been transformed
         if 'RTL' in simulations:
+            logger.info(f'Running "RTL" simulation...')
             if 'PYHA' not in simulations:
                 raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
             elif 'PYHA_SKIP_RTL' in os.environ:
@@ -234,8 +253,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 ret = vhdl_sim.main(*args)
 
                 out['RTL'] = process_outputs(delay_compensate, ret)
+                logger.info(f'OK!')
 
         if 'GATE' in simulations:
+            logger.info(f'Running "GATE" simulation...')
             if 'PYHA' not in simulations:
                 raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
             elif 'PYHA_SKIP_GATE' in os.environ:
@@ -250,6 +271,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 ret = vhdl_sim.main(*args)
 
                 out['GATE'] = process_outputs(delay_compensate, ret)
+                logger.info(f'OK!')
 
     logger.info('Simulations completed!')
     return out
