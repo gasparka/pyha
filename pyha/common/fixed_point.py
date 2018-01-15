@@ -2,6 +2,7 @@ import logging
 import math
 
 import numpy as np
+
 from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
@@ -104,17 +105,14 @@ class Sfix:
         if init_only or Sfix._float_mode.enabled:
             return
 
-        if overflow_style is 'saturate':
-            if self.overflows():
+        self.quantize()
+        if self.overflows():
+            if overflow_style is 'saturate':
                 self.saturate()
-            else:
-                self.quantize()
-        elif overflow_style in 'wrap':
-            self.quantize()
-            if self.overflows():
+            elif overflow_style in 'wrap':
                 self.wrap()
-        else:
-            raise Exception(f'Unknown overflow style {overflow_style}')
+            else:
+                raise Exception(f'Unknown overflow style {overflow_style}')
 
     def __eq__(self, other):
         if type(other) is type(self):
