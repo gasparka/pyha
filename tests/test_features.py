@@ -3,8 +3,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -833,6 +834,22 @@ class TestInterface:
         x = [Sfix(0.1, 0, -8), Sfix(0.2, 0, -8)]
 
         sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, expected=x)
+
+    def test_input_hardware(self):
+
+        class In(Hardware):
+            def __init__(self, a):
+                self.a = a
+
+        class T13(Hardware):
+            def main(self, x):
+                return x
+
+        dut = T13()
+        x = [In(0.1), In(0.2)]
+
+        sims = simulate(dut, x, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims, expected=x)
 
 

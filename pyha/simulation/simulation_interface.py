@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
 
+from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, default_sfix
@@ -20,6 +21,7 @@ pd.options.display.max_rows = 32
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
+
 
 def np_to_py(array):
     """ Convert numpy to python recursively.
@@ -70,8 +72,11 @@ def convert_input_types(args, to_types=None, silence=False):
             elif to_types is not None:
                 args[i] = convert_arg(None, arg, i)
 
-    return args
+            elif isinstance(arg[0], Hardware):
+                for x in arg:
+                    x._pyha_floats_to_fixed()
 
+    return args
 
 
 def transpose(args):
@@ -98,7 +103,7 @@ def process_outputs(delay_compensate, ret):
     # skip the initial pipeline outputs
     try:
         ret = ret[delay_compensate:]
-    except TypeError: # this happened when ret is single element
+    except TypeError:  # this happened when ret is single element
         pass
 
     # transpose

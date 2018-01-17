@@ -310,3 +310,14 @@ class Hardware(with_metaclass(Meta)):
             return
 
         self._pyha_next[name] = value
+
+    def __str__(self):
+        filt = {}
+        for k, v in vars(self).items():
+            if k[0] != '_':
+                filt[k] = v
+
+        return f'{self.__class__.__name__}{filt}'
+
+    def __repr__(self):
+        return str(self)
