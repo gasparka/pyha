@@ -134,17 +134,15 @@ class CocotbAuto:
 
     def setup_environment(self):
 
-        # ill throw my computer out of the window counter: 10
-        self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-
         # this is some cocotb bullshit that sometimes causes troubles
-        # ill throw my computer out of the window counter: 10
+        # ill throw my computer out of the window counter: 11
+        self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
         import sys
         if not is_virtual() or ('CI' in self.environment and self.environment['CI']):  # inside virtualenv??
             self.environment["PYTHONHOME"] = str(
                 Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
-            print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
-                  f'this is COCOTB related bullshit) - it may actually break your build\n\n')
+            # print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
+            #       f'this is COCOTB related bullshit) - it may actually break your build\n\n')
 
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
