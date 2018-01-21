@@ -57,7 +57,7 @@ def convert_input_types(args, to_types=None, silence=False):
         ret = [t(x) for x in arg]
         if not silence:
             l = pd.DataFrame({'original': args_orig, 'converted': ret})
-            logger.info(f'Converted {i}. input:\n {l}')
+            logger.debug(f'Converted {i}. input:\n {l}')
         return ret
 
     args = list(args)
@@ -251,6 +251,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
             elif 'PYHA_SKIP_RTL' in os.environ:
                 logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+            elif Sfix._float_mode.enabled:
+                logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
             elif not have_ghdl():
                 logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
             else:
@@ -266,6 +268,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
             elif 'PYHA_SKIP_GATE' in os.environ:
                 logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
+            elif Sfix._float_mode.enabled:
+                logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
             elif not have_quartus():
                 logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
             elif not have_ghdl():

@@ -235,7 +235,7 @@ class PyhaList(UserList):
                 import pandas as pd
                 pd.options.display.max_rows = 32
                 l = pd.DataFrame({'float': self.data, 'fixed': new})
-                logger.info(
+                logger.debug(
                     f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
             self._pyha_next = deepcopy(new)
@@ -263,7 +263,7 @@ class Hardware(with_metaclass(Meta)):
                 new.overflow_style = 'wrap'
 
                 if not silence:
-                    logger.info(
+                    logger.debug(
                         f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
                 self.__dict__[k] = new
                 self._pyha_next[k] = deepcopy(new)
