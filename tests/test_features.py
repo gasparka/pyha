@@ -14,6 +14,22 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
+def test_numpy_list():
+    """ Numpy arrays shall be converted to list and thus will be synthesisable  """
+    class T(Hardware):
+        def __init__(self, arr):
+            self.arr = np.array(arr)
+
+        def main(self, dummy):
+            return self.arr
+
+    dut = T([0.0, 0.1, 0.2])
+    inputs = [0, 1, 2]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
+
+
 class TestLocalInstance:
     def test_complex(self):
         class T(Hardware):

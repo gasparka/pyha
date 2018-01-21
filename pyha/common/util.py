@@ -54,3 +54,25 @@ def bools_to_hex(bl):
 
 def bools_to_bitstr(bl):
     return ''.join(str(int(x)) for x in bl)
+
+
+def np_to_py(array):
+    """ Convert numpy to python recursively.
+    For example float32 to float and ndarray to []
+    """
+    # https://github.com/numpy/numpy/issues/8052
+    if isinstance(array, np.ndarray):
+        if isinstance(array[0], complex):
+            array = array.astype(complex)
+        elif isinstance(array[0], np.floating):
+            array = array.astype(float)
+
+        return np_to_py(array.tolist())
+    elif isinstance(array, list):
+        return [np_to_py(item) for item in array]
+    elif isinstance(array, tuple):
+        return tuple(np_to_py(item) for item in array)
+    elif isinstance(array, np.float):
+        return float(array)
+    else:
+        return array

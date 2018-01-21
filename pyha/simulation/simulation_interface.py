@@ -13,7 +13,7 @@ from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, default_sfix
-from pyha.common.util import get_iterable
+from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
@@ -21,28 +21,6 @@ pd.options.display.max_rows = 32
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
-
-
-def np_to_py(array):
-    """ Convert numpy to python recursively.
-    For example float32 to float and ndarray to []
-    """
-    # https://github.com/numpy/numpy/issues/8052
-    if isinstance(array, np.ndarray):
-        if isinstance(array[0], complex):
-            array = array.astype(complex)
-        elif isinstance(array[0], np.floating):
-            array = array.astype(float)
-
-        return np_to_py(array.tolist())
-    elif isinstance(array, list):
-        return [np_to_py(item) for item in array]
-    elif isinstance(array, tuple):
-        return tuple(np_to_py(item) for item in array)
-    elif isinstance(array, np.float):
-        return float(array)
-    else:
-        return array
 
 
 def convert_input_types(args, to_types=None, silence=False):

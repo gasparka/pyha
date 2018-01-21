@@ -2,13 +2,14 @@ import logging
 import sys
 from collections import UserList
 from copy import deepcopy, copy
-
 from six import with_metaclass
-
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
+import numpy as np
 
 # functions that will not be decorated/converted/parsed
+from pyha.common.util import np_to_py
+
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('core')
@@ -116,9 +117,12 @@ class Meta(type):
         ret._pyha_is_local = SimulationRunning.is_enabled()
         cls.instance_count += 1
         cls.instances = copy(cls.instances + [ret])
-        # cls.instances[cls.__name__] = ret
 
         for k, v in ret.__dict__.items():
+
+            if isinstance(v, np.ndarray):
+                v = np_to_py(v)
+
             if isinstance(v, list):
                 ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
 
