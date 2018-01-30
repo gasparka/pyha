@@ -221,12 +221,14 @@ class Sfix:
             right = min(self.right, other.right)
         return left, right
 
-    def __add__(self, other):
-        if type(other) == float:
+    def _convert_other_operand(self, other):
+        if isinstance(other, (float, int)):
             other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
+        return other
 
+    def __add__(self, other):
+        other = self._convert_other_operand(other)
         left, right = self._size_add(other)
-
         return Sfix(self.val + other.val,
                     left,
                     right,
@@ -236,24 +238,19 @@ class Sfix:
         return self.__add__(other)
 
     def __sub__(self, other):
-        if type(other) == float:
-            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
-
+        other = self._convert_other_operand(other)
         left, right = self._size_add(other)
-
         return Sfix(self.val - other.val,
                     left,
                     right,
                     init_only=True)
 
     def __rsub__(self, other):
-        if type(other) == float:
-            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
+        other = self._convert_other_operand(other)
         return other.__sub__(self)
 
     def __mul__(self, other):
-        if type(other) == float:
-            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
+        other = self._convert_other_operand(other)
 
         if self.left is None and other.left is None:
             left = None
@@ -313,6 +310,12 @@ class Sfix:
 
     def __gt__(self, other):
         return bool(self.val > other)
+
+    def __ge__(self, other):
+        return bool(self.val >= other)
+
+    def __le__(self, other):
+        return bool(self.val <= other)
 
     def __neg__(self):
         left = None if self.left is None else self.left + 1

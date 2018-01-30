@@ -207,8 +207,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
 
             ret = []
-            for x in tmpargs:
-                ret.append(deepcopy(model.main(*x)))  # deepcopy required or 'subsub' modules break
+            for input in tmpargs:
+                output = deepcopy(model.main(*input)) # deepcopy required or 'subsub' modules break
+                ret.append(output)
                 model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret)
