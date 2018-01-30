@@ -8,7 +8,6 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
-
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
@@ -41,10 +40,10 @@ def convert_input_types(args, to_types=None, silence=False):
     args = list(args)
     with SimPath('inputs'):
         for i, arg in enumerate(args):
-            if isinstance(arg[0], float):
+            if any(isinstance(x, float) for x in arg):
                 args[i] = convert_arg(default_sfix, arg, i)
 
-            elif isinstance(arg[0], (complex, np.complexfloating)):
+            elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
                 args[i] = convert_arg(default_complex, arg, i)
 
             elif to_types is not None:

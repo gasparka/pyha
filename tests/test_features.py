@@ -3,9 +3,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -16,6 +15,7 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
 
 def test_numpy_list():
     """ Numpy arrays shall be converted to list and thus will be synthesisable  """
+
     class T(Hardware):
         def __init__(self, arr):
             self.arr = np.array(arr)
@@ -25,6 +25,39 @@ def test_numpy_list():
 
     dut = T([0.0, 0.1, 0.2])
     inputs = [0, 1, 2]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
+
+
+def test_convert_to_int():
+    """ Test convert int() to to_integer(round_syle=fixed_truncate, overflow_style=fixed_wrap) for VHDL. """
+    class T(Hardware):
+
+        def main(self, x):
+            arg = x
+            a = int(arg)
+            return int(arg), a
+
+    dut = T()
+    inputs = np.random.uniform(-8, 8, 512)
+    inputs = [Sfix(x, 4, -17) for x in inputs]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
+
+
+def test_local_sfix_constant():
+    """ Test that local constants of are converted to Sfix (if var type is Sfix) """
+    class T(Hardware):
+        def main(self, x):
+            y = x
+            if x == 0.5:
+                y = 0 # this used to fail -> now it is converted to Sfix
+            return y
+
+    dut = T()
+    inputs = [0.0, 0.5, 1.0, 0.9]
 
     sims = simulate(dut, inputs)
     assert sims_close(sims)
@@ -614,6 +647,20 @@ class TestMainAsModel:
 
 
 class TestInterface:
+
+    def test_int_float(self):
+        """ This failed because first input is 0 (not 0.0) system got confused """
+        class T(Hardware):
+            def main(self, x):
+                y = x
+                return y
+
+        dut = T()
+        inputs = [0, 0.5, 1.0, 0.9]
+
+        sim_out = simulate(dut, inputs)
+        assert sims_close(sim_out)
+
     def test_basic(self):
         class T(Hardware):
             def main(self, i):

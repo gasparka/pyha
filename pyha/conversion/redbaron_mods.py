@@ -2,16 +2,15 @@ import logging
 import textwrap
 from contextlib import suppress
 
-from parse import parse
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import LineProxyList
-
 import pyha
+from parse import parse
 from pyha.common.core import SKIP_FUNCTIONS
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import LineProxyList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -548,7 +547,6 @@ class ClassNodeVHDL(NodeVHDL):
         data = [x._pyha_reset_constants() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
-
     def build_update_registers(self, prototype_only=False):
         template = textwrap.dedent("""\
             procedure pyha_update_registers(self:inout self_t) is
@@ -707,7 +705,6 @@ class ClassNodeVHDL(NodeVHDL):
         return template.format(**sockets)
 
 
-
 def redbaron_node_to_vhdl_node(red: Node, caller):
     """ Convert RedBaron class to conversion class
     For example: red:NameNode returns NameNodeVHDL class
@@ -750,6 +747,7 @@ def convert(red: Node, obj=None):
     red = CallModifications.apply(red)
     red = MultiAssign.apply(red)
     red = LazyOperand.apply(red)
+    red = IntToInteger.apply(red)
     if obj is not None:
         red = EnumModifications.apply(red)
         ImplicitNext.apply(red)
@@ -786,6 +784,19 @@ def super_getattr(obj, attr):
 
     return obj
 
+
+def super_local_getattr(obj, attr):
+    for part in attr.split('.'):
+        if part.find('[') != -1:  # is array indexing
+            part = part[:part.find('[')]
+            obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
+        elif part.find(']') != -1:
+            # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
+            continue
+        else:
+            obj = getattr(obj, part)
+
+    return obj
 
 class ResizeMods:
     """ Replace 'wrap' -> fixed_wrap
@@ -839,6 +850,26 @@ class ResizeMods:
 
             if not round_kword_found:
                 call.append(f'round_style=fixed_truncate')
+
+        return red_node
+
+
+class IntToInteger:
+    """ Convert int() to to_integer(round_syle=fixed_truncate, overflow_style=fixed_wrap) for VHDL. """
+
+    @staticmethod
+    def apply(red_node):
+        nodes = red_node.find_all('call')
+
+        for call in nodes:
+            call_index = call.previous.index_on_parent
+            if call_index != 0:  # not just copy().. maybe self.copy() etc...
+                continue
+
+            if call.previous.value == 'int':
+                call.previous.value = 'to_integer'
+                call.append('round_style=fixed_truncate')
+                call.append('overflow_style=fixed_wrap')
 
         return red_node
 
@@ -902,6 +933,8 @@ class LazyOperand:
         return red_node
 
 
+
+
 class AutoResize:
     """ Auto resize on Sfix assignments
      Examples (depend on initial Sfix type):
@@ -943,19 +976,56 @@ class AutoResize:
     @staticmethod
     def apply(red_node):
         """ Wrap all subjects to autosfix inside resize() according to initial type """
-        nodes = AutoResize.find(red_node)
+        # nodes = AutoResize.find(red_node)
+        nodes = red_node.find_all('assign')
 
-        pass_nodes, pass_types = AutoResize.filter(nodes)
-        for node, var_t in zip(pass_nodes, pass_types):
-
-            if isinstance(node.value, (FloatNode, IntNode)) \
-                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
-                    FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
-                node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+        for node in nodes:
+            if len(node.target) > 1 and node.target[0].value == 'self':
+                var_t = super_getattr(convert_obj, str(node.target))
             else:
-                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+                # get the SOURCE function (where call is going on) from datamodel
+                def_parent = node.parent
+                while not isinstance(def_parent, DefNode):
+                    def_parent = def_parent.parent
 
-        return pass_nodes
+                source_func_name = f'self.{def_parent.name}'
+                source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+                func_locals = source_func_obj.locals
+
+                class Struct:
+                    def __init__(self, **entries):
+                        self.__dict__.update(entries)
+
+                struct = Struct(**func_locals)
+                var_t = super_local_getattr(struct, str(node.target))
+
+                # try:
+                #     var_t = source_func_obj.locals[str(node.target)]
+                # except: # target is array
+                #     var_t = source_func_obj.locals[str(node.target[0])][0]
+
+            if isinstance(var_t, Sfix):
+                if isinstance(node.value, (FloatNode, IntNode)) \
+                        or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
+                        FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
+                    node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+                else:
+                    node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+
+        return red_node
+
+        # pass_nodes, pass_types = AutoResize.filter(nodes)
+        # for node, var_t in zip(pass_nodes, pass_types):
+        #
+        #     if isinstance(node.value, (FloatNode, IntNode)) \
+        #             or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
+        #             FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
+        #         node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+        #     else:
+        #         node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+        #
+        # return pass_nodes
 
 
 class SubmoduleDeepcopy:

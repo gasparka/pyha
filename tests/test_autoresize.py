@@ -1,8 +1,8 @@
 from pyha import simulate, sims_close
-from pyha.common.context_managers import AutoResize
-from pyha.common.fixed_point import Sfix
 from pyha.common.complex import Complex
+from pyha.common.context_managers import AutoResize
 from pyha.common.core import Hardware, PyhaList
+from pyha.common.fixed_point import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match
 
 
@@ -224,7 +224,7 @@ class TestComplex:
                 self.a = a
                 return self.a
 
-        x = [0.012 + 0.234j, -0.256 + 0.689]
+        x = [0.012 + 0.234j, -0.256 + 0.689j]
 
         dut = A2('saturate', 'round')
         sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])

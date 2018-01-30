@@ -1,13 +1,13 @@
-import pytest
-from pyha.conversion.redbaron_mods import convert
 import textwrap
 from enum import Enum
-from redbaron import RedBaron
-from pyha.common.complex import Complex
+
+import pytest
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, resize
-from pyha.conversion.conversion import get_objects_rednode, get_conversion
-from pyha.conversion.redbaron_mods import AutoResize, ImplicitNext, ForModification, set_convert_obj
+from pyha.conversion.conversion import get_conversion
+from pyha.conversion.redbaron_mods import ImplicitNext, ForModification
+from pyha.conversion.redbaron_mods import convert
+from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -1411,7 +1411,7 @@ class TestCallModifications:
             'loc := pyha_ret_2;\n' \
             'Sub_0.f(self.sub, pyha_ret_3);\n' \
             'self.\\next\\.r := pyha_ret_3;\n' \
-            'f := resize(Sfix(1, 1, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate), 0, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate);\n' \
+            'f := resize(resize(Sfix(1, 1, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate), 0, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate), 0, -15, fixed_wrap, fixed_truncate);\n' \
             'multi(self, x, pyha_ret_4, pyha_ret_5);\n' \
             'self.\\next\\.arr(0) := pyha_ret_4;\n' \
             'self.\\next\\.arr(1) := pyha_ret_5;\n' \
@@ -1419,109 +1419,6 @@ class TestCallModifications:
         conv = get_conversion(dut)
         func = conv.get_function('a')
         assert expect == func.build_body()
-
-
-class TestAutoResize:
-    def setup_class(self):
-        class T1(Hardware):
-            def __init__(self):
-                self.int_reg = 0
-                self.sfix_reg = Sfix(0.1, 2, -19, round_style='truncate')
-
-        class T0(Hardware):
-            def __init__(self):
-                self.int_reg = 0
-                self.complex_reg = Complex(2.5 + 2.5j, 5, -29, overflow_style='wrap')
-                self.sfix_reg = Sfix(2.5, 5, -29, overflow_style='wrap')
-                self.submod_reg = T1()
-
-                self.sfix_list = [Sfix()] * 2
-                self.int_list = [0] * 2
-
-                self.submod_list = [T1(), T1()]
-
-            def main(self, a):
-                # not subjects to resize conversion
-                # some may be rejected due to type
-                self.int_reg = a
-                self.complex_reg = self.complex_reg
-                b = self.sfix_reg
-                self.submod_reg.int_reg = a
-                self.int_list[0] = a
-                self.submod_list[1].int_reg = a
-                c = self.submod_list[1].sfix_reg
-
-                # subjects
-                self.sfix_reg = a
-                self.submod_reg.sfix_reg = a
-                self.sfix_list[0] = a
-                self.submod_list[1].sfix_reg = a
-                self.complex_reg.real = a
-                self.complex_reg.imag = a
-
-        self.dut = T0()
-        self.dut.main(Sfix(0))
-        self.red_node = get_objects_rednode(self.dut)
-        f = self.red_node.find('def', name='__init__')
-        f.parent.remove(f)
-        set_convert_obj(self.dut)
-
-    def test_find(self):
-        """ Test all assignments that could be potential subjects, has no type info """
-        expect = [
-            'self.int_reg = a',
-            'self.complex_reg = self.complex_reg',
-            'self.submod_reg.int_reg = a',
-            'self.int_list[0] = a',
-            'self.submod_list[1].int_reg = a',
-            'self.sfix_reg = a',
-            'self.submod_reg.sfix_reg = a',
-            'self.sfix_list[0] = a',
-            'self.submod_list[1].sfix_reg = a',
-            'self.complex_reg.real = a',
-            'self.complex_reg.imag = a']
-
-        out = [str(x) for x in AutoResize.find(self.red_node)]
-        assert out == expect
-
-    def test_filter(self):
-        """ Subjects shall be of Sfix type """
-        expect_nodes = ['self.sfix_reg = a',
-                        'self.submod_reg.sfix_reg = a',
-                        'self.sfix_list[0] = a',
-                        'self.submod_list[1].sfix_reg = a',
-                        'self.complex_reg.real = a',
-                        'self.complex_reg.imag = a'
-                        ]
-
-        expect_types = [Sfix(2.5, 5, -29, overflow_style='wrap', round_style='truncate'),
-                        Sfix(0.1, 2, -19, overflow_style='wrap', round_style='truncate'),
-                        Sfix(0, overflow_style='wrap', round_style='truncate'),
-                        Sfix(0.1, 2, -19, overflow_style='wrap', round_style='truncate'),
-                        Sfix(2.5, 5, -29, overflow_style='wrap'),
-                        Sfix(2.5, 5, -29, overflow_style='wrap')]
-
-        nodes = AutoResize.find(self.red_node)
-        passed_nodes, passed_types = AutoResize.filter(nodes)
-
-        assert expect_nodes == [str(x) for x in passed_nodes]
-        assert expect_types == passed_types
-
-    def test_apply(self):
-        expect_nodes = ['self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_truncate)',
-                        'self.submod_reg.sfix_reg = resize(a, 2, -19, fixed_wrap, fixed_truncate)',
-                        'self.sfix_list[0] = resize(a, None, None, fixed_wrap, fixed_truncate)',
-                        'self.submod_list[1].sfix_reg = resize(a, 2, -19, fixed_wrap, fixed_truncate)',
-                        'self.complex_reg.real = resize(a, 5, -29, fixed_wrap, fixed_truncate)',
-                        'self.complex_reg.imag = resize(a, 5, -29, fixed_wrap, fixed_truncate)'
-                        ]
-
-        nodes = AutoResize.apply(self.red_node)
-        assert expect_nodes == [str(x) for x in nodes]
-
-        # todo:
-        # * auto resize on function calls that return to self.next ??
-        # * what if is already resized??
 
 
 class TestImplicitNext:

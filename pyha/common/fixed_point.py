@@ -115,6 +115,7 @@ class Sfix:
                 raise Exception(f'Unknown overflow style {overflow_style}')
 
     def __eq__(self, other):
+        other = self._convert_other_operand(other)
         if type(other) is type(self):
             return self.__dict__ == other.__dict__
         return False
