@@ -2,15 +2,16 @@ import logging
 import textwrap
 from contextlib import suppress
 
-import pyha
 from parse import parse
+from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+from redbaron.base_nodes import LineProxyList
+
+import pyha
 from pyha.common.core import SKIP_FUNCTIONS
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
-from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
-from redbaron.base_nodes import LineProxyList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -206,18 +207,18 @@ class DefNodeVHDL(NodeVHDL):
     def build_arguments(self):
         # function arguments
         argnames = inspect.getfullargspec(self.data.func).args[1:]  # skip the first 'self'
-        argvals = list(self.data.last_args)
+        argvals = list(self.data.get_arg_types())
         args = [init_vhdl_type(name, val, val) for name, val in zip(argnames, argvals)]
         args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
 
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
-        if self.data.last_return is not None:
-            if isinstance(self.data.last_return, tuple):  # multiple returns
+        if self.data.get_output_types() is not None:
+            if isinstance(self.data.get_output_types(), tuple):  # multiple returns
                 rets = [init_vhdl_type(f'ret_{i}', val, val)
-                        for i, val in enumerate(get_iterable(self.data.last_return))]
+                        for i, val in enumerate(get_iterable(self.data.get_output_types()))]
             else:
-                rets = [init_vhdl_type(f'ret_{0}', self.data.last_return, self.data.last_return)]
+                rets = [init_vhdl_type(f'ret_{0}', self.data.get_output_types(), self.data.get_output_types())]
             rets = [f'{x._pyha_name()}:out {x._pyha_type()}' for x in rets]
 
         return '; '.join(args + rets)
@@ -225,7 +226,7 @@ class DefNodeVHDL(NodeVHDL):
     def build_variables(self):
         argnames = inspect.getfullargspec(self.data.func).args
         variables = [init_vhdl_type(name, val, val)
-                     for name, val in self.data.locals.items()
+                     for name, val in self.data.get_local_types().items()
                      if name not in argnames]
 
         variables = [f'variable {x._pyha_name()}: {x._pyha_type()};' for x in variables if x is not None]
@@ -617,7 +618,7 @@ class ClassNodeVHDL(NodeVHDL):
         for function in self.value:
             if not isinstance(function, DefNodeVHDL):
                 continue
-            variables = [init_vhdl_type(name, val, val) for name, val in function.data.locals.items()]
+            variables = [init_vhdl_type(name, val, val) for name, val in function.data.get_local_types().items()]
             typedefs += [x._pyha_typedef() for x in variables if x is not None and x._pyha_typedef() is not None]
         typedefs = list(dict.fromkeys(typedefs))  # get rid of duplicates
         return typedefs
@@ -798,6 +799,7 @@ def super_local_getattr(obj, attr):
 
     return obj
 
+
 class ResizeMods:
     """ Replace 'wrap' -> fixed_wrap
         'saturate' -> fixed_saturate
@@ -933,8 +935,6 @@ class LazyOperand:
         return red_node
 
 
-
-
 class AutoResize:
     """ Auto resize on Sfix assignments
      Examples (depend on initial Sfix type):
@@ -991,7 +991,7 @@ class AutoResize:
                 source_func_name = f'self.{def_parent.name}'
                 source_func_obj = super_getattr(convert_obj, str(source_func_name))
 
-                func_locals = source_func_obj.locals
+                func_locals = source_func_obj.get_local_types()
 
                 class Struct:
                     def __init__(self, **entries):
@@ -1174,16 +1174,16 @@ class CallModifications:
                 var = init_vhdl_type('-', var, var)
                 atom.insert(0, var._pyha_module_name())
 
-            if target_func_obj.last_return is None:
+            if target_func_obj.get_output_types() is None:
                 continue  # function is not returning stuff -> this is simple
             else:
 
                 # add return variables to function locals, so that they will be converted to VHDL variables
                 ret_vars = []
-                for x in get_iterable(target_func_obj.last_return):
+                for x in get_iterable(target_func_obj.get_output_types()):
                     name = f'pyha_ret_{tmp_var_count}'
                     ret_vars.append(name)
-                    source_func_obj.locals[name] = x  # add var to SOURCE function
+                    source_func_obj.add_local_type(name, x)
                     tmp_var_count += 1
 
                     # add return variable to arguments

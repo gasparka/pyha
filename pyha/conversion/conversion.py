@@ -132,7 +132,7 @@ class Conversion:
             # iterate all functions and discover local variables that may need to be converted
             for x in self.obj.__dict__.values():
                 if isinstance(x, PyhaFunc):
-                    for key, val in x.locals.items():
+                    for key, val in x.get_local_types().items():
                         if isinstance(val, Hardware):
                             node = init_vhdl_type(key, val)
                             conv(self, node)

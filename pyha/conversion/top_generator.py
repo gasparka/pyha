@@ -32,18 +32,18 @@ class TopGenerator:
             raise NoOutputsError('Top level "main" has no outputs (return values).')
 
     def get_object_args(self) -> list:
-        rets = [init_vhdl_type('-', val, val) for val in self.simulated_object.main.last_args]
+        rets = [init_vhdl_type('-', val, val) for val in self.simulated_object.main.get_arg_types()]
         return rets
 
     def get_object_kwargs(self) -> list:
-        rets = [init_vhdl_type(key, val, val) for key, val in self.simulated_object.main.last_kwargs.items()]
+        rets = [init_vhdl_type(key, val, val) for key, val in self.simulated_object.main.get_kwarg_types().items()]
         return rets
 
     def get_object_inputs(self) -> list:
         return self.get_object_args() + self.get_object_kwargs()
 
     def get_object_return(self) -> list:
-        rets = self.simulated_object.main.last_return
+        rets = self.simulated_object.main.get_output_types()
         if rets == None:
             return []
         if isinstance(rets, tuple):  # multiple returns

@@ -253,19 +253,6 @@ def test_meta_deepcopy():
     assert id(dut.l.l.a) != id(dut.l.l._pyha_next['a']) != id(dut.l.l.__dict__['_pyha_initial_self'].a)
 
 
-def test_outputs():
-    class A(Hardware):
-        def main(self, a):
-            return a
-
-    dut = A()
-    dut.main(1)
-    dut.main(2)
-    dut.main(3)
-    dut.main(4)
-    assert dut._pyha_outputs == [1, 2, 3, 4]
-
-
 def test_setattr_assign_self():
     class A(Hardware):
         def __init__(self):

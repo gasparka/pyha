@@ -3,8 +3,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -32,6 +33,7 @@ def test_numpy_list():
 
 def test_convert_to_int():
     """ Test convert int() to to_integer(round_syle=fixed_truncate, overflow_style=fixed_wrap) for VHDL. """
+
     class T(Hardware):
 
         def main(self, x):
@@ -49,11 +51,12 @@ def test_convert_to_int():
 
 def test_local_sfix_constant():
     """ Test that local constants of are converted to Sfix (if var type is Sfix) """
+
     class T(Hardware):
         def main(self, x):
             y = x
             if x == 0.5:
-                y = 0 # this used to fail -> now it is converted to Sfix
+                y = 0  # this used to fail -> now it is converted to Sfix
             return y
 
     dut = T()
@@ -61,6 +64,43 @@ def test_local_sfix_constant():
 
     sims = simulate(dut, inputs)
     assert sims_close(sims)
+
+
+class TestFunctionHistory:
+    """ Test situation where PYHA simulation could resolve to multiple distinctive types. In this case locals, returns, args must prefer the Sfix types """
+
+    def test_simple(self):
+        class T(Hardware):
+            def main(self, x):
+                y = x
+                if x == 0.5:
+                    y = 0  # this sets the var type as integer...should remember that actual is Sfix
+                return x
+
+        dut = T()
+        inputs = [0.0, 0.5]
+
+        sims = simulate(dut, inputs)
+        assert sims_close(sims)
+
+    def test_args_ret(self):
+        class T(Hardware):
+            def l(self, b):  # make sure args is synth as Sfix, even some times it may be Int
+                return b  # return shuld also be sfix
+
+            def main(self, x):
+                y = x
+                if x == 0.5:
+                    y = 0
+
+                ret = self.l(y)
+                return ret
+
+        dut = T()
+        inputs = [0.0, 0.5]
+
+        sims = simulate(dut, inputs)
+        assert sims_close(sims)
 
 
 class TestLocalInstance:
@@ -650,6 +690,7 @@ class TestInterface:
 
     def test_int_float(self):
         """ This failed because first input is 0 (not 0.0) system got confused """
+
         class T(Hardware):
             def main(self, x):
                 y = x

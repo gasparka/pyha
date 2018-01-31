@@ -2,13 +2,14 @@ import logging
 import sys
 from collections import UserList
 from copy import deepcopy, copy
+
+import numpy as np
 from six import with_metaclass
+
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
-import numpy as np
-
 # functions that will not be decorated/converted/parsed
-from pyha.common.util import np_to_py
+from pyha.common.util import np_to_py, get_iterable
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -52,12 +53,12 @@ class PyhaFunc:
         self.function_name = func.__name__
         self.func = func
         self.calls = 0
-        self.locals = {}
 
-        # used for top_generator
-        self.last_args = {}
-        self.last_kwargs = {}
-        self.last_return = {}
+        self.local_types = {}
+        self.arg_types = None
+        self.kwarg_types = None
+        self.output_types = None
+        self.outputs_is_tuple = False
 
         self.is_main = self.function_name == 'main'
 
@@ -69,34 +70,79 @@ class PyhaFunc:
         sys.setprofile(None)  # without this things get fucked up
         self.TraceManager.remove_profile()
 
-        # TODO: why remove self?
         self.TraceManager.last_call_locals.pop('self')
-
-        self.locals.update(self.TraceManager.last_call_locals)
+        self.update_local_types(self.TraceManager.last_call_locals)
 
         # in case nested call, restore the tracer function
         self.TraceManager.restore_profile()
         return res
 
-    def __call__(self, *args, **kwargs):
+    def get_local_types(self):
+        return self.local_types
 
-        self.last_args = args
-        self.last_kwargs = kwargs
-        real_self = self.func.__self__
+    def add_local_type(self, name, value):
+        self.local_types[name] = value
+
+    def get_arg_types(self):
+        return self.arg_types
+
+    def get_kwarg_types(self):
+        return self.kwarg_types
+
+    def get_output_types(self):
+        if self.outputs_is_tuple:
+            return tuple(self.output_types)
+        else:
+            if len(self.output_types) == 1:
+                return self.output_types[0] # single return (this was temporarily converted to list)
+            else:
+                return self.output_types
+
+    def update_local_types(self, new_stack):
+        for k, v in new_stack.items():
+            if k in self.local_types and not isinstance(v, Sfix) and isinstance(self.local_types[k], Sfix):
+                continue  # dont allow overwriting Sfix values
+            self.local_types[k] = v
+
+    def update_input_types(self, args, kwargs):
+        if self.arg_types is None:
+            self.arg_types = list(deepcopy(args))
+        else:
+            for i, v in enumerate(args):
+                if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.arg_types[i] = v
+
+        if self.kwarg_types is None:
+            self.kwarg_types = deepcopy(kwargs)
+        else:
+            for k, v in kwargs.items():
+                if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.kwarg_types[k] = v
+
+    def update_output_types(self, ret):
+        ret = get_iterable(ret)
+        if self.output_types is None:
+            if isinstance(ret, tuple):
+                self.outputs_is_tuple = True
+            self.output_types = list(deepcopy(ret))
+        else:
+            for i, v in enumerate(ret):
+                if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.output_types[i] = v
+
+    def __call__(self, *args, **kwargs):
+        self.update_input_types(args, kwargs)
         self.calls += 1
 
-        # CALL IS HERE!
         with SimPath(f'{self.class_name}.{self.function_name}()'):
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     ret = self.call_with_locals_discovery(*args, **kwargs)
-                    # ret = self.func(*args, **kwargs)
 
-        # ret = tuple(ret)
-        # ret = (ret,)
-        self.last_return = ret
-
-        real_self._pyha_outputs.append(ret)
+        self.update_output_types(ret)
         return ret
 
 

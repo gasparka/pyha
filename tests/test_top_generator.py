@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInputsError, NoOutputsError
@@ -9,12 +10,12 @@ from pyha.conversion.top_generator import TopGenerator, NotTrainedError, NoInput
 @pytest.fixture
 def basic_obj():
     class Register(Hardware):
-        def main(self, a, b, c):
+        def main(self, a, b, c=0):
             return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
-    dut.main(2, Sfix(1.0, 2, -17), False)
-    dut.main(-57, Sfix(1.0, 2, -17), True)
+    dut.main(2, Sfix(1.0, 2, -17))
+    dut.main(-57, Sfix(1.0, 2, -17))
     dut.main(-57, Sfix(1.0, 2, -17), c=True)
     return dut
 
@@ -260,35 +261,3 @@ def test_no_sim():
 
     with pytest.raises(NotTrainedError):
         TopGenerator(dut)
-
-
-def test_decorator():
-    class A(Hardware):
-        def main(self, a, b, c):
-            return a * 5, True, Sfix(0.0)
-
-    dut = A()
-    dut.main(2, Sfix(1.0), False)
-    assert type(dut.main.last_args[0]) == int
-    assert type(dut.main.last_args[1]) == Sfix
-    assert type(dut.main.last_args[2]) == bool
-
-    assert type(dut.main.last_return[0]) == int
-    assert type(dut.main.last_return[1]) == bool
-    assert type(dut.main.last_return[2]) == Sfix
-
-
-def test_decorator_kwargs():
-    class A(Hardware):
-        def main(self, a, b, c):
-            return a * 5, True, Sfix(0.0)
-
-    dut = A()
-    dut.main(b=2, c=Sfix(1.0), a=False)
-    assert type(dut.main.last_kwargs['b']) == int
-    assert type(dut.main.last_kwargs['c']) == Sfix
-    assert type(dut.main.last_kwargs['a']) == bool
-
-    assert type(dut.main.last_return[0]) == int
-    assert type(dut.main.last_return[1]) == bool
-    assert type(dut.main.last_return[2]) == Sfix
