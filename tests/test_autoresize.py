@@ -227,7 +227,7 @@ class TestComplex:
         x = [0.012 + 0.234j, -0.256 + 0.689j]
 
         dut = A2('saturate', 'round')
-        sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'],conversion_path='/home/gaspar/git/pyha/playground')
         assert sims_close(sims)
 
 

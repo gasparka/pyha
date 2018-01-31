@@ -2,12 +2,12 @@ import textwrap
 from enum import Enum
 
 import pytest
+from redbaron import RedBaron
+
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, resize
 from pyha.conversion.conversion import get_conversion
-from pyha.conversion.redbaron_mods import ImplicitNext, ForModification
 from pyha.conversion.redbaron_mods import convert
-from redbaron import RedBaron
 
 
 @pytest.fixture
@@ -1311,18 +1311,6 @@ end package;""")
 
 
 class TestForModification:
-    def test_for(self):
-        code = textwrap.dedent("""\
-                for x in arr:
-                    x.main()""")
-        expect = textwrap.dedent("""\
-                for _i_ in arr:
-                    arr[_i_].main()
-                    """)
-
-        y = ForModification.apply(RedBaron(code)[0])
-        assert expect == y.dumps()
-
     def test_for_self(self):
         class T(Hardware):
             def __init__(self):
@@ -1419,61 +1407,3 @@ class TestCallModifications:
         conv = get_conversion(dut)
         func = conv.get_function('a')
         assert expect == func.build_body()
-
-
-class TestImplicitNext:
-    def test_basic(self):
-        code = 'self.a = 1'
-        expect = 'self.next.a = 1'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_list(self):
-        code = 'self.a[i] = 1'
-        expect = 'self.next.a[i] = 1'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_submod(self):
-        code = 'self.submod.a = 1'
-        expect = 'self.submod.next.a = 1'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_submod_list(self):
-        code = 'self.submod.a[i].b = 1'
-        expect = 'self.submod.a[i].next.b = 1'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_call(self):
-        code = 'self.a = self.call()'
-        expect = 'self.next.a = self.call()'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_call_multi_return(self):
-        code = 'self.a, self.b[i], local = self.call()'
-        expect = 'self.next.a, self.next.b[i], local = self.call()'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect
-
-    def test_non_target(self):
-        code = 'b.self.a = 1'
-        expect = 'b.self.a = 1'
-
-        red = RedBaron(code)
-        ImplicitNext.apply(red)
-        assert red.dumps() == expect

@@ -4,7 +4,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode
 from redbaron.base_nodes import LineProxyList
 
 import pyha
@@ -742,19 +742,18 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
-    red = ResizeMods.apply(red)
-    red = RemoveCopyDeepcopy.apply(red)
-    red = ForModification.apply(red)
-    red = CallModifications.apply(red)
-    red = MultiAssign.apply(red)
-    red = LazyOperand.apply(red)
-    red = IntToInteger.apply(red)
+    transform_resize_arguments(red)
+    transform_remove_copy(red)
+    transform_for(red)
+    transform_call(red)
+    transform_multiple_assignment(red)
+    transform_lazy_operand(red)
+    transform_int_cast(red)
     if obj is not None:
-        red = EnumModifications.apply(red)
-        ImplicitNext.apply(red)
-        AutoResize.apply(red)
-        SubmoduleDeepcopy.apply(red)
-        SubmoduleListDeepcopy.apply(red)
+        transform_enum(red)
+        transform_registers(red)
+        transform_auto_resize(red)
+        transform_submodule_deepcopy(red)
 
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
@@ -800,7 +799,7 @@ def super_local_getattr(obj, attr):
     return obj
 
 
-class ResizeMods:
+def transform_resize_arguments(red_node):
     """ Replace 'wrap' -> fixed_wrap
         'saturate' -> fixed_saturate
         'truncate' -> fixed_truncate
@@ -808,256 +807,164 @@ class ResizeMods:
 
         Force default fixed_wrap and fixed_truncate.
     """
+    nodes = red_node.find_all('call')
 
-    @staticmethod
-    def apply(red_node):
-        nodes = red_node.find_all('call')
+    for call in nodes:
+        call_index = call.previous.index_on_parent
+        if call_index != 0:  # not just resize().. maybe self.resize() etc...
+            continue
 
-        for call in nodes:
-            call_index = call.previous.index_on_parent
-            if call_index != 0:  # not just resize().. maybe self.resize() etc...
-                continue
+        if call.previous.value not in ['resize', 'Sfix']:
+            continue
 
-            if call.previous.value not in ['resize', 'Sfix']:
-                continue
+        args = call.find_all('call_argument')
+        overflow_kword_found = False
+        round_kword_found = False
+        for arg in args:
+            if str(arg.value) == "'wrap'":
+                arg.value = 'fixed_wrap'
+                arg.target = 'overflow_style'
+                overflow_kword_found = True
 
-            args = call.find_all('call_argument')
-            overflow_kword_found = False
-            round_kword_found = False
-            for arg in args:
-                if str(arg.value) == "'wrap'":
-                    arg.value = 'fixed_wrap'
-                    arg.target = 'overflow_style'
-                    overflow_kword_found = True
+            if str(arg.value) == "'saturate'":
+                arg.value = 'fixed_saturate'
+                arg.target = 'overflow_style'
+                overflow_kword_found = True
 
-                if str(arg.value) == "'saturate'":
-                    arg.value = 'fixed_saturate'
-                    arg.target = 'overflow_style'
-                    overflow_kword_found = True
+            if str(arg.value) == "'truncate'":
+                arg.value = 'fixed_truncate'
+                arg.target = 'round_style'
+                round_kword_found = True
 
-                if str(arg.value) == "'truncate'":
-                    arg.value = 'fixed_truncate'
-                    arg.target = 'round_style'
-                    round_kword_found = True
+            if str(arg.value) == "'round'":
+                arg.value = 'fixed_round'
+                arg.target = 'round_style'
 
-                if str(arg.value) == "'round'":
-                    arg.value = 'fixed_round'
-                    arg.target = 'round_style'
+                round_kword_found = True
 
-                    round_kword_found = True
+        # force defaults if not set
+        if not overflow_kword_found:
+            call.append(f'overflow_style=fixed_wrap')
 
-            # force defaults if not set
-            if not overflow_kword_found:
-                call.append(f'overflow_style=fixed_wrap')
-
-            if not round_kword_found:
-                call.append(f'round_style=fixed_truncate')
-
-        return red_node
+        if not round_kword_found:
+            call.append(f'round_style=fixed_truncate')
 
 
-class IntToInteger:
+def transform_int_cast(red_node):
     """ Convert int() to to_integer(round_syle=fixed_truncate, overflow_style=fixed_wrap) for VHDL. """
+    nodes = red_node.find_all('call')
+    for call in nodes:
+        call_index = call.previous.index_on_parent
+        if call_index != 0:  # not just copy().. maybe self.copy() etc...
+            continue
 
-    @staticmethod
-    def apply(red_node):
-        nodes = red_node.find_all('call')
-
-        for call in nodes:
-            call_index = call.previous.index_on_parent
-            if call_index != 0:  # not just copy().. maybe self.copy() etc...
-                continue
-
-            if call.previous.value == 'int':
-                call.previous.value = 'to_integer'
-                call.append('round_style=fixed_truncate')
-                call.append('overflow_style=fixed_wrap')
-
-        return red_node
+        if call.previous.value == 'int':
+            call.previous.value = 'to_integer'
+            call.append('round_style=fixed_truncate')
+            call.append('overflow_style=fixed_wrap')
 
 
-class RemoveCopyDeepcopy:
+def transform_remove_copy(red_node):
     """ Remove copy() and deepcopy() calls, in VHDL everything is deepcopy by default
     """
+    nodes = red_node.find_all('call')
+    for call in nodes:
+        call_index = call.previous.index_on_parent
+        if call_index != 0:  # not just copy().. maybe self.copy() etc...
+            continue
 
-    @staticmethod
-    def apply(red_node):
-        nodes = red_node.find_all('call')
+        if call.previous.value not in ['copy', 'deepcopy']:
+            continue
 
-        for call in nodes:
-            call_index = call.previous.index_on_parent
-            if call_index != 0:  # not just copy().. maybe self.copy() etc...
-                continue
-
-            if call.previous.value not in ['copy', 'deepcopy']:
-                continue
-
-            call.parent.replace(call.value.dumps())
-
-        return red_node
+        call.parent.replace(call.value.dumps())
 
 
-class MultiAssign:
+def transform_multiple_assignment(red_node):
     """ Multi target assigns to single target:
     a, b, c = 1, 2, 3 ->
     a = 1
     b = 2
     c = 3
     """
+    nodes = red_node.find_all('assign', target=lambda x: isinstance(x, TupleNode))
 
-    @staticmethod
-    def apply(red_node):
-        nodes = red_node.find_all('assign', target=lambda x: isinstance(x, TupleNode))
-
-        for x in nodes:
-            for i, (target, value) in enumerate(zip(x.target, x.value)):
-                if i == len(x.target) - 1:
-                    x.replace(f'{target} = {value}')
-                else:
-                    x.parent.insert(x.index_on_parent, f'{target} = {value}')
-
-        return red_node
+    for x in nodes:
+        for i, (target, value) in enumerate(zip(x.target, x.value)):
+            if i == len(x.target) - 1:
+                x.replace(f'{target} = {value}')
+            else:
+                x.parent.insert(x.index_on_parent, f'{target} = {value}')
 
 
-class LazyOperand:
+def transform_lazy_operand(red_node):
     """ *=, += .. etc:
     a *= b ->
     a = a * b
     """
-
-    @staticmethod
-    def apply(red_node):
-        nodes = red_node.find_all('assign', operator=lambda x: x != '')
-
-        for x in nodes:
-            x.replace(f'{x.target} = {x.target} {x.operator} {x.value}')
-
-        return red_node
+    nodes = red_node.find_all('assign', operator=lambda x: x != '')
+    for x in nodes:
+        x.replace(f'{x.target} = {x.target} {x.operator} {x.value}')
 
 
-class AutoResize:
+def transform_auto_resize(red_node):
     """ Auto resize on Sfix assignments
      Examples (depend on initial Sfix type):
          self.sfix_reg = a        ->   self.sfix_reg = resize(a, 5, -29, fixed_wrap, fixed_round)
          self.sfix_list[0] = a    ->   self.sfix_list[0] = resize(a, 0, 0, fixed_saturate, fixed_round)
          """
+    """ Resize stuff should happen on Sfix registers only, filter others out """
+    """ Wrap all subjects to autosfix inside resize() according to initial type """
 
-    @staticmethod
-    def find(red_node):
-        """ Find all assignments that are subject to auto resize conversion """
+    nodes = red_node.find_all('assign')
 
-        def is_subject(x):
-            """
-            Acceptable examples:
-                    self.a = b
-                    self.a.b = a
-                    self.b[0] = a
-                    self.a[3].b.b = a
-            """
-            if len(x) > 1 and str(x[0].value) == 'self':
-                return True
-            return False
+    for node in nodes:
+        if len(node.target) > 1 and node.target[0].value == 'self':
+            var_t = super_getattr(convert_obj, str(node.target))
+        else:
+            # get the SOURCE function (where call is going on) from datamodel
+            def_parent = node.parent
+            while not isinstance(def_parent, DefNode):
+                def_parent = def_parent.parent
 
-        return red_node.find_all('assign', target=is_subject)
+            source_func_name = f'self.{def_parent.name}'
+            source_func_obj = super_getattr(convert_obj, str(source_func_name))
 
-    @staticmethod
-    def filter(nodes):
-        """ Resize stuff should happen on Sfix registers only, filter others out """
+            func_locals = source_func_obj.get_local_types()
 
-        passed_nodes = []
-        types = []
-        for x in nodes:
-            t = super_getattr(convert_obj, str(x.target))
-            if isinstance(t, Sfix):
-                passed_nodes.append(x)
-                types.append(t)
-        return passed_nodes, types
+            class Struct:
+                def __init__(self, **entries):
+                    self.__dict__.update(entries)
 
-    @staticmethod
-    def apply(red_node):
-        """ Wrap all subjects to autosfix inside resize() according to initial type """
-        # nodes = AutoResize.find(red_node)
-        nodes = red_node.find_all('assign')
+            struct = Struct(**func_locals)
+            var_t = super_local_getattr(struct, str(node.target))
 
-        for node in nodes:
-            if len(node.target) > 1 and node.target[0].value == 'self':
-                var_t = super_getattr(convert_obj, str(node.target))
+        if isinstance(var_t, Sfix):
+            if isinstance(node.value, (FloatNode, IntNode)) \
+                    or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
+                    FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
+                node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
-                # get the SOURCE function (where call is going on) from datamodel
-                def_parent = node.parent
-                while not isinstance(def_parent, DefNode):
-                    def_parent = def_parent.parent
-
-                source_func_name = f'self.{def_parent.name}'
-                source_func_obj = super_getattr(convert_obj, str(source_func_name))
-
-                func_locals = source_func_obj.get_local_types()
-
-                class Struct:
-                    def __init__(self, **entries):
-                        self.__dict__.update(entries)
-
-                struct = Struct(**func_locals)
-                var_t = super_local_getattr(struct, str(node.target))
-
-                # try:
-                #     var_t = source_func_obj.locals[str(node.target)]
-                # except: # target is array
-                #     var_t = source_func_obj.locals[str(node.target[0])][0]
-
-            if isinstance(var_t, Sfix):
-                if isinstance(node.value, (FloatNode, IntNode)) \
-                        or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
-                        FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
-                    node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
-                else:
-                    node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
-
-        return red_node
-
-        # pass_nodes, pass_types = AutoResize.filter(nodes)
-        # for node, var_t in zip(pass_nodes, pass_types):
-        #
-        #     if isinstance(node.value, (FloatNode, IntNode)) \
-        #             or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
-        #             FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
-        #         node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
-        #     else:
-        #         node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
-        #
-        # return pass_nodes
+                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
 
 
-class SubmoduleDeepcopy:
+def transform_submodule_deepcopy(red_node):
     """ Converts assign to submodule to 'pyha_deepcopy' call"""
-
-    @staticmethod
-    def apply(red_node):
-        nodes = AutoResize.find(red_node)
-
-        for x in nodes:
-            target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
-            if isinstance(target_type, VHDLModule):
-                x.replace(
-                    f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
-
-
-class SubmoduleListDeepcopy:
-
-    @staticmethod
-    def apply(red_node):
-        nodes = AutoResize.find(red_node)
-
-        for x in nodes:
-            target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
-            if isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
-                x.replace(
-                    f'{target_type.elems[0]._pyha_module_name()}.pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+    nodes = red_node.find_all('assign')
+    for x in nodes:
+        if not isinstance(x.target, AtomtrailersNode) or x.target[0].value != 'self':
+            continue
+        target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
+        if isinstance(target_type, VHDLModule):
+            x.replace(
+                f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+        elif isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
+            x.replace(
+                f'{target_type.elems[0]._pyha_module_name()}.pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
 
 
-class ImplicitNext:
+def transform_registers(red_node):
     """
-    On all assignments add 'next' before the final target. This is to support variable based signal assignment in VHDL code.
+    On all assignments to self, add 'next' before the final target. This is to support variable based signal assignment in VHDL code.
 
     Examples:
     self.a -> self.next.a
@@ -1072,188 +979,164 @@ class ImplicitNext:
 
     """
 
-    @staticmethod
-    def apply(red_node):
+    def add_next(x):
+        if len(x) > 1 and str(x[0].value) == 'self':
+            loc = len(x) - 1
+            if isinstance(x[loc], GetitemNode):
+                loc -= 1
+            x.insert(loc, 'next')
 
-        def add_next(x):
-            if len(x) > 1 and str(x[0].value) == 'self':
-                loc = len(x) - 1
-                if isinstance(x[loc], GetitemNode):
-                    loc -= 1
-                x.insert(loc, 'next')
-
-        assigns = red_node.find_all('assign')
-        for node in assigns:
-            if isinstance(node.target, TupleNode):
-                for mn in node.target:
-                    add_next(mn)
-            else:
-                add_next(node.target)
+    assigns = red_node.find_all('assign')
+    for node in assigns:
+        if isinstance(node.target, TupleNode):
+            for mn in node.target:
+                add_next(mn)
+        else:
+            add_next(node.target)
 
 
-class CallModifications:
+def transform_call(red_node):
+    """
+    Converts Python style function calls to VHDL style:
+    self.d(a) -> d(self, a)
 
-    @staticmethod
-    def regular_functions(red_node):
-        """
-        Converts Python style function calls to VHDL style:
-        self.d(a) -> d(self, a)
+    If function owner is not exactly 'self' then 'unknown_type' is prepended.
+    self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
 
-        If function owner is not exactly 'self' then 'unknown_type' is prepended.
-        self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+    self.d(a) -> d(self, a)
+    self.next.d(a) -> d(self.next, a)
+    local.d() -> type.d(local)
+    self.local.d() -> type.d(self.local)
 
-        self.d(a) -> d(self, a)
-        self.next.d(a) -> d(self.next, a)
-        local.d() -> type.d(local)
-        self.local.d() -> type.d(self.local)
+    If return then:
 
-        If return then:
+    b = self.a(arg) ->
 
-        b = self.a(arg) ->
+        variable pyha_ret_0: type;
 
-            variable pyha_ret_0: type;
+        a(self, arg, pyha_ret_0);
+        b := pyha_ret_0;
 
-            a(self, arg, pyha_ret_0);
-            b := pyha_ret_0;
+    Handling call inside call is limited to depth 1.
 
-        Handling call inside call is limited to depth 1.
+    """
 
-        """
+    is_hack = False
 
-        is_hack = False
+    # make sure each created variable is unique by appending this number and incrementing
+    tmp_var_count = 0
 
-        # make sure each created variable is unique by appending this number and incrementing
-        tmp_var_count = 0
+    # loop over all atomtrailers, call is always a member of this
+    atomtrailers = red_node.find_all('atomtrailers')
+    for i, atom in enumerate(atomtrailers):  # reversed is for the case when one call is argument to other
+        if is_hack:  # when parsed out of order call
+            atom = atomtrailers[i - 1]
+            call = atom.call
+            is_hack = False
+        else:
+            call = atom.call  # this actually points to the stuff between ()
 
-        # loop over all atomtrailers, call is always a member of this
-        atomtrailers = red_node.find_all('atomtrailers')
-        for i, atom in enumerate(atomtrailers):  # reversed is for the case when one call is argument to other
-            if is_hack:  # when parsed out of order call
-                atom = atomtrailers[i - 1]
-                call = atom.call
-                is_hack = False
-            else:
-                call = atom.call  # this actually points to the stuff between ()
+        if call is None:  # this atomtrailer has no function call
+            continue
+
+        if call.call is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
+            atom = atomtrailers[i + 1]
+            call = atom.call
+            is_hack = True
 
             if call is None:  # this atomtrailer has no function call
                 continue
 
-            if call.call is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
-                atom = atomtrailers[i + 1]
-                call = atom.call
-                is_hack = True
+        call_index = call.previous.index_on_parent
+        if call_index == 0:  # input is something like x() -> len(), Sfix() ....
+            continue
 
-                if call is None:  # this atomtrailer has no function call
-                    continue
+        # get the TARGET function object from datamodel
+        target_func_name = atom.copy()
+        del target_func_name[call_index + 1:]
+        target_func_obj = super_getattr(convert_obj, str(target_func_name))
 
-            call_index = call.previous.index_on_parent
-            if call_index == 0:  # input is something like x() -> len(), Sfix() ....
-                continue
+        # set prefix as first argument (self)
+        # self.d(a) -> d(self, a)
+        prefix = atom.copy()
+        del prefix[call_index:]
+        del atom[:call_index]
+        call.insert(0, prefix)
 
-            # get the TARGET function object from datamodel
-            target_func_name = atom.copy()
-            del target_func_name[call_index + 1:]
-            target_func_obj = super_getattr(convert_obj, str(target_func_name))
+        # get the SOURCE (where call is going on) function object from datamodel
+        def_parent = atom.parent_find('def')
+        source_func_name = f'self.{def_parent.name}'
+        source_func_obj = super_getattr(convert_obj, str(source_func_name))
 
-            # set prefix as first argument (self)
-            # self.d(a) -> d(self, a)
-            prefix = atom.copy()
-            del prefix[call_index:]
-            del atom[:call_index]
-            call.insert(0, prefix)
+        # if call is not to local class function
+        # self.moving_average.main(x) -> MODULE_NAME.main(self.moving_average, x)
+        if str(prefix) != 'self':
+            var = super_getattr(convert_obj, str(prefix))
+            var = init_vhdl_type('-', var, var)
+            atom.insert(0, var._pyha_module_name())
 
-            # get the SOURCE (where call is going on) function object from datamodel
-            def_parent = atom.parent_find('def')
-            source_func_name = f'self.{def_parent.name}'
-            source_func_obj = super_getattr(convert_obj, str(source_func_name))
+        if target_func_obj.get_output_types() is None:
+            continue  # function is not returning stuff -> this is simple
+        else:
 
-            # if call is not to local class function
-            # self.moving_average.main(x) -> MODULE_NAME.main(self.moving_average, x)
-            if str(prefix) != 'self':
-                var = super_getattr(convert_obj, str(prefix))
-                var = init_vhdl_type('-', var, var)
-                atom.insert(0, var._pyha_module_name())
+            # add return variables to function locals, so that they will be converted to VHDL variables
+            ret_vars = []
+            for x in get_iterable(target_func_obj.get_output_types()):
+                name = f'pyha_ret_{tmp_var_count}'
+                ret_vars.append(name)
+                source_func_obj.add_local_type(name, x)
+                tmp_var_count += 1
 
-            if target_func_obj.get_output_types() is None:
-                continue  # function is not returning stuff -> this is simple
-            else:
+                # add return variable to arguments
+                call.append(name)
+                # call.value[-1].target = f'ret_{j}'
 
-                # add return variables to function locals, so that they will be converted to VHDL variables
-                ret_vars = []
-                for x in get_iterable(target_func_obj.get_output_types()):
-                    name = f'pyha_ret_{tmp_var_count}'
-                    ret_vars.append(name)
-                    source_func_obj.add_local_type(name, x)
-                    tmp_var_count += 1
-
-                    # add return variable to arguments
-                    call.append(name)
-                    # call.value[-1].target = f'ret_{j}'
-
-                # need to add new source line before the CURRENT line..search for the node with linenodes
-                line_node = atom
-                while True:
-                    if type(line_node.next) == EndlNode:
+            # need to add new source line before the CURRENT line..search for the node with linenodes
+            line_node = atom
+            while True:
+                if type(line_node.next) == EndlNode:
+                    break
+                if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
+                    if not (hasattr(line_node.parent, 'test') and (
+                            line_node.parent.test == atom  # if WE are the if contition, skip
+                            or line_node.parent.test == atom.parent)):  # if WE are the if contition (part of condition)
                         break
-                    if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
-                        if not (hasattr(line_node.parent, 'test') and (
-                                line_node.parent.test == atom  # if WE are the if contition, skip
-                                or line_node.parent.test == atom.parent)):  # if WE are the if contition (part of condition)
-                            break
 
-                    line_node = line_node.parent
+                line_node = line_node.parent
 
-                # add function call BEFORE the CURRENT line
-                if line_node != atom:  # equality means that value is not assigned to anything
-                    line_node.parent.insert(line_node.index_on_parent, atom.copy())
-                    atom.replace(','.join(ret_vars))
-
-        return red_node
-
-    @staticmethod
-    def apply(red_node):
-        red_node = CallModifications.regular_functions(red_node)
-        return red_node
+            # add function call BEFORE the CURRENT line
+            if line_node != atom:  # equality means that value is not assigned to anything
+                line_node.parent.insert(line_node.index_on_parent, atom.copy())
+                atom.replace(','.join(ret_vars))
 
 
-class ForModification:
-    @staticmethod
-    def apply(red_node):
-        def modify_for(red_node):
-            # if for range contains call to 'range' -> skip
-            with suppress(Exception):
-                if red_node.target('call')[0].previous.value == 'range':
-                    return red_node
+def transform_for(red_node):
+    def modify_for(red_node):
+        # if for range contains call to 'range' -> skip
+        with suppress(Exception):
+            if red_node.target('call')[0].previous.value == 'range':
+                return
 
-            ite = red_node.iterator
-            red_node(ite.__class__.__name__, value=ite.value) \
-                .map(lambda x: x.replace(f'{red_node.target}[_i_]'))
+        ite = red_node.iterator
+        red_node(ite.__class__.__name__, value=ite.value) \
+            .map(lambda x: x.replace(f'{red_node.target}[_i_]'))
 
-            red_node.iterator = '_i_'
-            return red_node
+        red_node.iterator = '_i_'
 
-        fors = red_node.find_all('for')
-        for x in fors:
-            modify_for(x)
-
-        return red_node
+    fors = red_node.find_all('for')
+    for x in fors:
+        modify_for(x)
 
 
-class EnumModifications:
+def transform_enum(red_node):
     """
     Converts 'EnumType.ENUMVALUE' to integer value , see #154
     """
-
-    @staticmethod
-    def apply(red_node):
-
-        data = VHDLModule('-', convert_obj)
-        enums = [x for x in data.elems if isinstance(x, VHDLEnum)]
-        for x in enums:
-            type_name = x._pyha_type()
-            red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
-            for i, node in enumerate(red_names):
-                enum_obj = type(x.current)[str(node[1])]
-                red_names[i].replace(str(enum_obj.value))
-
-        return red_node
+    data = VHDLModule('-', convert_obj)
+    enums = [x for x in data.elems if isinstance(x, VHDLEnum)]
+    for x in enums:
+        type_name = x._pyha_type()
+        red_names = red_node.find_all('atomtrailers', value=lambda x: x[0].value == type_name)
+        for i, node in enumerate(red_names):
+            enum_obj = type(x.current)[str(node[1])]
+            red_names[i].replace(str(enum_obj.value))
