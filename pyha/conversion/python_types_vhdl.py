@@ -6,7 +6,6 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -302,8 +301,8 @@ class VHDLEnum(BaseVHDLType):
 
     def _pyha_typedef(self):
         name = self._pyha_type()
-        return 'type {} is range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'.format(name, len(
-            type(self.current)) - 1)
+        return 'subtype {} is natural range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'\
+            .format(name, len(type(self.current)) - 1)
 
     def _pyha_reset_value(self):
         return self.initial.value
