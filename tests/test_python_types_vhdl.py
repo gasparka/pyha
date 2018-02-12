@@ -428,7 +428,7 @@ class TestVHDLEnum:
     def test_pyha_typedef(self):
         d = self.T.ENUM0
         dut = VHDLEnum('name', d, d)
-        expect = 'type T is range 0 to 3; -- enum converted to range due to Quartus "bug", see #154'
+        expect = 'subtype T is natural range 0 to 3; -- enum converted to range due to Quartus "bug", see #154'
         assert dut._pyha_typedef() == expect
 
     def test_pyha_reset_value(self):
