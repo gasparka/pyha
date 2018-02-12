@@ -915,6 +915,33 @@ class TestInterface:
         sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+    def test_single_input_nolist(self):
+        class T13(Hardware):
+            def main(self, x):
+                return x
+
+            def model_main(self, xl):
+                return xl
+
+        dut = T13()
+        x = 1.0
+        sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    # def test_single_input_nolist_dual(self):
+    #     class T13(Hardware):
+    #         def main(self, x, y):
+    #             return x, y
+    #
+    #         def model_main(self, xl, yl):
+    #             return xl, yl
+    #
+    #     dut = T13()
+    #     x = 1.0
+    #     y = 2.0
+    #     sims = simulate(dut, [x, y], simulations=['MODEL', 'PYHA', 'RTL'])
+    #     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
     def test_no_output(self):
         class T13(Hardware):
             def main(self, x):

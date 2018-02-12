@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
+
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
@@ -40,6 +41,7 @@ def convert_input_types(args, to_types=None, silence=False):
     args = list(args)
     with SimPath('inputs'):
         for i, arg in enumerate(args):
+            arg = get_iterable(arg)
             if any(isinstance(x, float) for x in arg):
                 args[i] = convert_arg(default_sfix, arg, i)
 
@@ -163,6 +165,30 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
                 out['MODEL'] = r
                 logger.info(f'OK!')
+
+
+        if 'MODEL_SIM' in simulations:
+            logger.info(f'Running "MODEL_SIM" simulation...')
+            with RegisterBehaviour.force_disable():
+                with Sfix._float_mode:
+                    tmpmodel = deepcopy(model)
+                    # tmpmodel._pyha_floats_to_fixed(silence=True)
+                    #
+                    tmpargs = deepcopy(args)
+                    # tmpargs = convert_input_types(tmpargs, input_types, silence=True)
+                    tmpargs = transpose(tmpargs)
+
+                    ret = []
+                    for x in tmpargs:
+                        ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
+                        # tmpmodel._pyha_update_registers()
+
+                    ret = process_outputs(0, ret)
+                    # convert outputs to Python types, for example fixed to floats
+                    # ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
+
+            out['MODEL_SIM'] = ret
+            logger.info(f'OK!')
 
         if 'MODEL_PYHA' in simulations:
             logger.info(f'Running "MODEL_PYHA" simulation...')
@@ -299,7 +325,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             expected = simulation_results['PYHA']
             logger.info(f'Using "PYHA" as golden output')
 
-    expected = np_to_py(expected)[skip_first_n:]
+    expected = np_to_py(get_iterable(expected))[skip_first_n:]
 
     expected = init_vhdl_type('root', expected, expected)
     result = True
