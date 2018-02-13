@@ -939,11 +939,8 @@ class TestInterface:
         x = 1.0
         y = 0.5
 
-        alt = [[x,y],
-               [x,y]]
-        # sims = simulate(dut, [x,x], [y,y], simulations=['MODEL', 'PYHA'])
-        sims = simulate(dut, alt, simulations=['MODEL', 'PYHA'])
-        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+        sims = simulate(dut, [x,x], [y,y], simulations=['MODEL', 'PYHA'])
+        assert sims_close(sims)
 
     def test_no_output(self):
         class T13(Hardware):

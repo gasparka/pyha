@@ -93,7 +93,7 @@ def process_outputs(delay_compensate, ret):
     return ret
 
 
-def simulate(model, args, simulations=None, conversion_path=None, input_types=None):
+def simulate(model, *args, simulations=None, conversion_path=None, input_types=None):
     """
     Run simulations on model.
 
@@ -157,7 +157,7 @@ def simulate(model, args, simulations=None, conversion_path=None, input_types=No
             if not hasattr(model, 'model_main'):
                 logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
             else:
-                r = model.model_main(*transpose(args))
+                r = model.model_main(*args)
                 r = np_to_py(r)
                 if isinstance(r, tuple):
                     r = list(r)
@@ -217,7 +217,7 @@ def simulate(model, args, simulations=None, conversion_path=None, input_types=No
             logger.info(f'Converting model to hardware types ...')
             model._pyha_floats_to_fixed()
             args = convert_input_types(args, input_types)
-            # args = transpose(*args)
+            args = transpose(args)
 
             delay_compensate = 0
             with suppress(AttributeError):
