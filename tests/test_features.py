@@ -3,9 +3,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -928,19 +927,23 @@ class TestInterface:
         sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])
         assert sims_close(sims)
 
-    # def test_single_input_nolist_dual(self):
-    #     class T13(Hardware):
-    #         def main(self, x, y):
-    #             return x, y
-    #
-    #         def model_main(self, xl, yl):
-    #             return xl, yl
-    #
-    #     dut = T13()
-    #     x = 1.0
-    #     y = 2.0
-    #     sims = simulate(dut, [x, y], simulations=['MODEL', 'PYHA', 'RTL'])
-    #     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+    def test_single_input_nolist_dual(self):
+        class T13(Hardware):
+            def main(self, x, y):
+                return x, y
+
+            def model_main(self, xl, yl):
+                return xl, yl
+
+        dut = T13()
+        x = 1.0
+        y = 0.5
+
+        alt = [[x,y],
+               [x,y]]
+        # sims = simulate(dut, [x,x], [y,y], simulations=['MODEL', 'PYHA'])
+        sims = simulate(dut, alt, simulations=['MODEL', 'PYHA'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_no_output(self):
         class T13(Hardware):
