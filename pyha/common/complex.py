@@ -61,16 +61,14 @@ class Complex(Hardware):
 
     def __add__(self, other):
         # other = self._convert_other_operand(other)
-        self.real = self.real + other.real
-        self.imag = self.imag + other.imag
+        return Complex(self.real + other.real, self.imag + other.imag)
 
     def __radd__(self, other):
         return self.__add__(other)
 
     def __sub__(self, other):
         # other = self._convert_other_operand(other)
-        self.real = self.real - other.real
-        self.imag = self.imag - other.imag
+        return Complex(self.real - other.real, self.imag - other.imag)
 
     def __rsub__(self, other):
         # other = self._convert_other_operand(other)
@@ -78,8 +76,9 @@ class Complex(Hardware):
 
     def __mul__(self, other):
         # other = self._convert_other_operand(other)
-        self.real = (self.real * other.real) - (self.imag * other.imag)
-        self.imag = (self.real * other.imag) + (self.imag * other.real)
+        real = (self.real * other.real) - (self.imag * other.imag)
+        imag = (self.real * other.imag) + (self.imag * other.real)
+        return Complex(real, imag)
 
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')
