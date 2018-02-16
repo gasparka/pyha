@@ -3,8 +3,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -597,6 +598,24 @@ class TestRegisters:
         print(sims)
         assert_equals(sims, expected=expect)
 
+    def test_complex_shiftreg(self):
+        """ This failed because inputs were converted with 'is_local=True', which disabled register updates. """
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sub = [Complex()] * 1
+
+            def main(self, new_sub):
+                self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                return self.shr_sub[-1]
+
+        dut = ShiftReg()
+
+        inputs = [0.1 + 0.2j, 0.2 + 0.3j, 0.3 + 0.4j]
+        expect = [0 + 0j, 0.1 + 0.2j, 0.2 + 0.3j]
+
+        ret = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_equals(ret, expect)
+
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
 
@@ -939,7 +958,7 @@ class TestInterface:
         x = 1.0
         y = 0.5
 
-        sims = simulate(dut, [x,x], [y,y], simulations=['MODEL', 'PYHA'])
+        sims = simulate(dut, [x, x], [y, y], simulations=['MODEL', 'PYHA'])
         assert sims_close(sims)
 
     def test_no_output(self):

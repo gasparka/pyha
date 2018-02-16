@@ -6,6 +6,7 @@ from math import isclose
 from typing import List
 
 import numpy as np
+
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -608,9 +609,9 @@ class VHDLFloat(BaseVHDLType):
 
 class VHDLComplex(BaseVHDLType):
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
-        if not isinstance(other.current, type(self.current)):
-            logger.error('Complex values not equal bacause types differ!= {}'.format(name, self.current, other.current))
-            return False
+        # if not isinstance(other.current, type(self.current)):
+        #     logger.error('Complex values not equal bacause types differ!= {}'.format(name, self.current, other.current))
+        #     return False
         eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
         eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
         eq = eq1 and eq2
