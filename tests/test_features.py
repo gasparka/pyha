@@ -1684,7 +1684,9 @@ class TestRemoveCopyDeepcopy:
 
         dut = T()
 
-        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j])
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], simulations=[
+            # 'MODEL_PYHA',
+                                                                    'PYHA'])
         assert sims_close(sims)
 
     def test_deepcopy(self):

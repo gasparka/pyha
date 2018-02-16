@@ -59,5 +59,27 @@ class Complex(Hardware):
     def _pyha_to_python_value(self):
         return complex(self)
 
+    def __add__(self, other):
+        # other = self._convert_other_operand(other)
+        self.real = self.real + other.real
+        self.imag = self.imag + other.imag
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        # other = self._convert_other_operand(other)
+        self.real = self.real - other.real
+        self.imag = self.imag - other.imag
+
+    def __rsub__(self, other):
+        # other = self._convert_other_operand(other)
+        return other.__sub__(self)
+
+    def __mul__(self, other):
+        # other = self._convert_other_operand(other)
+        self.real = (self.real * other.real) - (self.imag * other.imag)
+        self.imag = (self.real * other.imag) + (self.imag * other.real)
+
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')
