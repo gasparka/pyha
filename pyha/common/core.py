@@ -4,12 +4,11 @@ from collections import UserList
 from copy import deepcopy, copy
 
 import numpy as np
-from six import with_metaclass
-
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable
+from six import with_metaclass
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -233,7 +232,7 @@ class PyhaList(UserList):
         """
         if hasattr(self.data[0], '_pyha_update_registers'):
             # object already knows how to handle registers
-            self[i] = y
+            self.data[i] = y
         else:
             if isinstance(self.data[0], Sfix):
                 with SimPath(f'{self.var_name}[{i}]='):
@@ -354,6 +353,7 @@ class Hardware(with_metaclass(Meta)):
                 # list of submodules -> need to copy each value to submodule next
                 for elem, new in zip(self.__dict__[name], value):
                     # for deeper submodules, deepcopy was not necessary..
+                    new._pyha_is_local = False # make sure it will be updated
                     elem.__dict__['_pyha_next'] = copy(new.__dict__)
             else:
                 self.__dict__[name]._pyha_next = value

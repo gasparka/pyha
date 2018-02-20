@@ -3,9 +3,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -622,11 +621,11 @@ class TestRegisters:
         class Sub(Hardware):
             def __init__(self, i=0):
                 self.a = i
-                # self.b = False
 
         class ShiftReg(Hardware):
             def __init__(self):
                 self.shr_sub = [Sub(3), Sub(4)]
+                self.DELAY = 1
 
             def main(self, new_sub):
                 self.shr_sub = [new_sub] + self.shr_sub[:-1]
@@ -635,10 +634,31 @@ class TestRegisters:
         dut = ShiftReg()
 
         inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
-        expect = [Sub(4), Sub(3), Sub(999), Sub(9999)]
+        expect = [Sub(3), Sub(999), Sub(9999)]
 
-        ret = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
-        assert_equals(ret, expect)
+        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'PYHA', 'RTL', 'GATE'])
+        assert sims_close(ret, expect)
+
+    def test_submodule_with_complex_shiftreg(self):
+        class Sub(Hardware):
+            def __init__(self, i=0.1 + 0.1j):
+                self.a = Complex(i, 0, -17)
+
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sub = [Sub(0.1 + 0.1j), Sub(0.2 + 0.2j)]
+                self.DELAY = 1
+
+            def main(self, new_sub):
+                self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                return self.shr_sub[-1]
+
+        dut = ShiftReg()
+
+        inputs = [Sub(0.3 + 0.3j), Sub(0.4 + 0.4j), Sub(0.5 + 0.5j), Sub(0.6 + 0.6j)]
+
+        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'PYHA', 'RTL', 'GATE'])
+        assert sims_close(ret)
 
 
 class TestMainAsModel:
@@ -1669,9 +1689,10 @@ def test_lazy_operands():
     assert sims_close(sims)
 
 
+
+
+
 from copy import copy, deepcopy
-
-
 class TestRemoveCopyDeepcopy:
     def test_copy(self):
         class T(Hardware):
