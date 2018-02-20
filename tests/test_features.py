@@ -599,6 +599,7 @@ class TestRegisters:
 
     def test_complex_shiftreg(self):
         """ This failed because inputs were converted with 'is_local=True', which disabled register updates. """
+
         class ShiftReg(Hardware):
             def __init__(self):
                 self.shr_sub = [Complex()] * 1
@@ -658,6 +659,46 @@ class TestRegisters:
         inputs = [Sub(0.3 + 0.3j), Sub(0.4 + 0.4j), Sub(0.5 + 0.5j), Sub(0.6 + 0.6j)]
 
         ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'PYHA', 'RTL', 'GATE'])
+        assert sims_close(ret)
+
+
+class TestMemory:
+    def test_regfile_basic(self):
+        """ Basic write/read to same address..read the old data. """
+
+        class DualPort(Hardware):
+            def __init__(self):
+                self.mem = [0, 1, 2, 3, 4]
+
+            def main(self, addr, to_write):
+                self.mem[addr] = to_write
+                return self.mem[addr]
+
+        dut = DualPort()
+
+        to_write = [4, 3, 2, 1, 0, 0, 1, 2, 3, 4]
+        addr = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+        ret = simulate(dut, addr, to_write, simulations=['PYHA', 'RTL', 'GATE'])
+        assert sims_close(ret)
+
+    def test_regfile_submodule(self):
+        """ Assigning objects were broken, it bypassed register effects """
+        class DualPort(Hardware):
+            def __init__(self):
+                self.mem = [Complex(0.1 + 0.1j), Complex(0.2 + 0.2j), Complex(0.3 + 0.3j), Complex(0.4 + 0.4j),
+                            Complex(0.5 + 0.5j)]
+
+            def main(self, addr, to_write):
+                self.mem[addr] = to_write
+                return self.mem[addr]
+
+        dut = DualPort()
+
+        to_write = [0.91 + 0.99j, 0.92 + 0.99j, 0.93 + 0.99j, 0.94 + 0.99j,
+                    0.95 + 0.96j, 0.99 + 0.99j, 0.99 + 0.99j, 0.99 + 0.99j,
+                    0.99 + 0.99j]
+        addr = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
+        ret = simulate(dut, addr, to_write, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(ret)
 
 
@@ -1689,10 +1730,9 @@ def test_lazy_operands():
     assert sims_close(sims)
 
 
-
-
-
 from copy import copy, deepcopy
+
+
 class TestRemoveCopyDeepcopy:
     def test_copy(self):
         class T(Hardware):
@@ -1707,7 +1747,7 @@ class TestRemoveCopyDeepcopy:
 
         sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], simulations=[
             # 'MODEL_PYHA',
-                                                                    'PYHA'])
+            'PYHA'])
         assert sims_close(sims)
 
     def test_deepcopy(self):

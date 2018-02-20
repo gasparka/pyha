@@ -232,7 +232,8 @@ class PyhaList(UserList):
         """
         if hasattr(self.data[0], '_pyha_update_registers'):
             # object already knows how to handle registers
-            self.data[i] = y
+            y._pyha_is_local = False  # make sure it will be updated
+            self.data[i]._pyha_next = copy(y.__dict__)
         else:
             if isinstance(self.data[0], Sfix):
                 with SimPath(f'{self.var_name}[{i}]='):
