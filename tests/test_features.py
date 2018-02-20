@@ -681,8 +681,26 @@ class TestMemory:
         ret = simulate(dut, addr, to_write, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(ret)
 
+    def test_simple_write(self):
+        """ Bug: write with list objects took 2 cycles """
+
+        class Mem(Hardware):
+            def __init__(self):
+                self.mem = [Complex(0.1 + 0.1j, 0, -17), Complex(0.2 + 0.2j, 0, -17)]
+
+            def main(self, addr, to_write):
+                self.mem[addr] = to_write
+                return self.mem[addr]
+
+        dut = Mem()
+        to_write = [0.91 + 0.99j, 0.92 + 0.99j, 0.93 + 0.99j, 0.94 + 0.99j]
+        addr = [0, 0, 0, 0]
+        ret = simulate(dut, addr, to_write, simulations=['PYHA', 'RTL', 'GATE'])
+        assert sims_close(ret)
+
     def test_regfile_submodule(self):
         """ Assigning objects were broken, it bypassed register effects """
+
         class DualPort(Hardware):
             def __init__(self):
                 self.mem = [Complex(0.1 + 0.1j), Complex(0.2 + 0.2j), Complex(0.3 + 0.3j), Complex(0.4 + 0.4j),

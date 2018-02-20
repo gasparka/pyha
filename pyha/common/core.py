@@ -232,8 +232,12 @@ class PyhaList(UserList):
         """
         if hasattr(self.data[0], '_pyha_update_registers'):
             # object already knows how to handle registers
-            y._pyha_is_local = False  # make sure it will be updated
-            self.data[i]._pyha_next = copy(y.__dict__)
+            # copy relevant stuff only
+            for k, v in y.__dict__.items():
+                if k.startswith('_pyha'):
+                    continue
+                self.data[i].__dict__['_pyha_next'][k] = copy(v)
+
         else:
             if isinstance(self.data[0], Sfix):
                 with SimPath(f'{self.var_name}[{i}]='):
@@ -354,8 +358,11 @@ class Hardware(with_metaclass(Meta)):
                 # list of submodules -> need to copy each value to submodule next
                 for elem, new in zip(self.__dict__[name], value):
                     # for deeper submodules, deepcopy was not necessary..
-                    new._pyha_is_local = False # make sure it will be updated
-                    elem.__dict__['_pyha_next'] = copy(new.__dict__)
+                    # copy relevant stuff only
+                    for k, v in new.__dict__.items():
+                        if k.startswith('_pyha'):
+                            continue
+                        elem.__dict__['_pyha_next'][k] = copy(v)
             else:
                 self.__dict__[name]._pyha_next = value
             return
