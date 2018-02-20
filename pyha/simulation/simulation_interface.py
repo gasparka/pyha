@@ -320,9 +320,9 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
         if 'MODEL' in simulation_results.keys():
             expected = simulation_results['MODEL']
             logger.info(f'Using "MODEL" as golden output')
-        elif 'PYHA_MODEL' in simulation_results.keys():
-            expected = simulation_results['PYHA_MODEL']
-            logger.info(f'Using "PYHA_MODEL" as golden output')
+        elif 'MODEL_PYHA' in simulation_results.keys():
+            expected = simulation_results['MODEL_PYHA']
+            logger.info(f'Using "MODEL_PYHA" as golden output')
         else:
             expected = simulation_results['PYHA']
             logger.info(f'Using "PYHA" as golden output')
