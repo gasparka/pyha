@@ -100,6 +100,10 @@ class Sfix:
         if self.left is None or self.right is None:
             return
 
+        # if bitwidths are abnormally large, limit them to [128, -128], this can happen when simulating design with no resizing
+        self.left = min(128, self.left)
+        self.right = max(-128, self.right)
+
         assert self.left >= self.right
         # FIXME: This sucks, init should not call these anyways, make to_sfixed function
         if init_only or Sfix._float_mode.enabled:
