@@ -178,7 +178,10 @@ class Meta(type):
                 continue
             if hasattr(v, '_pyha_update_registers'):
                 continue
-            ret._pyha_next[k] = deepcopy(v)
+            if not ret._pyha_is_local:
+                ret._pyha_next[k] = deepcopy(v)
+            else:
+                ret._pyha_next = v
 
         ret._pyha_updateable = []
         for k, v in ret.__dict__.items():
@@ -186,7 +189,10 @@ class Meta(type):
                 ret._pyha_updateable.append(v)
 
         # save the initial self values - all registers and initial values will be derived from these values!
-        ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+        if not ret._pyha_is_local:
+            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+        else:
+            ret.__dict__['_pyha_initial_self'] = ret
 
         # every call to 'main' will append returned values here
         ret._pyha_outputs = []
