@@ -236,7 +236,7 @@ class PyhaList(UserList):
             for k, v in y.__dict__.items():
                 if k.startswith('_pyha'):
                     continue
-                self.data[i].__dict__['_pyha_next'][k] = copy(v)
+                self.data[i].__dict__['_pyha_next'][k] = v
 
         else:
             if isinstance(self.data[0], Sfix):
@@ -362,7 +362,7 @@ class Hardware(with_metaclass(Meta)):
                     for k, v in new.__dict__.items():
                         if k.startswith('_pyha'):
                             continue
-                        elem.__dict__['_pyha_next'][k] = copy(v)
+                        elem.__dict__['_pyha_next'][k] = v
             else:
                 self.__dict__[name]._pyha_next = value
             return
