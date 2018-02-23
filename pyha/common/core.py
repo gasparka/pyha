@@ -4,11 +4,12 @@ from collections import UserList
 from copy import deepcopy, copy
 
 import numpy as np
+from six import with_metaclass
+
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable
-from six import with_metaclass
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -277,24 +278,33 @@ class PyhaList(UserList):
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
+        from pyha.common.complex import default_complex
         if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
             for x in self.data:
                 x._pyha_floats_to_fixed(silence)
         else:
-            if not isinstance(self.data[0], float):
+            if not isinstance(self.data[0], (float, complex)):
                 return
 
             new = []
             for x in self.data:
-                item = default_sfix(x)
-                item.round_style = 'truncate'
-                item.overflow_style = 'wrap'
+                if isinstance(x, float):
+                    item = default_sfix(x)
+                    item.round_style = 'truncate'
+                    item.overflow_style = 'wrap'
+                elif isinstance(x, complex):
+                    item = default_complex(x)
+                    item.real.round_style = 'truncate'
+                    item.real.overflow_style = 'wrap'
+                    item.imag.round_style = 'truncate'
+                    item.imag.overflow_style = 'wrap'
+
                 new.append(item)
 
             if not silence:
                 import pandas as pd
                 pd.options.display.max_rows = 32
-                l = pd.DataFrame({'float': self.data, 'fixed': new})
+                l = pd.DataFrame({'original': self.data, 'converted': new})
                 logger.debug(
                     f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
@@ -315,18 +325,30 @@ class Hardware(with_metaclass(Meta)):
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
+        from pyha.common.complex import default_complex
         # update atoms
         for k, v in self.__dict__.items():
+            if not isinstance(v, (float, complex)):
+                continue
+
             if isinstance(v, float):
                 new = default_sfix(v)
                 new.round_style = 'truncate'
                 new.overflow_style = 'wrap'
 
-                if not silence:
-                    logger.debug(
-                        f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
-                self.__dict__[k] = new
-                self._pyha_next[k] = deepcopy(new)
+            elif isinstance(v, complex):
+                new = default_complex(v)
+                new.real.round_style = 'truncate'
+                new.real.overflow_style = 'wrap'
+                new.imag.round_style = 'truncate'
+                new.imag.overflow_style = 'wrap'
+
+
+            if not silence:
+                logger.debug(
+                    f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
+            self.__dict__[k] = new
+            self._pyha_next[k] = deepcopy(new)
 
         # update all childs
         for x in self._pyha_updateable:

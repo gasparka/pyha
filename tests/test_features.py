@@ -3,8 +3,9 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pyha
 import pytest
+
+import pyha
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -1273,6 +1274,54 @@ class TestFloatToSfix:
         def __init__(self):
             self.float_list = [0.5, 0.00009, 1.5]
             # self.l = [D(), D()] # submod list
+
+    def test_complex(self):
+        class D(Hardware):
+            def __init__(self):
+                self.reg = 0.5 + 0.5j
+                self.saturation = 1.5 - 1.5j  # make sure is saturated
+                self.round = 0.00009 + 0.00009j  # make sure is rounded
+
+        dut = D()
+        dut._pyha_floats_to_fixed()
+
+        assert str(dut.reg) == str(Complex(0.5 + 0.5j, 0, -17))
+        assert str(dut.saturation) == str(Complex(1.5 - 1.5j, 0, -17, overflow_style='saturate'))
+        assert str(dut.round) == str(Complex(0.00009 + 0.00009j, 0, -17, round_style='round'))
+
+        # cant add these for Complex object...they must live inside of Sfix object!
+        assert not hasattr(dut.reg, 'round_style')
+        assert not hasattr(dut.reg, 'overflow_style')
+
+        # make sure the overall defaults are restored (however conversion is done with saturate and round)
+        assert dut.reg.real.round_style == 'truncate'
+        assert dut.reg.real.overflow_style == 'wrap'
+
+        assert dut.reg.imag.round_style == 'truncate'
+        assert dut.reg.imag.overflow_style == 'wrap'
+
+    def test_complex_list(self):
+        class Listy(Hardware):
+            def __init__(self):
+                self.l = [0.5 + 0.5j, 1.5 - 1.5j, 0.00009 + 0.00009j]
+
+        dut = Listy()
+        dut._pyha_floats_to_fixed()
+
+        assert str(dut.l[0]) == str(Complex(0.5 + 0.5j, 0, -17))
+        assert str(dut.l[1]) == str(Complex(1.5 - 1.5j, 0, -17, overflow_style='saturate'))
+        assert str(dut.l[2]) == str(Complex(0.00009 + 0.00009j, 0, -17, round_style='round'))
+
+        # cant add these for Complex object...they must live inside of Sfix object!
+        assert not hasattr(dut.l[0], 'round_style')
+        assert not hasattr(dut.l[0], 'overflow_style')
+
+        # make sure the overall defaults are restored (however conversion is done with saturate and round)
+        assert dut.l[0].real.round_style == 'truncate'
+        assert dut.l[0].real.overflow_style == 'wrap'
+
+        assert dut.l[0].imag.round_style == 'truncate'
+        assert dut.l[0].imag.overflow_style == 'wrap'
 
     def test_basic(self):
         dut = self.D()
