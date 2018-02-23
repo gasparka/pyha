@@ -177,6 +177,18 @@ def test_and(converter):
     assert str(conv) == 'a and b'
 
 
+def test_bitand(converter):
+    code = 'a & b'
+    conv = converter(code)
+    assert str(conv) == 'a and b'
+
+
+def test_UnitaryOperatorNode(converter):
+    code = 'not(a & b)'
+    conv = converter(code)
+    assert str(conv) == 'not(a and b)'
+
+
 def test_or(converter):
     code = 'a or b'
     conv = converter(code)

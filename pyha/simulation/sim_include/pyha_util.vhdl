@@ -39,6 +39,7 @@ package PyhaUtil is
   function "or"(a:integer; b:boolean) return integer;
   function "or"(a, b:integer) return integer;
   function "xor"(a, b:integer) return integer;
+  function "not" (a : integer) return boolean;
 
   -- function bits_to_int(x: boolean_list_t) return integer;
   -- function "??"(a:integer) return boolean; -- not supported for quartus
@@ -156,6 +157,15 @@ package body PyhaUtil is
   function "xor"(a, b:integer) return integer is
   begin
      return to_integer(to_signed(a, 32) xor to_signed(b, 32));
+  end function;
+
+  function "not"(a :integer) return boolean is
+  begin
+    if a = 0 then
+       return True;
+    else
+      return False;
+    end if;
   end function;
 
   function "??"(a:integer) return boolean is

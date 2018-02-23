@@ -305,7 +305,8 @@ class FloatNodeVHDL(NodeVHDL):
 
 
 class UnitaryOperatorNodeVHDL(NodeVHDL):
-    pass
+    def __str__(self):
+        return f'{self.value}{self.target}'
 
 
 class AssertNodeVHDL(NodeVHDL):
