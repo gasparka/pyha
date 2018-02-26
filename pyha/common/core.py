@@ -94,7 +94,7 @@ class PyhaFunc:
             return tuple(self.output_types)
         else:
             if len(self.output_types) == 1:
-                return self.output_types[0] # single return (this was temporarily converted to list)
+                return self.output_types[0]  # single return (this was temporarily converted to list)
             else:
                 return self.output_types
 
@@ -190,7 +190,7 @@ class Meta(type):
         if ret._pyha_is_local:
             ret.__dict__['_pyha_initial_self'] = ret
             if not cls.instances:
-                cls.instances = [] # code depends on having this var
+                cls.instances = []  # code depends on having this var
         else:
 
             cls.instance_count += 1
@@ -315,7 +315,6 @@ class PyhaList(UserList):
 class Hardware(with_metaclass(Meta)):
 
     def __deepcopy__(self, memo):
-        """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
@@ -323,11 +322,16 @@ class Hardware(with_metaclass(Meta)):
         with RegisterBehaviour.force_disable():
             with AutoResize.force_disable():
                 for k, v in self.__dict__.items():
-                    # todo: maybe this also works for 'next'
-                    if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
-                        setattr(result, k, copy(v))
+                    if SimulationRunning.is_enabled(): # can use cheaper copy..
+                        if k.startswith('_pyha'):
+                            continue
+                        else:
+                            setattr(result, k, deepcopy(v, memo))
                     else:
-                        setattr(result, k, deepcopy(v, memo))
+                        if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                            setattr(result, k, copy(v))
+                        else:
+                            setattr(result, k, deepcopy(v, memo))
         return result
 
     def _pyha_update_registers(self):
@@ -346,6 +350,9 @@ class Hardware(with_metaclass(Meta)):
         from pyha.common.complex import default_complex
         # update atoms
         for k, v in self.__dict__.items():
+            if hasattr(v, '_pyha_update_registers'):
+                v._pyha_floats_to_fixed(silence)
+
             if not isinstance(v, (float, complex)):
                 continue
 
@@ -361,7 +368,6 @@ class Hardware(with_metaclass(Meta)):
                 new.imag.round_style = 'truncate'
                 new.imag.overflow_style = 'wrap'
 
-
             if not silence:
                 logger.debug(
                     f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
@@ -369,8 +375,8 @@ class Hardware(with_metaclass(Meta)):
             self._pyha_next[k] = deepcopy(new)
 
         # update all childs
-        for x in self._pyha_updateable:
-            x._pyha_floats_to_fixed(silence)
+        # for x in self._pyha_updateable:
+            # x._pyha_floats_to_fixed(silence)
 
         # update initial self
         try:

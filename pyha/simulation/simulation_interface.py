@@ -154,6 +154,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     out = {}
     model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
+    model_pyha = deepcopy(model) # used for MODEL_PYHA (need to copy before SimulationRunning starts)
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
             logger.info(f'Running "MODEL" simulation...')
@@ -173,7 +174,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             logger.info(f'Running "MODEL_PYHA" simulation...')
             with RegisterBehaviour.force_disable():
                 with Sfix._float_mode:
-                    tmpmodel = deepcopy(model)
+                    tmpmodel = model_pyha
                     tmpmodel._pyha_floats_to_fixed(silence=True)
 
                     tmpargs = deepcopy(args)

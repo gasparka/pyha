@@ -457,10 +457,13 @@ class VHDLList(BaseVHDLType):
 
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None, parent=None):
-        if initial is None:
-            initial = current._pyha_initial_self
-        else:
-            current._pyha_initial_self = initial._pyha_initial_self
+        try:
+            if initial is None:
+                initial = current._pyha_initial_self
+            else:
+                current._pyha_initial_self = initial._pyha_initial_self
+        except:
+            pass
 
         super().__init__(var_name, current, initial, parent)
 
@@ -674,7 +677,10 @@ def get_vars_as_vhdl_types(obj: Hardware, parent=None) -> List[BaseVHDLType]:
                 and not isinstance(v, PyhaFunc)}
 
     current_vars = filter_junk(vars(obj))
-    initial_vars = filter_junk(vars(obj._pyha_initial_self))
+    try:
+        initial_vars = filter_junk(vars(obj._pyha_initial_self))
+    except:
+        initial_vars = current_vars
 
     # convert to conversion classes
     ret = [init_vhdl_type(name, current_val, initial_val, parent) for name, current_val, initial_val in
