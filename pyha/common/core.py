@@ -4,12 +4,11 @@ from collections import UserList
 from copy import deepcopy, copy
 
 import numpy as np
-from six import with_metaclass
-
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable
+from six import with_metaclass
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -155,6 +154,7 @@ class Meta(type):
     instances = []
 
     # ran when instance is made
+    # @profile
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
@@ -162,6 +162,7 @@ class Meta(type):
         # if this object was CREATED during simulation, so it must be local object (or input/output)
         # anyways for local objects register and sfix behavour stuff must be disabled
         ret._pyha_is_local = SimulationRunning.is_enabled()
+        # if not ret._pyha_is_local:
         cls.instance_count += 1
         cls.instances = copy(cls.instances + [ret])
 
@@ -176,14 +177,23 @@ class Meta(type):
         # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
         ret._pyha_next = {}
         for k, v in ret.__dict__.items():
-            if k == '__dict__' or k.startswith('_pyha'):
+            if k.startswith('_pyha') or k == '__dict__':
                 continue
-            if hasattr(v, '_pyha_update_registers'):
-                continue
+
+            # if isinstance(v, np.ndarray):
+            #     v = np_to_py(v)
+            #
+            # if isinstance(v, list):
+            #     v = PyhaList(v, ret.__class__.__name__, k)
+            #     ret.__dict__[k] = v
+
             if not ret._pyha_is_local:
                 ret._pyha_next[k] = deepcopy(v)
             else:
                 ret._pyha_next = v
+
+            # if hasattr(v, '_pyha_update_registers'):
+            #     ret._pyha_updateable.append(v)
 
         ret._pyha_updateable = []
         for k, v in ret.__dict__.items():

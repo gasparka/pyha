@@ -8,7 +8,6 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
-
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
@@ -27,19 +26,19 @@ def convert_input_types(args, to_types=None, silence=False):
     if not silence:
         logger.info(f'Converting simulation inputs to hardware types...')
 
-    def convert_complex(default_type, arg, i):
-        t = default_type
-        if to_types is not None:
-            t = to_types[i]
-
-        ret = []
-        for x in arg:
-            new = t
-            new.real = Sfix(x.real, 0, -17)
-            new.imag = Sfix(x.imag, 0, -17)
-            ret.append(new)
-
-        return ret
+    # def convert_complex(default_type, arg, i):
+    #     t = default_type
+    #     if to_types is not None:
+    #         t = to_types[i]
+    #
+    #     ret = []
+    #     for x in arg:
+    #         new = t
+    #         new.real = Sfix(x.real, 0, -17)
+    #         new.imag = Sfix(x.imag, 0, -17)
+    #         ret.append(new)
+    #
+    #     return ret
 
     def convert_arg(default_type, arg, i):
         # args_orig = deepcopy(args[i])
@@ -61,7 +60,7 @@ def convert_input_types(args, to_types=None, silence=False):
                 args[i] = convert_arg(default_sfix, arg, i)
 
             elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
-                args[i] = convert_complex(default_complex, arg, i)
+                args[i] = convert_arg(default_complex, arg, i)
 
             elif to_types is not None:
                 args[i] = convert_arg(None, arg, i)
