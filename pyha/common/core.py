@@ -106,7 +106,7 @@ class PyhaFunc:
 
     def update_input_types(self, args, kwargs):
         if self.arg_types is None:
-            self.arg_types = list(deepcopy(args))
+            self.arg_types = list(args)
         else:
             for i, v in enumerate(args):
                 if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
@@ -114,7 +114,7 @@ class PyhaFunc:
                 self.arg_types[i] = v
 
         if self.kwarg_types is None:
-            self.kwarg_types = deepcopy(kwargs)
+            self.kwarg_types = kwargs
         else:
             for k, v in kwargs.items():
                 if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
@@ -189,6 +189,8 @@ class Meta(type):
         # save the initial self values - all registers and initial values will be derived from these values!
         if ret._pyha_is_local:
             ret.__dict__['_pyha_initial_self'] = ret
+            if not cls.instances:
+                cls.instances = [] # code depends on having this var
         else:
 
             cls.instance_count += 1

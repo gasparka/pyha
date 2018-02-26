@@ -3,9 +3,8 @@ import subprocess
 from enum import Enum
 
 import numpy as np
-import pytest
-
 import pyha
+import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
@@ -1869,7 +1868,7 @@ class TestPitfalls:
 
         class Register(Hardware):
             def main(self, x):
-                tmp = x
+                tmp = x # NOTE: this actually OVERWRITES the input value, which MAY be wrongly passed to RTL sim ie. inputs need to be deepcopyed
                 tmp.real = x.imag
                 tmp.imag = x.real
                 return tmp

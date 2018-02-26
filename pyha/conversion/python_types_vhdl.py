@@ -6,7 +6,6 @@ from math import isclose
 from typing import List
 
 import numpy as np
-
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 
@@ -469,10 +468,13 @@ class VHDLModule(BaseVHDLType):
         self.elems = [x for x in self.elems if x is not None]
 
     def _pyha_instance_id(self):
-        for i, instance in enumerate(self.current.instances):
-            mod = VHDLModule('-', instance)
-            if self._pyha_type_is_compatible(mod):
-                return i
+        try:
+            for i, instance in enumerate(self.current.instances):
+                mod = VHDLModule('-', instance)
+                if self._pyha_type_is_compatible(mod):
+                    return i
+        except:
+            pass
 
         # types that get full bounds during simulation can end up here
         self.current.instances.append(self.current)

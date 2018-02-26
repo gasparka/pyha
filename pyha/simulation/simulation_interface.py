@@ -26,20 +26,6 @@ def convert_input_types(args, to_types=None, silence=False):
     if not silence:
         logger.info(f'Converting simulation inputs to hardware types...')
 
-    # def convert_complex(default_type, arg, i):
-    #     t = default_type
-    #     if to_types is not None:
-    #         t = to_types[i]
-    #
-    #     ret = []
-    #     for x in arg:
-    #         new = t
-    #         new.real = Sfix(x.real, 0, -17)
-    #         new.imag = Sfix(x.imag, 0, -17)
-    #         ret.append(new)
-    #
-    #     return ret
-
     def convert_arg(default_type, arg, i):
         # args_orig = deepcopy(args[i])
         t = default_type
@@ -223,10 +209,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
             tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
-            # tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
             for input in tmpargs:
+                # input = deepcopy(input)
                 output = deepcopy(model.main(*input))  # deepcopy required or 'subsub' modules break
                 ret.append(output)
                 model._pyha_update_registers()
