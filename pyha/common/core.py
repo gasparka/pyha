@@ -127,7 +127,7 @@ class PyhaFunc:
         if self.output_types is None:
             if isinstance(ret, tuple):
                 self.outputs_is_tuple = True
-            self.output_types = list(deepcopy(ret))
+            self.output_types = list(ret)
         else:
             for i, v in enumerate(ret):
                 if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):

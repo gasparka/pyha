@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
+
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
@@ -26,15 +27,30 @@ def convert_input_types(args, to_types=None, silence=False):
     if not silence:
         logger.info(f'Converting simulation inputs to hardware types...')
 
-    def convert_arg(default_type, arg, i):
-        args_orig = deepcopy(args[i])
+    def convert_complex(default_type, arg, i):
         t = default_type
         if to_types is not None:
             t = to_types[i]
+
+        ret = []
+        for x in arg:
+            new = t
+            new.real = Sfix(x.real, 0, -17)
+            new.imag = Sfix(x.imag, 0, -17)
+            ret.append(new)
+
+        return ret
+
+    def convert_arg(default_type, arg, i):
+        # args_orig = deepcopy(args[i])
+        t = default_type
+        if to_types is not None:
+            t = to_types[i]
+
         ret = [t(x) for x in arg]
-        if not silence:
-            l = pd.DataFrame({'original': args_orig, 'converted': ret})
-            logger.debug(f'Converted {i}. input:\n {l}')
+        # if not silence:
+        #     l = pd.DataFrame({'original': args_orig, 'converted': ret})
+        #     logger.debug(f'Converted {i}. input:\n {l}')
         return ret
 
     args = list(args)
@@ -45,7 +61,7 @@ def convert_input_types(args, to_types=None, silence=False):
                 args[i] = convert_arg(default_sfix, arg, i)
 
             elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
-                args[i] = convert_arg(default_complex, arg, i)
+                args[i] = convert_complex(default_complex, arg, i)
 
             elif to_types is not None:
                 args[i] = convert_arg(None, arg, i)
@@ -152,7 +168,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             os.makedirs(conversion_path)
 
     out = {}
-    #model = deepcopy(model)  # make sure we dont mess up original model
+    model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
             logger.info(f'Running "MODEL" simulation...')
@@ -208,10 +224,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
             tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
+            # tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
             for input in tmpargs:
-                output = deepcopy(model.main(*input)) # deepcopy required or 'subsub' modules break
+                output = deepcopy(model.main(*input))  # deepcopy required or 'subsub' modules break
                 ret.append(output)
                 model._pyha_update_registers()
 
