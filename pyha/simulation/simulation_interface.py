@@ -152,7 +152,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             os.makedirs(conversion_path)
 
     out = {}
-    model = deepcopy(model)  # make sure we dont mess up original model
+    #model = deepcopy(model)  # make sure we dont mess up original model
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
             logger.info(f'Running "MODEL" simulation...')
@@ -167,30 +167,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
                 out['MODEL'] = r
                 logger.info(f'OK!')
-
-
-        if 'MODEL_SIM' in simulations:
-            logger.info(f'Running "MODEL_SIM" simulation...')
-            with RegisterBehaviour.force_disable():
-                with Sfix._float_mode:
-                    tmpmodel = deepcopy(model)
-                    # tmpmodel._pyha_floats_to_fixed(silence=True)
-                    #
-                    tmpargs = deepcopy(args)
-                    # tmpargs = convert_input_types(tmpargs, input_types, silence=True)
-                    tmpargs = transpose(tmpargs)
-
-                    ret = []
-                    for x in tmpargs:
-                        ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
-                        # tmpmodel._pyha_update_registers()
-
-                    ret = process_outputs(0, ret)
-                    # convert outputs to Python types, for example fixed to floats
-                    # ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
-
-            out['MODEL_SIM'] = ret
-            logger.info(f'OK!')
 
         if 'MODEL_PYHA' in simulations:
             logger.info(f'Running "MODEL_PYHA" simulation...')
