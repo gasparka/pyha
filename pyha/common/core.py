@@ -4,11 +4,12 @@ from collections import UserList
 from copy import deepcopy, copy
 
 import numpy as np
+from six import with_metaclass
+
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable
-from six import with_metaclass
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -63,18 +64,18 @@ class PyhaFunc:
 
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
-        # self.TraceManager.set_profile()
+        self.TraceManager.set_profile()
         # assert 0
         res = self.func(*args, **kwargs)
 
-        # sys.setprofile(None)  # without this things get fucked up
-        # self.TraceManager.remove_profile()
-        #
-        # self.TraceManager.last_call_locals.pop('self')
-        # self.update_local_types(self.TraceManager.last_call_locals)
-        #
-        # # in case nested call, restore the tracer function
-        # self.TraceManager.restore_profile()
+        sys.setprofile(None)  # without this things get fucked up
+        self.TraceManager.remove_profile()
+
+        self.TraceManager.last_call_locals.pop('self')
+        self.update_local_types(self.TraceManager.last_call_locals)
+
+        # in case nested call, restore the tracer function
+        self.TraceManager.restore_profile()
         return res
 
     def get_local_types(self):
@@ -195,9 +196,6 @@ class Meta(type):
         else:
             ret.__dict__['_pyha_initial_self'] = ret
 
-        # every call to 'main' will append returned values here
-        ret._pyha_outputs = []
-
         # decorate all methods -> for locals discovery
         for method_str in dir(ret):
             if method_str in SKIP_FUNCTIONS:
@@ -312,6 +310,23 @@ class PyhaList(UserList):
 
 
 class Hardware(with_metaclass(Meta)):
+
+    def __deepcopy__(self, memo):
+        """ http://stackoverflow.com/questions/1500718/what-is-the-right-way-to-override-the-copy-deepcopy-operations-on-an-object-in-p """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+
+        with RegisterBehaviour.force_disable():
+            with AutoResize.force_disable():
+                for k, v in self.__dict__.items():
+                    # todo: maybe this also works for 'next'
+                    if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                        setattr(result, k, copy(v))
+                    else:
+                        setattr(result, k, deepcopy(v, memo))
+        return result
+
     def _pyha_update_registers(self):
         """ Update registers (everything in self), called after the return of toplevel 'main' """
         if RegisterBehaviour.is_force_disabled() or self._pyha_is_local:

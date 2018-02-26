@@ -36,14 +36,19 @@ class RegisterBehaviour:
 class AutoResize:
     """ This controls the sfix automatic resize feature """
     _enable = ContextManagerRefCounted()
+    _force_disable = ContextManagerRefCounted()
 
     @staticmethod
     def enable():
         return AutoResize._enable
 
     @staticmethod
+    def force_disable():
+        return AutoResize._force_disable
+
+    @staticmethod
     def is_enabled():
-        return AutoResize._enable.enabled
+        return False if AutoResize._force_disable.enabled else AutoResize._enable.enabled
 
 
 class SimulationRunning:
