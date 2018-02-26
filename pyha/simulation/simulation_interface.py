@@ -213,7 +213,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
             ret = []
             for input in tmpargs:
-                # input = deepcopy(input)
                 output = deepcopy(model.main(*input))  # deepcopy required or 'subsub' modules break
                 ret.append(output)
                 model._pyha_update_registers()
@@ -229,7 +228,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             out['PYHA'] = ret
             logger.info(f'OK!')
 
-        # From this point on we assume ARGS and MODEL have been transformed
+        # From this point on we assume ARGS and MODEL have been transformed to fixed point
         if 'RTL' in simulations:
             logger.info(f'Running "RTL" simulation...')
             if 'PYHA' not in simulations:

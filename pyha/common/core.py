@@ -158,40 +158,46 @@ class Meta(type):
     def __call__(cls, *args, **kwargs):
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
-        ret._pyha_instance_id = cls.instance_count
         # if this object was CREATED during simulation, so it must be local object (or input/output)
         # anyways for local objects register and sfix behavour stuff must be disabled
         ret._pyha_is_local = SimulationRunning.is_enabled()
 
-        # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
-        ret._pyha_next = {}
-        ret._pyha_updateable = []
-        for k, v in ret.__dict__.items():
-            if k.startswith('_pyha') or k == '__dict__':
-                continue
-
-            if isinstance(v, np.ndarray):
-                v = np_to_py(v)
-
-            if isinstance(v, list):
-                v = PyhaList(v, ret.__class__.__name__, k)
-                ret.__dict__[k] = v
-
-            if hasattr(v, '_pyha_update_registers'):
-                ret._pyha_updateable.append(v)
-                continue
-
-            if not ret._pyha_is_local:
-                ret._pyha_next[k] = deepcopy(v)
-            else:
-                ret._pyha_next[k] = v
-
-        # save the initial self values - all registers and initial values will be derived from these values!
-        if ret._pyha_is_local:
-            ret.__dict__['_pyha_initial_self'] = ret
+        if ret._pyha_is_local: # local objects are simplified, they need no reset or register behaviour
             if not cls.instances:
                 cls.instances = []  # code depends on having this var
+            pass
+            # for k, v in ret.__dict__.items():
+            #     if isinstance(v, np.ndarray):
+            #         v = np_to_py(v)
+            #
+            #     if isinstance(v, list):
+            #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
         else:
+            ret._pyha_instance_id = cls.instance_count
+
+            # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+            ret._pyha_next = {}
+            ret._pyha_updateable = []
+            for k, v in ret.__dict__.items():
+                if k.startswith('_pyha') or k == '__dict__':
+                    continue
+
+                if isinstance(v, np.ndarray):
+                    v = np_to_py(v)
+
+                if isinstance(v, list):
+                    v = PyhaList(v, ret.__class__.__name__, k)
+                    ret.__dict__[k] = v
+
+                if hasattr(v, '_pyha_update_registers'):
+                    ret._pyha_updateable.append(v)
+                    continue
+
+                if not ret._pyha_is_local:
+                    ret._pyha_next[k] = deepcopy(v)
+                else:
+                    pass
+                    ret._pyha_next[k] = v
 
             cls.instance_count += 1
             cls.instances = copy(cls.instances + [ret])
