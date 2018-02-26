@@ -4,11 +4,12 @@ from collections import UserList
 from copy import deepcopy, copy
 
 import numpy as np
-from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath
+from six import with_metaclass
+
+from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, NoTrace
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable
-from six import with_metaclass
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -63,18 +64,18 @@ class PyhaFunc:
 
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
-        # self.TraceManager.set_profile()
+        self.TraceManager.set_profile()
         # assert 0
         res = self.func(*args, **kwargs)
 
-        # sys.setprofile(None)  # without this things get fucked up
-        # self.TraceManager.remove_profile()
-        #
-        # self.TraceManager.last_call_locals.pop('self')
-        # self.update_local_types(self.TraceManager.last_call_locals)
-        #
-        # # in case nested call, restore the tracer function
-        # self.TraceManager.restore_profile()
+        sys.setprofile(None)  # without this things get fucked up
+        self.TraceManager.remove_profile()
+
+        self.TraceManager.last_call_locals.pop('self')
+        self.update_local_types(self.TraceManager.last_call_locals)
+
+        # in case nested call, restore the tracer function
+        self.TraceManager.restore_profile()
         return res
 
     def get_local_types(self):
@@ -99,39 +100,42 @@ class PyhaFunc:
                 return self.output_types
 
     def update_local_types(self, new_stack):
-        for k, v in new_stack.items():
-            if k in self.local_types and not isinstance(v, Sfix) and isinstance(self.local_types[k], Sfix):
-                continue  # dont allow overwriting Sfix values
-            self.local_types[k] = v
+        with NoTrace():
+            for k, v in new_stack.items():
+                if k in self.local_types and not isinstance(v, Sfix) and isinstance(self.local_types[k], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.local_types[k] = v
 
     def update_input_types(self, args, kwargs):
-        if self.arg_types is None:
-            self.arg_types = list(args)
-        else:
-            for i, v in enumerate(args):
-                if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
-                    continue  # dont allow overwriting Sfix values
-                self.arg_types[i] = v
+        with NoTrace():
+            if self.arg_types is None:
+                self.arg_types = list(args)
+            else:
+                for i, v in enumerate(args):
+                    if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
+                        continue  # dont allow overwriting Sfix values
+                    self.arg_types[i] = v
 
-        if self.kwarg_types is None:
-            self.kwarg_types = kwargs
-        else:
-            for k, v in kwargs.items():
-                if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
-                    continue  # dont allow overwriting Sfix values
-                self.kwarg_types[k] = v
+            if self.kwarg_types is None:
+                self.kwarg_types = kwargs
+            else:
+                for k, v in kwargs.items():
+                    if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
+                        continue  # dont allow overwriting Sfix values
+                    self.kwarg_types[k] = v
 
     def update_output_types(self, ret):
-        ret = get_iterable(ret)
-        if self.output_types is None:
-            if isinstance(ret, tuple):
-                self.outputs_is_tuple = True
-            self.output_types = list(ret)
-        else:
-            for i, v in enumerate(ret):
-                if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):
-                    continue  # dont allow overwriting Sfix values
-                self.output_types[i] = v
+        with NoTrace():
+            ret = get_iterable(ret)
+            if self.output_types is None:
+                if isinstance(ret, tuple):
+                    self.outputs_is_tuple = True
+                self.output_types = list(ret)
+            else:
+                for i, v in enumerate(ret):
+                    if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):
+                        continue  # dont allow overwriting Sfix values
+                    self.output_types[i] = v
 
     def __call__(self, *args, **kwargs):
         self.update_input_types(args, kwargs)
@@ -156,64 +160,65 @@ class Meta(type):
     # ran when instance is made
     # @profile
     def __call__(cls, *args, **kwargs):
-        ret = super(Meta, cls).__call__(*args, **kwargs)
+        with NoTrace():
+            ret = super(Meta, cls).__call__(*args, **kwargs)
 
-        # if this object was CREATED during simulation, so it must be local object (or input/output)
-        # anyways for local objects register and sfix behavour stuff must be disabled
-        ret._pyha_is_local = SimulationRunning.is_enabled()
+            # if this object was CREATED during simulation, so it must be local object (or input/output)
+            # anyways for local objects register and sfix behavour stuff must be disabled
+            ret._pyha_is_local = SimulationRunning.is_enabled()
 
-        if ret._pyha_is_local: # local objects are simplified, they need no reset or register behaviour
-            if not cls.instances:
-                cls.instances = []  # code depends on having this var
-            pass
-            # for k, v in ret.__dict__.items():
-            #     if isinstance(v, np.ndarray):
-            #         v = np_to_py(v)
-            #
-            #     if isinstance(v, list):
-            #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
-        else:
-            ret._pyha_instance_id = cls.instance_count
+            if ret._pyha_is_local: # local objects are simplified, they need no reset or register behaviour
+                if not cls.instances:
+                    cls.instances = []  # code depends on having this var
+                pass
+                # for k, v in ret.__dict__.items():
+                #     if isinstance(v, np.ndarray):
+                #         v = np_to_py(v)
+                #
+                #     if isinstance(v, list):
+                #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
+            else:
+                ret._pyha_instance_id = cls.instance_count
 
-            # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
-            ret._pyha_next = {}
-            ret._pyha_updateable = []
-            for k, v in ret.__dict__.items():
-                if k.startswith('_pyha') or k == '__dict__':
-                    continue
+                # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+                ret._pyha_next = {}
+                ret._pyha_updateable = []
+                for k, v in ret.__dict__.items():
+                    if k.startswith('_pyha') or k == '__dict__':
+                        continue
 
-                if isinstance(v, np.ndarray):
-                    v = np_to_py(v)
+                    if isinstance(v, np.ndarray):
+                        v = np_to_py(v)
 
-                if isinstance(v, list):
-                    v = PyhaList(v, ret.__class__.__name__, k)
-                    ret.__dict__[k] = v
+                    if isinstance(v, list):
+                        v = PyhaList(v, ret.__class__.__name__, k)
+                        ret.__dict__[k] = v
 
-                if hasattr(v, '_pyha_update_registers'):
-                    ret._pyha_updateable.append(v)
-                    continue
+                    if hasattr(v, '_pyha_update_registers'):
+                        ret._pyha_updateable.append(v)
+                        continue
 
-                if not ret._pyha_is_local:
-                    ret._pyha_next[k] = deepcopy(v)
-                else:
-                    pass
-                    ret._pyha_next[k] = v
+                    if not ret._pyha_is_local:
+                        ret._pyha_next[k] = deepcopy(v)
+                    else:
+                        pass
+                        ret._pyha_next[k] = v
 
-            cls.instance_count += 1
-            cls.instances = copy(cls.instances + [ret])
+                cls.instance_count += 1
+                cls.instances = copy(cls.instances + [ret])
 
-            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+                ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
-            # decorate all methods -> for locals discovery
-            for method_str in dir(ret):
-                # if not inspect.ismethod()
-                if method_str in SKIP_FUNCTIONS:
-                    continue
-                method = getattr(ret, method_str)
-                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                        method) and method.__class__.__name__ == 'method':
-                    new = PyhaFunc(method)
-                    setattr(ret, method_str, new)
+                # decorate all methods -> for locals discovery
+                for method_str in dir(ret):
+                    # if not inspect.ismethod()
+                    if method_str in SKIP_FUNCTIONS:
+                        continue
+                    method = getattr(ret, method_str)
+                    if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                            method) and method.__class__.__name__ == 'method':
+                        new = PyhaFunc(method)
+                        setattr(ret, method_str, new)
 
         return ret
 
@@ -244,34 +249,35 @@ class PyhaList(UserList):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
-        if hasattr(self.data[0], '_pyha_update_registers'):
-            # object already knows how to handle registers
-            # copy relevant stuff only
-            for k, v in y.__dict__.items():
-                if k.startswith('_pyha'):
-                    continue
-                self.data[i].__dict__['_pyha_next'][k] = v
+        with NoTrace():
+            if hasattr(self.data[0], '_pyha_update_registers'):
+                # object already knows how to handle registers
+                # copy relevant stuff only
+                for k, v in y.__dict__.items():
+                    if k.startswith('_pyha'):
+                        continue
+                    self.data[i].__dict__['_pyha_next'][k] = v
 
-        else:
-            if isinstance(self.data[0], Sfix):
-                with SimPath(f'{self.var_name}[{i}]='):
-                    y = auto_resize(self.data[0], y)
-
-                # lazy bounds feature, if bounds is None, take the bound from assgned value
-                if self.data[0].left is None:
-                    for x, xn in zip(self.data, self._pyha_next):
-                        x.left = y.left
-                        xn.left = y.left
-
-                if self.data[0].right is None:
-                    for x, xn in zip(self.data, self._pyha_next):
-                        x.right = y.right
-                        xn.right = y.right
-
-            if RegisterBehaviour.is_enabled():
-                self._pyha_next[i] = y
             else:
-                self.data[i] = y
+                if isinstance(self.data[0], Sfix):
+                    with SimPath(f'{self.var_name}[{i}]='):
+                        y = auto_resize(self.data[0], y)
+
+                    # lazy bounds feature, if bounds is None, take the bound from assgned value
+                    if self.data[0].left is None:
+                        for x, xn in zip(self.data, self._pyha_next):
+                            x.left = y.left
+                            xn.left = y.left
+
+                    if self.data[0].right is None:
+                        for x, xn in zip(self.data, self._pyha_next):
+                            x.right = y.right
+                            xn.right = y.right
+
+                if RegisterBehaviour.is_enabled():
+                    self._pyha_next[i] = y
+                else:
+                    self.data[i] = y
 
     def _pyha_update_registers(self):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
@@ -321,23 +327,24 @@ class PyhaList(UserList):
 class Hardware(with_metaclass(Meta)):
 
     def __deepcopy__(self, memo):
-        cls = self.__class__
-        result = cls.__new__(cls)
-        memo[id(self)] = result
+        with NoTrace():
+            cls = self.__class__
+            result = cls.__new__(cls)
+            memo[id(self)] = result
 
-        with RegisterBehaviour.force_disable():
-            with AutoResize.force_disable():
-                for k, v in self.__dict__.items():
-                    if SimulationRunning.is_enabled(): # can use cheaper copy..
-                        if k.startswith('_pyha'):
-                            continue
+            with RegisterBehaviour.force_disable():
+                with AutoResize.force_disable():
+                    for k, v in self.__dict__.items():
+                        if SimulationRunning.is_enabled(): # can use cheaper copy..
+                            if k.startswith('_pyha'):
+                                continue
+                            else:
+                                setattr(result, k, deepcopy(v, memo))
                         else:
-                            setattr(result, k, deepcopy(v, memo))
-                    else:
-                        if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
-                            setattr(result, k, copy(v))
-                        else:
-                            setattr(result, k, deepcopy(v, memo))
+                            if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                                setattr(result, k, copy(v))
+                            else:
+                                setattr(result, k, deepcopy(v, memo))
         return result
 
     def _pyha_update_registers(self):
@@ -394,38 +401,38 @@ class Hardware(with_metaclass(Meta)):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
+        with NoTrace():
+            if not hasattr(self, '_pyha_is_local'):  # this happend in some deepcopy situations..
+                self.__dict__[name] = value
+                return
 
-        if not hasattr(self, '_pyha_is_local'):  # this happend in some deepcopy situations..
-            self.__dict__[name] = value
-            return
+            if AutoResize.is_enabled() and not self._pyha_is_local:
+                target = getattr(self._pyha_initial_self, name)
+                with SimPath(f'{name}='):
+                    value = auto_resize(target, value)
 
-        if AutoResize.is_enabled() and not self._pyha_is_local:
-            target = getattr(self._pyha_initial_self, name)
-            with SimPath(f'{name}='):
-                value = auto_resize(target, value)
+            if not RegisterBehaviour.is_enabled() or self._pyha_is_local:
+                self.__dict__[name] = value
+                return
 
-        if not RegisterBehaviour.is_enabled() or self._pyha_is_local:
-            self.__dict__[name] = value
-            return
+            if isinstance(value, list):
+                # list assign
+                # example: self.i = [i] + self.i[:-1]
+                assert isinstance(self.__dict__[name], PyhaList)
+                if hasattr(self.__dict__[name][0], '_pyha_update_registers'):
+                    # list of submodules -> need to copy each value to submodule next
+                    for elem, new in zip(self.__dict__[name], value):
+                        # for deeper submodules, deepcopy was not necessary..
+                        # copy relevant stuff only
+                        for k, v in new.__dict__.items():
+                            if k.startswith('_pyha'):
+                                continue
+                            elem.__dict__['_pyha_next'][k] = v
+                else:
+                    self.__dict__[name]._pyha_next = value
+                return
 
-        if isinstance(value, list):
-            # list assign
-            # example: self.i = [i] + self.i[:-1]
-            assert isinstance(self.__dict__[name], PyhaList)
-            if hasattr(self.__dict__[name][0], '_pyha_update_registers'):
-                # list of submodules -> need to copy each value to submodule next
-                for elem, new in zip(self.__dict__[name], value):
-                    # for deeper submodules, deepcopy was not necessary..
-                    # copy relevant stuff only
-                    for k, v in new.__dict__.items():
-                        if k.startswith('_pyha'):
-                            continue
-                        elem.__dict__['_pyha_next'][k] = v
-            else:
-                self.__dict__[name]._pyha_next = value
-            return
-
-        self._pyha_next[name] = value
+            self._pyha_next[name] = value
 
     def __str__(self):
         filt = {}

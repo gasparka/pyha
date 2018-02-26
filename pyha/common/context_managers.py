@@ -1,4 +1,6 @@
 """ This file exsists mainly because i had troubles with circular imports """
+import sys
+
 
 class ContextManagerRefCounted:
     def __init__(self):
@@ -9,6 +11,19 @@ class ContextManagerRefCounted:
 
     def __exit__(self, type, value, traceback):
         self.enabled -= 1
+
+
+class NoTrace:
+    """ Disables the collection of function locals/inputs/returns, speeeeed """
+    def __init__(self):
+        self.profile = sys.getprofile()
+
+    def __enter__(self):
+        sys.setprofile(None)
+
+    def __exit__(self, type, value, traceback):
+        if self.profile:
+            sys.setprofile(self.profile)
 
 
 class RegisterBehaviour:

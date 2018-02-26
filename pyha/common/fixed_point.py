@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from pyha.common.context_managers import ContextManagerRefCounted, SimPath
+from pyha.common.context_managers import ContextManagerRefCounted, SimPath, NoTrace
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sfix')
@@ -119,10 +119,11 @@ class Sfix:
                 raise Exception(f'Unknown overflow style {overflow_style}')
 
     def __eq__(self, other):
-        other = self._convert_other_operand(other)
-        if type(other) is type(self):
-            return self.__dict__ == other.__dict__
-        return False
+        with NoTrace():
+            other = self._convert_other_operand(other)
+            if type(other) is type(self):
+                return self.__dict__ == other.__dict__
+            return False
 
     def max_representable(self):
         if self.left < 0:
@@ -199,7 +200,8 @@ class Sfix:
         return float(self.val)
 
     def __int__(self):
-        return int(math.floor(self.val))
+        with NoTrace():
+            return int(math.floor(self.val))
 
     def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False):
         if type is not None:  # TODO: add tests
@@ -233,109 +235,124 @@ class Sfix:
         return other
 
     def __add__(self, other):
-        other = self._convert_other_operand(other)
-        left, right = self._size_add(other)
-        return Sfix(self.val + other.val,
-                    left,
-                    right,
-                    init_only=True)
+        with NoTrace():
+            other = self._convert_other_operand(other)
+            left, right = self._size_add(other)
+            return Sfix(self.val + other.val,
+                        left,
+                        right,
+                        init_only=True)
 
     def __radd__(self, other):
-        return self.__add__(other)
+        with NoTrace():
+            return self.__add__(other)
 
     def __sub__(self, other):
-        other = self._convert_other_operand(other)
-        left, right = self._size_add(other)
-        return Sfix(self.val - other.val,
-                    left,
-                    right,
-                    init_only=True)
+        with NoTrace():
+            other = self._convert_other_operand(other)
+            left, right = self._size_add(other)
+            return Sfix(self.val - other.val,
+                        left,
+                        right,
+                        init_only=True)
 
     def __rsub__(self, other):
-        other = self._convert_other_operand(other)
-        return other.__sub__(self)
+        with NoTrace():
+            other = self._convert_other_operand(other)
+            return other.__sub__(self)
 
     def __mul__(self, other):
-        other = self._convert_other_operand(other)
+        with NoTrace():
+            other = self._convert_other_operand(other)
 
-        if self.left is None and other.left is None:
-            left = None
-        elif self.left is None:
-            left = other.left + 1
-        elif other.left is None:
-            left = self.left + 1
-        else:
-            left = self.left + other.left + 1
+            if self.left is None and other.left is None:
+                left = None
+            elif self.left is None:
+                left = other.left + 1
+            elif other.left is None:
+                left = self.left + 1
+            else:
+                left = self.left + other.left + 1
 
-        if self.right is None and other.right is None:
-            right = None
-        elif self.right is None:
-            right = other.right
-        elif other.right is None:
-            right = self.right
-        else:
-            right = self.right + other.right
+            if self.right is None and other.right is None:
+                right = None
+            elif self.right is None:
+                right = other.right
+            elif other.right is None:
+                right = self.right
+            else:
+                right = self.right + other.right
 
-        return Sfix(self.val * other.val,
-                    left,
-                    right,
-                    init_only=True)
+            return Sfix(self.val * other.val,
+                        left,
+                        right,
+                        init_only=True)
 
     def sign_bit(self):
-        s = np.sign(self.val)
-        if s in [0, 1]:
-            return 0
-        return 1
+        with NoTrace():
+            s = np.sign(self.val)
+            if s in [0, 1]:
+                return 0
+            return 1
 
     def __rshift__(self, other):
-        if self.right is None or Sfix._float_mode.enabled:
-            o = math.ldexp(self.val, -other)
-        else:
-            o = int(self.val / 2 ** self.right)
-            o = (o >> other) * 2 ** self.right
-        # THIS CAN WRAP!
-        return Sfix(o, self.left, self.right)
+        with NoTrace():
+            if self.right is None or Sfix._float_mode.enabled:
+                o = math.ldexp(self.val, -other)
+            else:
+                o = int(self.val / 2 ** self.right)
+                o = (o >> other) * 2 ** self.right
+            # THIS CAN WRAP!
+            return Sfix(o, self.left, self.right)
 
     def __lshift__(self, other):
-        if self.right is None or Sfix._float_mode.enabled:
-            o = math.ldexp(self.val, other)
-        else:
-            o = int(self.val / 2 ** self.right)
-            o = (o << other) * 2 ** self.right
-        # THIS CAN WRAP!
-        return Sfix(o, self.left, self.right)
+        with NoTrace():
+            if self.right is None or Sfix._float_mode.enabled:
+                o = math.ldexp(self.val, other)
+            else:
+                o = int(self.val / 2 ** self.right)
+                o = (o << other) * 2 ** self.right
+            # THIS CAN WRAP!
+            return Sfix(o, self.left, self.right)
 
     def __abs__(self):
-        return Sfix(abs(self.val),
-                    self.left + 1,
-                    self.right,
-                    init_only=True)
+        with NoTrace():
+            return Sfix(abs(self.val),
+                        self.left + 1,
+                        self.right,
+                        init_only=True)
 
     def __lt__(self, other):
-        return bool(self.val < other)
+        with NoTrace():
+            return bool(self.val < other)
 
     def __gt__(self, other):
-        return bool(self.val > other)
+        with NoTrace():
+            return bool(self.val > other)
 
     def __ge__(self, other):
-        return bool(self.val >= other)
+        with NoTrace():
+            return bool(self.val >= other)
 
     def __le__(self, other):
-        return bool(self.val <= other)
+        with NoTrace():
+            return bool(self.val <= other)
 
     def __neg__(self):
-        left = None if self.left is None else self.left + 1
-        return Sfix(-self.val,
-                    left,
-                    self.right,
-                    init_only=True)
+        with NoTrace():
+            left = None if self.left is None else self.left + 1
+            return Sfix(-self.val,
+                        left,
+                        self.right,
+                        init_only=True)
 
     def __len__(self):
         return -self.right + self.left + 1
 
     def __call__(self, x: float):
-        return Sfix(x, self.left, self.right, self.overflow_style,
-                    self.round_style)
+        with NoTrace():
+            return Sfix(x, self.left, self.right, self.overflow_style,
+                        self.round_style)
 
 
 # default are 'saturate' and 'round' as this is the case in VHDL lib....
@@ -365,13 +382,14 @@ def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', rou
 
 
     """
-    if isinstance(fix, (float, int)):
-        if size_res is not None:
-            left = size_res.left
-            right = size_res.right
-        return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+    with NoTrace():
+        if isinstance(fix, (float, int)):
+            if size_res is not None:
+                left = size_res.left
+                right = size_res.right
+            return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
-    return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+        return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
 
 
 def left_index(x: Sfix) -> int:
@@ -411,8 +429,9 @@ def scalb(x: Sfix, i: int) -> Sfix:
     >>> scalb(a, -8)
     0.001953125 [-8:-25]
     """
-    n = 2 ** i
-    return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
+    with NoTrace():
+        n = 2 ** i
+        return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
 
 
 default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
