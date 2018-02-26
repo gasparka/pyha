@@ -19,13 +19,10 @@ class NoTrace:
         self.profile = sys.getprofile()
 
     def __enter__(self):
-        pass
-        # sys.setprofile(None)
+        sys.setprofile(None)
 
     def __exit__(self, type, value, traceback):
-        pass
-        # if self.profile:
-        #     sys.setprofile(self.profile)
+        sys.setprofile(self.profile)
 
 
 class RegisterBehaviour:
