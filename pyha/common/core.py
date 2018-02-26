@@ -162,59 +162,50 @@ class Meta(type):
         # if this object was CREATED during simulation, so it must be local object (or input/output)
         # anyways for local objects register and sfix behavour stuff must be disabled
         ret._pyha_is_local = SimulationRunning.is_enabled()
-        # if not ret._pyha_is_local:
-        cls.instance_count += 1
-        cls.instances = copy(cls.instances + [ret])
 
+        # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+        ret._pyha_next = {}
+        ret._pyha_updateable = []
         for k, v in ret.__dict__.items():
+            if k.startswith('_pyha') or k == '__dict__':
+                continue
 
             if isinstance(v, np.ndarray):
                 v = np_to_py(v)
 
             if isinstance(v, list):
-                ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
+                v = PyhaList(v, ret.__class__.__name__, k)
+                ret.__dict__[k] = v
 
-        # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
-        ret._pyha_next = {}
-        for k, v in ret.__dict__.items():
-            if k.startswith('_pyha') or k == '__dict__':
+            if hasattr(v, '_pyha_update_registers'):
+                ret._pyha_updateable.append(v)
                 continue
-
-            # if isinstance(v, np.ndarray):
-            #     v = np_to_py(v)
-            #
-            # if isinstance(v, list):
-            #     v = PyhaList(v, ret.__class__.__name__, k)
-            #     ret.__dict__[k] = v
 
             if not ret._pyha_is_local:
                 ret._pyha_next[k] = deepcopy(v)
             else:
-                ret._pyha_next = v
-
-            # if hasattr(v, '_pyha_update_registers'):
-            #     ret._pyha_updateable.append(v)
-
-        ret._pyha_updateable = []
-        for k, v in ret.__dict__.items():
-            if hasattr(v, '_pyha_update_registers'):
-                ret._pyha_updateable.append(v)
+                ret._pyha_next[k] = v
 
         # save the initial self values - all registers and initial values will be derived from these values!
-        if not ret._pyha_is_local:
-            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
-        else:
+        if ret._pyha_is_local:
             ret.__dict__['_pyha_initial_self'] = ret
+        else:
 
-        # decorate all methods -> for locals discovery
-        for method_str in dir(ret):
-            if method_str in SKIP_FUNCTIONS:
-                continue
-            method = getattr(ret, method_str)
-            if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                    method) and method.__class__.__name__ == 'method':
-                new = PyhaFunc(method)
-                setattr(ret, method_str, new)
+            cls.instance_count += 1
+            cls.instances = copy(cls.instances + [ret])
+
+            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
+            # decorate all methods -> for locals discovery
+            for method_str in dir(ret):
+                # if not inspect.ismethod()
+                if method_str in SKIP_FUNCTIONS:
+                    continue
+                method = getattr(ret, method_str)
+                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                        method) and method.__class__.__name__ == 'method':
+                    new = PyhaFunc(method)
+                    setattr(ret, method_str, new)
 
         return ret
 
