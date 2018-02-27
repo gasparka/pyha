@@ -1,0 +1,16 @@
+{
+    "benchmarks.TimeSuite.time_complex_shiftreg": {
+        "code": "def time_complex_shiftreg(self):\n    simulate(self.dut, self.inp, simulations=['PYHA'])\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.TimeSuite.time_complex_shiftreg",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_complex_shiftreg",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds"
+    },
+    "version": 1
+}

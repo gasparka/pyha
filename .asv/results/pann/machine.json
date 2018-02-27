@@ -1,0 +1,8 @@
+{
+    "arch": "x86_64",
+    "cpu": "Intel(R) Xeon(R) CPU E3-1225 V2 @ 3.20GHz",
+    "machine": "pann",
+    "os": "Linux 4.13.0-36-generic",
+    "ram": "32870352",
+    "version": 1
+}
