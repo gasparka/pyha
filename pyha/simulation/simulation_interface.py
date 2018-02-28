@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
+
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
@@ -87,6 +88,11 @@ def process_outputs(delay_compensate, ret):
         ret = ret[delay_compensate:]
     except TypeError:  # this happened when ret is single element
         pass
+
+
+    if hasattr(ret[0], '_pyha_on_simulation_output'):
+        return ret[0]._pyha_on_simulation_output(ret)
+
 
     # transpose
     try:
