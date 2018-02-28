@@ -334,15 +334,19 @@ class Hardware(with_metaclass(Meta)):
 
             with RegisterBehaviour.force_disable():
                 with AutoResize.force_disable():
-                    for k, v in self.__dict__.items():
-                        if SimulationRunning.is_enabled(): # can use cheaper copy..
+                    if SimulationRunning.is_enabled():
+                        for k, v in self.__dict__.items():
                             if k.startswith('_pyha'):
+                                continue
+                            elif self._pyha_is_local and isinstance(v, PyhaFunc): # PyhaFunc MUST be copied for initial objects...everything breaks otherwise
                                 continue
                             else:
                                 setattr(result, k, deepcopy(v, memo))
-                        else:
+                    else:
+                        for k, v in self.__dict__.items():
                             if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
                                 setattr(result, k, copy(v))
+                                # print(k, v)
                             else:
                                 setattr(result, k, deepcopy(v, memo))
         return result

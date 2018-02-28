@@ -80,5 +80,10 @@ class Complex(Hardware):
         imag = (self.real * other.imag) + (self.imag * other.real)
         return Complex(real, imag)
 
+    # def conjugate(self):
+    #     imag = resize(-self.imag, self.imag.left, self.imag.right)
+    #     return Complex(self.real, imag)
+
+
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')
