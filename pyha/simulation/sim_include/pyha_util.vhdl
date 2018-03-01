@@ -88,7 +88,7 @@ package body PyhaUtil is
       constant overflow_style : fixed_overflow_style_type := fixed_wrap;
     constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
-    return to_sfixed(real(a), left_index, right_index, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
+    return to_sfixed(a, left_index, right_index, round_style=>round_style, overflow_style=>overflow_style);
   end function;
 
   function Sfix(a:real; size_res:sfixed;
