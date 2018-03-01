@@ -190,6 +190,13 @@ class Sfix:
     def fixed_value(self):
         return int(round(self.val / 2 ** self.right))
 
+    def __getitem__(self, item):
+        assert type(item) == int
+        if self.right < 0:
+            item += abs(self.right)
+
+        return bool(self.fixed_value() & (2**item))
+
     def __str__(self):
         return f'{self.val:g} [{self.left}:{self.right}]'
 

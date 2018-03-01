@@ -2,6 +2,8 @@ from decimal import *
 
 import numpy as np
 import pytest
+
+from pyha import Hardware, simulate, sims_close
 from pyha.common.fixed_point import Sfix, resize
 
 getcontext().prec = 128
@@ -524,3 +526,17 @@ class TestFloatMode:
             assert b.val == 0.12345678 * 2
             assert b.left == 0
             assert b.right == -2
+
+
+class TestIndexing:
+    def test_get(self):
+        class Dut(Hardware):
+            def main(self, fix, index):
+                return fix[index]
+
+        dut = Dut()
+        fix = np.random.uniform(-1, 1, 128)
+        index = [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]
+
+        sims = simulate(dut, fix, index, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
