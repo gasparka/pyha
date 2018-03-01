@@ -89,10 +89,11 @@ def process_outputs(delay_compensate, ret):
     except TypeError:  # this happened when ret is single element
         pass
 
-
-    if hasattr(ret[0], '_pyha_on_simulation_output'):
-        return ret[0]._pyha_on_simulation_output(ret)
-
+    try:
+        if hasattr(ret[0], '_pyha_on_simulation_output'):
+            return ret[0]._pyha_on_simulation_output(ret)
+    except TypeError:  # this happened when ret is single element
+        pass
 
     # transpose
     try:
