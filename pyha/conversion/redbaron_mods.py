@@ -755,6 +755,7 @@ def convert(red: Node, obj=None):
     if obj is not None:
         transform_enum(red)
         transform_registers(red)
+        transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
         transform_submodule_deepcopy(red)
 
@@ -771,27 +772,18 @@ def convert(red: Node, obj=None):
 #####################################################################
 
 
-def super_getattr(obj, attr):
+def super_getattr(obj, attr, is_local=False):
     for part in attr.split('.'):
-        if part == 'self' or part == 'next':
-            continue
+        if not is_local:
+            if part == 'self' or part == 'next':
+                continue
 
         if part.find('[') != -1:  # is array indexing
             part = part[:part.find('[')]
-            obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
-        elif part.find(']') != -1:
-            # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
-            continue
-        else:
-            obj = getattr(obj, part)
 
-    return obj
+            if isinstance(getattr(obj, part), Sfix):  # indexing of sfix bits..
+                return 'FIXED_INDEXING_HACK'
 
-
-def super_local_getattr(obj, attr):
-    for part in attr.split('.'):
-        if part.find('[') != -1:  # is array indexing
-            part = part[:part.find('[')]
             obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
         elif part.find(']') != -1:
             # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
@@ -917,6 +909,7 @@ def transform_auto_resize(red_node):
          """
     """ Resize stuff should happen on Sfix registers only, filter others out """
     """ Wrap all subjects to autosfix inside resize() according to initial type """
+    """ When assignment target is sfix indexing ie. sfix[2], converts value to 'to_std_logic(value)' """
 
     nodes = red_node.find_all('assign')
 
@@ -939,15 +932,56 @@ def transform_auto_resize(red_node):
                     self.__dict__.update(entries)
 
             struct = Struct(**func_locals)
-            var_t = super_local_getattr(struct, str(node.target))
+            var_t = super_getattr(struct, str(node.target), is_local=True)
 
-        if isinstance(var_t, Sfix):
+        if var_t == 'FIXED_INDEXING_HACK':
+            node.value = f'to_std_logic({node.value})'
+        elif isinstance(var_t, Sfix):
             if isinstance(node.value, (FloatNode, IntNode)) \
                     or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
                     FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
                 node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+
+
+def transform_fixed_indexing_result_to_bool(red_node):
+    """ VHDL indexing of fixed point value returns 'std_logic' type, this casts such assignments to bool() """
+
+    nodes = red_node.find_all('atomtrailers')
+
+    for node in nodes:
+        try:
+            if node.parent.target == node:  # this node is assignment target ie. NODE = value
+                continue
+        except:
+            pass
+
+        if len(node) > 1 and node[0].value == 'self':
+            var_t = super_getattr(convert_obj, str(node))
+        else:
+            # get the SOURCE function (where call is going on) from datamodel
+            def_parent = node.parent
+            while not isinstance(def_parent, DefNode):
+                def_parent = def_parent.parent
+
+            source_func_name = f'self.{def_parent.name}'
+            source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+            func_locals = source_func_obj.get_local_types()
+
+            class Struct:
+                def __init__(self, **entries):
+                    self.__dict__.update(entries)
+
+            struct = Struct(**func_locals)
+            try:
+                var_t = super_getattr(struct, str(node), is_local=True)
+            except AttributeError: # happend when node is Sfix(...)
+                continue
+
+        if var_t == 'FIXED_INDEXING_HACK':
+            node.value = f'bool({node})'
 
 
 def transform_submodule_deepcopy(red_node):

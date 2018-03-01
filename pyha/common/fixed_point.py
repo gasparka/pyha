@@ -159,7 +159,6 @@ class Sfix:
                     pydevd.settrace()
                 except ModuleNotFoundError: # this happens when ran in 'Run' mode instead of 'Debug'
                     pass
-            print(old.val)
             logger.warning(f'SATURATION {old:g} -> {self.val:g}\t[{SimPath}]')
 
     def wrap(self):
@@ -191,11 +190,22 @@ class Sfix:
         return int(round(self.val / 2 ** self.right))
 
     def __getitem__(self, item):
-        assert type(item) == int
         if self.right < 0:
             item += abs(self.right)
 
         return bool(self.fixed_value() & (2**item))
+
+    def __setitem__(self, key, value):
+        if self.right < 0:
+            key += abs(self.right)
+
+        fix = self.fixed_value()
+        if value:
+            fix = fix | (2 ** key)
+        else:
+            fix = fix & ~(2 ** key)
+
+        self.val = fix * 2 ** self.right
 
     def __str__(self):
         return f'{self.val:g} [{self.left}:{self.right}]'

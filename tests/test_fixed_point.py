@@ -89,6 +89,7 @@ def test_sub():
     assert c.left == 1
     assert c.right == -18
 
+
 def test_rsub():
     b = Sfix(0.1, 0, -17)
     c = 0.1 - b
@@ -529,14 +530,73 @@ class TestFloatMode:
 
 
 class TestIndexing:
-    def test_get(self):
+
+    def test_get_fully_fractional(self):
         class Dut(Hardware):
             def main(self, fix, index):
                 return fix[index]
 
         dut = Dut()
-        fix = np.random.uniform(-1, 1, 128)
-        index = [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]
+        N = 2 ** 13
+        fix = np.random.uniform(-1, 1, N)
+        index = np.random.uniform(-17, 0, N).astype(int)
 
         sims = simulate(dut, fix, index, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_get_fully_int(self):
+        class Dut(Hardware):
+            def main(self, fix, index):
+                return fix[index]
+
+        dut = Dut()
+        N = 2 ** 13
+        fix = np.random.uniform(0, 2 ** 17, N)
+        index = np.random.uniform(0, 17, N).astype(int)
+
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 17, 0), int], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_get_combined(self):
+        class Dut(Hardware):
+            def main(self, fix, index):
+                return fix[index]
+
+        dut = Dut()
+        N = 2 ** 13
+        fix = np.random.uniform(0, 2 ** 8, N)
+        index = np.random.uniform(-8, 8, N).astype(int)
+
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 8, -8), int], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_set_basic(self):
+        class Dut(Hardware):
+            def main(self, fix, index, bit_val):
+                tmp = fix
+                tmp[index] = bit_val
+                return tmp
+
+        dut = Dut()
+        fix = [0.0]
+        index = [-1]
+        bit_val = [True]
+
+        sims = simulate(dut, fix, index, bit_val, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_set_combined(self):
+        class Dut(Hardware):
+            def main(self, fix, index, bit_val):
+                tmp = fix
+                tmp[index] = bit_val
+                return tmp
+
+        dut = Dut()
+        N = 2 ** 13
+        fix = np.random.uniform(0, 2 ** 8, N)
+        index = np.random.uniform(-8, 8, N).astype(int)
+        bit_val = np.random.uniform(0, 1, N).astype(bool)
+
+        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL'])
         assert sims_close(sims)

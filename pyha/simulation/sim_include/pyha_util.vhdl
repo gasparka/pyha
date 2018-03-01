@@ -30,6 +30,10 @@ package PyhaUtil is
     constant overflow_style : fixed_overflow_style_type := fixed_wrap;
     constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
 
+
+  function bool(x: std_logic) return boolean;
+  function to_std_logic(x: boolean) return std_logic;
+
   function logic_to_bool(x: std_logic_vector(0 downto 0)) return boolean;
   function bool_to_logic(x: boolean) return std_logic_vector;
 
@@ -99,6 +103,24 @@ package body PyhaUtil is
     constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed is
   begin
     return to_sfixed(a, left_index, right_index);
+  end function;
+
+  function bool(x: std_logic) return boolean is
+  begin
+    if x = '1' then
+      return True;
+    else
+      return False;
+    end if;
+  end function;
+
+  function to_std_logic(x: boolean) return std_logic is
+  begin
+    if x = True then
+      return '1';
+    else
+      return '0';
+    end if;
   end function;
 
   function logic_to_bool(x: std_logic_vector(0 downto 0)) return boolean is
