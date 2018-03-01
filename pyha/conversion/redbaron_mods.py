@@ -308,7 +308,10 @@ class FloatNodeVHDL(NodeVHDL):
 
 class UnitaryOperatorNodeVHDL(NodeVHDL):
     def __str__(self):
-        return f'{self.value}{self.target}'
+        if self.value == '-':
+            return f'{self.value}{self.target}' # eg. -1
+        else:
+            return f'{self.value} {self.target}' # eg. not self.val
 
 
 class AssertNodeVHDL(NodeVHDL):

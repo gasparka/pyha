@@ -186,8 +186,12 @@ def test_bitand(converter):
 def test_UnitaryOperatorNode(converter):
     code = 'not(a & b)'
     conv = converter(code)
-    assert str(conv) == 'not(a and b)'
+    assert str(conv) == 'not (a and b)'
 
+def test_UnitaryOperatorNode2(converter):
+    code = 'not self.state'
+    conv = converter(code)
+    assert str(conv) == 'not self.state'
 
 def test_or(converter):
     code = 'a or b'
