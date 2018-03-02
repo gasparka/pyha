@@ -1094,7 +1094,10 @@ def transform_call(red_node):
         # get the TARGET function object from datamodel
         target_func_name = atom.copy()
         del target_func_name[call_index + 1:]
-        target_func_obj = super_getattr(convert_obj, str(target_func_name))
+        try:
+            target_func_obj = super_getattr(convert_obj, str(target_func_name))
+        except: # happend for: (self.conjugate(complex_in) * complex_in).real
+            continue
 
         # set prefix as first argument (self)
         # self.d(a) -> d(self, a)

@@ -665,6 +665,8 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return None
     elif inspect.isclass(current_val): # this may happend for local variables, when using nested class or something
         return None
+    elif isinstance(current_val, str):
+        return None  # see #216
 
     print(type(current_val))
     assert 0
