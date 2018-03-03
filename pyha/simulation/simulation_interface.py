@@ -13,6 +13,7 @@ from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
 from pyha.common.fixed_point import Sfix, default_sfix
+from pyha.common.stream import packetize, Stream, unpacketize
 from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
@@ -56,6 +57,12 @@ def convert_input_types(args, to_types=None, silence=False):
                 for x in arg:
                     x._pyha_floats_to_fixed()
 
+            elif isinstance(arg, (list, np.ndarray)):
+                # input is 2D array -> turn into packets (1D list of Stream objects)
+                r = convert_input_types(arg)
+                pack = packetize(r)
+                args[i] = pack
+
     return args
 
 
@@ -87,6 +94,12 @@ def process_outputs(delay_compensate, ret):
     try:
         ret = ret[delay_compensate:]
     except TypeError:  # this happened when ret is single element
+        pass
+
+    try:
+        if isinstance(ret[0], Stream):
+            return unpacketize(ret)
+    except TypeError:
         pass
 
     try:
