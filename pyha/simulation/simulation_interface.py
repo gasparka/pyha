@@ -225,7 +225,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 delay_compensate = model.DELAY
 
             for i in range(delay_compensate):  # add samples to flush the pipeline
-                args.append(args[0])
+                args.append(args[-1])
 
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
