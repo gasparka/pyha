@@ -154,8 +154,8 @@ class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
-    instance_count = 0
-    instances = []
+    _pyha_instance_count = 0
+    _pyha_instances = []
 
     # ran when instance is made
     # @profile
@@ -163,13 +163,9 @@ class Meta(type):
         with NoTrace():
             ret = super(Meta, cls).__call__(*args, **kwargs)
 
-            # if this object was CREATED during simulation, so it must be local object (or input/output)
-            # anyways for local objects register and sfix behavour stuff must be disabled
-            ret._pyha_is_local = SimulationRunning.is_enabled()
-
-            if ret._pyha_is_local: # local objects are simplified, they need no reset or register behaviour
-                if not cls.instances:
-                    cls.instances = []  # code depends on having this var
+            if SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
+                if not cls._pyha_instances:
+                    cls._pyha_instances = []  # code depends on having this var
                 pass
                 # for k, v in ret.__dict__.items():
                 #     if isinstance(v, np.ndarray):
@@ -178,7 +174,7 @@ class Meta(type):
                 #     if isinstance(v, list):
                 #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
             else:
-                ret._pyha_instance_id = cls.instance_count
+                ret._pyha_instance_id = cls._pyha_instance_count
 
                 # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
                 ret._pyha_next = {}
@@ -204,8 +200,8 @@ class Meta(type):
                         pass
                         ret._pyha_next[k] = v
 
-                cls.instance_count += 1
-                cls.instances = copy(cls.instances + [ret])
+                cls._pyha_instance_count += 1
+                cls._pyha_instances = copy(cls._pyha_instances + [ret])
 
                 ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 

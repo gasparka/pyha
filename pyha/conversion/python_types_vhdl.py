@@ -472,7 +472,7 @@ class VHDLModule(BaseVHDLType):
 
     def _pyha_instance_id(self):
         try:
-            for i, instance in enumerate(self.current.instances):
+            for i, instance in enumerate(self.current._pyha_instances):
                 mod = VHDLModule('-', instance)
                 if self._pyha_type_is_compatible(mod):
                     return i
@@ -480,8 +480,8 @@ class VHDLModule(BaseVHDLType):
             pass
 
         # types that get full bounds during simulation can end up here
-        self.current.instances.append(self.current)
-        return len(self.current.instances)-1
+        self.current._pyha_instances.append(self.current)
+        return len(self.current._pyha_instances)-1
 
     def _pyha_module_name(self):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
