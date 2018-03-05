@@ -161,6 +161,7 @@ class Meta(type):
     # @profile
     def __call__(cls, *args, **kwargs):
         with NoTrace():
+            cls._pyha_is_initialization = True # flag to avoid problems in __setattr__
             ret = super(Meta, cls).__call__(*args, **kwargs)
 
             if SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
@@ -194,11 +195,7 @@ class Meta(type):
                         ret._pyha_updateable.append(v)
                         continue
 
-                    if not ret._pyha_is_local:
-                        ret._pyha_next[k] = deepcopy(v)
-                    else:
-                        pass
-                        ret._pyha_next[k] = v
+                    ret._pyha_next[k] = deepcopy(v)
 
                 cls._pyha_instance_count += 1
                 cls._pyha_instances = copy(cls._pyha_instances + [ret])
@@ -214,8 +211,9 @@ class Meta(type):
                     if method_str[:2] != '__' and method_str[:1] != '_' and callable(
                             method) and method.__class__.__name__ == 'method':
                         new = PyhaFunc(method)
-                        setattr(ret, method_str, new)
+                        ret.__dict__[method_str] = new
 
+        del cls._pyha_is_initialization
         return ret
 
 
@@ -407,18 +405,14 @@ class Hardware(with_metaclass(Meta)):
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
         with NoTrace():
-            if not hasattr(self, '_pyha_is_local'):  # this happend in some deepcopy situations..
+            if hasattr(self, '_pyha_is_initialization') or self._pyha_is_local() or not RegisterBehaviour.is_enabled():
                 self.__dict__[name] = value
                 return
 
-            if AutoResize.is_enabled() and not self._pyha_is_local:
+            if AutoResize.is_enabled():
                 target = getattr(self._pyha_initial_self, name)
                 with SimPath(f'{name}='):
                     value = auto_resize(target, value)
-
-            if not RegisterBehaviour.is_enabled() or self._pyha_is_local:
-                self.__dict__[name] = value
-                return
 
             if isinstance(value, list):
                 # list assign
