@@ -434,7 +434,18 @@ class Hardware(with_metaclass(Meta)):
                     self.__dict__[name]._pyha_next = value
                 return
 
-            self._pyha_next[name] = value
+            if isinstance(value, Hardware):
+                for k, v in value.__dict__.items():
+                    if k.startswith('_pyha'):
+                        continue
+                    n = self.__dict__[name]
+                    if isinstance(n.__dict__[k], Hardware): # recursive assign of submodule
+                        setattr(n, k, v)
+                    else:
+                        self.__dict__[name].__dict__['_pyha_next'][k] = v
+                return
+
+            self.__dict__['_pyha_next'][name] = value
 
     def __str__(self):
         filt = {}

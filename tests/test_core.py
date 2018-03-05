@@ -281,3 +281,35 @@ def test_setattr_resize():
     dut.main(Sfix(0.1234, 0, -24))
     assert dut._pyha_next['a'].left == 0
     assert dut._pyha_next['a'].right == -2
+
+
+def test_submodule_setattr():
+    """ The __setattr__ must be recursive for submodules.. this also applies resizing for deeper Sfix elements"""
+    class B(Hardware):
+        def __init__(self, init):
+            self.val = Sfix(init, 0, -17)
+
+    class A(Hardware):
+        def __init__(self):
+            self.b = B(0.0)
+
+        def main(self, b):
+            self.b = b
+            return self.b.val
+
+    dut = A()
+    assert dut.b.val.val == 0.0
+
+    r = dut.main(B(0.5))
+    assert r.val == 0.0
+    assert dut.b.val.val == 0.0
+    assert dut.b._pyha_next['val'].val == 0.5
+
+    dut._pyha_update_registers()
+    assert dut.b.val.val == 0.5
+
+    r = dut.main(B(0.0012345))
+    assert r.val == 0.5
+    assert dut.b._pyha_next['val'].val == 0.00122833251953125 # auto-resize works
+    dut._pyha_update_registers()
+    assert dut.b.val.val == 0.00122833251953125
