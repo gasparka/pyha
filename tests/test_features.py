@@ -1868,7 +1868,7 @@ class TestPitfalls:
 
         class Register(Hardware):
             def main(self, x):
-                tmp = x # NOTE: this actually OVERWRITES the input value, which MAY be wrongly passed to RTL sim ie. inputs need to be deepcopyed
+                tmp = x  # NOTE: this actually OVERWRITES the input value, which MAY be wrongly passed to RTL sim ie. inputs need to be deepcopyed
                 tmp.real = x.imag
                 tmp.imag = x.real
                 return tmp
