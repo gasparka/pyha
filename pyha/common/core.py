@@ -320,6 +320,9 @@ class PyhaList(UserList):
 
 class Hardware(with_metaclass(Meta)):
 
+    def _pyha_is_local(self):
+        return not hasattr(self, '_pyha_initial_self')
+
     def __deepcopy__(self, memo):
         with NoTrace():
             cls = self.__class__
@@ -352,7 +355,7 @@ class Hardware(with_metaclass(Meta)):
 
     def _pyha_update_registers(self):
         """ Update registers (everything in self), called after the return of toplevel 'main' """
-        if RegisterBehaviour.is_force_disabled() or self._pyha_is_local:
+        if RegisterBehaviour.is_force_disabled() or self._pyha_is_local():
             return
         # update atoms
         self.__dict__.update(self._pyha_next)
