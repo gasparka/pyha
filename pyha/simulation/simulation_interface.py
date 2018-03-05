@@ -57,11 +57,11 @@ def convert_input_types(args, to_types=None, silence=False):
                 for x in arg:
                     x._pyha_floats_to_fixed()
 
-            elif isinstance(arg, (list, np.ndarray)):
-                # input is 2D array -> turn into packets (1D list of Stream objects)
-                r = convert_input_types(arg)
-                pack = packetize(r)
-                args[i] = pack
+            # elif isinstance(arg, (list, np.ndarray)):
+            #     # input is 2D array -> turn into packets (1D list of Stream objects)
+            #     r = convert_input_types(arg)
+            #     pack = packetize(r)
+            #     args[i] = pack
 
     return args
 
@@ -96,11 +96,11 @@ def process_outputs(delay_compensate, ret):
     except TypeError:  # this happened when ret is single element
         pass
 
-    try:
-        if isinstance(ret[0], Stream):
-            return unpacketize(ret)
-    except TypeError:
-        pass
+    # try:
+    #     if isinstance(ret[0], Stream):
+    #         return unpacketize(ret)
+    # except TypeError:
+    #     pass
 
     try:
         if hasattr(ret[0], '_pyha_on_simulation_output'):
