@@ -220,14 +220,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             with suppress(AttributeError):
                 delay_compensate = model.DELAY
 
-            replicate = args[0:delay_compensate]
-            # for x in replicate:
-            #     if isinstance(x, Stream):
-            #         x.package_end = False
-            #         x.package_end = False
-            #         x.valid = True
+            # duplicate input args to flush pipeline
+            # this used to copy the first value repeadeatly...but in some cases circuit may need specific input to keep working
+            target_len = len(args) + delay_compensate
+            args += args * int(np.ceil(delay_compensate / len(args)))
+            args = args[:target_len]
 
-            args += replicate
+
 
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')

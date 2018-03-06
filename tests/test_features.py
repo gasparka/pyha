@@ -785,6 +785,23 @@ class TestMainAsModel:
 
 class TestInterface:
 
+    def test_delay_compensate(self):
+        """ Failed when delay was larger than amount of inputs """
+
+        class T(Hardware):
+            def __init__(self):
+                self.DELAY = 100
+
+            def main(self, x):
+                y = x
+                return y
+
+        dut = T()
+        inputs = [0, 0.5, 1.0, 0.9]
+
+        sim_out = simulate(dut, inputs)
+        assert sims_close(sim_out)
+
     def test_int_float(self):
         """ This failed because first input is 0 (not 0.0) system got confused """
 
