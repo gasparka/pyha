@@ -220,14 +220,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             with suppress(AttributeError):
                 delay_compensate = model.DELAY
 
-            replicate = deepcopy(args[-1])
-            for x in replicate:
-                if isinstance(x, Stream):
-                    x.package_end = False
-                    x.package_end = False
-                    x.valid = True
+            replicate = args[0:delay_compensate]
+            # for x in replicate:
+            #     if isinstance(x, Stream):
+            #         x.package_end = False
+            #         x.package_end = False
+            #         x.valid = True
 
-            args += [replicate] * delay_compensate
+            args += replicate
 
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
