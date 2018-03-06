@@ -57,7 +57,7 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
                 for x in arg:
                     x._pyha_floats_to_fixed()
 
-            elif isinstance(arg, (list, np.ndarray)):
+            elif isinstance(arg[0], (list, np.ndarray)):
                 # input is 2D array -> turn into packets (1D list of Stream objects)
                 args[i] = convert_input_types(arg) # dont apply input callback here..
 
