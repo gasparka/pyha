@@ -4,7 +4,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode
 from redbaron.base_nodes import LineProxyList
 
 import pyha
@@ -285,7 +285,8 @@ class CallNodeVHDL(NodeVHDL):
             p = p.parent
 
         if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
-            base += ';'
+            if not isinstance(self.red_node.parent.parent, CallArgumentNode): # dont add ; for last argument
+                base += ';'
         return base
 
 

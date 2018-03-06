@@ -188,10 +188,12 @@ def test_UnitaryOperatorNode(converter):
     conv = converter(code)
     assert str(conv) == 'not (a and b)'
 
+
 def test_UnitaryOperatorNode2(converter):
     code = 'not self.state'
     conv = converter(code)
     assert str(conv) == 'not self.state'
+
 
 def test_or(converter):
     code = 'a or b'
@@ -317,6 +319,19 @@ def test_if_complex(converter):
             b := a;
         end if;"""
     expect = textwrap.dedent(expect)
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_call_semicolon(converter):
+    code = textwrap.dedent("""\
+            if wtf:
+                DataWithIndex_1.pyha_deepcopy(self.out, DataWithIndex(data, index=self.counter, valid=True))""")
+
+    expect = textwrap.dedent("""\
+            if wtf then
+                DataWithIndex_1.pyha_deepcopy(self.\out\, DataWithIndex(data, index=>self.counter, valid=>True));
+            end if;""")
     conv = converter(code)
     assert expect == str(conv)
 
