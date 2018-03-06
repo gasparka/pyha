@@ -80,6 +80,13 @@ class Complex(Hardware):
         imag = (self.real * other.imag) + (self.imag * other.real)
         return Complex(real, imag)
 
+    def __rshift__(self, other):
+        return Complex(self.real >> other, self.imag >> other)
+
+    def __lshift__(self, other):
+        return Complex(self.real << other, self.imag << other)
+
+
     # def conjugate(self):
     #     imag = resize(-self.imag, self.imag.left, self.imag.right)
     #     return Complex(self.real, imag)
