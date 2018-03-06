@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
 
 
-def convert_input_types(args, to_types=None, silence=False):
+def convert_input_types(args, to_types=None, silence=False, input_callback=None):
     if not silence:
         logger.info(f'Converting simulation inputs to hardware types...')
 
@@ -57,11 +57,13 @@ def convert_input_types(args, to_types=None, silence=False):
                 for x in arg:
                     x._pyha_floats_to_fixed()
 
-            # elif isinstance(arg, (list, np.ndarray)):
-            #     # input is 2D array -> turn into packets (1D list of Stream objects)
-            #     r = convert_input_types(arg)
-            #     pack = packetize(r)
-            #     args[i] = pack
+            elif isinstance(arg, (list, np.ndarray)):
+                # input is 2D array -> turn into packets (1D list of Stream objects)
+                args[i] = convert_input_types(arg) # dont apply input callback here..
+
+    if input_callback:
+        for i in range(len(args)):
+            args[i] = input_callback(args[i])
 
     return args
 
@@ -89,24 +91,18 @@ def have_quartus():
         return False
 
 
-def process_outputs(delay_compensate, ret):
+def process_outputs(delay_compensate, ret, output_callback=None):
     # skip the initial pipeline outputs
     try:
         ret = ret[delay_compensate:]
     except TypeError:  # this happened when ret is single element
         pass
 
-    # try:
-    #     if isinstance(ret[0], Stream):
-    #         return unpacketize(ret)
-    # except TypeError:
-    #     pass
-
-    try:
-        if hasattr(ret[0], '_pyha_on_simulation_output'):
-            return ret[0]._pyha_on_simulation_output(ret)
-    except TypeError:  # this happened when ret is single element
-        pass
+    if output_callback:
+        try:
+            ret = output_callback(ret)
+        except TypeError:  # this happened when ret is single element
+            pass
 
     # transpose
     try:
@@ -117,7 +113,7 @@ def process_outputs(delay_compensate, ret):
     return ret
 
 
-def simulate(model, *args, simulations=None, conversion_path=None, input_types=None):
+def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None, output_callback=None):
     """
     Run simulations on model.
 
@@ -198,7 +194,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     tmpmodel._pyha_floats_to_fixed(silence=True)
 
                     tmpargs = deepcopy(args)
-                    tmpargs = convert_input_types(tmpargs, input_types, silence=True)
+                    tmpargs = convert_input_types(tmpargs, input_types, silence=True, input_callback=input_callback)
                     tmpargs = transpose(tmpargs)
 
                     ret = []
@@ -206,7 +202,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
                         tmpmodel._pyha_update_registers()
 
-                    ret = process_outputs(0, ret)
+                    ret = process_outputs(0, ret, output_callback)
                     # convert outputs to Python types, for example fixed to floats
                     ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
 
@@ -217,7 +213,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
             logger.info(f'Converting model to hardware types ...')
             model._pyha_floats_to_fixed()
-            args = convert_input_types(args, input_types)
+            args = convert_input_types(args, input_types, input_callback=input_callback)
             args = transpose(args)
 
             delay_compensate = 0
@@ -243,7 +239,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 ret.append(output)
                 model._pyha_update_registers()
 
-            ret = process_outputs(delay_compensate, ret)
+            ret = process_outputs(delay_compensate, ret, output_callback)
 
             try:
                 # convert outputs to Python types, for example fixed to floats
@@ -269,7 +265,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
                 ret = vhdl_sim.main(*args)
 
-                out['RTL'] = process_outputs(delay_compensate, ret)
+                out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
                 logger.info(f'OK!')
 
         if 'GATE' in simulations:
@@ -289,7 +285,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
-                out['GATE'] = process_outputs(delay_compensate, ret)
+                out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
                 logger.info(f'OK!')
 
     logger.info('Simulations completed!')
