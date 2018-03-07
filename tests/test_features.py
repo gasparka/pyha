@@ -1426,6 +1426,30 @@ class TestFloatToSfix:
         assert dut.sub_list[1].reg == Sfix(0.5, 0, -17)
         assert dut.sub_list[0].float_list[0] == Sfix(0.5, 0, -17)
 
+    def test_complex_numpy(self):
+        """ System generated registers without _pyha_next, because conversion was called when SimulatinRunning was True
+        RTL failed cause of the comment '# this was bugged, had no _pyha_next', which broke the ';' insertion
+        """
+
+        def W(k, N):
+            """ e^-j*2*PI*k*n/N, argument k = k * n """
+            return np.exp(-1j * (2 * np.pi / N) * k)
+
+        class T(Hardware):
+            def __init__(self, fft_size):
+                self.FFT_SIZE = fft_size
+                self.FFT_HALF = fft_size // 2
+                self.TWIDDLES = [W(i, self.FFT_SIZE) for i in range(self.FFT_HALF)]
+                self.twiddle_buffer = self.TWIDDLES[0]
+
+            def main(self, x):
+                self.twiddle_buffer = x # this was bugged, had no _pyha_next
+                return self.twiddle_buffer
+
+        dut = T(4)
+        sims = simulate(dut, [0.1+0.2j], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, expected=[1.0 + 0j])
+
 
 class TestCallModifications:
     """ Test various ways of calling functions.. """

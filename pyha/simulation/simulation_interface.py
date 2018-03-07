@@ -169,7 +169,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             os.makedirs(conversion_path)
 
     out = {}
-    model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
+    if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
+        fix_model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
+        logger.info(f'Converting model to hardware types ...')
+        fix_model._pyha_floats_to_fixed() # this must run before 'with SimulationRunning.enable():'
+
     model_pyha = deepcopy(model) # used for MODEL_PYHA (need to copy before SimulationRunning starts)
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
@@ -211,8 +215,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
         # prepare inputs and model for hardware simulations
         if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-            logger.info(f'Converting model to hardware types ...')
-            model._pyha_floats_to_fixed()
             args = convert_input_types(args, input_types, input_callback=input_callback)
             args = transpose(args)
 
@@ -221,7 +223,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 delay_compensate = model.DELAY
 
             # duplicate input args to flush pipeline
-            # this used to copy the first value repeadeatly...but in some cases circuit may need specific input to keep working
             target_len = len(args) + delay_compensate
             args += args * int(np.ceil(delay_compensate / len(args)))
             args = args[:target_len]
@@ -234,9 +235,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
             ret = []
             for input in tmpargs:
-                output = deepcopy(model.main(*input))  # deepcopy required or 'subsub' modules break
+                output = deepcopy(fix_model.main(*input))  # deepcopy required or 'subsub' modules break
                 ret.append(output)
-                model._pyha_update_registers()
+                fix_model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret, output_callback)
 
@@ -261,7 +262,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             elif not have_ghdl():
                 logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
             else:
-                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
+                vhdl_sim = VHDLSimulation(Path(conversion_path), fix_model, 'RTL')
                 ret = vhdl_sim.main(*args)
 
                 out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
@@ -281,7 +282,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
             else:
 
-                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
+                vhdl_sim = VHDLSimulation(Path(conversion_path), fix_model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
                 out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
