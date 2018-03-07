@@ -284,7 +284,7 @@ class CallNodeVHDL(NodeVHDL):
                 break
             p = p.parent
 
-        if not is_assign and isinstance(self.red_node.next_recursive, EndlNode):
+        if not is_assign and isinstance(self.red_node.next_recursive, (EndlNode, CommentNode)):
             if not isinstance(self.red_node.parent.parent, CallArgumentNode): # dont add ; for last argument
                 base += ';'
         return base
