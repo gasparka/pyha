@@ -77,6 +77,9 @@ class BaseVHDLType:
     def _pyha_type(self) -> str:
         raise NotImplementedError()
 
+    def _pyha_definition(self):
+        return f'{self._pyha_name()}: {self._pyha_type()};'
+
     def _pyha_typedef(self) -> str:
         pass
 
@@ -330,6 +333,11 @@ class VHDLList(BaseVHDLType):
                       enumerate(zip(self.current, self.initial))]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
+        self.elements_compatible_typed = all([x._pyha_type_is_compatible(self.elems[0]) for x in self.elems])
+        if not self.elements_compatible_typed:
+            for i, x in enumerate(self.elems):
+                x._name = f'{var_name}_{i}'
+        pass
 
     def _pyha_arr_type_name(self):
         elem_type = self.elems[0]._pyha_type()
@@ -343,6 +351,14 @@ class VHDLList(BaseVHDLType):
             lib = self.elems[0]._pyha_module_name()
 
         return '{}.{}(0 to {})'.format(lib, self._pyha_arr_type_name(), len(self.current) - 1)
+
+    def _pyha_definition(self):
+        if self.elements_compatible_typed:
+            return super()._pyha_definition()
+
+        ret = '\n'.join(x._pyha_definition() for x in self.elems)
+        return ret
+
 
     def _pyha_typedef(self):
         if self.not_submodules_list:
@@ -611,6 +627,11 @@ class VHDLFloat(BaseVHDLType):
     def _pyha_to_python_value(self):
         return self.current
 
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
+
 
 class VHDLComplex(BaseVHDLType):
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
@@ -623,6 +644,11 @@ class VHDLComplex(BaseVHDLType):
         if not eq:
             logger.error('{} {} != {}'.format(name, self.current, other.current))
         return eq
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
 
 
 def init_vhdl_type(name, current_val, initial_val=None, parent=None):

@@ -13,6 +13,21 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
+def test_impossible_list():
+    class T(Hardware):
+        def __init__(self, arr):
+            self.arr = [Sfix(0.0, 0, -17), Sfix(0.0, 0, -16)]  # impossible to convert
+
+        def main(self, dummy):
+            return self.arr[0], self.arr[1]
+
+    dut = T([0.0, 0.1, 0.2])
+    inputs = [0, 1, 2]
+
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims)
+
+
 def test_numpy_list():
     """ Numpy arrays shall be converted to list and thus will be synthesisable  """
 
@@ -1443,11 +1458,11 @@ class TestFloatToSfix:
                 self.twiddle_buffer = self.TWIDDLES[0]
 
             def main(self, x):
-                self.twiddle_buffer = x # this was bugged, had no _pyha_next
+                self.twiddle_buffer = x  # this was bugged, had no _pyha_next
                 return self.twiddle_buffer
 
         dut = T(4)
-        sims = simulate(dut, [0.1+0.2j], simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j], simulations=['PYHA', 'RTL'])
         assert sims_close(sims, expected=[1.0 + 0j])
 
 

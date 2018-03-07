@@ -614,7 +614,7 @@ class ClassNodeVHDL(NodeVHDL):
                 \\next\\: next_t;
             end record;""")
 
-        data = [f'{x._pyha_name()}: {x._pyha_type()};' for x in self.data.elems]
+        data = [x._pyha_definition() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
