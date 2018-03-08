@@ -253,17 +253,17 @@ class PyhaList(UserList):
                     self.data[i].__dict__['_pyha_next'][k] = v
 
             else:
-                if isinstance(self.data[0], Sfix):
+                if isinstance(self.data[i], Sfix):
                     with SimPath(f'{self.var_name}[{i}]='):
-                        y = auto_resize(self.data[0], y)
+                        y = auto_resize(self.data[i], y)
 
                     # lazy bounds feature, if bounds is None, take the bound from assgned value
-                    if self.data[0].left is None:
+                    if self.data[i].left is None:
                         for x, xn in zip(self.data, self._pyha_next):
                             x.left = y.left
                             xn.left = y.left
 
-                    if self.data[0].right is None:
+                    if self.data[i].right is None:
                         for x, xn in zip(self.data, self._pyha_next):
                             x.right = y.right
                             xn.right = y.right
