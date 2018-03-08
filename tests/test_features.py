@@ -23,8 +23,6 @@ class TestDynamicLists:
                 self.arr = [Sfix(0.1, 0, -5), Sfix(0.2, 0, -16)]  # impossible to convert
 
             def main(self, x):
-                # self.arr[0] = x
-                # self.arr[1] = x
                 return self.arr[0], self.arr[1]
 
         dut = T()
@@ -50,8 +48,6 @@ class TestDynamicLists:
         assert sims_close(sims)
 
     def test_submodule(self):
-        """ recursive?? """
-
         class TSub(Hardware):
             def __init__(self, size):
                 self.arr = [0] * size
@@ -75,6 +71,91 @@ class TestDynamicLists:
         sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
         assert sims_close(sims)
 
+    def test_index_not_constant(self):
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [Sfix(0.1, 0, -5), Sfix(0.2, 0, -16)]  # impossible to convert
+                self.i = 0
+
+            def main(self, x):
+                self.arr[self.i] = x  # shoud resize to 0,-5
+                return self.arr[0], self.arr[1]
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_index_not_constant_call(self):
+        class TSub(Hardware):
+            def __init__(self, size):
+                self.arr = [Sfix(0.0, 0, -5 * size)] * size
+
+            def main(self, x):
+                self.arr = [x] + self.arr[:-1]
+                return self.arr[-1]
+
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [TSub(1), TSub(2)]  # impossible to convert
+                self.i = 0
+
+            def main(self, x):
+                ret = self.arr[self.i].main(x)
+                self.arr[1].main(x)  # dummy call, to train the object for conversion
+                return ret
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_for_range(self):
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [Sfix(0.1, 0, -5), Sfix(0.2, 0, -16)]  # impossible to convert
+                self.i = 0
+
+            def main(self, x):
+                for i in range(len(self.arr)):
+                    self.arr[i] = x
+
+                return self.arr[0], self.arr[1]
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_for_submodule(self):
+        class TSub(Hardware):
+            def __init__(self, size):
+                self.arr = [0.0] * size
+
+            def main(self, x):
+                self.arr = [x] + self.arr[:-1]
+                return self.arr[-1]
+
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [TSub(1), TSub(2)]  # impossible to convert
+
+            def main(self, x):
+                tmp = x
+                for sub in self.arr:
+                    tmp = sub.main(tmp)
+
+                return tmp
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
 
 
 def test_singleelem_list():
@@ -90,6 +171,31 @@ def test_singleelem_list():
     inputs = [0.1, 0.2]
 
     sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims)
+
+
+def test_submod_nocall():
+    class TSub(Hardware):
+        def __init__(self, size):
+            self.arr = [0.0] * size
+
+        def main(self, x):
+            self.arr = [x] + self.arr[:-1]
+            return self.arr[-1]
+
+    class T(Hardware):
+        def __init__(self):
+            self.arr = [TSub(1), TSub(2)]  # impossible to convert
+
+        def main(self, x):
+            ret = self.arr[0].main(x)
+            return ret
+
+    dut = T()
+    inputs = [0.0, 0.1, 0.2]
+
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+                    conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims)
 
 

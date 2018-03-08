@@ -357,13 +357,13 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_definition(self):
         if not self.elements_compatible_typed:
-            return '\n'.join(x._pyha_definition() for x in self.elems)
+            r = super()._pyha_definition() + '\n' # still define the LIST type, because some code may depend on it eg. len(self.list)
+            r += '\n'.join(x._pyha_definition() for x in self.elems)
+            return r
 
         return super()._pyha_definition()
 
     def _pyha_typedef(self):
-        if not self.elements_compatible_typed:
-            return None
 
         if self.not_submodules_list:
             return 'type {} is array (natural range <>) of {};'.format(self._pyha_arr_type_name(),

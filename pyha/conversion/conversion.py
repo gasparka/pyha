@@ -110,10 +110,20 @@ class Conversion:
             self.childs = []
 
             def conv(self, node):
-                if isinstance(node, VHDLList) and isinstance(node.elems[0], VHDLModule):
-                    if node.elems[0]._pyha_module_name() in self.converted_names:
-                        return
-                    self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+                if isinstance(node, VHDLList):
+                    if node.elements_compatible_typed:
+                        if isinstance(node.elems[0], VHDLModule):
+                            if node.elems[0]._pyha_module_name() in self.converted_names:
+                                return
+                            self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+
+                    else:
+                        # dynamic list..need to convert all modules
+                        for x in node.elems:
+                            if isinstance(x, VHDLModule):
+                                if x._pyha_module_name() in self.converted_names:
+                                    return
+                                self.childs.append(Conversion(x.current, x))
                 elif isinstance(node, VHDLModule):
                     if node._pyha_module_name() in self.converted_names:
                         return

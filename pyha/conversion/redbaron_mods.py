@@ -752,6 +752,8 @@ def convert(red: Node, obj=None):
     transform_resize_arguments(red)
     transform_remove_copy(red)
     transform_for(red)
+    if obj is not None:
+        transform_dynamic_lists(red)
     transform_call(red)
     transform_multiple_assignment(red)
     transform_lazy_operand(red)
@@ -762,7 +764,6 @@ def convert(red: Node, obj=None):
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
         transform_submodule_deepcopy(red)
-        transform_dynamic_lists(red)
 
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
@@ -799,7 +800,16 @@ def super_getattr(obj, attr, is_local=False):
             # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
             continue
         else:
-            obj = getattr(obj, part)
+            try:
+                obj = getattr(obj, part)
+            except AttributeError:
+                # obj might be dynamic array that has transformed indexing eg. a[0] -> a_0
+                try:
+                    index = int(part[part.find('_')+1:])
+                    name = part[:part.find('_')]
+                    obj = getattr(obj, name)[index]
+                except:
+                    raise AttributeError
 
     return obj
 
@@ -1114,7 +1124,10 @@ def transform_call(red_node):
         call.insert(0, prefix)
 
         # get the SOURCE (where call is going on) function object from datamodel
-        def_parent = atom.parent_find('def')
+        def_parent = atom
+        while not isinstance(def_parent, DefNode):
+            def_parent = def_parent.parent
+        # def_parent = atom.parent_find('def')
         source_func_name = f'self.{def_parent.name}'
         source_func_obj = super_getattr(convert_obj, str(source_func_name))
 
@@ -1202,5 +1215,34 @@ def transform_dynamic_lists(red_node):
         for node in red_names:
             for i, part in enumerate(node):
                 if str(part) == name and isinstance(part.next, GetitemNode):
-                    part.replace(f'{name}_{part.next.value}')
-                    del node[i+1]
+                    try:
+                        index = int(str(part.next.value))
+                        part.replace(f'{name}_{index}')
+                        del node[i+1]
+                    except ValueError:
+
+                        line_node = node
+                        while True:
+                            if type(line_node.next) == EndlNode:
+                                break
+                            if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
+                                if not (hasattr(line_node.parent, 'test') and (
+                                        line_node.parent.test == node  # if WE are the if contition, skip
+                                        or line_node.parent.test == node.parent)):  # if WE are the if contition (part of condition)
+                                    break
+
+                            line_node = line_node.parent
+
+                        index = str(part.next.value)
+                        node[i+1].replace(' ') # del node[i+1], crashes redbaron
+
+                        new = ""
+                        for i in range(len(x.elems)):
+                            part.replace(f'{name}_{i}')
+
+                            head = 'if' if i == 0 else 'elif'
+                            new += f'{head} {index} == {i}:\n\t{line_node}\n'
+
+                        line_node.replace(f'#') # deleting line_node crashes redbaron
+                        line_node.parent.insert(line_node.index_on_parent, new)
+
