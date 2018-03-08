@@ -121,7 +121,7 @@ class BaseVHDLType:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
-    def pyha_deepcopy(self, prefix='self') -> str:
+    def _pyha_deepcopy(self, prefix='self') -> str:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
 
@@ -133,6 +133,9 @@ class BaseVHDLType:
         for line in r.splitlines():
             line_target = line[:line.find(':=')]
             for part in line_target.split('.'):
+                if part == '':
+                    continue
+
                 if part.find('(') != -1:  # cut out array indexing
                     part = part[:part.find('(')]
                 if part[0] == '\\':
@@ -304,7 +307,7 @@ class VHDLEnum(BaseVHDLType):
 
     def _pyha_typedef(self):
         name = self._pyha_type()
-        return 'subtype {} is natural range 0 to {}; -- enum converted to range due to Quartus "bug", see #154'\
+        return 'subtype {} is natural range 0 to {}; -- enum converted to range due to Quartus "bug", see #154' \
             .format(name, len(type(self.current)) - 1)
 
     def _pyha_reset_value(self):
@@ -353,20 +356,24 @@ class VHDLList(BaseVHDLType):
         return '{}.{}(0 to {})'.format(lib, self._pyha_arr_type_name(), len(self.current) - 1)
 
     def _pyha_definition(self):
-        if self.elements_compatible_typed:
-            return super()._pyha_definition()
+        if not self.elements_compatible_typed:
+            return '\n'.join(x._pyha_definition() for x in self.elems)
 
-        ret = '\n'.join(x._pyha_definition() for x in self.elems)
-        return ret
-
+        return super()._pyha_definition()
 
     def _pyha_typedef(self):
+        if not self.elements_compatible_typed:
+            return None
+
         if self.not_submodules_list:
             return 'type {} is array (natural range <>) of {};'.format(self._pyha_arr_type_name(),
                                                                        self.elems[0]._pyha_type())
         return None  # arrays of submodules are already defined in each submodule package!
 
     def _pyha_init(self):
+        if not self.elements_compatible_typed:
+            return '\n'.join(x._pyha_init() for x in self.elems)
+
         if self.not_submodules_list:
             return super()._pyha_init()
 
@@ -375,6 +382,9 @@ class VHDLList(BaseVHDLType):
         return '\n'.join(inits)
 
     def _pyha_update_registers(self):
+        if not self.elements_compatible_typed:
+            return '\n'.join(x._pyha_update_registers() for x in self.elems)
+
         if self.not_submodules_list:
             return super()._pyha_update_registers()
 
@@ -384,6 +394,10 @@ class VHDLList(BaseVHDLType):
         return '\n'.join(inits)
 
     def _pyha_reset(self, prefix='self') -> str:
+
+        if not self.elements_compatible_typed:
+            return ''.join(x._pyha_reset() for x in self.elems)
+
         name = self._pyha_name()
         if self.not_submodules_list:
             data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
@@ -395,7 +409,11 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def pyha_deepcopy(self, prefix='self') -> str:
+    def _pyha_deepcopy(self, prefix='self') -> str:
+
+        if not self.elements_compatible_typed:
+            return ''.join(x._pyha_deepcopy() for x in self.elems)
+
         name = self._pyha_name()
         if self.not_submodules_list:
             return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
@@ -403,7 +421,7 @@ class VHDLList(BaseVHDLType):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = '{}.{}({})'.format(prefix, name, i)
-            ret += sub.pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -470,6 +488,24 @@ class VHDLList(BaseVHDLType):
 
         return all(r)
 
+    def _pyha_constructor(self):
+        if self.is_const():
+            return ''
+
+        if not self.elements_compatible_typed:
+            return '\n'.join(x._pyha_constructor() for x in self.elems)
+
+        return super()._pyha_constructor()
+
+    def _pyha_constructor_arg(self):
+        if self.is_const():
+            return ''
+
+        if not self.elements_compatible_typed:
+            return ';'.join(x._pyha_constructor_arg() for x in self.elems)
+
+        return super()._pyha_constructor_arg()
+
 
 class VHDLModule(BaseVHDLType):
     def __init__(self, var_name, current, initial=None, parent=None):
@@ -497,7 +533,7 @@ class VHDLModule(BaseVHDLType):
 
         # types that get full bounds during simulation can end up here
         self.current._pyha_instances.append(self.current)
-        return len(self.current._pyha_instances)-1
+        return len(self.current._pyha_instances) - 1
 
     def _pyha_module_name(self):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
@@ -528,7 +564,7 @@ class VHDLModule(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def pyha_deepcopy(self, prefix='self'):
+    def _pyha_deepcopy(self, prefix='self'):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
@@ -536,7 +572,7 @@ class VHDLModule(BaseVHDLType):
                 tmp_prefix = f'{prefix}'
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
-            ret += sub.pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -689,7 +725,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return init_vhdl_type(name, PyhaList(current_val.tolist()), PyhaList(initial_val.tolist()), parent)
     elif current_val is None:
         return None
-    elif inspect.isclass(current_val): # this may happend for local variables, when using nested class or something
+    elif inspect.isclass(current_val):  # this may happend for local variables, when using nested class or something
         return None
     elif isinstance(current_val, str):
         return None  # see #216

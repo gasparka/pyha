@@ -13,16 +13,81 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
-def test_impossible_list():
+class TestDynamicLists:
+    """ In Python, everything can coexist in a list. In VHDL, list must be contain variables with same type/size.
+    Pyha 'unrolls' dynamic lists to make them usable(limited) in VHDL"""
+
+    def test_sfix(self):
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [Sfix(0.1, 0, -5), Sfix(0.2, 0, -16)]  # impossible to convert
+
+            def main(self, x):
+                # self.arr[0] = x
+                # self.arr[1] = x
+                return self.arr[0], self.arr[1]
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_sfix_resize(self):
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [Sfix(0.1, 0, -5), Sfix(0.2, 0, -16)]  # impossible to convert
+
+            def main(self, x):
+                self.arr[0] = x  # shoud resize to 0,-5
+                self.arr[1] = x  # should resize to 0 - 16
+                return self.arr[0], self.arr[1]
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+    def test_submodule(self):
+        """ recursive?? """
+
+        class TSub(Hardware):
+            def __init__(self, size):
+                self.arr = [0] * size
+
+            def main(self, x):
+                self.arr = [x] + self.arr[:-1]
+                return self.arr[-1]
+
+        class T(Hardware):
+            def __init__(self):
+                self.arr = [TSub(1), TSub(2)]  # impossible to convert
+
+            def main(self, x):
+                r0 = self.arr[0].main(x)
+                r1 = self.arr[1].main(x)
+                return r0, r1
+
+        dut = T()
+        inputs = [0, 1, 2, 3, 4]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
+
+
+
+def test_singleelem_list():
     class T(Hardware):
-        def __init__(self, arr):
-            self.arr = [Sfix(0.0, 0, -17), Sfix(0.0, 0, -16)]  # impossible to convert
+        def __init__(self, size):
+            self.arr = [Sfix(0.0, 0, -17)] * size
 
-        def main(self, dummy):
-            return self.arr[0], self.arr[1]
+        def main(self, x):
+            self.arr = [x] + self.arr[:-1]
+            return self.arr[-1]
 
-    dut = T([0.0, 0.1, 0.2])
-    inputs = [0, 1, 2]
+    dut = T(1)
+    inputs = [0.1, 0.2]
 
     sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims)

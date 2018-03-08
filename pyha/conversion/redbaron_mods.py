@@ -509,7 +509,7 @@ class ClassNodeVHDL(NodeVHDL):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x.pyha_deepcopy() for x in self.data.elems]
+        data = [x._pyha_deepcopy() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_list_deepcopy(self, prototype_only=False):
@@ -762,6 +762,7 @@ def convert(red: Node, obj=None):
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
         transform_submodule_deepcopy(red)
+        transform_dynamic_lists(red)
 
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
@@ -783,12 +784,17 @@ def super_getattr(obj, attr, is_local=False):
                 continue
 
         if part.find('[') != -1:  # is array indexing
+            try:
+                index = int(part[part.find('[')+1: part.find(']')])
+            except ValueError: # cant convert to int :(
+                index = 0
+
             part = part[:part.find('[')]
 
             if isinstance(getattr(obj, part), Sfix):  # indexing of sfix bits..
                 return 'FIXED_INDEXING_HACK'
 
-            obj = getattr(obj, part)[0]  # just take first array element, because the index may be variable
+            obj = getattr(obj, part)[index]  # just take first array element, because the index may be variable
         elif part.find(']') != -1:
             # this can happen if array index includes '.' so arr.split makes false split. example: self.a[self.b]
             continue
@@ -1184,3 +1190,17 @@ def transform_enum(red_node):
         for i, node in enumerate(red_names):
             enum_obj = type(x.current)[str(node[1])]
             red_names[i].replace(str(enum_obj.value))
+
+
+def transform_dynamic_lists(red_node):
+    data = VHDLModule('-', convert_obj)
+
+    dynamic_lists = [x for x in data.elems if isinstance(x, VHDLList) and not x.elements_compatible_typed]
+    for x in dynamic_lists:
+        name = x._name
+        red_names = red_node.find_all('atomtrailers')
+        for node in red_names:
+            for i, part in enumerate(node):
+                if str(part) == name and isinstance(part.next, GetitemNode):
+                    part.replace(f'{name}_{part.next.value}')
+                    del node[i+1]
