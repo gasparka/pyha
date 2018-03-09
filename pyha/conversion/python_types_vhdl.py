@@ -399,10 +399,9 @@ class VHDLList(BaseVHDLType):
             return ''.join(x._pyha_reset() for x in self.elems)
 
         name = self._pyha_name()
-        if len(self.elems) == 1:
-            name += '(0)'
-
         if self.not_submodules_list:
+            if len(self.elems) == 1:
+                name += '(0)'
             data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
             return '{}.\\next\\.{} := ({});\n'.format(prefix, name, data)
 

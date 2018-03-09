@@ -174,6 +174,22 @@ def test_singleelem_list():
     assert sims_close(sims)
 
 
+def test_singleelem_list_complex():
+    class T(Hardware):
+        def __init__(self, size):
+            self.arr = [Complex(0.0, 0, -17)] * size
+
+        def main(self, x):
+            self.arr = [x] + self.arr[:-1]
+            return self.arr[-1]
+
+    dut = T(1)
+    inputs = [0.1 + 0.2j, 0.2 + 0.3j]
+
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims)
+
+
 def test_submod_nocall():
     class TSub(Hardware):
         def __init__(self, size):
