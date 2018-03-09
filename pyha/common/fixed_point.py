@@ -91,8 +91,8 @@ class Sfix:
             self.right = left.right
             self.left = left.left
         else:
-            self.right = right
-            self.left = left
+            self.right = int(right)
+            self.left = int(left)
 
         self.val = val
         self.init_val = val

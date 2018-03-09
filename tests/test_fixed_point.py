@@ -600,3 +600,36 @@ class TestIndexing:
 
         sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL'])
         assert sims_close(sims)
+
+
+def test_float_bounds():
+    class Dut(Hardware):
+        def __init__(self):
+            self.counter = Sfix(0, 2.0, -17.5, signed=False)
+            self.DELAY = 1
+
+        def main(self, dummy):
+            return self.counter
+
+    dut = Dut()
+    inp = list(range(128))
+
+    sims = simulate(dut, inp)
+    assert sims_close(sims)
+
+class TestUnsigned:
+    def test_wrapping_add(self):
+        class Dut(Hardware):
+            def __init__(self):
+                self.counter = Sfix(0, 2, 0, signed=False)
+                self.DELAY = 1
+
+            def main(self, dummy):
+                self.counter = (self.counter + 1) % 4
+                return self.counter
+
+        dut = Dut()
+        inp = list(range(128))
+
+        sims = simulate(dut, inp)
+        assert sims_close(sims)
