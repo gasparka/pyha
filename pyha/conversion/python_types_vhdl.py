@@ -264,21 +264,34 @@ class VHDLSfix(BaseVHDLType):
 
     def _pyha_type(self):
         self.__log_none_bounds()
-        return 'sfixed({} downto {})'.format(self.current.left, self.current.right)
+        if self.current.signed:
+            return 'sfixed({} downto {})'.format(self.current.left, self.current.right)
+        else:
+            return 'ufixed({} downto {})'.format(self.current.left-1, self.current.right)
 
     def _pyha_bitwidth(self) -> int:
         return len(self.current)
 
     def _pyha_reset_value(self):
         self.__log_none_bounds()
-        return 'Sfix({}, {}, {})'.format(self.initial.val, self.current.left, self.current.right)
+        if self.current.signed:
+            return 'Sfix({}, {}, {})'.format(self.initial.val, self.current.left, self.current.right)
+        else:
+            return 'Ufix({}, {}, {})'.format(self.initial.val, self.current.left-1, self.current.right)
 
     def _pyha_stdlogic_type(self) -> str:
-        return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
+        if self.current.signed:
+            return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
+        else:
+            return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right) -1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
-        return '{} := Sfix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
+        if self.current.signed:
+            return '{} := Sfix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
+        else:
+            return '{} := Ufix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left-1, self.current.right)
+
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
@@ -287,17 +300,23 @@ class VHDLSfix(BaseVHDLType):
     def _pyha_type_is_compatible(self, other) -> bool:
         if type(self.current) != type(other.current):
             return False
-        return self.current.left == other.current.left and self.current.right == other.current.right
+        return self.current.left == other.current.left and self.current.right == other.current.right and self.current.signed == other.current.signed
 
     def _pyha_to_python_value(self):
-        return float(self.current)
+        if self.current.right == 0: # no fractional bits
+            return int(float(self.current))
+        else:
+            return float(self.current)
 
     def _pyha_serialize(self):
         val = self.current.fixed_value()
         return to_twoscomplement(len(self.current), val)
 
     def _pyha_deserialize(self, serial):
-        val = to_signed_int(int(serial, 2), len(self.current))
+        if self.current.signed:
+            val = to_signed_int(int(serial, 2), len(self.current))
+        else:
+            val = int(serial, 2)
         return val * 2 ** self.current.right
 
 

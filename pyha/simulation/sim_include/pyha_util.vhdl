@@ -31,6 +31,23 @@ package PyhaUtil is
     constant round_style    : fixed_round_style_type    := fixed_truncate) return sfixed;
 
 
+  function Ufix(a:real; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed;
+
+  function Ufix(a:integer; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed;
+
+  function Ufix(a:real; size_res:ufixed;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed;
+
+  function Ufix(a:std_logic_vector; left_index, right_index:integer;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed;
+
+
   function bool(x: std_logic) return boolean;
   function to_std_logic(x: boolean) return std_logic;
 
@@ -104,6 +121,37 @@ package body PyhaUtil is
   begin
     return to_sfixed(a, left_index, right_index);
   end function;
+
+
+  function Ufix(a:real; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed is
+  begin
+    return to_ufixed(a, left_index, right_index, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
+  end function;
+
+  function Ufix(a:integer; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed is
+  begin
+    return to_ufixed(a, left_index, right_index, round_style=>round_style, overflow_style=>overflow_style);
+  end function;
+
+  function Ufix(a:real; size_res:ufixed;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed is
+  begin
+    return to_ufixed(a, size_res, guard_bits=>0, round_style=>round_style, overflow_style=>overflow_style);
+  end function;
+
+  function Ufix(a:std_logic_vector; left_index, right_index:integer;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return ufixed is
+  begin
+    return to_ufixed(a, left_index, right_index);
+  end function;
+
+
 
   function bool(x: std_logic) return boolean is
   begin

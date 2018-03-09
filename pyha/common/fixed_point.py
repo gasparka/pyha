@@ -79,8 +79,9 @@ class Sfix:
     _float_mode = ContextManagerRefCounted()
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate', init_only=False, wrap_is_ok=False):
+                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True):
 
+        self.signed = signed
         self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
         self.overflow_style = overflow_style
@@ -91,8 +92,8 @@ class Sfix:
             self.right = left.right
             self.left = left.left
         else:
-            self.right = int(right)
-            self.left = int(left)
+            self.right = int(right) if right else right
+            self.left = int(left) if left else left
 
         self.val = val
         self.init_val = val
@@ -138,7 +139,10 @@ class Sfix:
             return 2 ** self.left - 2 ** self.right
 
     def min_representable(self):
-        return -2 ** self.left
+        if self.signed:
+            return -2 ** self.left
+        else:
+            return 0
 
     def overflows(self):
         return self.val < self.min_representable() or \
@@ -165,7 +169,7 @@ class Sfix:
         fmin = self.min_representable()
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
-        if not self.wrap_is_ok:
+        if not self.wrap_is_ok and self.signed:
             if str(SimPath) != 'inputs':
                 try:
                     import pydevd
@@ -220,11 +224,11 @@ class Sfix:
         with NoTrace():
             return int(math.floor(self.val))
 
-    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False):
+    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False, signed=True):
         if type is not None:  # TODO: add tests
             left = type.left
             right = type.right
-        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok, signed=signed)
 
     def _size_add(self, other):
         """ Size rules for add/sub operation. Handles the 'None'(lazy) cases. """
@@ -248,17 +252,18 @@ class Sfix:
 
     def _convert_other_operand(self, other):
         if isinstance(other, (float, int)):
-            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round')
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round', signed=self.signed)
         return other
 
     def __add__(self, other):
         with NoTrace():
             other = self._convert_other_operand(other)
             left, right = self._size_add(other)
+            signed = self.signed or other.signed
             return Sfix(self.val + other.val,
                         left,
                         right,
-                        init_only=True)
+                        init_only=True, signed=signed)
 
     def __radd__(self, other):
         with NoTrace():
@@ -304,6 +309,12 @@ class Sfix:
                         left,
                         right,
                         init_only=True)
+
+    def __mod__(self, other):
+        return Sfix(self.val % other,
+                    self.left,
+                    self.right,
+                    init_only=True)
 
     def sign_bit(self):
         with NoTrace():
@@ -364,7 +375,10 @@ class Sfix:
                         init_only=True)
 
     def __len__(self):
-        return -self.right + self.left + 1
+        if self.signed:
+            return -self.right + self.left + 1
+        else:
+            return -self.right + self.left
 
     def __call__(self, x: float):
         with NoTrace():
@@ -372,8 +386,14 @@ class Sfix:
                         self.round_style)
 
 
+# class Ufix(Sfix):
+#
+#     def min_representable(self):
+#         return 0
+
+
 # default are 'saturate' and 'round' as this is the case in VHDL lib....
-def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False) -> Sfix:
+def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False, signed=True) -> Sfix:
     """
     Resize fixed point number.
 
@@ -404,9 +424,9 @@ def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', rou
             if size_res is not None:
                 left = size_res.left
                 right = size_res.right
-            return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+            return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok, signed=signed)
 
-        return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok)
+        return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok, signed=signed)
 
 
 def left_index(x: Sfix) -> int:

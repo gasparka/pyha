@@ -960,9 +960,15 @@ def transform_auto_resize(red_node):
             if isinstance(node.value, (FloatNode, IntNode)) \
                     or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
                     FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
-                node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+                if var_t.signed:
+                    node.value = f'Sfix({node.value}, {var_t.left}, {var_t.right})'
+                else:
+                    node.value = f'Ufix({node.value}, {var_t.left-1}, {var_t.right})'
             else:
-                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+                if var_t.signed:
+                    node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+                else:
+                    node.value = f'resize({node.value}, {var_t.left-1}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
 
 
 def transform_fixed_indexing_result_to_bool(red_node):
