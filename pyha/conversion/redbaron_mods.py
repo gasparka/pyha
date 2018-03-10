@@ -8,7 +8,7 @@ from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, Comment
 from redbaron.base_nodes import LineProxyList
 
 import pyha
-from pyha.common.core import SKIP_FUNCTIONS
+from pyha.common.core import SKIP_FUNCTIONS, Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
@@ -814,6 +814,33 @@ def super_getattr(obj, attr, is_local=False):
     return obj
 
 
+def get_object(node):
+    """ Parse rebaron AtomTrailers node into Python object (taken from ongoing conversion object)
+     Works for object and local scope """
+
+    if len(node) > 1 and node[0].value == 'self':
+        var_t = super_getattr(convert_obj, str(node))
+    else:
+        # get the SOURCE function (where call is going on) from datamodel
+        def_parent = node.parent
+        while not isinstance(def_parent, DefNode):
+            def_parent = def_parent.parent
+
+        source_func_name = f'self.{def_parent.name}'
+        source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+        func_locals = source_func_obj.get_local_types()
+
+        class Struct:
+            def __init__(self, **entries):
+                self.__dict__.update(entries)
+
+        struct = Struct(**func_locals)
+        var_t = super_getattr(struct, str(node), is_local=True)
+
+    return var_t
+
+
 def transform_resize_arguments(red_node):
     """ Replace 'wrap' -> fixed_wrap
         'saturate' -> fixed_saturate
@@ -934,25 +961,8 @@ def transform_auto_resize(red_node):
     nodes = red_node.find_all('assign')
 
     for node in nodes:
-        if len(node.target) > 1 and node.target[0].value == 'self':
-            var_t = super_getattr(convert_obj, str(node.target))
-        else:
-            # get the SOURCE function (where call is going on) from datamodel
-            def_parent = node.parent
-            while not isinstance(def_parent, DefNode):
-                def_parent = def_parent.parent
 
-            source_func_name = f'self.{def_parent.name}'
-            source_func_obj = super_getattr(convert_obj, str(source_func_name))
-
-            func_locals = source_func_obj.get_local_types()
-
-            class Struct:
-                def __init__(self, **entries):
-                    self.__dict__.update(entries)
-
-            struct = Struct(**func_locals)
-            var_t = super_getattr(struct, str(node.target), is_local=True)
+        var_t = get_object(node.target)
 
         if var_t == 'FIXED_INDEXING_HACK':
             node.value = f'to_std_logic({node.value})'
@@ -982,29 +992,10 @@ def transform_fixed_indexing_result_to_bool(red_node):
                 continue
         except:
             pass
-
-        if len(node) > 1 and node[0].value == 'self':
-            var_t = super_getattr(convert_obj, str(node))
-        else:
-            # get the SOURCE function (where call is going on) from datamodel
-            def_parent = node.parent
-            while not isinstance(def_parent, DefNode):
-                def_parent = def_parent.parent
-
-            source_func_name = f'self.{def_parent.name}'
-            source_func_obj = super_getattr(convert_obj, str(source_func_name))
-
-            func_locals = source_func_obj.get_local_types()
-
-            class Struct:
-                def __init__(self, **entries):
-                    self.__dict__.update(entries)
-
-            struct = Struct(**func_locals)
-            try:
-                var_t = super_getattr(struct, str(node), is_local=True)
-            except AttributeError: # happend when node is Sfix(...)
-                continue
+        try:
+            var_t = get_object(node)
+        except AttributeError: # can happen when node is Sfix()
+            continue
 
         if var_t == 'FIXED_INDEXING_HACK':
             node.value = f'bool({node})'
@@ -1091,7 +1082,7 @@ def transform_call(red_node):
 
     # loop over all atomtrailers, call is always a member of this
     atomtrailers = red_node.find_all('atomtrailers')
-    for i, atom in enumerate(atomtrailers):  # reversed is for the case when one call is argument to other
+    for i, atom in enumerate(atomtrailers):
         if is_hack:  # when parsed out of order call
             atom = atomtrailers[i - 1]
             call = atom.call
