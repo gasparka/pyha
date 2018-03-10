@@ -28,7 +28,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_sfix_resize(self):
@@ -44,7 +44,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_submodule(self):
@@ -68,7 +68,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0, 1, 2, 3, 4]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_index_not_constant(self):
@@ -84,7 +84,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_index_not_constant_call(self):
@@ -109,8 +109,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
-                        conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_for_range(self):
@@ -128,7 +127,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_for_submodule(self):
@@ -154,7 +153,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
 
