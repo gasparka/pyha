@@ -121,15 +121,15 @@ class BaseVHDLType:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
-    def _pyha_deepcopy(self, prefix='self') -> str:
+    def _pyha_deepcopy(self, prefix='self', other_name="other") -> str:
         name = self._pyha_name()
-        return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
+        return '{}.{} = {}.{}\n'.format(prefix, name, other_name, name)
 
     def _pyha_reset_constants(self) -> str:
         r = self._pyha_reset()
 
         ret = []
-        # filter out CONSTANTS (some name is fully uppercase)
+        # filter out CONSTANTS (name is fully uppercase)
         for line in r.splitlines():
             line_target = line[:line.find(':=')]
             for part in line_target.split('.'):
@@ -430,14 +430,14 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self') -> str:
+    def _pyha_deepcopy(self, prefix='self', other_name="other") -> str:
 
         if not self.elements_compatible_typed:
             return ''.join(x._pyha_deepcopy() for x in self.elems)
 
         name = self._pyha_name()
         if self.not_submodules_list:
-            return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", "other"), name)
+            return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", other_name), name)
 
         ret = ''
         for i, sub in enumerate(self.elems):
@@ -585,7 +585,7 @@ class VHDLModule(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self'):
+    def _pyha_deepcopy(self, prefix='self', other_name="other"):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
@@ -593,7 +593,7 @@ class VHDLModule(BaseVHDLType):
                 tmp_prefix = f'{prefix}'
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
-            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub._pyha_deepcopy(tmp_prefix, other_name)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:

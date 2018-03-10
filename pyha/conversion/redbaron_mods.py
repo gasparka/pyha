@@ -654,8 +654,6 @@ class ClassNodeVHDL(NodeVHDL):
         proto += self.build_reset(prototype_only=True) + '\n'
         proto += self.build_init(prototype_only=True) + '\n'
         proto += self.build_reset_constants(prototype_only=True) + '\n'
-        proto += self.build_deepcopy(prototype_only=True) + '\n'
-        proto += self.build_list_deepcopy(prototype_only=True) + '\n'
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
@@ -674,10 +672,6 @@ class ClassNodeVHDL(NodeVHDL):
             {INIT_SELF}
             
             {CONSTANT_SELF}
-            
-            {DEEPCOPY}
-            
-            {DEEPCOPY_LIST}
 
             end package body;""")
 
@@ -688,8 +682,6 @@ class ClassNodeVHDL(NodeVHDL):
         sockets['INIT_SELF'] = tabber(self.build_init())
         sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
         sockets['RESET_SELF'] = tabber(self.build_reset())
-        sockets['DEEPCOPY'] = tabber(self.build_deepcopy())
-        sockets['DEEPCOPY_LIST'] = tabber(self.build_list_deepcopy())
         sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['USER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeVHDL))
 
@@ -760,10 +752,10 @@ def convert(red: Node, obj=None):
     transform_int_cast(red)
     if obj is not None:
         transform_enum(red)
+        transform_submodule_deepcopy(red)
         transform_registers(red)
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
-        transform_submodule_deepcopy(red)
 
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
@@ -1007,10 +999,19 @@ def transform_submodule_deepcopy(red_node):
     for x in nodes:
         if not isinstance(x.target, AtomtrailersNode) or x.target[0].value != 'self':
             continue
+
         target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
         if isinstance(target_type, VHDLModule):
-            x.replace(
-                f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+            new = target_type._pyha_deepcopy(prefix=str(x.target), other_name=str(x.value))
+
+            for line in new.splitlines():
+                x.parent.insert(x.index_on_parent, line)
+            x.replace('#')
+            # x.replace(
+            #     f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+            #
+
+
         elif isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
             x.replace(
                 f'{target_type.elems[0]._pyha_module_name()}.pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')

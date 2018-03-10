@@ -13,6 +13,105 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
+class TestSubmoduleAssign:
+    """ Should be delayed assignment + all fixed point elements must be resized (however deep). In VHDL we cant just assign
+    a := b; as this would update values immidietly, instead we need to assign every element:
+    a.next.elem1 := b.elem1;
+    e.next.elem2 := b.elem2;
+    ...
+    """
+
+    def test_basic(self):
+        class T(Hardware):
+            def __init__(self):
+                self.comp = Complex(0.0, 0, -8)
+
+            def main(self, x):
+                self.comp = x
+                return self.comp
+
+        dut = T()
+        inputs = [0.0j, 0.1j, 0.2j]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_basic_list(self):
+        """ Failed because list __setitem__ did NOT go into recusive __setattr__"""
+        class T(Hardware):
+            def __init__(self):
+                self.comp = [Complex(0.0, 0, -8), Complex(0.0, 0, -8)]
+
+            def main(self, x):
+                self.comp[0] = x
+                return self.comp
+
+        dut = T()
+        inputs = [0.0j, 0.1j, 0.2j]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_deep(self):
+        class TSub(Hardware):
+            def __init__(self, x):
+                self.comp = x
+
+        class T(Hardware):
+            def __init__(self):
+                self.comp = Complex(0.0, 0, -8)
+                self.sub = TSub(Complex(0.0, 0, -2))
+
+            def main(self, x):
+                self.comp = x
+                self.sub.comp = x
+                self.sub = TSub(x)
+                return self.comp
+
+        dut = T()
+        inputs = [0.0j, 0.1j, 0.2j]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+
+    def test_constructor(self):
+        class T(Hardware):
+            def __init__(self):
+                self.sub = Complex(0.0, 0, -2)
+
+            def main(self, x):
+                self.sub = Complex(x, x)
+                return self.sub
+
+        dut = T()
+        inputs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+    def test_deep_construct(self):
+        class TSub(Hardware):
+            def __init__(self, x):
+                self.comp = x
+
+        class T(Hardware):
+            def __init__(self):
+                self.sub = TSub(Complex(0.0, 0, -2))
+
+            def main(self, x):
+                self.sub = TSub(x)
+                return self.sub
+
+        dut = T()
+        inputs = [0.0j, 0.1j, 0.2j]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        assert sims_close(sims)
+
+
+
+
 class TestDynamicLists:
     """ In Python, everything can coexist in a list. In VHDL, list must be contain variables with same type/size.
     Pyha 'unrolls' dynamic lists to make them usable(limited) in VHDL"""
