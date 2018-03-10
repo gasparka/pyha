@@ -250,7 +250,8 @@ class PyhaList(UserList):
                 for k, v in y.__dict__.items():
                     if k.startswith('_pyha'):
                         continue
-                    self.data[i].__dict__['_pyha_next'][k] = v
+                    setattr(self.data[i], k, v)
+                    # self.data[i].__dict__['_pyha_next'][k] = v
 
             else:
                 if isinstance(self.data[i], Sfix):
