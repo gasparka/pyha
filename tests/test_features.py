@@ -38,6 +38,7 @@ class TestSubmoduleAssign:
 
     def test_basic_list(self):
         """ Failed because list __setitem__ did NOT go into recusive __setattr__"""
+
         class T(Hardware):
             def __init__(self):
                 self.comp = [Complex(0.0, 0, -8), Complex(0.0, 0, -8)]
@@ -74,11 +75,10 @@ class TestSubmoduleAssign:
         sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
         assert sims_close(sims)
 
-
     def test_constructor(self):
         class T(Hardware):
             def __init__(self):
-                self.sub = Complex(0.0, 0, -2)
+                self.sub = Complex(0.0, 0, -8)
 
             def main(self, x):
                 self.sub = Complex(x, x)
@@ -92,24 +92,40 @@ class TestSubmoduleAssign:
 
     def test_deep_construct(self):
         class TSub(Hardware):
-            def __init__(self, x):
-                self.comp = x
+            def __init__(self, comp, comp2):
+                self.comp = comp
+                self.comp2 = comp2
 
         class T(Hardware):
             def __init__(self):
-                self.sub = TSub(Complex(0.0, 0, -2))
+                self.sub = TSub(Complex(0.0, 0, -8), Complex(0.0, 0, -4))
 
             def main(self, x):
-                self.sub = TSub(x)
+                self.sub = TSub(x, comp2=x)
                 return self.sub
 
         dut = T()
-        inputs = [0.0j, 0.1j, 0.2j]
+        inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
         assert sims_close(sims)
 
+    def test_submodule_array(self):
+        class T(Hardware):
+            def __init__(self):
+                self.sub = [Complex(), Complex()]
 
+            def main(self, x):
+                self.sub = [x] + self.sub[:-1]
+                return self.sub[-1]
+
+        dut = T()
+        inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
+
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert sims_close(sims)
 
 
 class TestDynamicLists:

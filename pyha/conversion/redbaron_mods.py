@@ -4,7 +4,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, RedBaron
 from redbaron.base_nodes import LineProxyList
 
 import pyha
@@ -285,7 +285,7 @@ class CallNodeVHDL(NodeVHDL):
             p = p.parent
 
         if not is_assign and isinstance(self.red_node.next_recursive, (EndlNode, CommentNode)):
-            if not isinstance(self.red_node.parent.parent, CallArgumentNode): # dont add ; for last argument
+            if not isinstance(self.red_node.parent.parent, CallArgumentNode):  # dont add ; for last argument
                 base += ';'
         return base
 
@@ -310,9 +310,9 @@ class FloatNodeVHDL(NodeVHDL):
 class UnitaryOperatorNodeVHDL(NodeVHDL):
     def __str__(self):
         if self.value == '-':
-            return f'{self.value}{self.target}' # eg. -1
+            return f'{self.value}{self.target}'  # eg. -1
         else:
-            return f'{self.value} {self.target}' # eg. not self.val
+            return f'{self.value} {self.target}'  # eg. not self.val
 
 
 class AssertNodeVHDL(NodeVHDL):
@@ -509,7 +509,7 @@ class ClassNodeVHDL(NodeVHDL):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_deepcopy() for x in self.data.elems]
+        data = [x._pyha_recursive_object_assign() for x in self.data.elems]
         return template.format(DATA=formatter(data))
 
     def build_list_deepcopy(self, prototype_only=False):
@@ -746,13 +746,15 @@ def convert(red: Node, obj=None):
     transform_for(red)
     if obj is not None:
         transform_dynamic_lists(red)
+        transform_unroll_local_constructor(red)
+        transform_submodule_deepcopy(red)
     transform_call(red)
     transform_multiple_assignment(red)
     transform_lazy_operand(red)
     transform_int_cast(red)
     if obj is not None:
         transform_enum(red)
-        transform_submodule_deepcopy(red)
+        # transform_submodule_deepcopy(red)
         transform_registers(red)
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
@@ -778,8 +780,8 @@ def super_getattr(obj, attr, is_local=False):
 
         if part.find('[') != -1:  # is array indexing
             try:
-                index = int(part[part.find('[')+1: part.find(']')])
-            except ValueError: # cant convert to int :(
+                index = int(part[part.find('[') + 1: part.find(']')])
+            except ValueError:  # cant convert to int :(
                 index = 0
 
             part = part[:part.find('[')]
@@ -797,7 +799,7 @@ def super_getattr(obj, attr, is_local=False):
             except AttributeError:
                 # obj might be dynamic array that has transformed indexing eg. a[0] -> a_0
                 try:
-                    index = int(part[part.find('_')+1:])
+                    index = int(part[part.find('_') + 1:])
                     name = part[:part.find('_')]
                     obj = getattr(obj, name)[index]
                 except:
@@ -986,35 +988,54 @@ def transform_fixed_indexing_result_to_bool(red_node):
             pass
         try:
             var_t = get_object(node)
-        except AttributeError: # can happen when node is Sfix()
+        except AttributeError:  # can happen when node is Sfix()
             continue
 
         if var_t == 'FIXED_INDEXING_HACK':
             node.value = f'bool({node})'
 
-
 def transform_submodule_deepcopy(red_node):
     """ Converts assign to submodule to 'pyha_deepcopy' call"""
+    tmp_var_count = 0
     nodes = red_node.find_all('assign')
-    for x in nodes:
-        if not isinstance(x.target, AtomtrailersNode) or x.target[0].value != 'self':
+    for node in nodes:
+        if not isinstance(node.target, AtomtrailersNode) or node.target[0].value != 'self':
             continue
 
-        target_type = init_vhdl_type('-', super_getattr(convert_obj, str(x.target)))
-        if isinstance(target_type, VHDLModule):
-            new = target_type._pyha_deepcopy(prefix=str(x.target), other_name=str(x.value))
+        target_obj = init_vhdl_type('-', super_getattr(convert_obj, str(node.target)))
+        if isinstance(target_obj, VHDLModule):
+            new = target_obj._pyha_recursive_object_assign(prefix=str(node.target), other_name=str(node.value))
 
             for line in new.splitlines():
-                x.parent.insert(x.index_on_parent, line)
-            x.replace('#')
-            # x.replace(
-            #     f'{target_type._pyha_module_name()}.pyha_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
-            #
+                node.parent.insert(node.index_on_parent + 1, line)
+                node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
+            node.replace(f'# Transform object assignment for : {node}')
 
+        elif isinstance(target_obj, VHDLList) and not target_obj.not_submodules_list:
 
-        elif isinstance(target_type, VHDLList) and not target_type.not_submodules_list:
-            x.replace(
-                f'{target_type.elems[0]._pyha_module_name()}.pyha_list_deepcopy({str(x.target).replace(".next","")}, {str(x.value)})')
+            # add new local variable for the function
+            # get the SOURCE (where call is going on) function object from datamodel
+            def_parent = node
+            while not isinstance(def_parent, DefNode):
+                def_parent = def_parent.parent
+            # def_parent = atom.parent_find('def')
+            source_func_name = f'self.{def_parent.name}'
+            source_func_obj = super_getattr(convert_obj, str(source_func_name))
+
+            name = f'pyha_objarr_tmp_{tmp_var_count}'
+            tmp_var_count += 1
+            source_func_obj.add_local_type(name, target_obj.current)
+
+            local = f'{name} = {node.value}'
+            node.parent.insert(node.index_on_parent, local)
+
+            for i, elem in enumerate(target_obj.elems):
+                new = elem._pyha_recursive_object_assign(prefix=f'{node.target}[{i}]', other_name=f'{name}[{i}]')
+
+                for line in new.splitlines():
+                    node.parent.insert(node.index_on_parent + 1, line)
+                    node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
+            node.replace(f'# Transform LIST of objects assignment for : {node}')
 
 
 def transform_registers(red_node):
@@ -1028,9 +1049,6 @@ def transform_registers(red_node):
     self.submod.a[i].a -> self.submod.a[i].next.a
 
     self.a, self.b = call() -> self.next.a, self.next.b = call()
-
-    Special case, when ComplexSfix: NOT IMPLEMENTED
-    self.complx.real -> self.next.complx.real
 
     """
 
@@ -1048,6 +1066,38 @@ def transform_registers(red_node):
                 add_next(mn)
         else:
             add_next(node.target)
+
+
+def transform_unroll_local_constructor(red_node):
+    assigns = red_node.find_all('assign')
+    for node in assigns:
+        call = node.value.call
+        if call is None:  # has no function call
+            continue
+
+        call_index = call.previous.index_on_parent
+        if call_index != 0:  # input is something complicated..we only consider simple calls like 'Complex(..)'
+            continue
+
+        obj = get_object(node.target)
+        if not isinstance(obj, Hardware):
+            continue
+
+        call_name = str(node.value[0])
+        res_type = obj.__class__.__name__
+        if res_type != call_name:  # not a call to constructor
+            continue
+
+        target = str(node.target)
+        for i, (k, v) in enumerate(obj.__dict__.items()):
+            if k.startswith('_pyha'):
+                continue
+
+            new = f'{target}.{k} = {call[i].value}'
+            node.parent.insert(node.index_on_parent + 1, new)
+            node.parent[node.index_on_parent + 1].parent = node.parent # fix parent
+
+        node.replace(f'# Transform constructor call for: {node}')
 
 
 def transform_call(red_node):
@@ -1111,7 +1161,7 @@ def transform_call(red_node):
         del target_func_name[call_index + 1:]
         try:
             target_func_obj = super_getattr(convert_obj, str(target_func_name))
-        except: # happend for: (self.conjugate(complex_in) * complex_in).real
+        except:  # happend for: (self.conjugate(complex_in) * complex_in).real
             continue
 
         # set prefix as first argument (self)
@@ -1216,7 +1266,7 @@ def transform_dynamic_lists(red_node):
                     try:
                         index = int(str(part.next.value))
                         part.replace(f'{name}_{index}')
-                        del node[i+1]
+                        del node[i + 1]
                     except ValueError:
 
                         line_node = node
@@ -1232,7 +1282,7 @@ def transform_dynamic_lists(red_node):
                             line_node = line_node.parent
 
                         index = str(part.next.value)
-                        node[i+1].replace(' ') # del node[i+1], crashes redbaron
+                        node[i + 1].replace(' ')  # del node[i+1], crashes redbaron
 
                         new = ""
                         for i in range(len(x.elems)):
@@ -1241,6 +1291,5 @@ def transform_dynamic_lists(red_node):
                             head = 'if' if i == 0 else 'elif'
                             new += f'{head} {index} == {i}:\n\t{line_node}\n'
 
-                        line_node.replace(f'#') # deleting line_node crashes redbaron
+                        line_node.replace(f'#')  # deleting line_node crashes redbaron
                         line_node.parent.insert(line_node.index_on_parent, new)
-

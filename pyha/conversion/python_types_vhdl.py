@@ -121,7 +121,7 @@ class BaseVHDLType:
         name = self._pyha_name()
         return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
-    def _pyha_deepcopy(self, prefix='self', other_name="other") -> str:
+    def _pyha_recursive_object_assign(self, prefix='self', other_name="other") -> str:
         name = self._pyha_name()
         return '{}.{} = {}.{}\n'.format(prefix, name, other_name, name)
 
@@ -430,10 +430,10 @@ class VHDLList(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self', other_name="other") -> str:
+    def _pyha_recursive_object_assign(self, prefix='self', other_name="other") -> str:
 
         if not self.elements_compatible_typed:
-            return ''.join(x._pyha_deepcopy() for x in self.elems)
+            return ''.join(x._pyha_recursive_object_assign() for x in self.elems)
 
         name = self._pyha_name()
         if self.not_submodules_list:
@@ -442,7 +442,7 @@ class VHDLList(BaseVHDLType):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = '{}.{}({})'.format(prefix, name, i)
-            ret += sub._pyha_deepcopy(tmp_prefix)  # recursive
+            ret += sub._pyha_recursive_object_assign(tmp_prefix)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -585,7 +585,7 @@ class VHDLModule(BaseVHDLType):
             ret += sub._pyha_reset(tmp_prefix)  # recursive
         return ret
 
-    def _pyha_deepcopy(self, prefix='self', other_name="other"):
+    def _pyha_recursive_object_assign(self, prefix='self', other_name="other"):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
@@ -593,7 +593,7 @@ class VHDLModule(BaseVHDLType):
                 tmp_prefix = f'{prefix}'
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
-            ret += sub._pyha_deepcopy(tmp_prefix, other_name)  # recursive
+            ret += sub._pyha_recursive_object_assign(tmp_prefix, other_name)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:

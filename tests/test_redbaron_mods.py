@@ -1334,8 +1334,6 @@ package B0_0 is
     procedure pyha_reset(self:inout self_t);
     procedure pyha_init_next(self:inout self_t);
     procedure pyha_reset_constants(self:inout self_t);
-    procedure pyha_deepcopy(self:inout self_t; other: in self_t);
-    procedure pyha_list_deepcopy(self:inout B0_0_self_t_list_t; other: in B0_0_self_t_list_t);
 end package;""")
 
         assert expect == dut.build_package_header()
