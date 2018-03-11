@@ -589,11 +589,12 @@ class VHDLModule(BaseVHDLType):
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
+            tmp_other = other_name
             if self._name != '-':
-                tmp_prefix = f'{prefix}'
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
-            ret += sub._pyha_recursive_object_assign(tmp_prefix, other_name)  # recursive
+                    tmp_other += f'.{self._pyha_name()}'
+            ret += sub._pyha_recursive_object_assign(tmp_prefix, tmp_other)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
