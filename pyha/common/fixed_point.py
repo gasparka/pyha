@@ -314,7 +314,8 @@ class Sfix:
         return Sfix(self.val % other,
                     self.left,
                     self.right,
-                    init_only=True)
+                    init_only=True,
+                    signed=self.signed)
 
     def sign_bit(self):
         with NoTrace():
