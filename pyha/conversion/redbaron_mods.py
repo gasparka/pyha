@@ -745,7 +745,7 @@ def convert(red: Node, obj=None):
     transform_remove_copy(red)
     transform_for(red)
     if obj is not None:
-        transform_dynamic_lists(red)
+        # transform_dynamic_lists(red)
         transform_unroll_local_constructor(red)
         transform_submodule_deepcopy(red)
     transform_call(red)

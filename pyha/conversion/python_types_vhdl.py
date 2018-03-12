@@ -351,8 +351,7 @@ class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial, parent=None):
         super().__init__(var_name, current, initial, parent)
 
-        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in
-                      enumerate(zip(self.current, self.initial))]
+        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in enumerate(zip(self.current, self.initial))]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
         self.elements_compatible_typed = all([x._pyha_type_is_compatible(self.elems[0]) for x in self.elems])
@@ -534,7 +533,7 @@ class VHDLModule(BaseVHDLType):
             if initial is None:
                 initial = current._pyha_initial_self
             else:
-                current._pyha_initial_self = initial._pyha_initial_self
+                current.__dict__['_pyha_initial_self'] = initial._pyha_initial_self
         except:
             pass
 
