@@ -16,16 +16,13 @@ class ContextManagerRefCounted:
 class NoTrace:
     """ Disables the collection of function locals/inputs/returns, speeeeed """
     def __init__(self):
-        pass
-        # self.profile = sys.getprofile()
+        self.profile = sys.getprofile()
 
     def __enter__(self):
-        pass
-        # sys.setprofile(None)
+        sys.setprofile(None)
 
     def __exit__(self, type, value, traceback):
-        pass
-        # sys.setprofile(self.profile)
+        sys.setprofile(self.profile)
 
 
 class RegisterBehaviour:
