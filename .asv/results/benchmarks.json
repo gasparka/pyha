@@ -1,4 +1,30 @@
 {
+    "benchmarks.ConversionComplex.time_float_to_sfix": {
+        "code": "def time_float_to_sfix(self):\n    with SimulationRunning.enable():  # turns all objects to 'locals'\n        ret = [default_complex(x) for x in self.inp]\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.ConversionComplex.time_float_to_sfix",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.ConversionComplex.time_float_to_sfix",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds"
+    },
+    "benchmarks.ConversionsFloat.time_float_to_sfix": {
+        "code": "def time_float_to_sfix(self):\n    ret = [default_sfix(x) for x in self.inp]\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.ConversionsFloat.time_float_to_sfix",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.ConversionsFloat.time_float_to_sfix",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds"
+    },
     "benchmarks.RedBaronTimes.time_conversion_r2sdf": {
         "code": "def time_conversion_r2sdf(self):\n    \"\"\" First stage, 1 element \"\"\"\n    conv = get_conversion(self.model)\n",
         "goal_time": 2.0,
@@ -20,6 +46,19 @@
         "param_names": [],
         "params": [],
         "pretty_name": "benchmarks.RedBaronTimes.time_conversion_r2sdfstage",
+        "repeat": 0,
+        "timeout": 60.0,
+        "type": "time",
+        "unit": "seconds"
+    },
+    "benchmarks.TimeSuite.time_complex_shiftreg": {
+        "code": "def time_complex_shiftreg(self):\n    simulate(self.dut, self.inp, simulations=['PYHA'])\n",
+        "goal_time": 2.0,
+        "name": "benchmarks.TimeSuite.time_complex_shiftreg",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "pretty_name": "benchmarks.TimeSuite.time_complex_shiftreg",
         "repeat": 0,
         "timeout": 60.0,
         "type": "time",

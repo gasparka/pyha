@@ -1096,16 +1096,16 @@ def transform_unroll_local_constructor(red_node):
         if res_type != call_name:  # not a call to constructor
             continue
 
+        correct_indentation = node.indentation
+        new = 'if True:\n'  # replace needs a BLOCK, so this is a dummy IF
         target = str(node.target)
         for i, (k, v) in enumerate(obj.__dict__.items()):
             if k.startswith('_pyha'):
                 continue
 
-            new = f'{target}.{k} = {call[i].value}'
-            node.parent.insert(node.index_on_parent + 1, new)
-            node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
+            new += f'{correct_indentation}\t{target}.{k} = {call[i].value}\n'
 
-        node.replace(f'# Transform constructor call for: {node}')
+        node.replace(new)
 
 
 def transform_call(red_node):
