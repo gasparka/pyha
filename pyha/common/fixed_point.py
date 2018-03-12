@@ -252,7 +252,7 @@ class Sfix:
 
     def _convert_other_operand(self, other):
         if isinstance(other, (float, int)):
-            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round', signed=self.signed)
+            other = Sfix(other, self.left, self.right, self.overflow_style, self.round_style, signed=self.signed)
         return other
 
     def __add__(self, other):
