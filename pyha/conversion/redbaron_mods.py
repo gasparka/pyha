@@ -430,7 +430,10 @@ class ForNodeVHDL(NodeVHDL):
         if range_len_pattern is not None and ',' not in range_len_pattern[0]:
             return range_len_pattern[0] + "'range"
         else:
-            range_pattern = parse('\\range\\({})', pyrange)
+            range_pattern = parse('\\range\\({});', pyrange)
+            if range_pattern is None:
+                range_pattern = parse('\\range\\({})', pyrange)
+
             if range_pattern is not None:
                 two_args = parse('{},{}', range_pattern[0])
                 if two_args is not None:
@@ -745,20 +748,19 @@ def convert(red: Node, obj=None):
     transform_remove_copy(red)
     transform_for(red)
     if obj is not None:
-        # transform_dynamic_lists(red)
+        transform_dynamic_lists(red)
         transform_unroll_local_constructor(red)
         transform_submodule_deepcopy(red)
+
     transform_call(red)
     transform_multiple_assignment(red)
     transform_lazy_operand(red)
     transform_int_cast(red)
     if obj is not None:
         transform_enum(red)
-        # transform_submodule_deepcopy(red)
         transform_registers(red)
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
-
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
     return conv
@@ -994,6 +996,7 @@ def transform_fixed_indexing_result_to_bool(red_node):
         if var_t == 'FIXED_INDEXING_HACK':
             node.value = f'bool({node})'
 
+
 def transform_submodule_deepcopy(red_node):
     """ Converts assign to submodule to 'pyha_deepcopy' call"""
     tmp_var_count = 0
@@ -1006,10 +1009,12 @@ def transform_submodule_deepcopy(red_node):
         if isinstance(target_obj, VHDLModule):
             new = target_obj._pyha_recursive_object_assign(prefix=str(node.target), other_name=str(node.value))
 
-            for line in new.splitlines():
-                node.parent.insert(node.index_on_parent + 1, line)
-                node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
-            node.replace(f'# Transform object assignment for : {node}')
+            correct_indentation = node.indentation
+            newstr = 'if True:\n'
+            for value in new.splitlines():
+                newstr += f'{correct_indentation}\t{value}\n'
+
+            node.replace(newstr)
 
         elif isinstance(target_obj, VHDLList) and not target_obj.not_submodules_list:
 
@@ -1029,13 +1034,16 @@ def transform_submodule_deepcopy(red_node):
             local = f'{name} = {node.value}'
             node.parent.insert(node.index_on_parent, local)
 
-            for i, elem in enumerate(target_obj.elems):
-                new = elem._pyha_recursive_object_assign(prefix=f'{node.target}[{i}]', other_name=f'{name}[{i}]')
+            correct_indentation = node.parent[node.index_on_parent].indentation
 
-                for line in new.splitlines():
-                    node.parent.insert(node.index_on_parent + 1, line)
-                    node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
-            node.replace(f'# Transform LIST of objects assignment for : {node}')
+            template = target_obj.elems[0]._pyha_recursive_object_assign(prefix=f'{node.target}[i]',
+                                                                         other_name=f'{name}[i]')
+
+            new = f'for i in range(len({name})):\n'
+            for part in template.splitlines():
+                new += f'{correct_indentation}\t{part}\n '
+
+            node.replace(new)
 
 
 def transform_registers(red_node):
@@ -1095,7 +1103,7 @@ def transform_unroll_local_constructor(red_node):
 
             new = f'{target}.{k} = {call[i].value}'
             node.parent.insert(node.index_on_parent + 1, new)
-            node.parent[node.index_on_parent + 1].parent = node.parent # fix parent
+            node.parent[node.index_on_parent + 1].parent = node.parent  # fix parent
 
         node.replace(f'# Transform constructor call for: {node}')
 
@@ -1209,8 +1217,8 @@ def transform_call(red_node):
                     break
                 if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
                     if not (hasattr(line_node.parent, 'test') and (
-                            line_node.parent.test == atom  # if WE are the if contition, skip
-                            or line_node.parent.test == atom.parent)):  # if WE are the if contition (part of condition)
+                            line_node.parent.test == atom  # if WE are the if condition, skip
+                            or line_node.parent.test == atom.parent)):  # if WE are the if condition (part of condition)
                         break
 
                 line_node = line_node.parent
@@ -1275,8 +1283,8 @@ def transform_dynamic_lists(red_node):
                                 break
                             if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
                                 if not (hasattr(line_node.parent, 'test') and (
-                                        line_node.parent.test == node  # if WE are the if contition, skip
-                                        or line_node.parent.test == node.parent)):  # if WE are the if contition (part of condition)
+                                        line_node.parent.test == node  # if WE are the if condition, skip
+                                        or line_node.parent.test == node.parent)):  # if WE are the if condition (part of condition)
                                     break
 
                             line_node = line_node.parent
@@ -1284,12 +1292,12 @@ def transform_dynamic_lists(red_node):
                         index = str(part.next.value)
                         node[i + 1].replace(' ')  # del node[i+1], crashes redbaron
 
-                        new = ""
+                        correct_indentation = line_node.indentation
+                        new = 'if True:\n'  # replace needs a BLOCK, so this is a dummy IF
                         for i in range(len(x.elems)):
                             part.replace(f'{name}_{i}')
 
                             head = 'if' if i == 0 else 'elif'
-                            new += f'{head} {index} == {i}:\n\t{line_node}\n'
+                            new += f'{correct_indentation}\t{head} {index} == {i}:\n{correct_indentation}\t\t{line_node}\n'
 
-                        line_node.replace(f'#')  # deleting line_node crashes redbaron
-                        line_node.parent.insert(line_node.index_on_parent, new)
+                        line_node.replace(new)
