@@ -112,6 +112,9 @@ def process_outputs(delay_compensate, ret, output_callback=None):
         pass
     return ret
 
+_last_trained_object = None
+def get_last_trained_object():
+    return _last_trained_object
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None, output_callback=None):
     """
@@ -248,6 +251,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             except AttributeError:
                 pass
 
+            global _last_trained_object
+            _last_trained_object = fix_model
             out['PYHA'] = ret
             logger.info(f'OK!')
 
