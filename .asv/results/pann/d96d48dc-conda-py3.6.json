@@ -1,0 +1,38 @@
+{
+    "commit_hash": "d96d48dc060284b0b4abcd56bd455c55f9653f0b",
+    "date": 1520869006000,
+    "ended_at": {
+        "benchmarks.ConversionComplex.time_float_to_sfix": 1520873562000,
+        "benchmarks.ConversionsFloat.time_float_to_sfix": 1520873564000,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdf": 1520873569000,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdfstage": 1520873574000,
+        "benchmarks.TimeSuite.time_complex_shiftreg": 1520873580000
+    },
+    "env_name": "conda-py3.6",
+    "params": {
+        "arch": "x86_64",
+        "cpu": "Intel(R) Xeon(R) CPU E3-1225 V2 @ 3.20GHz",
+        "machine": "pann",
+        "os": "Linux 4.13.0-36-generic",
+        "python": "3.6",
+        "ram": "32870352"
+    },
+    "profiles": {},
+    "python": "3.6",
+    "requirements": {},
+    "results": {
+        "benchmarks.ConversionComplex.time_float_to_sfix": 0.16777554830000002,
+        "benchmarks.ConversionsFloat.time_float_to_sfix": 0.055396929200000014,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdf": 0.3572910979999997,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdfstage": 0.5244058090000001,
+        "benchmarks.TimeSuite.time_complex_shiftreg": 1.9248836799999998
+    },
+    "started_at": {
+        "benchmarks.ConversionComplex.time_float_to_sfix": 1520873556000,
+        "benchmarks.ConversionsFloat.time_float_to_sfix": 1520873562000,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdf": 1520873564000,
+        "benchmarks.RedBaronTimes.time_conversion_r2sdfstage": 1520873569000,
+        "benchmarks.TimeSuite.time_complex_shiftreg": 1520873574000
+    },
+    "version": 1
+}
