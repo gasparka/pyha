@@ -1,7 +1,28 @@
 import time
 
+from pyha import Complex
 from pyha.common.core import Hardware, Meta, PyhaFunc
 from pyha.common.fixed_point import Sfix
+
+
+def test_const_not_in_next():
+    class A(Hardware):
+        def __init__(self):
+            self.A = Sfix(0.0)
+
+
+    dut = A()
+    assert 'A' not in dut._pyha_next
+
+
+def test_submodule_const_not_updatable():
+    class A(Hardware):
+        def __init__(self):
+            self.A = Complex()
+
+
+    dut = A()
+    assert dut._pyha_updateable == []
 
 
 def test_metaclass_assigned():

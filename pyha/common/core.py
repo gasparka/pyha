@@ -195,6 +195,9 @@ class Meta(type):
                         v = PyhaList(v, ret.__class__.__name__, k)
                         ret.__dict__[k] = v
 
+                    if is_constant(k):
+                        continue
+
                     if hasattr(v, '_pyha_update_registers'):
                         ret._pyha_updateable.append(v)
                         continue
