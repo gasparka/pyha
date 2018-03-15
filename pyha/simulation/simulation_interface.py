@@ -59,7 +59,7 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
 
             elif isinstance(arg[0], (list, np.ndarray)):
                 # input is 2D array -> turn into packets (1D list of Stream objects)
-                args[i] = convert_input_types(arg) # dont apply input callback here..
+                args[i] = convert_input_types(arg, silence=True) # dont apply input callback here..
 
     if input_callback:
         for i in range(len(args)):

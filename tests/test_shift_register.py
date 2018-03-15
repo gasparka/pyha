@@ -37,7 +37,7 @@ def test_complex():
             self.shr_old = self.shr_old[1:] + [inp]
             return self.shr_new.peek(), self.shr_old[0]
 
-    N = 32
+    N = 1024
     dut = T([Complex(0.0+0.0j, 0, -17) for _ in range(N)])
 
     inp = np.random.uniform(-1, 1, N * 2) + np.random.uniform(-1, 1, N * 2) * 1j
@@ -47,4 +47,25 @@ def test_complex():
                                                          ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims['PYHA'][0] == sims['PYHA'][1]
+    assert sims_close(sims)
+
+
+def test_complex_pure():
+    class T(Hardware):
+        def __init__(self, data):
+            self.shr_new = ShiftRegister(data)
+
+        def main(self, inp):
+            self.shr_new.push_next(inp)
+            return self.shr_new.peek()
+
+    N = 1024 * 2 * 2 * 2
+    dut = T([Complex(0.0+0.0j, 0, -17) for _ in range(N)])
+
+    inp = np.random.uniform(-1, 1, N * 2) + np.random.uniform(-1, 1, N * 2) * 1j
+    sims = simulate(dut, inp, simulations=['PYHA',
+                                                           'RTL',
+                                                         'GATE'
+                                                         ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims)

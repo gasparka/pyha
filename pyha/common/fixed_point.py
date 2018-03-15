@@ -387,13 +387,6 @@ class Sfix:
                         self.round_style)
 
 
-# class Ufix(Sfix):
-#
-#     def min_representable(self):
-#         return 0
-
-
-# default are 'saturate' and 'round' as this is the case in VHDL lib....
 def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False, signed=True) -> Sfix:
     """
     Resize fixed point number.
