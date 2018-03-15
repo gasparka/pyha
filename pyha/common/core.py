@@ -104,42 +104,39 @@ class PyhaFunc:
                 return self.output_types
 
     def update_local_types(self, new_stack):
-        with NoTrace():
-            for k, v in new_stack.items():
-                if k in self.local_types and not isinstance(v, Sfix) and isinstance(self.local_types[k], Sfix):
-                    continue  # dont allow overwriting Sfix values
-                self.local_types[k] = v
+        for k, v in new_stack.items():
+            if k in self.local_types and not isinstance(v, Sfix) and isinstance(self.local_types[k], Sfix):
+                continue  # dont allow overwriting Sfix values
+            self.local_types[k] = v
 
     def update_input_types(self, args, kwargs):
-        with NoTrace():
-            if self.arg_types is None:
-                self.arg_types = list(args)
-            else:
-                for i, v in enumerate(args):
-                    if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
-                        continue  # dont allow overwriting Sfix values
-                    self.arg_types[i] = v
+        if self.arg_types is None:
+            self.arg_types = list(args)
+        else:
+            for i, v in enumerate(args):
+                if not isinstance(v, Sfix) and isinstance(self.arg_types[i], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.arg_types[i] = v
 
-            if self.kwarg_types is None:
-                self.kwarg_types = kwargs
-            else:
-                for k, v in kwargs.items():
-                    if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
-                        continue  # dont allow overwriting Sfix values
-                    self.kwarg_types[k] = v
+        if self.kwarg_types is None:
+            self.kwarg_types = kwargs
+        else:
+            for k, v in kwargs.items():
+                if k in self.kwarg_types and not isinstance(v, Sfix) and isinstance(self.kwarg_types[k], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.kwarg_types[k] = v
 
     def update_output_types(self, ret):
-        with NoTrace():
-            ret = get_iterable(ret)
-            if self.output_types is None:
-                if isinstance(ret, tuple):
-                    self.outputs_is_tuple = True
-                self.output_types = list(ret)
-            else:
-                for i, v in enumerate(ret):
-                    if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):
-                        continue  # dont allow overwriting Sfix values
-                    self.output_types[i] = v
+        ret = get_iterable(ret)
+        if self.output_types is None:
+            if isinstance(ret, tuple):
+                self.outputs_is_tuple = True
+            self.output_types = list(ret)
+        else:
+            for i, v in enumerate(ret):
+                if not isinstance(v, Sfix) and isinstance(self.output_types[i], Sfix):
+                    continue  # dont allow overwriting Sfix values
+                self.output_types[i] = v
 
     def __call__(self, *args, **kwargs):
         self.update_input_types(args, kwargs)
@@ -323,7 +320,7 @@ class PyhaList(UserList):
                 logger.debug(
                     f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
-            self._pyha_next = deepcopy(new)
+            self._pyha_next = new
 
 
 class Hardware(with_metaclass(Meta)):

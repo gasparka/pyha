@@ -2,7 +2,7 @@
 import sys
 
 
-PYHA_DISABLE_PROFILE_HACKS = True
+PYHA_DISABLE_PROFILE_HACKS = False
 
 
 class ContextManagerRefCounted:

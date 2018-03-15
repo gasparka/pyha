@@ -239,8 +239,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             ret = []
             for input in tmpargs:
                 # idea: remove deepcopy by instead calling init_vhdl_tuype and storing that instead?
-                output = deepcopy(fix_model.main(*input))  # deepcopy required or 'subsub' modules break
-                ret.append(output)
+                returns = fix_model.main(*input)
+                returns = deepcopy(returns)  # deepcopy required or 'subsub' modules break
+                ret.append(returns)
                 fix_model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret, output_callback)
