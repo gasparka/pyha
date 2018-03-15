@@ -4,6 +4,7 @@ from pyha import Hardware, Complex, simulate
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import SimulationRunning
 from pyha.common.fixed_point import default_sfix, resize, Sfix
+from pyha.common.shift_register import ShiftRegister
 from pyha.conversion.conversion import get_conversion
 from pyha.simulation.simulation_interface import get_last_trained_object
 
@@ -75,13 +76,11 @@ class RedBaronTimes:
             self.FFT_HALF = fft_size // 2
 
             self.CONTROL_MASK = (self.FFT_HALF - 1)
-            self.shr = [Complex() for _ in range(self.FFT_HALF)]
+            self.shr = ShiftRegister([Complex() for _ in range(self.FFT_HALF)])
 
             # self.TWIDDLES = [Complex(W(i, self.FFT_SIZE), 0, -8, overflow_style='saturate', round_style='round') for i in range(self.FFT_HALF)]
 
             self.TWIDDLES = [W(i, self.FFT_SIZE) for i in range(self.FFT_HALF)]
-
-            # self.twiddle_buffer = Complex()
 
         def butterfly(self, in_up, in_down, twiddle):
             up_real = resize(in_up.real + in_down.real, 0, -17)
@@ -98,7 +97,7 @@ class RedBaronTimes:
             return up, down
 
         def main(self, x, control):
-            up, down = self.butterfly(self.shr[-1], x, self.TWIDDLES[control & self.CONTROL_MASK])
+            up, down = self.butterfly(self.shr.peek(), x, self.TWIDDLES[control & self.CONTROL_MASK])
 
             if self.FFT_HALF > 4:
                 down.real = down.real >> 1
@@ -107,13 +106,11 @@ class RedBaronTimes:
                 up.imag = up.imag >> 1
 
             if not (control & self.FFT_HALF):
-                self.shr = [x] + self.shr[:-1]
-                return self.shr[-1]
+                self.shr.push_next(x)
+                return self.shr.peek()
             else:
-                # self.shr = [down] + self.shr[:-1]
+                self.shr.push_next(down)
                 return up
-
-            return up
 
     class R2SDF(Hardware):
         def __init__(self, fft_size):
@@ -160,12 +157,14 @@ class RedBaronTimes:
             return ffts
 
     def setup(self):
-        fft_size = 64
+        fft_size = 256
         np.random.seed(0)
         dut = RedBaronTimes.R2SDF(fft_size)
         inp = np.random.uniform(-1, 1, size=(2, fft_size)) + np.random.uniform(-1, 1, size=(2, fft_size)) * 1j
         inp *= 0.25
 
+        self.dut = dut
+        self.inp = inp
         sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
                                                # 'RTL',
                                                # 'GATE'
@@ -177,6 +176,9 @@ class RedBaronTimes:
         self.model = get_last_trained_object()
         # assert sims_close(sims, rtol=1e-1, atol=1e-4)
 
+    def time_pyha_simulation(self):
+        sims = simulate(self.dut, self.inp, simulations=['PYHA'], input_callback=RedBaronTimes.package)
+
     def time_conversion_r2sdf(self):
         """ First stage, 1 element """
         conv = get_conversion(self.model)
@@ -186,6 +188,7 @@ class RedBaronTimes:
         conv = get_conversion(self.model.stages[0])
 
 if __name__ == '__main__':
+    # asv profile --gui=snakeviz benchmarks.TimeQuadratureDemod.time_demod_phantom2_signal speed
     d = RedBaronTimes()
     d.setup()
     d.time_conversion_r2sdfstage()
