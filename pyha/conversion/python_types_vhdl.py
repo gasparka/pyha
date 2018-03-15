@@ -9,6 +9,7 @@ from typing import List
 import numpy as np
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
+from pyha.common.util import is_constant
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
@@ -88,20 +89,15 @@ class BaseVHDLType:
         name = self._pyha_name()
         return 'self.\\next\\.{} := self.{};'.format(name, name)
 
-    def is_const(self):
-        # for constants (UPPERCASE NAME) dont update
-        tmp = self._name.replace('_', '')
-        return True if tmp.isupper() else False
-
     def _pyha_constructor(self):
-        if self.is_const():
+        if is_constant(self._name):
             return ''
 
         name = self._pyha_name()
         return 'self.{} := {};'.format(name, name)
 
     def _pyha_constructor_arg(self):
-        if self.is_const():
+        if is_constant(self._name):
             return ''
 
         name = self._pyha_name()
@@ -109,7 +105,7 @@ class BaseVHDLType:
 
     def _pyha_update_registers(self):
         # for constants (UPPERCASE NAME) dont update
-        if self.is_const():
+        if is_constant(self._name):
             return ''
 
         name = self._pyha_name()
@@ -510,7 +506,7 @@ class VHDLList(BaseVHDLType):
         return all(r)
 
     def _pyha_constructor(self):
-        if self.is_const():
+        if is_constant(self._name):
             return ''
 
         if not self.elements_compatible_typed:
@@ -519,7 +515,7 @@ class VHDLList(BaseVHDLType):
         return super()._pyha_constructor()
 
     def _pyha_constructor_arg(self):
-        if self.is_const():
+        if is_constant(self._name):
             return ''
 
         if not self.elements_compatible_typed:

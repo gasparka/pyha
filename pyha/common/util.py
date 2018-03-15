@@ -16,6 +16,10 @@ def get_iterable(x):
         return [x]
 
 
+def is_constant(name):
+    return True if name.replace('_', '').isupper() else False
+
+
 def tabber(str):
     TAB = '    '
     """ Add tab infront of every line """
