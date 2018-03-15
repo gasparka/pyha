@@ -9,47 +9,82 @@ from pyha.conversion.conversion import get_conversion
 from pyha.simulation.simulation_interface import get_last_trained_object
 
 
-class TimeSuite:
+class OldShiftRegister:
     def setup(self):
         class ShiftReg(Hardware):
             def __init__(self):
-                self.shr_sub = [Complex()] * 1
+                self.shr_sub = [Complex()] * 2 ** 10
 
             def main(self, new_sub):
                 self.shr_sub = [new_sub] + self.shr_sub[:-1]
                 return self.shr_sub[-1]
 
         self.dut = ShiftReg()
-        n = 2 ** 13
+        n = 2 ** 10
+        self.inp = np.random.uniform(-1, 1, n) + np.random.uniform(-1, 1, n) * 1j
+
+    def time_complex_shiftreg(self):
+        simulate(self.dut, self.inp, simulations=['PYHA'])
+
+class NewShiftRegister:
+    def setup(self):
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sub = ShiftRegister([Complex()] * 2 ** 10)
+
+            def main(self, new_sub):
+                self.shr_sub.push_next(new_sub)
+                return self.shr_sub.peek()
+
+        self.dut = ShiftReg()
+        n = 2 ** 10
         self.inp = np.random.uniform(-1, 1, n) + np.random.uniform(-1, 1, n) * 1j
 
     def time_complex_shiftreg(self):
         simulate(self.dut, self.inp, simulations=['PYHA'])
 
 
-class ConversionsFloat:
-    """ Turning Python floats values into Sfix object, involves quantization etc.."""
-
-    def setup(self):
-        n = 2 ** 13
-        self.inp = np.random.uniform(-1, 1, n)
-
-    def time_float_to_sfix(self):
-        ret = [default_sfix(x) for x in self.inp]
-
-
-class ConversionComplex:
-    """ Turning Python complex values into Complex object, involves quantization etc.."""
-
-    def setup(self):
-        n = 2 ** 13
-        self.inp = np.random.uniform(-1, 1, n) + np.random.uniform(-1, 1, n) * 1j
-
-    def time_float_to_sfix(self):
-        with SimulationRunning.enable():  # turns all objects to 'locals'
-            ret = [default_complex(x) for x in self.inp]
+# class TimeSuite2:
+#     def setup(self):
+#         class ShiftReg(Hardware):
+#             def __init__(self):
+#                 self.shr_sub = [Complex()] * 1
+#
+#             def main(self, new_sub):
+#                 self.shr_sub = [new_sub] + self.shr_sub[:-1]
+#                 return self.shr_sub[-1]
+#
+#         self.dut = ShiftReg()
+#         n = 2 ** 13
+#         self.inp = np.random.uniform(-1, 1, n) + np.random.uniform(-1, 1, n) * 1j
+#
+#     def time_new_complex_shiftreg(self):
+#         simulate(self.dut, self.inp, simulations=['PYHA'])
 
 
+# class ConversionsFloat:
+#     """ Turning Python floats values into Sfix object, involves quantization etc.."""
+#
+#     def setup(self):
+#         n = 2 ** 13
+#         self.inp = np.random.uniform(-1, 1, n)
+#
+#     def time_float_to_sfix(self):
+#         ret = [default_sfix(x) for x in self.inp]
+#
+#
+# class ConversionComplex:
+#     """ Turning Python complex values into Complex object, involves quantization etc.."""
+#
+#     def setup(self):
+#         n = 2 ** 13
+#         self.inp = np.random.uniform(-1, 1, n) + np.random.uniform(-1, 1, n) * 1j
+#
+#     def time_float_to_sfix(self):
+#         with SimulationRunning.enable():  # turns all objects to 'locals'
+#             ret = [default_complex(x) for x in self.inp]
+#
+#
 def W(k, N):
     """ e^-j*2*PI*k*n/N, argument k = k * n """
     return np.exp(-1j * (2 * np.pi / N) * k)
@@ -157,7 +192,7 @@ class RedBaronTimes:
             return ffts
 
     def setup(self):
-        fft_size = 256
+        fft_size = 512
         np.random.seed(0)
         dut = RedBaronTimes.R2SDF(fft_size)
         inp = np.random.uniform(-1, 1, size=(2, fft_size)) + np.random.uniform(-1, 1, size=(2, fft_size)) * 1j
@@ -186,9 +221,9 @@ class RedBaronTimes:
     def time_conversion_r2sdfstage(self):
         """ Last stage, largest arrays """
         conv = get_conversion(self.model.stages[0])
-
-if __name__ == '__main__':
-    # asv profile --gui=snakeviz benchmarks.TimeQuadratureDemod.time_demod_phantom2_signal speed
-    d = RedBaronTimes()
-    d.setup()
-    d.time_conversion_r2sdfstage()
+#
+# if __name__ == '__main__':
+#     # asv profile --gui=snakeviz benchmarks.TimeQuadratureDemod.time_demod_phantom2_signal speed
+#     d = RedBaronTimes()
+#     d.setup()
+#     d.time_conversion_r2sdfstage()
