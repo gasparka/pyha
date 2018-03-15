@@ -6,10 +6,11 @@ from copy import deepcopy, copy
 import numpy as np
 from six import with_metaclass
 
-from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, NoTrace
+from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, NoTrace, \
+    PYHA_DISABLE_PROFILE_HACKS
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
-from pyha.common.util import np_to_py, get_iterable
+from pyha.common.util import np_to_py, get_iterable, is_constant
 
 SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
@@ -64,21 +65,22 @@ class PyhaFunc:
 
     def call_with_locals_discovery(self, *args, **kwargs):
         """ Call decorated function with tracing to read back local values """
-        # self.TraceManager.set_profile()
-        # # assert 0
-        # res = self.func(*args, **kwargs)
-        # #
-        # sys.setprofile(None)  # without this things get fucked up
-        # self.TraceManager.remove_profile()
-        #
-        # self.TraceManager.last_call_locals.pop('self')
-        # self.update_local_types(self.TraceManager.last_call_locals)
-        #
-        # # in case nested call, restore the tracer function
-        # self.TraceManager.restore_profile()
+        if PYHA_DISABLE_PROFILE_HACKS:
+            res = self.func(*args, **kwargs)
+            return res
+        else:
+            self.TraceManager.set_profile()
+            res = self.func(*args, **kwargs)
+            sys.setprofile(None)  # without this things get fucked up
+            self.TraceManager.remove_profile()
 
-        res = self.func(*args, **kwargs)
-        return res
+            self.TraceManager.last_call_locals.pop('self')
+            self.update_local_types(self.TraceManager.last_call_locals)
+
+            # in case nested call, restore the tracer function
+            self.TraceManager.restore_profile()
+
+            return res
 
     def get_local_types(self):
         return self.local_types

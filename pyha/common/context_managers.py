@@ -2,6 +2,9 @@
 import sys
 
 
+PYHA_DISABLE_PROFILE_HACKS = False
+
+
 class ContextManagerRefCounted:
     def __init__(self):
         self.enabled = 0
@@ -16,17 +19,16 @@ class ContextManagerRefCounted:
 class NoTrace:
     """ Disables the collection of function locals/inputs/returns, speeeeed """
     def __init__(self):
-        pass
-        # self.profile = sys.getprofile()
+        if not PYHA_DISABLE_PROFILE_HACKS:
+            self.profile = sys.getprofile()
 
     def __enter__(self):
-        pass
-        # sys.setprofile(None)
+        if not PYHA_DISABLE_PROFILE_HACKS:
+            sys.setprofile(None)
 
     def __exit__(self, type, value, traceback):
-        pass
-        # sys.setprofile(self.profile)
-
+        if not PYHA_DISABLE_PROFILE_HACKS:
+            sys.setprofile(self.profile)
 
 class RegisterBehaviour:
     """ This controls the 'implicit next' feature i.e. the hardware register behaviour """
