@@ -1,6 +1,7 @@
 import copy
 import inspect
 import logging
+from collections import deque
 from enum import Enum
 from math import isclose
 from typing import List
@@ -750,6 +751,12 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return None
     elif isinstance(current_val, str):
         return None  # see #216
+
+    elif isinstance(current_val, deque):
+        try:
+            return VHDLList(name, list(current_val), list(initial_val), parent)
+        except:
+            return VHDLList(name, list(current_val), list(current_val), parent)
 
     print(type(current_val))
     assert 0

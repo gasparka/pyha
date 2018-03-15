@@ -744,6 +744,7 @@ def convert(red: Node, obj=None):
         f.parent.remove(f)
 
     # run RedBaron based conversions before parsing
+    transform_preprocessor(red)
     transform_resize_arguments(red)
     transform_remove_copy(red)
     transform_for(red)
@@ -835,6 +836,16 @@ def get_object(node):
         var_t = super_getattr(struct, str(node), is_local=True)
 
     return var_t
+
+
+
+def transform_preprocessor(red_node):
+    nodes = red_node.find_all('comment', value=lambda x: x == '# CONVERSION PREPROCESSOR replace next line with:')
+
+    for x in nodes:
+        new = str(x.parent[x.index_on_parent + 1].value)[2:]
+        x.parent[x.index_on_parent + 2].replace(new)
+        # x.replace(f'{x.target} = {x.target} {x.operator} {x.value}')
 
 
 def transform_resize_arguments(red_node):
