@@ -4,6 +4,8 @@ from cocotb.binary import BinaryValue           # pragma: no cover
 from cocotb.clock import Clock                  # pragma: no cover
 from cocotb.result import ReturnValue           # pragma: no cover
 from cocotb.triggers import RisingEdge, Timer   # pragma: no cover
+from tqdm import tqdm                           # pragma: no cover
+import sys
 
 
 @cocotb.coroutine               # pragma: no cover
@@ -25,8 +27,10 @@ def run_dut(dut, in_data, out_count):   # pragma: no cover
 
     ret = []
     # print('Input data: {}'.format(in_data))
-    for x in in_data:
-
+    count = 0
+    for x in tqdm(in_data, file=sys.stdout):
+        # print(count)
+        count += 1
         # put input
         # print('Processing slice: {}'.format(x))
         for i, xi in enumerate(x):

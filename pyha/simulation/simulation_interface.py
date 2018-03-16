@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import sys
 from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
@@ -8,10 +9,11 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from pyha import Hardware
 from pyha.common.complex import default_complex
-from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath
+from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath, AutoResize
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.stream import packetize, Stream, unpacketize
 from pyha.common.util import get_iterable, np_to_py
@@ -237,12 +239,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
 
             ret = []
-            for input in tmpargs:
-                # idea: remove deepcopy by instead calling init_vhdl_tuype and storing that instead?
-                returns = fix_model.main(*input)
-                returns = deepcopy(returns)  # deepcopy required or 'subsub' modules break
-                ret.append(returns)
-                fix_model._pyha_update_registers()
+            with RegisterBehaviour.enable():
+                with AutoResize.enable():
+                    for input in tqdm(tmpargs, file=sys.stdout):
+                        # idea: remove deepcopy by instead calling init_vhdl_tuype and storing that instead?
+                        returns = fix_model.main(*input)
+                        returns = deepcopy(returns)  # deepcopy required or 'subsub' modules break
+                        ret.append(returns)
+                        fix_model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret, output_callback)
 
