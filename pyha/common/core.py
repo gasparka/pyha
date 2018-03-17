@@ -142,10 +142,10 @@ class PyhaFunc:
         self.update_input_types(args, kwargs)
         self.calls += 1
 
-        with SimPath(f'{self.class_name}.{self.function_name}()'):
-            with RegisterBehaviour.enable():
-                with AutoResize.enable():
-                    ret = self.call_with_locals_discovery(*args, **kwargs)
+        # with SimPath(f'{self.class_name}.{self.function_name}()'):
+        with RegisterBehaviour.enable():
+            with AutoResize.enable():
+                ret = self.call_with_locals_discovery(*args, **kwargs)
 
         self.update_output_types(ret)
         return ret
@@ -161,61 +161,61 @@ class Meta(type):
     # ran when instance is made
     # @profile
     def __call__(cls, *args, **kwargs):
-        with NoTrace():
-            cls._pyha_is_initialization = True # flag to avoid problems in __setattr__
-            ret = super(Meta, cls).__call__(*args, **kwargs)
+        cls._pyha_is_initialization = True # flag to avoid problems in __setattr__
+        ret = super(Meta, cls).__call__(*args, **kwargs)
 
-            if SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
-                if not cls._pyha_instances:
-                    cls._pyha_instances = []  # code depends on having this var
-                pass
-                # for k, v in ret.__dict__.items():
-                #     if isinstance(v, np.ndarray):
-                #         v = np_to_py(v)
-                #
-                #     if isinstance(v, list):
-                #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
-            else:
-                ret._pyha_instance_id = cls._pyha_instance_count
 
-                # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
-                ret._pyha_next = {}
-                ret._pyha_updateable = []
-                for k, v in ret.__dict__.items():
-                    if k.startswith('_pyha') or k == '__dict__':
-                        continue
+        if not SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
+        #     if not cls._pyha_instances:
+        #         cls._pyha_instances = []  # code depends on having this var
+        #     pass
+        #     # for k, v in ret.__dict__.items():
+        #     #     if isinstance(v, np.ndarray):
+        #     #         v = np_to_py(v)
+        #     #
+        #     #     if isinstance(v, list):
+        #     #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
+        # else:
+            ret._pyha_instance_id = cls._pyha_instance_count
 
-                    if isinstance(v, np.ndarray):
-                        v = np_to_py(v)
+            # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
+            ret._pyha_next = {}
+            ret._pyha_updateable = []
+            for k, v in ret.__dict__.items():
+                if k.startswith('_pyha') or k == '__dict__':
+                    continue
 
-                    if isinstance(v, list):
-                        v = PyhaList(v, ret.__class__.__name__, k)
-                        ret.__dict__[k] = v
+                if isinstance(v, np.ndarray):
+                    v = np_to_py(v)
 
-                    if is_constant(k):
-                        continue
+                if isinstance(v, list):
+                    v = PyhaList(v, ret.__class__.__name__, k)
+                    ret.__dict__[k] = v
 
-                    if hasattr(v, '_pyha_update_registers'):
-                        ret._pyha_updateable.append(v)
-                        continue
+                if is_constant(k):
+                    continue
 
-                    ret._pyha_next[k] = deepcopy(v)
+                if hasattr(v, '_pyha_update_registers'):
+                    ret._pyha_updateable.append(v)
+                    continue
 
-                cls._pyha_instance_count += 1
-                cls._pyha_instances = copy(cls._pyha_instances + [ret])
+                ret._pyha_next[k] = deepcopy(v)
 
-                ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+            cls._pyha_instance_count += 1
+            cls._pyha_instances = copy(cls._pyha_instances + [ret])
 
-                # decorate all methods -> for locals discovery
-                for method_str in dir(ret):
-                    # if not inspect.ismethod()
-                    if method_str in SKIP_FUNCTIONS:
-                        continue
-                    method = getattr(ret, method_str)
-                    if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                            method) and method.__class__.__name__ == 'method':
-                        new = PyhaFunc(method)
-                        ret.__dict__[method_str] = new
+            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+
+            # decorate all methods -> for locals discovery
+            for method_str in dir(ret):
+                # if not inspect.ismethod()
+                if method_str in SKIP_FUNCTIONS:
+                    continue
+                method = getattr(ret, method_str)
+                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                        method) and method.__class__.__name__ == 'method':
+                    new = PyhaFunc(method)
+                    ret.__dict__[method_str] = new
 
         del cls._pyha_is_initialization
         return ret
