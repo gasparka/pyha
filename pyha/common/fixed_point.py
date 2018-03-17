@@ -89,11 +89,9 @@ class Sfix:
         self.overflow_style = overflow_style
         self.right = right
         self.left = left
-        self.val = val
-        if init_only:
+        self.val = float(val)
+        if init_only or Sfix._float_mode.enabled:
             return
-
-        val = float(val)
 
         if isinstance(left, Sfix):
             self.right = left.right
@@ -102,18 +100,7 @@ class Sfix:
             self.right = int(right) if right else right
             self.left = int(left) if left else left
 
-        self.val = val
-
         if self.left is None or self.right is None:
-            return
-
-        # if bitwidths are abnormally large, limit them to [128, -128], this can happen when simulating design with no resizing
-        # self.left = min(128, self.left)
-        # self.right = max(-128, self.right)
-        #
-        # assert self.left >= self.right
-        # FIXME: This sucks, init should not call these anyways, make to_sfixed function
-        if init_only or Sfix._float_mode.enabled:
             return
 
         self.quantize()
@@ -133,16 +120,7 @@ class Sfix:
         return False
 
     def max_representable(self):
-        if self.left < 0:
-            # FIXME: I am not sure how to handle this when negative index
-            # assert 0
-
-            if self.right == 0:
-                return 2 ** self.left
-            else:
-                return 2 ** self.left - 2 ** self.right
-        else:
-            return 2 ** self.left - 2 ** self.right
+        return 2 ** self.left - 2 ** self.right
 
     def min_representable(self):
         if self.signed:
@@ -160,8 +138,7 @@ class Sfix:
             self.val = self.max_representable()
         elif self.val < self.min_representable():
             self.val = self.min_representable()
-        else:
-            assert False
+
         if old != 1.0:  # skip warnings about 1.0
             if str(SimPath) != 'inputs':
                 try:
