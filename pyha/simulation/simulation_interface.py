@@ -179,7 +179,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'Converting model to hardware types ...')
         fix_model._pyha_floats_to_fixed() # this must run before 'with SimulationRunning.enable():'
 
-    model_pyha = deepcopy(model) # used for MODEL_PYHA (need to copy before SimulationRunning starts)
+    if 'MODEL_PYHA' in simulations:
+        model_pyha = deepcopy(model) # used for MODEL_PYHA (need to copy before SimulationRunning starts)
+
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
             logger.info(f'Running "MODEL" simulation...')
@@ -244,6 +246,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     for input in tqdm(tmpargs, file=sys.stdout):
                         # idea: remove deepcopy by instead calling init_vhdl_tuype and storing that instead?
                         returns = fix_model.main(*input)
+                        # returns = init_vhdl_type('-', returns, returns)._pyha_to_python_value()
                         returns = deepcopy(returns)  # deepcopy required or 'subsub' modules break
                         ret.append(returns)
                         fix_model._pyha_update_registers()
