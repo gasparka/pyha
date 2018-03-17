@@ -1,25 +1,12 @@
 {
-    "benchmarks.NewShiftRegister.time_complex_shiftreg": {
-        "code": "def time_complex_shiftreg(self):\n    simulate(self.dut, self.inp, simulations=['PYHA'])\n",
+    "benchmarks.RedBaronTimes.time_pyha_simulation": {
+        "code": "def time_pyha_simulation(self):\n    sims = simulate(self.dut, self.inp, simulations=['PYHA'], input_callback=RedBaronTimes.package)\n",
         "goal_time": 2.0,
-        "name": "benchmarks.NewShiftRegister.time_complex_shiftreg",
+        "name": "benchmarks.RedBaronTimes.time_pyha_simulation",
         "number": 0,
         "param_names": [],
         "params": [],
-        "pretty_name": "benchmarks.NewShiftRegister.time_complex_shiftreg",
-        "repeat": 0,
-        "timeout": 60.0,
-        "type": "time",
-        "unit": "seconds"
-    },
-    "benchmarks.OldShiftRegister.time_complex_shiftreg": {
-        "code": "def time_complex_shiftreg(self):\n    simulate(self.dut, self.inp, simulations=['PYHA'])\n",
-        "goal_time": 2.0,
-        "name": "benchmarks.OldShiftRegister.time_complex_shiftreg",
-        "number": 0,
-        "param_names": [],
-        "params": [],
-        "pretty_name": "benchmarks.OldShiftRegister.time_complex_shiftreg",
+        "pretty_name": "benchmarks.RedBaronTimes.time_pyha_simulation",
         "repeat": 0,
         "timeout": 60.0,
         "type": "time",
