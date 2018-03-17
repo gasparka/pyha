@@ -313,12 +313,12 @@ class PyhaList(UserList):
 
                 new.append(item)
 
-            if not silence:
-                import pandas as pd
-                pd.options.display.max_rows = 32
-                l = pd.DataFrame({'original': self.data, 'converted': new})
-                logger.debug(
-                    f'Converted {self.class_name}.{self.var_name}:\n {l}')
+            # if not silence:
+            #     import pandas as pd
+            #     pd.options.display.max_rows = 32
+            #     l = pd.DataFrame({'original': self.data, 'converted': new})
+            #     logger.debug(
+            #         f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
             self._pyha_next = new
 
