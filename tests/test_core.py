@@ -230,7 +230,6 @@ def test_initial_self():
     dut.main()
     dut.main()
     dut.main()
-    assert dut.__dict__['_pyha_initial_self'].a.init_val == 0.0123
     assert dut.__dict__['_pyha_initial_self'].i == 25
     assert dut.__dict__['_pyha_initial_self'].b == False
 

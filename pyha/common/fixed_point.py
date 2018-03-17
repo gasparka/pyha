@@ -128,7 +128,8 @@ class Sfix:
     def __eq__(self, other):
         other = self._convert_other_operand(other)
         if type(other) is type(self):
-            return self.__dict__ == other.__dict__
+            equal = all([getattr(self, k) == getattr(other,k) for k in self.__slots__])
+            return equal
         return False
 
     def max_representable(self):
@@ -234,15 +235,7 @@ class Sfix:
             left = type.left
             right = type.right
 
-        self.left = left
-        self.right = right
-        self.signed = signed
-        self.wrap_is_ok = wrap_is_ok
-        self.overflow_style = overflow_style
-        self.round_style = round_style
-        self.quantize()
-        return self
-        # return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok, signed=signed)
+        return Sfix(self.val, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok, signed=signed)
 
     def _size_add(self, other):
         """ Size rules for add/sub operation. Handles the 'None'(lazy) cases. """
