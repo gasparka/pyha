@@ -164,21 +164,12 @@ class Meta(type):
         cls._pyha_is_initialization = True # flag to avoid problems in __setattr__
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
+        if not cls._pyha_instances:
+            cls._pyha_instances = []  # code depends on having this var
 
         if not SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
-        #     if not cls._pyha_instances:
-        #         cls._pyha_instances = []  # code depends on having this var
-        #     pass
-        #     # for k, v in ret.__dict__.items():
-        #     #     if isinstance(v, np.ndarray):
-        #     #         v = np_to_py(v)
-        #     #
-        #     #     if isinstance(v, list):
-        #     #         ret.__dict__[k] = PyhaList(v, ret.__class__.__name__, k)
-        # else:
             ret._pyha_instance_id = cls._pyha_instance_count
 
-            # make ._pyha_next variable that holds 'next' state for elements that dont know how to update themself
             ret._pyha_next = {}
             ret._pyha_updateable = []
             for k, v in ret.__dict__.items():
