@@ -284,7 +284,7 @@ def test_singleelem_list():
     dut = T(1)
     inputs = [0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
     assert sims_close(sims)
 
 
@@ -300,7 +300,7 @@ def test_singleelem_list_complex():
     dut = T(1)
     inputs = [0.1 + 0.2j, 0.2 + 0.3j]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
     assert sims_close(sims)
 
 
@@ -324,8 +324,7 @@ def test_submod_nocall():
     dut = T()
     inputs = [0.0, 0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
     assert sims_close(sims)
 
 
