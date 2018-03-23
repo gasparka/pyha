@@ -4,10 +4,12 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, RedBaron
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, RedBaron, \
+    BinaryOperatorNode, ComplexNode
 from redbaron.base_nodes import LineProxyList
 
 import pyha
+from pyha import Complex
 from pyha.common.core import SKIP_FUNCTIONS, Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter
@@ -491,6 +493,7 @@ class ClassNodeVHDL(NodeVHDL):
                 use ieee.math_real.all;
 
             library work;
+                use work.complex_pkg.all;
                 use work.PyhaUtil.all;
                 use work.Typedefs.all;
                 use work.all;
@@ -762,6 +765,8 @@ def convert(red: Node, obj=None):
         transform_registers(red)
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
+    transform_complex_real_imag(red)
+
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
     return conv
@@ -928,6 +933,16 @@ def transform_remove_copy(red_node):
         call.parent.replace(call.value.dumps())
 
 
+def transform_complex_real_imag(red_node):
+    nodes = red_node.find_all('atomtrailers')
+    for node in nodes:
+        if str(node[-1]) == 'real':
+            node.replace(f'get_real({node[:-1].dumps()})')
+        elif str(node[-1]) == 'imag':
+            node.replace(f'get_imag({node[:-1].dumps()})')
+
+
+
 def transform_multiple_assignment(red_node):
     """ Multi target assigns to single target:
     a, b, c = 1, 2, 3 ->
@@ -973,7 +988,7 @@ def transform_auto_resize(red_node):
 
         if var_t == 'FIXED_INDEXING_HACK':
             node.value = f'to_std_logic({node.value})'
-        elif isinstance(var_t, Sfix):
+        elif isinstance(var_t, (Sfix)):
             if isinstance(node.value, (FloatNode, IntNode)) \
                     or (isinstance(node.value, UnitaryOperatorNode) and isinstance(node.value.target, (
                     FloatNode, IntNode))):  # second term to pass marked(-) nodes, like -1. -0.34 etc
@@ -986,6 +1001,13 @@ def transform_auto_resize(red_node):
                     node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
                 else:
                     node.value = f'resize({node.value}, {var_t.left-1}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
+        elif isinstance(var_t, (Complex)):
+            if isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second, BinaryOperatorNode): # handle mul case: 1+1*1j
+                node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.first}, {var_t.left}, {var_t.right})'
+            elif isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second, ComplexNode): # normal case: 1+1j
+                node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.value[:-1]}, {var_t.left}, {var_t.right})'
+            else:
+                node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
 
 
 def transform_fixed_indexing_result_to_bool(red_node):

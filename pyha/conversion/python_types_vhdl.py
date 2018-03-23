@@ -7,6 +7,8 @@ from math import isclose
 from typing import List
 
 import numpy as np
+
+from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import is_constant
@@ -317,6 +319,87 @@ class VHDLSfix(BaseVHDLType):
         return val * 2 ** self.current.right
 
 
+class VHDLComplex(BaseVHDLType):
+    def __log_none_bounds(self):
+
+        def get_full_var_name():
+            ret = []
+            node = self
+            while node:
+                new = node._name if node._name != '-' else 'self'
+                ret += [new]
+                if new[0] != '[':
+                    ret += ['.']
+                node = node.parent
+
+            return ''.join(reversed(ret))[1:]
+
+        if not hasattr(self, '__has_logged'):
+            setattr(self, '__has_logged', True)
+            if self.current.left is None or self.current.right is None:
+                logger.error(
+                    f'{get_full_var_name()} = {self._pyha_reset_value()} -> bounds must be resolved in PYHA simulation!')
+
+    def _pyha_type(self):
+        self.__log_none_bounds()
+        return f'complex_t({self.current.left*2+1 if self.current.left else 1} downto {self.current.right*2 if self.current.right else -1})'
+
+    def _pyha_bitwidth(self) -> int:
+        lefts = abs((self.current.left+1)*2) if self.current.left else 2
+        rights = abs(self.current.right*2) if self.current.right else 2
+        return lefts + rights
+
+    def _pyha_reset_value(self):
+        self.__log_none_bounds()
+        val = self.initial.val
+        left = self.current.left
+        right = self.current.right
+        return f'Complex({val.real}, {val.imag}, {left}, {right})'
+
+    def _pyha_stdlogic_type(self) -> str:
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth() - 1)
+
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
+        return '{} := Complex({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
+
+
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
+                                                          0 + out_index_offset, in_name)
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if isinstance(self.current, complex) and isinstance(other.current, complex):
+            return True
+
+        if type(self.current) != type(other.current):
+            return False
+        return self.current.left == other.current.left and self.current.right == other.current.right
+
+    def _pyha_serialize(self):
+        fix = self.current.val / 2 ** self.current.right
+        real_bits = to_twoscomplement(self._pyha_bitwidth()//2, int(round(fix.real)))
+        imag_bits = to_twoscomplement(self._pyha_bitwidth()//2, int(round(fix.imag)))
+        return real_bits + imag_bits
+
+    def _pyha_deserialize(self, serial):
+        len = self._pyha_bitwidth()//2
+        real = to_signed_int(int(serial[:len],2), len)
+        imag = to_signed_int(int(serial[len:],2), len)
+        val = real + imag*1j
+        return val * 2 ** self.current.right
+
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+
+
+        eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
+        eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
+        eq = eq1 and eq2
+        if not eq:
+            logger.error('{} {} != {}'.format(name, self.current, other.current))
+        return eq
+
+
 class VHDLEnum(BaseVHDLType):
     def _pyha_type(self):
         return type(self.current).__name__
@@ -449,9 +532,6 @@ class VHDLList(BaseVHDLType):
 
         return self.elems[0]._pyha_type_is_compatible(other.elems[0])
 
-    def _pyha_to_python_value(self):
-        return [x._pyha_to_python_value() for x in self.elems]
-
     def _pyha_bitwidth(self) -> int:
         return sum([x._pyha_bitwidth() for x in self.elems])
 
@@ -540,13 +620,10 @@ class VHDLModule(BaseVHDLType):
         self.elems = [x for x in self.elems if x is not None]
 
     def _pyha_instance_id(self):
-        try:
-            for i, instance in enumerate(self.current._pyha_instances):
-                mod = VHDLModule('-', instance)
-                if self._pyha_type_is_compatible(mod):
-                    return i
-        except:
-            pass
+        for i, instance in enumerate(self.current._pyha_instances):
+            mod = VHDLModule('-', instance)
+            if self._pyha_type_is_compatible(mod):
+                return i
 
         # types that get full bounds during simulation can end up here
         self.current._pyha_instances.append(self.current)
@@ -687,22 +764,22 @@ class VHDLFloat(BaseVHDLType):
         return True
 
 
-class VHDLComplex(BaseVHDLType):
-    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
-        # if not isinstance(other.current, type(self.current)):
-        #     logger.error('Complex values not equal bacause types differ!= {}'.format(name, self.current, other.current))
-        #     return False
-        eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
-        eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
-        eq = eq1 and eq2
-        if not eq:
-            logger.error('{} {} != {}'.format(name, self.current, other.current))
-        return eq
-
-    def _pyha_type_is_compatible(self, other) -> bool:
-        if type(self.current) != type(other.current):
-            return False
-        return True
+# class VHDLComplex(BaseVHDLType):
+#     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+#         # if not isinstance(other.current, type(self.current)):
+#         #     logger.error('Complex values not equal bacause types differ!= {}'.format(name, self.current, other.current))
+#         #     return False
+#         eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
+#         eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
+#         eq = eq1 and eq2
+#         if not eq:
+#             logger.error('{} {} != {}'.format(name, self.current, other.current))
+#         return eq
+#
+#     def _pyha_type_is_compatible(self, other) -> bool:
+#         if type(self.current) != type(other.current):
+#             return False
+#         return True
 
 
 def init_vhdl_type(name, current_val, initial_val=None, parent=None):
@@ -718,7 +795,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
 
         return VHDLFloat(name, current_val, initial_val, parent)
 
-    elif isinstance(current_val, complex):
+    elif isinstance(current_val, (complex, Complex)):
         return VHDLComplex(name, current_val, initial_val, parent)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val, parent)

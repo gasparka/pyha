@@ -6,6 +6,7 @@ from copy import deepcopy, copy
 import numpy as np
 from six import with_metaclass
 
+from pyha import Complex
 from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, NoTrace, \
     PYHA_DISABLE_PROFILE_HACKS
 from pyha.common.fixed_point import Sfix, resize, default_sfix
@@ -142,10 +143,10 @@ class PyhaFunc:
         self.update_input_types(args, kwargs)
         self.calls += 1
 
-        # with SimPath(f'{self.class_name}.{self.function_name}()'):
-        with RegisterBehaviour.enable():
-            with AutoResize.enable():
-                ret = self.call_with_locals_discovery(*args, **kwargs)
+        with SimPath(f'{self.class_name}.{self.function_name}()'):
+            with RegisterBehaviour.enable():
+                with AutoResize.enable():
+                    ret = self.call_with_locals_discovery(*args, **kwargs)
 
         self.update_output_types(ret)
         return ret
@@ -161,13 +162,13 @@ class Meta(type):
     # ran when instance is made
     # @profile
     def __call__(cls, *args, **kwargs):
-        cls._pyha_is_initialization = True # flag to avoid problems in __setattr__
+        cls._pyha_is_initialization = True  # flag to avoid problems in __setattr__
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
         if not cls._pyha_instances:
             cls._pyha_instances = []  # code depends on having this var
 
-        if not SimulationRunning.is_enabled(): # local objects are simplified, they need no reset or register behaviour
+        if not SimulationRunning.is_enabled():  # local objects are simplified, they need no reset or register behaviour
             ret._pyha_instance_id = cls._pyha_instance_count
 
             ret._pyha_next = {}
@@ -193,7 +194,8 @@ class Meta(type):
                 ret._pyha_next[k] = deepcopy(v)
 
             cls._pyha_instance_count += 1
-            cls._pyha_instances = copy(cls._pyha_instances + [ret])
+            cls._pyha_instances.append(ret)
+            # cls._pyha_instances = copy(cls._pyha_instances + [ret])
 
             ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
@@ -213,7 +215,7 @@ class Meta(type):
 
 
 def auto_resize(target, value):
-    if not AutoResize.is_enabled() or not isinstance(target, Sfix) or Sfix._float_mode.enabled:
+    if not AutoResize.is_enabled() or not isinstance(target, (Sfix, Complex)) or Sfix._float_mode.enabled:
         return value
 
     left = target.left if target.left is not None else value.left
@@ -249,7 +251,7 @@ class PyhaList(UserList):
                     # self.data[i].__dict__['_pyha_next'][k] = v
 
             else:
-                if isinstance(self.data[i], Sfix):
+                if isinstance(self.data[i], (Sfix, Complex)):
                     with SimPath(f'{self.var_name}[{i}]='):
                         y = auto_resize(self.data[i], y)
 
@@ -297,10 +299,8 @@ class PyhaList(UserList):
                     item.overflow_style = 'wrap'
                 elif isinstance(x, complex):
                     item = default_complex(x)
-                    item.real.round_style = 'truncate'
-                    item.real.overflow_style = 'wrap'
-                    item.imag.round_style = 'truncate'
-                    item.imag.overflow_style = 'wrap'
+                    item.round_style = 'truncate'
+                    item.overflow_style = 'wrap'
 
                 new.append(item)
 
@@ -312,6 +312,9 @@ class PyhaList(UserList):
             #         f'Converted {self.class_name}.{self.var_name}:\n {l}')
             self.data = new
             self._pyha_next = new
+
+    def _pyha_to_python_value(self):
+        return [x._pyha_to_python_value() for x in self.data]
 
 
 class Hardware(with_metaclass(Meta)):
@@ -378,10 +381,8 @@ class Hardware(with_metaclass(Meta)):
 
             elif isinstance(v, complex):
                 new = default_complex(v)
-                new.real.round_style = 'truncate'
-                new.real.overflow_style = 'wrap'
-                new.imag.round_style = 'truncate'
-                new.imag.overflow_style = 'wrap'
+                new.round_style = 'truncate'
+                new.overflow_style = 'wrap'
 
             if not silence:
                 logger.debug(
@@ -391,7 +392,7 @@ class Hardware(with_metaclass(Meta)):
 
         # update all childs
         # for x in self._pyha_updateable:
-            # x._pyha_floats_to_fixed(silence)
+        # x._pyha_floats_to_fixed(silence)
 
         # update initial self
         try:
@@ -439,6 +440,16 @@ class Hardware(with_metaclass(Meta)):
                 return
 
             self.__dict__['_pyha_next'][name] = value
+
+    def _pyha_to_python_value(self):
+        ret = copy(self)
+        for k, v in self.__dict__.items():
+            try:
+                ret.__dict__[k] = v._pyha_to_python_value()
+            except:
+                ret.__dict__[k] = v
+
+        return ret
 
     def __str__(self):
         filt = {}

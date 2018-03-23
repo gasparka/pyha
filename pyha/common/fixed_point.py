@@ -356,8 +356,11 @@ class Sfix:
         return Sfix(x, self.left, self.right, self.overflow_style,
                     self.round_style)
 
+    def _pyha_to_python_value(self):
+        return float(self)
 
-def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
+
+def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
            signed=True) -> Sfix:
     """
     Resize fixed point number.
@@ -393,8 +396,13 @@ def resize(fix: Sfix, left=0, right=0, size_res=None, overflow_style='wrap', rou
         if size_res:
             left = size_res.left
             right = size_res.right
-        return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok,
-                    signed=signed)
+        try:
+            return Sfix(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok,
+                        signed=signed)
+        except:
+            from pyha import Complex
+            return Complex(fix, left, right, overflow_style=overflow_style, round_style=round_style, wrap_is_ok=wrap_is_ok,
+                        signed=signed)
 
 
 def left_index(x: Sfix) -> int:

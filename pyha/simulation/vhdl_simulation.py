@@ -45,10 +45,15 @@ class VHDLSimulation:
     def get_conversion_sources(self):
         # NB! order of files added to src matters!
 
+
+        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/complex.vhdl',
+                        self.src_util_path / 'complex.vhdl')
+        src = [self.src_util_path / 'complex.vhdl']
+
         # copy pyha_util to src dir
         shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl',
                         self.src_util_path / 'pyha_util.vhdl')
-        src = [self.src_util_path / 'pyha_util.vhdl']
+        src += [self.src_util_path / 'pyha_util.vhdl']
 
         # write typedefs file
         src += [self.src_util_path / 'typedefs.vhdl']
@@ -135,7 +140,7 @@ class CocotbAuto:
     def setup_environment(self):
 
         # this is some cocotb bullshit that sometimes causes troubles
-        # ill throw my computer out of the window counter: 11
+        # ill throw my computer out of the window counter: 12
         self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
         import sys
         if not is_virtual() or ('CI' in self.environment and self.environment['CI']):  # inside virtualenv??
@@ -188,6 +193,10 @@ class CocotbAuto:
         try:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
         except subprocess.CalledProcessError as err:
+            logger.error('Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
+            os._exit(0)
+            # sys.exit(0)
+
             raise Exception(
                 'Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
 

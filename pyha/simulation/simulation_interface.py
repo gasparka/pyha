@@ -61,7 +61,7 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
 
             elif isinstance(arg[0], (list, np.ndarray)):
                 # input is 2D array -> turn into packets (1D list of Stream objects)
-                args[i] = convert_input_types(arg, silence=True) # dont apply input callback here..
+                args[i] = convert_input_types(arg, silence=True)  # dont apply input callback here..
 
     if input_callback:
         for i in range(len(args)):
@@ -114,11 +114,16 @@ def process_outputs(delay_compensate, ret, output_callback=None):
         pass
     return ret
 
+
 _last_trained_object = None
+
+
 def get_last_trained_object():
     return _last_trained_object
 
-def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None, output_callback=None):
+
+def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
+             output_callback=None):
     """
     Run simulations on model.
 
@@ -159,6 +164,26 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     """
 
+    def types_from_pyha_to_python(pyha_types):
+        returns = pyha_types # can be the case for builtins ie. int
+        if isinstance(pyha_types, tuple):  # multiple return
+            pyvals = []
+            for val in pyha_types:
+                try:
+                    pval = val._pyha_to_python_value()
+                except AttributeError:
+                    pval = val
+
+                pyvals.append(pval)
+
+            returns = tuple(pyvals)
+        else:
+            try:
+                returns = pyha_types._pyha_to_python_value()
+            except AttributeError:
+                pass
+        return returns
+
     if simulations is None:
         if hasattr(model, 'model_main'):
             simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
@@ -170,17 +195,20 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         conversion_path = TemporaryDirectory().name
     else:
         conversion_path = str(Path(conversion_path).expanduser())  # turn ~ into path
-        if not Path(conversion_path).exists():
-            os.makedirs(conversion_path)
+        try:
+            shutil.rmtree(conversion_path) # clear folder
+        except:
+            pass
+        os.makedirs(conversion_path)
 
     out = {}
     if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
         fix_model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
         logger.info(f'Converting model to hardware types ...')
-        fix_model._pyha_floats_to_fixed() # this must run before 'with SimulationRunning.enable():'
+        fix_model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
 
     if 'MODEL_PYHA' in simulations:
-        model_pyha = deepcopy(model) # used for MODEL_PYHA (need to copy before SimulationRunning starts)
+        model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
 
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
@@ -209,14 +237,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     tmpargs = transpose(tmpargs)
 
                     ret = []
-                    for x in tmpargs:
-                        ret.append(deepcopy(tmpmodel.main(*x)))  # deepcopy required or 'subsub' modules break
+                    for input in tmpargs:
+                        returns = tmpmodel.main(*input)
+                        returns = types_from_pyha_to_python(returns)
+                        ret.append(returns)
                         tmpmodel._pyha_update_registers()
 
                     ret = process_outputs(0, ret, output_callback)
-                    # convert outputs to Python types, for example fixed to floats
-                    ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
-
             out['MODEL_PYHA'] = ret
             logger.info(f'OK!')
 
@@ -234,8 +261,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             args += args * int(np.ceil(delay_compensate / len(args)))
             args = args[:target_len]
 
-
-
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
             tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
@@ -244,20 +269,12 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
-                        # idea: remove deepcopy by instead calling init_vhdl_tuype and storing that instead?
                         returns = fix_model.main(*input)
-                        # returns = init_vhdl_type('-', returns, returns)._pyha_to_python_value()
-                        returns = deepcopy(returns)  # deepcopy required or 'subsub' modules break
+                        returns = types_from_pyha_to_python(returns)
                         ret.append(returns)
                         fix_model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret, output_callback)
-
-            try:
-                # convert outputs to Python types, for example fixed to floats
-                ret = [init_vhdl_type('-', x, x)._pyha_to_python_value() for x in ret]
-            except AttributeError:
-                pass
 
             global _last_trained_object
             _last_trained_object = fix_model

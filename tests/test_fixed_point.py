@@ -541,7 +541,7 @@ class TestIndexing:
         fix = np.random.uniform(-1, 1, N)
         index = np.random.uniform(-17, 0, N).astype(int)
 
-        sims = simulate(dut, fix, index, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, fix, index, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_get_fully_int(self):
@@ -554,7 +554,7 @@ class TestIndexing:
         fix = np.random.uniform(0, 2 ** 17, N)
         index = np.random.uniform(0, 17, N).astype(int)
 
-        sims = simulate(dut, fix, index, input_types=[Sfix(0, 17, 0), int], simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 17, 0), int], simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_get_combined(self):
@@ -567,7 +567,7 @@ class TestIndexing:
         fix = np.random.uniform(0, 2 ** 8, N)
         index = np.random.uniform(-8, 8, N).astype(int)
 
-        sims = simulate(dut, fix, index, input_types=[Sfix(0, 8, -8), int], simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 8, -8), int], simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_set_basic(self):
@@ -582,7 +582,7 @@ class TestIndexing:
         index = [-1]
         bit_val = [True]
 
-        sims = simulate(dut, fix, index, bit_val, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, fix, index, bit_val, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_set_combined(self):
@@ -598,7 +598,7 @@ class TestIndexing:
         index = np.random.uniform(-8, 8, N).astype(int)
         bit_val = np.random.uniform(0, 1, N).astype(bool)
 
-        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
 

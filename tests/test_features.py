@@ -1,6 +1,7 @@
 import os
 import subprocess
 from enum import Enum
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pyha
@@ -33,7 +34,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_basic_list(self):
@@ -50,7 +51,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_deep(self):
@@ -72,7 +73,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_constructor(self):
@@ -87,7 +88,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_deep_construct(self):
@@ -107,8 +108,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
-                        conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
     def test_submodule_array(self):
@@ -123,8 +123,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
 
-        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
-                        conversion_path='/home/gaspar/git/pyha/playground')
+        sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
 
@@ -284,7 +283,7 @@ def test_singleelem_list():
     dut = T(1)
     inputs = [0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
     assert sims_close(sims)
 
 
@@ -300,7 +299,7 @@ def test_singleelem_list_complex():
     dut = T(1)
     inputs = [0.1 + 0.2j, 0.2 + 0.3j]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
     assert sims_close(sims)
 
 
@@ -324,7 +323,7 @@ def test_submod_nocall():
     dut = T()
     inputs = [0.0, 0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
     assert sims_close(sims)
 
 
@@ -612,7 +611,7 @@ class TestEnum:
 
         dut = T()
         inputs = [1] * 4
-        ret = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL'])
+        ret = simulate(dut, inputs, simulations=['MODEL', 'PYHA', 'RTL', 'GATE'])
         assert_equals(ret)
 
     def test_statemachine(self):
@@ -796,13 +795,10 @@ class TestRegisters:
             def __init__(self):
                 self.DELAY = 1
                 self.b = Complex(0, 0, -17)
-                self.a = Complex(0, 0, -17)
 
             def main(self, nb):
                 self.b = nb
-                self.a.real = nb.real
-                self.a.imag = nb.imag
-                return self.b, self.a
+                return self.b
 
         dut = Register()
         inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
@@ -1331,7 +1327,7 @@ class TestInterface:
 
         dut = Tst()
 
-        sims = simulate(dut, inp, simulations=['PYHA'])
+        sims = simulate(dut, inp)
         assert sims_close(sims, expect)
 
     def test_single_input(self):
@@ -1341,8 +1337,8 @@ class TestInterface:
 
         dut = T13()
         x = [1.0]
-        sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
-        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+        sims = simulate(dut, x)
+        assert sims_close(sims)
 
     def test_single_input_nolist(self):
         class T13(Hardware):
@@ -1394,7 +1390,7 @@ class TestInterface:
         dut = T13()
         x = [Sfix(0.1, 0, -8), Sfix(0.2, 0, -8)]
 
-        sims = simulate(dut, x, simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, x)
         assert sims_close(sims, expected=x)
 
     def test_input_hardware(self):
@@ -1412,67 +1408,6 @@ class TestInterface:
 
         sims = simulate(dut, x, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims, expected=x)
-
-
-class TestComplexSfix:
-    def test_py_implementation(self):
-        a = Complex()
-        assert a.real == Sfix(0.0)
-        assert a.imag == Sfix(0.0)
-
-        a = Complex(0)
-        assert a.real == Sfix(0.0)
-        assert a.imag == Sfix(0.0)
-
-        a = Complex(0.5 + 1.2j, 1, -12)
-        assert a.real == Sfix(0.5, 1, -12)
-        assert a.imag == Sfix(1.2, 1, -12)
-
-        a = Complex(0.699 + 0.012j, 0, -4)
-        assert a.real.val == 0.6875
-        assert a.imag.val == 0
-
-    def test_in_out(self):
-        class T(Hardware):
-            def main(self, a):
-                return a
-
-        inputs = [0.1 + 0.5j] * 16
-        dut = T()
-        ret = simulate(dut, inputs)
-        assert_equals(ret, inputs)
-
-    def test_assign_local_input(self):
-        """ For local object (in this case the input) there should be no register or sfix effects enabled """
-
-        class Register(Hardware):
-            def main(self, x):
-                ret = x
-                ret.real = x.real
-                ret.imag = x.imag
-                return ret
-
-        dut = Register()
-        inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
-
-        sims = simulate(dut, inputs)
-        assert sims_close(sims)
-
-    # def test_assign_local_input_add(self):
-    #     """ For local object (in this case the input) there should be no register or sfix effects enabled """
-    #
-    #     class Register(Hardware):
-    #         def main(self, x):
-    #             ret = x
-    #             ret.real = x.real + 0.1
-    #             ret.imag = x.imag + 0.1
-    #             return ret
-    #
-    #     dut = Register()
-    #     inputs = [0.1 + 0.15j, 0.2 + 0.25j, 0.3 + 0.35j, 0.4 + 0.45j]
-    #
-    #     sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'], conversion_path='/home/gaspar/git/pyha/playground')
-    #     assert sims_close(sims)
 
 
 class TestInOutOrdering:
@@ -1620,16 +1555,10 @@ class TestFloatToSfix:
         assert str(dut.saturation) == str(Complex(1.5 - 1.5j, 0, -17, overflow_style='saturate'))
         assert str(dut.round) == str(Complex(0.00009 + 0.00009j, 0, -17, round_style='round'))
 
-        # cant add these for Complex object...they must live inside of Sfix object!
-        assert not hasattr(dut.reg, 'round_style')
-        assert not hasattr(dut.reg, 'overflow_style')
-
         # make sure the overall defaults are restored (however conversion is done with saturate and round)
-        assert dut.reg.real.round_style == 'truncate'
-        assert dut.reg.real.overflow_style == 'wrap'
+        assert dut.reg.round_style == 'truncate'
+        assert dut.reg.overflow_style == 'wrap'
 
-        assert dut.reg.imag.round_style == 'truncate'
-        assert dut.reg.imag.overflow_style == 'wrap'
 
     def test_complex_list(self):
         class Listy(Hardware):
@@ -1643,16 +1572,10 @@ class TestFloatToSfix:
         assert str(dut.l[1]) == str(Complex(1.5 - 1.5j, 0, -17, overflow_style='saturate'))
         assert str(dut.l[2]) == str(Complex(0.00009 + 0.00009j, 0, -17, round_style='round'))
 
-        # cant add these for Complex object...they must live inside of Sfix object!
-        assert not hasattr(dut.l[0], 'round_style')
-        assert not hasattr(dut.l[0], 'overflow_style')
-
         # make sure the overall defaults are restored (however conversion is done with saturate and round)
-        assert dut.l[0].real.round_style == 'truncate'
-        assert dut.l[0].real.overflow_style == 'wrap'
+        assert dut.l[0].round_style == 'truncate'
+        assert dut.l[0].overflow_style == 'wrap'
 
-        assert dut.l[0].imag.round_style == 'truncate'
-        assert dut.l[0].imag.overflow_style == 'wrap'
 
     def test_basic(self):
         dut = self.D()
@@ -1762,7 +1685,7 @@ class TestFloatToSfix:
                 return self.twiddle_buffer
 
         dut = T(4)
-        sims = simulate(dut, [0.1 + 0.2j], simulations=['PYHA', 'RTL'])
+        sims = simulate(dut, [0.1 + 0.2j], simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims, expected=[1.0 + 0j])
 
 
@@ -1905,8 +1828,7 @@ class TestCallModifications:
                 self.DELAY = 1
 
             def f(self, inp):
-                self.a.imag = inp.real + 0.1
-                self.a.real = inp.imag + 0.1
+                self.a = inp + 0.1
                 return self.a
 
             def main(self, inp):
@@ -2160,24 +2082,19 @@ class TestRemoveCopyDeepcopy:
         class T(Hardware):
             def main(self, inp):
                 tmp = copy(inp)
-                tmp.real = inp.imag
-                tmp.imag = inp.real
+                tmp = inp
 
                 return tmp
 
         dut = T()
-
-        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j], simulations=[
-            # 'MODEL_PYHA',
-            'PYHA'])
+        sims = simulate(dut, [0.1 + 0.2j, 0.3 - 0.4j])
         assert sims_close(sims)
 
     def test_deepcopy(self):
         class T(Hardware):
             def main(self, inp):
                 tmp = deepcopy(inp)
-                tmp.real = inp.imag
-                tmp.imag = inp.real
+                tmp = inp
 
                 return tmp
 
@@ -2216,39 +2133,19 @@ class TestPitfalls:
         if 'PYHA_SKIP_RTL' in os.environ:
             pytest.skip()
 
-        with pytest.raises(Exception):
-            sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
+        with patch('os._exit', MagicMock(return_value=0)):
+            with pytest.raises(Exception):
+                sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'])
 
-    def test_object_assignment_183(self):
-        """ In Python it goes by pointer but VHDL always makes copy., see #183 """
-
-        class Register(Hardware):
-            def main(self, x):
-                tmp = x  # NOTE: this actually OVERWRITES the input value, which MAY be wrongly passed to RTL sim ie. inputs need to be deepcopyed
-                tmp.real = x.imag
-                tmp.imag = x.real
-                return tmp
-
-        dut = Register()
-        inputs = [0.1 + 0.2 * 1j, 0.2 + 0.5 * 1j]
-
-        if 'PYHA_SKIP_RTL' in os.environ:
-            pytest.skip()
-
-        sims = simulate(dut, inputs)
-        with pytest.raises(Exception):
-            assert sims_close(sims)
-
-
-def test_ghdl_version():
-    ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
-    assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
-
-
-def test_cocotb_version():
-    version_file = pyha.__path__[0] + '/../cocotb/version'
-    with open(version_file, 'r') as f:
-        assert 'VERSION=1.0.1\n' == f.read()
+# def test_ghdl_version():
+#     ret = subprocess.getoutput('ghdl --version | grep -m1 GHDL')
+#     assert 'GHDL 0.34 (v0.34rc12-4-g06a78d2) [Dunoon edition]' == ret
+#
+#
+# def test_cocotb_version():
+#     version_file = pyha.__path__[0] + '/../cocotb/version'
+#     with open(version_file, 'r') as f:
+#         assert 'VERSION=1.0.1\n' == f.read()
 
 # 2D CONV IDEA
 # def tst_conv2d(a, b):

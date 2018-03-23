@@ -1,13 +1,15 @@
 import textwrap
 from pathlib import Path
-
 import os
+from unittest import mock
 import pytest
 from pyha import simulate
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.conversion import Conversion, get_objects_rednode
+from pyha.simulation import vhdl_simulation
 from pyha.simulation.simulation_interface import assert_sim_match
+from unittest.mock import MagicMock, patch
 
 
 class T:
@@ -180,6 +182,7 @@ def test_typedefs():
             use ieee.math_real.all;
             
         library work;
+            use work.complex_pkg.all;
             use work.PyhaUtil.all;
             use work.all;
         
@@ -216,5 +219,7 @@ def test_element_with_none_bound():
 
     if 'PYHA_SKIP_RTL' in os.environ:
         pytest.skip()
-    with pytest.raises(Exception):
-        sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+
+    with patch('os._exit', MagicMock(return_value=0)):
+        with pytest.raises(Exception):
+            sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])

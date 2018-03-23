@@ -195,6 +195,7 @@ class Conversion:
                 use ieee.math_real.all;
                 
             library work;
+                use work.complex_pkg.all;
                 use work.PyhaUtil.all;
                 use work.all;
 

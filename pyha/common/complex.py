@@ -1,8 +1,13 @@
-from pyha.common.core import Hardware
+import logging
+import math
+
+from pyha.common.context_managers import SimPath
 from pyha.common.fixed_point import Sfix
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('complex')
 
-class Complex(Hardware):
+class Complex:
     """
     Complex number with ``.real`` and ``.imag`` elements. Default type is ``Complex(left=0, right=-17)``.
 
@@ -28,30 +33,126 @@ class Complex(Hardware):
     -0.50+0.50j [0:-17]
 
     """
+    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed')
 
-    def __init__(self, val=0.0 + 0.0j, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate'):
+    def __init__(self, val=0.0 + 0.0j, left=0, right=-17, overflow_style='wrap', round_style='truncate',
+                 init_only=False, wrap_is_ok=False, signed=True):
 
-        if type(val) is Sfix and type(left) is Sfix:
-            self.real = val
-            self.imag = left
+        self.signed = signed
+        self.wrap_is_ok = wrap_is_ok
+        self.round_style = round_style
+        self.overflow_style = overflow_style
+        self.right = right
+        self.left = left
+        self.val = val
+
+        if init_only:
+            return
+
+        if isinstance(val, Sfix):
+            self.val = float(val) + float(left)*1j
+            self.left = val.left
+            self.right = val.right
+
+        if Sfix._float_mode.enabled:
+            return
+
+        self.quantize()
+        if self.overflows():
+            if self.overflow_style is 'saturate':
+                self.saturate()
+            elif self.overflow_style in 'wrap':
+                self.wrap()
+            else:
+                raise Exception(f'Unknown overflow style {self.overflow_style}')
+
+    @property
+    def real(self):
+        return Sfix(self.val.real, self.left, self.right, init_only=True)
+
+    # @real.setter
+    # def real(self, value):
+    #     self.val = value.val + self.val.imag*1j
+    #     self.fixed_effects()
+
+    @property
+    def imag(self):
+        return Sfix(self.val.imag, self.left, self.right, init_only=True)
+
+    # @imag.setter
+    # def imag(self, value):
+    #     self.val = self.val.real + value.val*1j
+    #     self.fixed_effects()
+
+    def max_representable(self):
+        return 2 ** self.left - 2 ** self.right
+
+    def min_representable(self):
+        return -2 ** self.left
+
+    def overflows(self):
+        max = self.max_representable()
+        min = self.min_representable()
+        return self.val.real < min or self.val.imag < min or self.val.real > max or self.val.imag > max
+
+    def saturate(self):
+        max = self.max_representable()
+        min = self.min_representable()
+        real = self.val.real
+        imag = self.val.imag
+
+        if self.val.real > max:
+            real = max
+        elif self.val.real < min:
+            real = min
+
+        if self.val.imag > max:
+            imag = max
+        elif self.val.imag < min:
+            imag = min
+
+        self.val = real + imag * 1j
+
+    def wrap(self):
+        fmin = self.min_representable()
+        fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
+        real = (self.val.real - fmin) % (fmax - fmin) + fmin
+        imag = (self.val.imag - fmin) % (fmax - fmin) + fmin
+        new_val = real + imag*1j
+
+        logger.error(f'WRAP {self.val:g} -> {new_val:g}\t[{SimPath}]')
+        self.val = new_val
+
+    def quantize(self):
+        fix = self.val / 2 ** self.right
+        if self.round_style is 'round':
+            fix = round(fix.real) + round(fix.imag) * 1j
         else:
-            self.real = Sfix(val.real, left, right, overflow_style, round_style)
-            self.imag = Sfix(val.imag, left, right, overflow_style, round_style)
+            fix = math.floor(fix.real) + math.floor(fix.imag) * 1j
+
+        self.val = fix * 2 ** self.right
+
+    def resize(self, left=0, right=0, type=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
+               signed=True):
+        if type is not None:
+            left = type.left
+            right = type.right
+
+        return Complex(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __complex__(self):
-        return float(self.real) + float(self.imag) * 1j
+        return self.val
 
     def __eq__(self, other):
         if type(other) is type(self):
-            return self.__dict__ == other.__dict__
+            return all([getattr(self, k) == getattr(other, k) for k in self.__slots__])
         return False
 
     def __call__(self, x):
-        return Complex(x, self.real.left, self.real.right, self.real.overflow_style, self.real.round_style)
+        return Complex(x, self.left, self.right, self.overflow_style, self.round_style)
 
     def __str__(self):
-        return '{:g} [{}:{}]'.format(complex(self), self.real.left, self.real.right)
+        return '{:g} [{}:{}]'.format(complex(self), self.left, self.right)
 
     def __repr__(self):
         return str(self)
@@ -59,38 +160,63 @@ class Complex(Hardware):
     def _pyha_to_python_value(self):
         return complex(self)
 
+    def _convert_other_operand(self, other):
+        if isinstance(other, complex):
+            other = Complex(other, self.left, self.right, overflow_style='saturate', round_style='round',
+                         signed=self.signed)
+        elif isinstance(other, (float, int)):
+            other = Sfix(other, self.left, self.right, overflow_style='saturate', round_style='round',
+                         signed=self.signed)
+        return other
+
     def __add__(self, other):
-        # other = self._convert_other_operand(other)
-        return Complex(self.real + other.real, self.imag + other.imag)
+        other = self._convert_other_operand(other)
+        left = max(self.left, other.left) + 1
+        right = min(self.right, other.right)
+        return Complex(self.val + other.val,
+                       left,
+                       right,
+                       init_only=True)
 
     def __radd__(self, other):
         return self.__add__(other)
 
     def __sub__(self, other):
-        # other = self._convert_other_operand(other)
-        return Complex(self.real - other.real, self.imag - other.imag)
+        other = self._convert_other_operand(other)
+        left = max(self.left, other.left) + 1
+        right = min(self.right, other.right)
+        return Complex(self.val - other.val,
+                       left,
+                       right,
+                       init_only=True)
 
     def __rsub__(self, other):
-        # other = self._convert_other_operand(other)
+        other = self._convert_other_operand(other)
         return other.__sub__(self)
 
     def __mul__(self, other):
-        # other = self._convert_other_operand(other)
-        real = (self.real * other.real) - (self.imag * other.imag)
-        imag = (self.real * other.imag) + (self.imag * other.real)
-        return Complex(real, imag)
+        """ Complex multiplication!
+        (x + yj)(u + vj) = (xu - yv) + (xv + yu)j
+        Also support mult by float.
+        """
+        other = self._convert_other_operand(other)
+        extra_bit = 1 # for complex mult
+        if isinstance(other, (Sfix, float)):
+            extra_bit = 0 # for real mult
+
+        left = (self.left + other.left + 1) + extra_bit
+        right = self.right + other.right
+        return Complex(self.val * other.val,
+                       left,
+                       right,
+                       init_only=True)
 
     def __rshift__(self, other):
-        return Complex(self.real >> other, self.imag >> other)
+        return Complex(self.val / 2 ** other, self.left, self.right)
 
     def __lshift__(self, other):
-        return Complex(self.real << other, self.imag << other)
-
-
-    # def conjugate(self):
-    #     imag = resize(-self.imag, self.imag.left, self.imag.right)
-    #     return Complex(self.real, imag)
-
+        # TODO: how to handle this in model code, should it always wrap?
+        return Complex(self.val * 2 ** other, self.left, self.right)
 
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')
