@@ -154,6 +154,26 @@ def test_part_access():
     assert sims_close(sims)
 
 
+def test_part_access_submod():
+    """ Bug: 'a.elem' was merged to 'aelem', see https://github.com/PyCQA/redbaron/issues/161 """
+
+    class A(Hardware):
+        def __init__(self, elem):
+            self.elem = elem
+
+    class T(Hardware):
+        def main(self, a):
+            return a.elem.real, a.elem.imag
+
+    dut = T()
+    a = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
+    a = [A(x) for x in a]
+
+    sims = simulate(dut, a)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+
 def test_add_float():
     class T(Hardware):
         def main(self, a, b):

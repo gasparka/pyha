@@ -983,9 +983,11 @@ def transform_complex_real_imag(red_node):
     nodes = red_node.find_all('atomtrailers')
     for node in nodes:
         if str(node[-1]) == 'real':
-            node.replace(f'get_real({node[:-1].dumps()})')
+            del node[-1]
+            node.replace(f'get_real({node.dumps()})')
         elif str(node[-1]) == 'imag':
-            node.replace(f'get_imag({node[:-1].dumps()})')
+            del node[-1]
+            node.replace(f'get_imag({node.dumps()})')
 
 
 def transform_multiple_assignment(red_node):
