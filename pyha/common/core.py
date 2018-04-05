@@ -386,7 +386,11 @@ class Hardware(with_metaclass(Meta)):
                 logger.debug(
                     f'Converted {self.__class__.__name__}.{k} = {v} -> {new}')
             self.__dict__[k] = new
-            self._pyha_next[k] = deepcopy(new)
+            try:
+                self._pyha_next[k] = deepcopy(new)
+            except AttributeError: # problem in code? -> fuck it
+                pass
+
 
         # update all childs
         # for x in self._pyha_updateable:
