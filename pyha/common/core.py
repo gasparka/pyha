@@ -7,7 +7,7 @@ import numpy as np
 from six import with_metaclass
 
 from pyha import Complex
-from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, NoTrace, \
+from pyha.common.context_managers import RegisterBehaviour, AutoResize, SimulationRunning, SimPath, \
     PYHA_DISABLE_PROFILE_HACKS
 from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
@@ -240,36 +240,35 @@ class PyhaList(UserList):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
-        with NoTrace():
-            if hasattr(self.data[0], '_pyha_update_registers'):
-                # object already knows how to handle registers
-                # copy relevant stuff only
-                for k, v in y.__dict__.items():
-                    if k.startswith('_pyha'):
-                        continue
-                    setattr(self.data[i], k, v)
-                    # self.data[i].__dict__['_pyha_next'][k] = v
+        if hasattr(self.data[0], '_pyha_update_registers'):
+            # object already knows how to handle registers
+            # copy relevant stuff only
+            for k, v in y.__dict__.items():
+                if k.startswith('_pyha'):
+                    continue
+                setattr(self.data[i], k, v)
+                # self.data[i].__dict__['_pyha_next'][k] = v
 
+        else:
+            if isinstance(self.data[i], (Sfix, Complex)):
+                with SimPath(f'{self.var_name}[{i}]='):
+                    y = auto_resize(self.data[i], y)
+
+                # lazy bounds feature, if bounds is None, take the bound from assgned value
+                if self.data[i].left is None:
+                    for x, xn in zip(self.data, self._pyha_next):
+                        x.left = y.left
+                        xn.left = y.left
+
+                if self.data[i].right is None:
+                    for x, xn in zip(self.data, self._pyha_next):
+                        x.right = y.right
+                        xn.right = y.right
+
+            if RegisterBehaviour.is_enabled():
+                self._pyha_next[i] = y
             else:
-                if isinstance(self.data[i], (Sfix, Complex)):
-                    with SimPath(f'{self.var_name}[{i}]='):
-                        y = auto_resize(self.data[i], y)
-
-                    # lazy bounds feature, if bounds is None, take the bound from assgned value
-                    if self.data[i].left is None:
-                        for x, xn in zip(self.data, self._pyha_next):
-                            x.left = y.left
-                            xn.left = y.left
-
-                    if self.data[i].right is None:
-                        for x, xn in zip(self.data, self._pyha_next):
-                            x.right = y.right
-                            xn.right = y.right
-
-                if RegisterBehaviour.is_enabled():
-                    self._pyha_next[i] = y
-                else:
-                    self.data[i] = y
+                self.data[i] = y
 
     def _pyha_update_registers(self):
         """ Update registers (eveyrthing in self), called after the return of toplevel 'main' """
@@ -323,33 +322,32 @@ class Hardware(with_metaclass(Meta)):
         return not hasattr(self, '_pyha_initial_self')
 
     def __deepcopy__(self, memo):
-        with NoTrace():
-            cls = self.__class__
-            result = cls.__new__(cls)
-            memo[id(self)] = result
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
 
-            with RegisterBehaviour.force_disable():
-                with AutoResize.force_disable():
-                    if SimulationRunning.is_enabled():
-                        for k, v in self.__dict__.items():
-                            # try:
-                            #     local = self._pyha_is_local
-                            # except:
-                            #     local = False
+        with RegisterBehaviour.force_disable():
+            with AutoResize.force_disable():
+                if SimulationRunning.is_enabled():
+                    for k, v in self.__dict__.items():
+                        # try:
+                        #     local = self._pyha_is_local
+                        # except:
+                        #     local = False
 
-                            if k.startswith('_pyha'):
-                                continue
-                            # elif local and isinstance(v, PyhaFunc): # PyhaFunc MUST be copied for initial objects...everything breaks otherwise
-                            #     continue
-                            else:
-                                setattr(result, k, deepcopy(v, memo))
-                    else:
-                        for k, v in self.__dict__.items():
-                            if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
-                                setattr(result, k, copy(v))
-                                # print(k, v)
-                            else:
-                                setattr(result, k, deepcopy(v, memo))
+                        if k.startswith('_pyha'):
+                            continue
+                        # elif local and isinstance(v, PyhaFunc): # PyhaFunc MUST be copied for initial objects...everything breaks otherwise
+                        #     continue
+                        else:
+                            setattr(result, k, deepcopy(v, memo))
+                else:
+                    for k, v in self.__dict__.items():
+                        if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                            setattr(result, k, copy(v))
+                            # print(k, v)
+                        else:
+                            setattr(result, k, deepcopy(v, memo))
         return result
 
     def _pyha_update_registers(self):
@@ -404,42 +402,41 @@ class Hardware(with_metaclass(Meta)):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
         Also implements the register behaviour i.e saves assigned value to shadow variable, that is later used by the '_pyha_update_registers' function.
         """
-        with NoTrace():
-            if hasattr(self, '_pyha_is_initialization') or self._pyha_is_local() or not RegisterBehaviour.is_enabled():
-                self.__dict__[name] = value
-                return
+        if hasattr(self, '_pyha_is_initialization') or self._pyha_is_local() or not RegisterBehaviour.is_enabled():
+            self.__dict__[name] = value
+            return
 
-            if AutoResize.is_enabled():
-                target = getattr(self._pyha_initial_self, name)
-                with SimPath(f'{name}='):
-                    value = auto_resize(target, value)
+        if AutoResize.is_enabled():
+            target = getattr(self._pyha_initial_self, name)
+            with SimPath(f'{name}='):
+                value = auto_resize(target, value)
 
-            if isinstance(value, list):
-                # list assign
-                # example: self.i = [i] + self.i[:-1]
-                assert isinstance(self.__dict__[name], PyhaList)
-                if hasattr(self.__dict__[name][0], '_pyha_update_registers'):
-                    # list of submodules -> need to copy each value to submodule next
-                    for elem, new in zip(self.__dict__[name], value):
-                        # for deeper submodules, deepcopy was not necessary..
-                        # copy relevant stuff only
-                        for k, v in new.__dict__.items():
-                            if k.startswith('_pyha'):
-                                continue
-                            elem.__dict__['_pyha_next'][k] = v
-                else:
-                    self.__dict__[name]._pyha_next = value
-                return
+        if isinstance(value, list):
+            # list assign
+            # example: self.i = [i] + self.i[:-1]
+            assert isinstance(self.__dict__[name], PyhaList)
+            if hasattr(self.__dict__[name][0], '_pyha_update_registers'):
+                # list of submodules -> need to copy each value to submodule next
+                for elem, new in zip(self.__dict__[name], value):
+                    # for deeper submodules, deepcopy was not necessary..
+                    # copy relevant stuff only
+                    for k, v in new.__dict__.items():
+                        if k.startswith('_pyha'):
+                            continue
+                        elem.__dict__['_pyha_next'][k] = v
+            else:
+                self.__dict__[name]._pyha_next = value
+            return
 
-            if isinstance(value, Hardware):
-                for k, v in value.__dict__.items():
-                    if k.startswith('_pyha'):
-                        continue
-                    n = self.__dict__[name]
-                    setattr(n, k, v)
-                return
+        if isinstance(value, Hardware):
+            for k, v in value.__dict__.items():
+                if k.startswith('_pyha'):
+                    continue
+                n = self.__dict__[name]
+                setattr(n, k, v)
+            return
 
-            self.__dict__['_pyha_next'][name] = value
+        self.__dict__['_pyha_next'][name] = value
 
     def _pyha_to_python_value(self):
         ret = copy(self)

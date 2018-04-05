@@ -150,53 +150,6 @@ def test_convert_submodule_name_conflict():
     assert names == ['A2_0.vhd', 'B2_0.vhd', 'top.vhd']
 
 
-def test_typedefs():
-    class A(Hardware):
-        def __init__(self):
-            self.reg = [1, 2]
-
-        def main(self):
-            b = [False, True]
-            pass
-
-    class B(Hardware):
-        def __init__(self):
-            self.sub = A()
-            self.l = [1, 2]
-            self.s = [Sfix(0, 1, -5)] * 2
-
-        def main(self, a):
-            self.sub.main()
-            return a
-
-    dut = B()
-    dut.main(1)
-    conv = Conversion(dut)
-
-    expect = textwrap.dedent("""\
-        library ieee;
-            use ieee.std_logic_1164.all;
-            use ieee.numeric_std.all;
-            use ieee.fixed_float_types.all;
-            use ieee.fixed_pkg.all;
-            use ieee.math_real.all;
-            
-        library work;
-            use work.complex_pkg.all;
-            use work.PyhaUtil.all;
-            use work.all;
-        
-        package Typedefs is
-            type integer_list_t is array (natural range <>) of integer;
-            type boolean_list_t is array (natural range <>) of boolean;
-            type sfixed1downto_5_list_t is array (natural range <>) of sfixed(1 downto -5);
-        end package;
-            """)
-
-    defs = conv.build_typedefs_package()
-    assert expect == defs[defs.find('\n') + 1:]
-
-
 def test_element_with_none_bound():
     class Child(Hardware):
         def __init__(self):

@@ -11,7 +11,7 @@ from redbaron import RedBaron
 from pyha.common.context_managers import ContextManagerRefCounted
 from pyha.common.core import PyhaFunc, Hardware
 from pyha.common.util import tabber
-from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList, init_vhdl_type
+from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList, init_vhdl_type, TypeAppendHack
 from pyha.conversion.redbaron_mods import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
@@ -170,7 +170,7 @@ class Conversion:
         with Conversion.in_progress:
             paths = []
             for x in self.childs:
-                paths.extend(x.write_vhdl_files(base_dir))  # recusion here
+                paths.extend(x.write_vhdl_files(base_dir))  # recursion here
 
             paths.append(base_dir / '{}.vhd'.format(self.datamodel._pyha_module_name()))
             with paths[-1].open('w') as f:
@@ -204,5 +204,6 @@ class Conversion:
             end package;
             """)
         self.typedefs = list(dict.fromkeys(self.typedefs))  # remove duplicates
+
         return template.format(FILE_HEADER=file_header(),
                                TYPES=tabber('\n'.join(self.typedefs)))

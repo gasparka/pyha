@@ -17,6 +17,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
 
 
+class TypeAppendString:
+    def __init__(self):
+        self.str = ''
+
+    def __enter__(self):
+        pass
+
+    def __call__(self, str):
+        self.str = str
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.str = ''
+
+    def __str__(self):
+        return self.str
+
+
+TypeAppendHack = TypeAppendString()
+
+
 def escape_reserved_vhdl(x: str) -> str:
     vhdl_reserved_names = ['abs', 'after', 'alias', 'all', 'and', 'architecture',
                            'array', 'assert', 'attribute', 'begin', 'block', 'body',
@@ -87,10 +108,6 @@ class BaseVHDLType:
     def _pyha_typedef(self) -> str:
         pass
 
-    def _pyha_init(self) -> str:
-        name = self._pyha_name()
-        return 'self.\\next\\.{} := self.{};'.format(name, name)
-
     def _pyha_constructor(self):
         if is_constant(self._name):
             return ''
@@ -105,45 +122,19 @@ class BaseVHDLType:
         name = self._pyha_name()
         return '{}: {}'.format(name, self._pyha_type())
 
-    def _pyha_update_registers(self):
-        # for constants (UPPERCASE NAME) dont update
-        if is_constant(self._name):
-            return ''
-
-        name = self._pyha_name()
-        return 'self.{} := self.\\next\\.{};'.format(name, name)
-
     def _pyha_reset_value(self):
         return self.initial
 
-    def _pyha_reset(self, prefix='self') -> str:
+    def _pyha_reset(self, prefix='self', filter_func=None) -> str:
         name = self._pyha_name()
-        return '{}.\\next\\.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
+        if filter_func:
+            if not filter_func(self):
+                return ''
+        return '{}.{} := {};\n'.format(prefix, name, self._pyha_reset_value())
 
     def _pyha_recursive_object_assign(self, prefix='self', other_name="other") -> str:
         name = self._pyha_name()
         return '{}.{} = {}.{}\n'.format(prefix, name, other_name, name)
-
-    def _pyha_reset_constants(self) -> str:
-        r = self._pyha_reset()
-
-        ret = []
-        # filter out CONSTANTS (name is fully uppercase)
-        for line in r.splitlines():
-            line_target = line[:line.find(':=')]
-            for part in line_target.split('.'):
-                if part == '':
-                    continue
-
-                if part.find('(') != -1:  # cut out array indexing
-                    part = part[:part.find('(')]
-                if part[0] == '\\':
-                    part = part[1:-1]  # cut out VHDL escaping
-                part = part.replace('_', '')
-                if part.isupper():
-                    ret.append(line.replace('.\\next\\', ''))
-
-        return '\n'.join(ret)
 
     def _pyha_bitwidth(self) -> int:
         raise NotImplementedError()
@@ -266,7 +257,7 @@ class VHDLSfix(BaseVHDLType):
         if self.current.signed:
             return 'sfixed({} downto {})'.format(self.current.left, self.current.right)
         else:
-            return 'ufixed({} downto {})'.format(self.current.left-1, self.current.right)
+            return 'ufixed({} downto {})'.format(self.current.left - 1, self.current.right)
 
     def _pyha_bitwidth(self) -> int:
         return len(self.current)
@@ -276,21 +267,20 @@ class VHDLSfix(BaseVHDLType):
         if self.current.signed:
             return 'Sfix({}, {}, {})'.format(self.initial.val, self.current.left, self.current.right)
         else:
-            return 'Ufix({}, {}, {})'.format(self.initial.val, self.current.left-1, self.current.right)
+            return 'Ufix({}, {}, {})'.format(self.initial.val, self.current.left - 1, self.current.right)
 
     def _pyha_stdlogic_type(self) -> str:
         if self.current.signed:
             return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right))
         else:
-            return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right) -1)
+            return 'std_logic_vector({} downto 0)'.format(self.current.left + abs(self.current.right) - 1)
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
         if self.current.signed:
             return '{} := Sfix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
         else:
-            return '{} := Ufix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left-1, self.current.right)
-
+            return '{} := Ufix({}, {}, {});\n'.format(out_var_name, in_name, self.current.left - 1, self.current.right)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
@@ -302,7 +292,7 @@ class VHDLSfix(BaseVHDLType):
         return self.current.left == other.current.left and self.current.right == other.current.right and self.current.signed == other.current.signed
 
     def _pyha_to_python_value(self):
-        if self.current.right == 0: # no fractional bits
+        if self.current.right == 0:  # no fractional bits
             return int(float(self.current))
         else:
             return float(self.current)
@@ -345,8 +335,8 @@ class VHDLComplex(BaseVHDLType):
         return f'complex_t({self.current.left*2+1 if self.current.left else 1} downto {self.current.right*2 if self.current.right else -1})'
 
     def _pyha_bitwidth(self) -> int:
-        lefts = abs((self.current.left+1)*2) if self.current.left else 2
-        rights = abs(self.current.right*2) if self.current.right else 2
+        lefts = abs((self.current.left + 1) * 2) if self.current.left else 2
+        rights = abs(self.current.right * 2) if self.current.right else 2
         return lefts + rights
 
     def _pyha_reset_value(self):
@@ -363,7 +353,6 @@ class VHDLComplex(BaseVHDLType):
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
         return '{} := Complex({}, {}, {});\n'.format(out_var_name, in_name, self.current.left, self.current.right)
 
-
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
                                                           0 + out_index_offset, in_name)
@@ -378,19 +367,18 @@ class VHDLComplex(BaseVHDLType):
 
     def _pyha_serialize(self):
         fix = self.current.val / 2 ** self.current.right
-        real_bits = to_twoscomplement(self._pyha_bitwidth()//2, int(round(fix.real)))
-        imag_bits = to_twoscomplement(self._pyha_bitwidth()//2, int(round(fix.imag)))
+        real_bits = to_twoscomplement(self._pyha_bitwidth() // 2, int(round(fix.real)))
+        imag_bits = to_twoscomplement(self._pyha_bitwidth() // 2, int(round(fix.imag)))
         return real_bits + imag_bits
 
     def _pyha_deserialize(self, serial):
-        len = self._pyha_bitwidth()//2
-        real = to_signed_int(int(serial[:len],2), len)
-        imag = to_signed_int(int(serial[len:],2), len)
-        val = real + imag*1j
+        len = self._pyha_bitwidth() // 2
+        real = to_signed_int(int(serial[:len], 2), len)
+        imag = to_signed_int(int(serial[len:], 2), len)
+        val = real + imag * 1j
         return val * 2 ** self.current.right
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
-
 
         eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
         eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
@@ -431,7 +419,8 @@ class VHDLList(BaseVHDLType):
     def __init__(self, var_name, current, initial, parent=None):
         super().__init__(var_name, current, initial, parent)
 
-        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in enumerate(zip(self.current, self.initial))]
+        self.elems = [init_vhdl_type(f'[{ii}]', c, i, parent=self) for ii, (c, i) in
+                      enumerate(zip(self.current, self.initial))]
         self.elems = [x for x in self.elems if x is not None]
         self.not_submodules_list = not len(self.elems) or not isinstance(self.elems[0], VHDLModule)
         self.elements_compatible_typed = all([x._pyha_type_is_compatible(self.elems[0]) for x in self.elems])
@@ -444,7 +433,7 @@ class VHDLList(BaseVHDLType):
         elem_type = self.elems[0]._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
-        return '{}_list_t'.format(elem_type)
+        return '{}_list_t{}'.format(elem_type, '' if self.not_submodules_list else TypeAppendHack)
 
     def _pyha_type(self):
         lib = 'Typedefs'
@@ -455,7 +444,7 @@ class VHDLList(BaseVHDLType):
 
     def _pyha_definition(self):
         if not self.elements_compatible_typed:
-            r = super()._pyha_definition() + '\n' # still define the LIST type, because some code may depend on it eg. len(self.list)
+            r = super()._pyha_definition() + '\n'  # still define the LIST type, because some code may depend on it eg. len(self.list)
             r += '\n'.join(x._pyha_definition() for x in self.elems)
             return r
 
@@ -491,37 +480,25 @@ class VHDLList(BaseVHDLType):
             for i in range(len(self.current))]
         return '\n'.join(inits)
 
-    def _pyha_reset(self, prefix='self') -> str:
+    def _pyha_reset(self, prefix='self', filter_func=None) -> str:
+        if filter_func:
+            if not filter_func(self):
+                return ''
 
         if not self.elements_compatible_typed:
-            return ''.join(x._pyha_reset() for x in self.elems)
+            return ''.join(x._pyha_reset(filter_func=filter_func) for x in self.elems)
 
         name = self._pyha_name()
         if self.not_submodules_list:
             if len(self.elems) == 1:
                 name += '(0)'
             data = ', '.join(str(x._pyha_reset_value()) for x in self.elems)
-            return '{}.\\next\\.{} := ({});\n'.format(prefix, name, data)
+            return '{}.{} := ({});\n'.format(prefix, name, data)
 
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = '{}.{}({})'.format(prefix, name, i)
-            ret += sub._pyha_reset(tmp_prefix)  # recursive
-        return ret
-
-    def _pyha_recursive_object_assign(self, prefix='self', other_name="other") -> str:
-
-        if not self.elements_compatible_typed:
-            return ''.join(x._pyha_recursive_object_assign() for x in self.elems)
-
-        name = self._pyha_name()
-        if self.not_submodules_list:
-            return '{}.\\next\\.{} := {}.{};\n'.format(prefix, name, prefix.replace("self", other_name), name)
-
-        ret = ''
-        for i, sub in enumerate(self.elems):
-            tmp_prefix = '{}.{}({})'.format(prefix, name, i)
-            ret += sub._pyha_recursive_object_assign(tmp_prefix)  # recursive
+            ret += sub._pyha_reset(tmp_prefix, filter_func=filter_func)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:
@@ -633,13 +610,13 @@ class VHDLModule(BaseVHDLType):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
 
     def _pyha_type(self):
-        return '{}.self_t'.format(self._pyha_module_name())
+        return '{}.self_t{}'.format(self._pyha_module_name(),TypeAppendHack)
 
     def _pyha_arr_type_name(self):
         elem_type = self._pyha_type()
         # some type may contain illegal chars for name..replace them
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
-        return '{}_list_t'.format(elem_type)
+        return '{}_list_t{}'.format(elem_type, TypeAppendHack)
 
     def _pyha_init(self) -> str:
         return '{}.pyha_init_next(self.{});'.format(self._pyha_module_name(), self._pyha_name())
@@ -647,7 +624,10 @@ class VHDLModule(BaseVHDLType):
     def _pyha_update_registers(self):
         return '{}.pyha_update_registers(self.{});'.format(self._pyha_module_name(), self._pyha_name())
 
-    def _pyha_reset(self, prefix='self'):
+    def _pyha_reset(self, prefix='self', filter_func=None):
+        if filter_func:
+            if not filter_func(self):
+                return ''
         ret = ''
         for i, sub in enumerate(self.elems):
             tmp_prefix = prefix
@@ -655,7 +635,7 @@ class VHDLModule(BaseVHDLType):
                 tmp_prefix = f'{prefix}'
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
-            ret += sub._pyha_reset(tmp_prefix)  # recursive
+            ret += sub._pyha_reset(tmp_prefix, filter_func=filter_func)  # recursive
         return ret
 
     def _pyha_recursive_object_assign(self, prefix='self', other_name="other"):

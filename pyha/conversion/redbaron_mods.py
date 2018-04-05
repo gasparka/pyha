@@ -12,8 +12,9 @@ import pyha
 from pyha import Complex
 from pyha.common.core import SKIP_FUNCTIONS, Hardware
 from pyha.common.fixed_point import Sfix
-from pyha.common.util import get_iterable, tabber, formatter
-from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList
+from pyha.common.util import get_iterable, tabber, formatter, is_constant, const_filter
+from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList, \
+    TypeAppendHack
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -213,7 +214,8 @@ class DefNodeVHDL(NodeVHDL):
         argnames = inspect.getfullargspec(self.data.func).args[1:]  # skip the first 'self'
         argvals = list(self.data.get_arg_types())
         args = [init_vhdl_type(name, val, val) for name, val in zip(argnames, argvals)]
-        args = ['self:inout self_t'] + [f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
+        args = ['self:in self_t; self_next:inout self_t; constant self_const: self_t_const'] + [
+            f'{x._pyha_name()}: {x._pyha_type()}' for x in args]
 
         # function returns -> need to add as 'out' arguments in VHDL
         rets = []
@@ -545,7 +547,7 @@ class ClassNodeVHDL(NodeVHDL):
 
         if prototype_only:
             return template.splitlines()[0][:-3] + ';'
-        data = [x._pyha_reset() for x in self.data.elems]
+        data = [x._pyha_reset() for x in self.data.elems if not is_constant(x._name)]
         return template.format(DATA=formatter(data))
 
     def build_reset_constants(self, prototype_only=False):
@@ -594,7 +596,6 @@ class ClassNodeVHDL(NodeVHDL):
                 -- limited constructor
                 variable self: self_t;
             begin
-                pyha_reset_constants(self);
             {DATA}
                 return self;
             end function;""")
@@ -611,16 +612,25 @@ class ClassNodeVHDL(NodeVHDL):
 
     def build_data_structs(self):
         template = textwrap.dedent("""\
-            type next_t is record
-            {DATA}
-            end record;
-            
             type self_t is record
             {DATA}
-                \\next\\: next_t;
             end record;""")
 
-        data = [x._pyha_definition() for x in self.data.elems]
+        data = [x._pyha_definition() for x in self.data.elems if not is_constant(x._name)]
+        if not data:
+            data = ['dummy: integer;']
+        return template.format(DATA=formatter(data))
+
+    def build_constants(self):
+        template = textwrap.dedent("""\
+            type self_t_const is record
+            {DATA}
+            end record;""")
+
+        data = [x._pyha_definition() for x in self.data.elems if const_filter(x)]
+
+        if not data:
+            data = ['DUMMY: integer;']
         return template.format(DATA=formatter(data))
 
     def build_typedefs(self):
@@ -642,24 +652,30 @@ class ClassNodeVHDL(NodeVHDL):
             package {NAME} is
             {SELF_T}
             {SELF_ARRAY_TYPEDEF}
+            
+            {CONST_SELF_T}
+            {CONST_SELF_ARRAY_TYPEDEF}
 
             {FUNC_HEADERS}
             end package;""")
 
         sockets = {}
         sockets['MULTILINE_COMMENT'] = self.multiline_comment
-        sockets['SELF_ARRAY_TYPEDEF'] = \
-            f'    type {self.data._pyha_arr_type_name()} is array (natural range <>) of {self.data._pyha_type()};'
         sockets['NAME'] = self.data._pyha_module_name()
+
+        # data-structure without constants ie. registers
         sockets['SELF_T'] = tabber(self.build_data_structs())
+        sockets[
+            'SELF_ARRAY_TYPEDEF'] = f'    type {self.data._pyha_arr_type_name()} is array (natural range <>) of {self.data._pyha_type()};'
+
+        # only constants
+        with TypeAppendHack('_const'):
+            sockets['CONST_SELF_T'] = tabber(self.build_constants())
+            sockets[
+                'CONST_SELF_ARRAY_TYPEDEF'] = f'    type {self.data._pyha_arr_type_name()} is array (natural range <>) of {self.data._pyha_type()};'
 
         proto = '\n'.join(x.build_function(prototype_only=True) for x in self.value if isinstance(x, DefNodeVHDL))
-        proto += '\n\n-- internal pyha functions\n'
-        proto += self.build_constructor(prototype_only=True) + '\n'
-        proto += self.build_update_registers(prototype_only=True) + '\n'
-        proto += self.build_reset(prototype_only=True) + '\n'
-        proto += self.build_init(prototype_only=True) + '\n'
-        proto += self.build_reset_constants(prototype_only=True) + '\n'
+        proto += '\n' + self.build_constructor(prototype_only=True) + '\n'
         sockets['FUNC_HEADERS'] = tabber(proto)
 
         return template.format(**sockets)
@@ -670,25 +686,16 @@ class ClassNodeVHDL(NodeVHDL):
             {USER_FUNCTIONS}
             
             {CONSTRUCTOR}
-            
-            {RESET_SELF}
-            
-            {UPDATE_SELF}
-            
-            {INIT_SELF}
-            
-            {CONSTANT_SELF}
-
             end package body;""")
 
         sockets = {}
         sockets['NAME'] = self.data._pyha_module_name()
 
         sockets['CONSTRUCTOR'] = tabber(self.build_constructor())
-        sockets['INIT_SELF'] = tabber(self.build_init())
-        sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
-        sockets['RESET_SELF'] = tabber(self.build_reset())
-        sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
+        # sockets['INIT_SELF'] = tabber(self.build_init())
+        # sockets['CONSTANT_SELF'] = tabber(self.build_reset_constants())
+        # sockets['RESET_SELF'] = tabber(self.build_reset())
+        # sockets['UPDATE_SELF'] = tabber(self.build_update_registers())
         sockets['USER_FUNCTIONS'] = '\n\n'.join(tabber(str(x)) for x in self.value if isinstance(x, DefNodeVHDL))
 
         return template.format(**sockets)
@@ -754,7 +761,6 @@ def convert(red: Node, obj=None):
     if obj is not None:
         transform_dynamic_lists(red)
         transform_unroll_local_constructor(red)
-        transform_submodule_deepcopy(red)
 
     transform_call(red)
     transform_multiple_assignment(red)
@@ -766,6 +772,7 @@ def convert(red: Node, obj=None):
         transform_fixed_indexing_result_to_bool(red)
         transform_auto_resize(red)
     transform_complex_real_imag(red)
+    transform_constants(red)
 
     conv = redbaron_node_to_vhdl_node(red, caller=None)  # converts all nodes
 
@@ -783,7 +790,7 @@ def convert(red: Node, obj=None):
 def super_getattr(obj, attr, is_local=False):
     for part in attr.split('.'):
         if not is_local:
-            if part == 'self' or part == 'next':
+            if part == 'self' or part == 'self_next':
                 continue
 
         if part.find('[') != -1:  # is array indexing
@@ -820,7 +827,7 @@ def get_object(node):
     """ Parse rebaron AtomTrailers node into Python object (taken from ongoing conversion object)
      Works for object and local scope """
 
-    if len(node) > 1 and node[0].value == 'self':
+    if len(node) > 1 and (node[0].value == 'self' or node[0].value == 'self_next'):
         var_t = super_getattr(convert_obj, str(node))
     else:
         # get the SOURCE function (where call is going on) from datamodel
@@ -842,6 +849,45 @@ def get_object(node):
 
     return var_t
 
+
+def transform_unroll_local_constructor(red_node):
+    assigns = red_node.find_all('assign')
+    for node in assigns:
+        call = node.value.call
+        if call is None:  # has no function call
+            continue
+
+        call_index = call.previous.index_on_parent
+        if call_index != 0:  # input is something complicated..we only consider simple calls like 'Complex(..)'
+            continue
+
+        obj = get_object(node.target)
+        if not isinstance(obj, Hardware):
+            continue
+
+        call_name = str(node.value[0])
+        res_type = obj.__class__.__name__
+        if res_type != call_name:  # not a call to constructor
+            continue
+
+        correct_indentation = node.indentation
+        new = 'if True:\n'  # replace needs a BLOCK, so this is a dummy IF
+        target = str(node.target)
+        for i, (k, v) in enumerate(obj.__dict__.items()):
+            if k.startswith('_pyha'):
+                continue
+
+            new += f'{correct_indentation}\t{target}.{k} = {call[i].value}\n'
+
+        node.replace(new)
+
+
+def transform_constants(red_node):
+    nodes = red_node.find_all('atomtrailers')
+    for node in nodes:
+        const = any([is_constant(x.dumps()) for x in node])
+        if const and node[0].dumps() == 'self':
+            node[0].replace('self_const')
 
 
 def transform_preprocessor(red_node):
@@ -942,7 +988,6 @@ def transform_complex_real_imag(red_node):
             node.replace(f'get_imag({node[:-1].dumps()})')
 
 
-
 def transform_multiple_assignment(red_node):
     """ Multi target assigns to single target:
     a, b, c = 1, 2, 3 ->
@@ -1002,9 +1047,11 @@ def transform_auto_resize(red_node):
                 else:
                     node.value = f'resize({node.value}, {var_t.left-1}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
         elif isinstance(var_t, (Complex)):
-            if isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second, BinaryOperatorNode): # handle mul case: 1+1*1j
+            if isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second,
+                                                                           BinaryOperatorNode):  # handle mul case: 1+1*1j
                 node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.first}, {var_t.left}, {var_t.right})'
-            elif isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second, ComplexNode): # normal case: 1+1j
+            elif isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second,
+                                                                             ComplexNode):  # normal case: 1+1j
                 node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.value[:-1]}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
@@ -1030,75 +1077,10 @@ def transform_fixed_indexing_result_to_bool(red_node):
             node.value = f'bool({node})'
 
 
-def transform_submodule_deepcopy(red_node):
-    """ Converts assign to submodule to 'pyha_deepcopy' call"""
-    tmp_var_count = 0
-    nodes = red_node.find_all('assign')
-    for node in nodes:
-        if not isinstance(node.target, AtomtrailersNode) or node.target[0].value != 'self':
-            continue
-
-        target_obj = init_vhdl_type('-', super_getattr(convert_obj, str(node.target)))
-        if isinstance(target_obj, VHDLModule):
-            new = target_obj._pyha_recursive_object_assign(prefix=str(node.target), other_name=str(node.value))
-
-            correct_indentation = node.indentation
-            newstr = 'if True:\n'
-            for value in new.splitlines():
-                newstr += f'{correct_indentation}\t{value}\n'
-
-            node.replace(newstr)
-
-        elif isinstance(target_obj, VHDLList) and not target_obj.not_submodules_list:
-
-            # add new local variable for the function
-            # get the SOURCE (where call is going on) function object from datamodel
-            def_parent = node
-            while not isinstance(def_parent, DefNode):
-                def_parent = def_parent.parent
-            # def_parent = atom.parent_find('def')
-            source_func_name = f'self.{def_parent.name}'
-            source_func_obj = super_getattr(convert_obj, str(source_func_name))
-
-            name = f'pyha_objarr_tmp_{tmp_var_count}'
-            tmp_var_count += 1
-            source_func_obj.add_local_type(name, target_obj.current)
-
-            local = f'{name} = {node.value}'
-            node.parent.insert(node.index_on_parent, local)
-
-            correct_indentation = node.parent[node.index_on_parent].indentation
-
-            template = target_obj.elems[0]._pyha_recursive_object_assign(prefix=f'{node.target}[i]',
-                                                                         other_name=f'{name}[i]')
-
-            new = f'for i in range(len({name})):\n'
-            for part in template.splitlines():
-                new += f'{correct_indentation}\t{part}\n '
-
-            node.replace(new)
-
-
 def transform_registers(red_node):
-    """
-    On all assignments to self, add 'next' before the final target. This is to support variable based signal assignment in VHDL code.
-
-    Examples:
-    self.a -> self.next.a
-    self.a[i] -> self.next.a[i]
-    self.submod.a -> self.submod.next.a
-    self.submod.a[i].a -> self.submod.a[i].next.a
-
-    self.a, self.b = call() -> self.next.a, self.next.b = call()
-
-    """
-
     def add_next(x):
         if len(x) > 1 and str(x[0].value) == 'self':
-            loc = len(x) - 1
-            if isinstance(x[loc], GetitemNode):
-                loc -= 1
-            x.insert(loc, 'next')
+            x[0].replace('self_next')
 
     assigns = red_node.find_all('assign')
     for node in assigns:
@@ -1107,38 +1089,6 @@ def transform_registers(red_node):
                 add_next(mn)
         else:
             add_next(node.target)
-
-
-def transform_unroll_local_constructor(red_node):
-    assigns = red_node.find_all('assign')
-    for node in assigns:
-        call = node.value.call
-        if call is None:  # has no function call
-            continue
-
-        call_index = call.previous.index_on_parent
-        if call_index != 0:  # input is something complicated..we only consider simple calls like 'Complex(..)'
-            continue
-
-        obj = get_object(node.target)
-        if not isinstance(obj, Hardware):
-            continue
-
-        call_name = str(node.value[0])
-        res_type = obj.__class__.__name__
-        if res_type != call_name:  # not a call to constructor
-            continue
-
-        correct_indentation = node.indentation
-        new = 'if True:\n'  # replace needs a BLOCK, so this is a dummy IF
-        target = str(node.target)
-        for i, (k, v) in enumerate(obj.__dict__.items()):
-            if k.startswith('_pyha'):
-                continue
-
-            new += f'{correct_indentation}\t{target}.{k} = {call[i].value}\n'
-
-        node.replace(new)
 
 
 def transform_call(red_node):
@@ -1205,12 +1155,34 @@ def transform_call(red_node):
         except:  # happend for: (self.conjugate(complex_in) * complex_in).real
             continue
 
-        # set prefix as first argument (self)
-        # self.d(a) -> d(self, a)
         prefix = atom.copy()
         del prefix[call_index:]
         del atom[:call_index]
-        call.insert(0, prefix)
+
+        tmp = prefix.copy()
+        if isinstance(tmp[0], AtomtrailersNode):
+            # this branch happens because of 'for transform'
+            tmp[0][0] = 'self_const'
+            call.insert(0, tmp)
+        else:
+            tmp[0] = 'self_const'
+            call.insert(0, tmp)
+
+        tmp = prefix.copy()
+        if isinstance(tmp[0], AtomtrailersNode):
+            tmp[0][0] = 'self_next'
+            call.insert(0, tmp)
+        else:
+            tmp[0] = 'self_next'
+            call.insert(0, tmp)
+
+        tmp = prefix.copy()
+        if isinstance(tmp[0], AtomtrailersNode):
+            tmp[0][0] = 'self'
+            call.insert(0, tmp)
+        else:
+            tmp[0] = 'self'
+            call.insert(0, tmp)
 
         # get the SOURCE (where call is going on) function object from datamodel
         def_parent = atom

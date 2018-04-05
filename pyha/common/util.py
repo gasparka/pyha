@@ -20,6 +20,13 @@ def is_constant(name):
     return True if name.replace('_', '').isupper() else False
 
 
+def const_filter(x):
+    from pyha.conversion.python_types_vhdl import VHDLList
+    from pyha.conversion.python_types_vhdl import VHDLModule
+    return is_constant(x._name) or isinstance(x, VHDLModule) or (
+                isinstance(x, VHDLList) and not x.not_submodules_list)
+
+
 def tabber(str):
     TAB = '    '
     """ Add tab infront of every line """

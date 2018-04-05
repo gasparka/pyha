@@ -1022,7 +1022,9 @@ class TestDefNodeConv:
         dut = T()
         dut.a(1, False, Sfix(0.5, 1, -2), [1, 2])
 
-        expect = 'self:inout self_t; ' \
+        expect = 'self:in self_t; ' \
+                 'self_next:inout self_t; '\
+                 'constant self_const: self_t_const; '\
                  'i: integer; ' \
                  'b: boolean; ' \
                  'f: sfixed(1 downto -2); ' \
@@ -1069,7 +1071,7 @@ class TestDefNodeConv:
         dut.out(1)
 
         expect = textwrap.dedent("""\
-            procedure \\out\\(self:inout self_t; i: integer; ret_0:out integer) is
+            procedure \\out\\(self:in self_t; self_next:inout self_t; constant self_const: self_t_const; i: integer; ret_0:out integer) is
 
 
             begin
@@ -1087,58 +1089,6 @@ class TestDefNodeConv:
 
 
 class TestClassNodeConv:
-    def test_build_data_structs(self):
-        class A(Hardware):
-            def __init__(self):
-                self.sub = 0
-
-        class TestEnum(Enum):
-            ENUM0, ENUM1, ENUM2, ENUM3 = range(4)
-
-        class T(Hardware):
-            def __init__(self):
-                self.a = Sfix(1.0, 0, -27)
-                self.out = Sfix(1.0, 0, -27)  # reserved name
-                self.c = 25
-                self.d = True
-                self.mode = TestEnum.ENUM1
-                self.al = [0] * 12
-                self.bl = [False] * 2
-                self.cl = [Sfix(0.1, 2, -15), Sfix(1.5, 2, -15)]
-                self.sub = A()
-                self.subl = [self.sub] * 2
-
-        expect = textwrap.dedent("""\
-                type next_t is record
-                    a: sfixed(0 downto -27);
-                    \\out\\: sfixed(0 downto -27);
-                    c: integer;
-                    d: boolean;
-                    mode: TestEnum;
-                    al: Typedefs.integer_list_t(0 to 11);
-                    bl: Typedefs.boolean_list_t(0 to 1);
-                    cl: Typedefs.sfixed2downto_15_list_t(0 to 1);
-                    sub: A_0.self_t;
-                    subl: A_0.A_0_self_t_list_t(0 to 1);
-                end record;
-
-                type self_t is record
-                    a: sfixed(0 downto -27);
-                    \\out\\: sfixed(0 downto -27);
-                    c: integer;
-                    d: boolean;
-                    mode: TestEnum;
-                    al: Typedefs.integer_list_t(0 to 11);
-                    bl: Typedefs.boolean_list_t(0 to 1);
-                    cl: Typedefs.sfixed2downto_15_list_t(0 to 1);
-                    sub: A_0.self_t;
-                    subl: A_0.A_0_self_t_list_t(0 to 1);
-                    \\next\\: next_t;
-                end record;""")
-
-        c = get_conversion(T()).build_data_structs()
-        assert expect == str(c)
-
     def test_build_typedefs(self):
         class A(Hardware):
             def __init__(self):
@@ -1168,176 +1118,6 @@ class TestClassNodeConv:
         c = get_conversion(dut).build_typedefs()
         assert expect == c
 
-    def test_build_init(self):
-        class A(Hardware):
-            def __init__(self):
-                self.sub = 0
-
-        class T(Hardware):
-            def __init__(self):
-                self.a = 0
-                self.al = [0, 0]
-                self.sub = A()
-                self.subl = [self.sub] * 2
-
-        expect = textwrap.dedent("""\
-            procedure pyha_init_next(self:inout self_t) is
-                -- sets all .next's to current register values, executed before 'main'. 
-                -- thanks to this, '.next' variables are always written before read, so they can never be registers
-            begin
-                self.\\next\\.a := self.a;
-                self.\\next\\.al := self.al;
-                A_0.pyha_init_next(self.sub);
-                A_0.pyha_init_next(self.subl(0));
-                A_0.pyha_init_next(self.subl(1));
-            end procedure;""")
-
-        dut = get_conversion(T())
-        assert expect == str(dut.build_init())
-
-        expect = 'procedure pyha_init_next(self:inout self_t);'
-        assert expect == str(dut.build_init(prototype_only=True))
-
-    def test_build_update_self(self):
-        class A(Hardware):
-            def __init__(self):
-                self.sub = 0
-
-        class T(Hardware):
-            def __init__(self):
-                self.a = 0
-                self.al = [0, 0]
-                self.sub = A()
-                self.subl = [self.sub] * 2
-
-        expect = textwrap.dedent("""\
-            procedure pyha_update_registers(self:inout self_t) is
-                -- loads 'next' values to registers, executed on clock rising edge
-            begin
-                self.a := self.\\next\\.a;
-                self.al := self.\\next\\.al;
-                A_0.pyha_update_registers(self.sub);
-                A_0.pyha_update_registers(self.subl(0));
-                A_0.pyha_update_registers(self.subl(1));
-            end procedure;""")
-
-        dut = get_conversion(T())
-        assert expect == str(dut.build_update_registers())
-
-        expect = 'procedure pyha_update_registers(self:inout self_t);'
-        assert expect == str(dut.build_update_registers(prototype_only=True))
-
-    def test_build_reset(self):
-        class A(Hardware):
-            def __init__(self):
-                self.r = 123
-
-        class T(Hardware):
-            def __init__(self):
-                self.a = 0
-                self.al = [0, 1]
-                self.sub = A()
-                self.subl = [self.sub] * 2
-
-        expect = textwrap.dedent("""\
-            procedure pyha_reset(self:inout self_t) is
-                -- executed on reset signal. Reset values are determined from initial values of Python variables.
-            begin
-                self.\\next\\.a := 0;
-                self.\\next\\.al := (0, 1);
-                self.sub.\\next\\.r := 123;
-                self.subl(0).\\next\\.r := 123;
-                self.subl(1).\\next\\.r := 123;
-                pyha_update_registers(self);
-            end procedure;""")
-
-        dut = get_conversion(T())
-        assert expect == str(dut.build_reset())
-
-        expect = 'procedure pyha_reset(self:inout self_t);'
-        assert expect == str(dut.build_reset(prototype_only=True))
-
-    def test_build_reset_constants(self):
-        class T(Hardware):
-            def __init__(self):
-                self.A = 0
-                self.a = 0
-                self.b = [1, 2]
-                self.AL = [0, 1]
-
-        expect = textwrap.dedent("""\
-            procedure pyha_reset_constants(self:inout self_t) is
-                -- reset CONSTANTS, executed before 'main'. Helps synthesis tools to determine constants.
-            begin
-                self.A := 0;
-                self.AL := (0, 1);
-            end procedure;""")
-
-        dut = get_conversion(T())
-        assert expect == str(dut.build_reset_constants())
-
-        expect = 'procedure pyha_reset_constants(self:inout self_t);'
-        assert expect == str(dut.build_reset_constants(prototype_only=True))
-
-    def test_multiline_comments(self):
-        class B0(Hardware):
-            """ class
-            doc """
-
-            def main(self):
-                """ func
-                doc
-                """
-                # normal doc
-                pass
-
-            def func2(self):
-                """ very useless function """
-                pass
-
-        dut = B0()
-        dut.main()
-        dut.func2()
-        dut = get_conversion(dut)
-
-        expect = textwrap.dedent("""\
-            procedure main(self:inout self_t) is
-            -- func
-            -- doc
-
-            begin
-                -- normal doc
-            end procedure;""")
-
-        assert expect == str(dut.get_function('main'))
-
-        expect = textwrap.dedent("""\
--- class
--- doc
-package B0_0 is
-    type next_t is record
-        much_dummy_very_wow: integer;
-    end record;
-
-    type self_t is record
-        much_dummy_very_wow: integer;
-        \\next\\: next_t;
-    end record;
-    type B0_0_self_t_list_t is array (natural range <>) of B0_0.self_t;
-
-    procedure main(self:inout self_t);
-    procedure func2(self:inout self_t);
-
-    -- internal pyha functions
-    function B0(much_dummy_very_wow: integer) return self_t;
-    procedure pyha_update_registers(self:inout self_t);
-    procedure pyha_reset(self:inout self_t);
-    procedure pyha_init_next(self:inout self_t);
-    procedure pyha_reset_constants(self:inout self_t);
-end package;""")
-
-        assert expect == dut.build_package_header()
-
 
 class TestForModification:
     def test_for_self(self):
@@ -1356,83 +1136,6 @@ class TestForModification:
                     a := self.arr(\\_i_\\);
                 end loop;""")
 
-        conv = get_conversion(dut)
-        func = conv.get_function('a')
-        assert expect == func.build_body()
-
-
-class EnumType(Enum):
-    ENUMVALUE = 0
-
-
-class TestEnumModifications:
-    def test_basic(self):
-        class T(Hardware):
-            def __init__(self):
-                self.r = EnumType.ENUMVALUE
-
-            def a(self):
-                self.r = EnumType.ENUMVALUE
-                r = EnumType.ENUMVALUE
-                if r == EnumType.ENUMVALUE:
-                    pass
-
-        dut = T()
-        dut.a()
-
-        expect = \
-            'self.\\next\\.r := 0;\n' \
-            'r := 0;\n' \
-            'if r = 0 then\n' \
-            '\n' \
-            'end if;'
-        conv = get_conversion(dut)
-        func = conv.get_function('a')
-        assert expect == func.build_body()
-
-
-class TestCallModifications:
-    def test_convert_call(self):
-        class Sub(Hardware):
-            def f(self):
-                return False
-
-        class T(Hardware):
-            def __init__(self):
-                self.sub = Sub()
-                self.r = False
-                self.arr = [1, 2]
-
-            def b(self, x):
-                return 1
-
-            def multi(self, x):
-                return 1, 2
-
-            def a(self, x):
-                self.b(x)
-                self.sub.f()
-                loc = self.b(x)
-                self.r = self.sub.f()
-                f = resize(Sfix(1, 1, -15), 0, -15)
-                self.arr[0], self.arr[1] = self.multi(x)
-                lol = self.arr[len(self.arr) - 1]
-
-        dut = T()
-        dut.a(1)
-
-        expect = \
-            'b(self, x, pyha_ret_0);\n' \
-            'Sub_0.f(self.sub, pyha_ret_1);\n' \
-            'b(self, x, pyha_ret_2);\n' \
-            'loc := pyha_ret_2;\n' \
-            'Sub_0.f(self.sub, pyha_ret_3);\n' \
-            'self.\\next\\.r := pyha_ret_3;\n' \
-            'f := resize(resize(Sfix(1, 1, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate), 0, -15, overflow_style=>fixed_wrap, round_style=>fixed_truncate), 0, -15, fixed_wrap, fixed_truncate);\n' \
-            'multi(self, x, pyha_ret_4, pyha_ret_5);\n' \
-            'self.\\next\\.arr(0) := pyha_ret_4;\n' \
-            'self.\\next\\.arr(1) := pyha_ret_5;\n' \
-            "lol := self.arr(self.arr'length - 1);"
         conv = get_conversion(dut)
         func = conv.get_function('a')
         assert expect == func.build_body()

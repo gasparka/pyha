@@ -47,6 +47,10 @@ Compile Quartus libraries into ``GHDL_PATH/lib/ghdl/altera`` by running:
     python /scripts/compile_quartus_lib.py
     # expected output: Compiling Altera Quartus libraries [FAILED]
 
+
+.. arch: /usr/lib/ghdl/vendors/compile-intel.sh -a --src /home/gaspar/intelFPGA_lite/17.1/quartus/eda/sim_lib
+.. sudo cp -r altera /usr/lib/ghdl
+
 .. _Intel Quartus: http://dl.altera.com/?edition=lite
 .. _GHDL: https://github.com/tgingold/ghdl
 .. _Cocotb: https://github.com/potentialventures/cocotb

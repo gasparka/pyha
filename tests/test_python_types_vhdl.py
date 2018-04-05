@@ -6,23 +6,6 @@ from pyha.conversion.python_types_vhdl import get_vars_as_vhdl_types, VHDLInt, V
     VHDLEnum, BaseVHDLType
 
 
-class TestBaseVHDLType:
-    def test_pyha_init(self):
-        dut = BaseVHDLType('out', 0, 0)
-        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
-        assert expect == dut._pyha_init()
-
-    def test_pyha_update_registers(self):
-        dut = BaseVHDLType('out', 0, 0)
-        expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
-        assert expect == dut._pyha_update_registers()
-
-    def test_pyha_reset(self):
-        dut = BaseVHDLType('out', 0, 0)
-        expect = 'self.\\next\\.\\out\\ := 0;\n'
-        assert expect == dut._pyha_reset()
-
-
 class TestVHDLList:
     def setup(self):
         d = [Sfix(0, 1, -2)] * 2
@@ -40,54 +23,6 @@ class TestVHDLList:
     def test_pyha_typedef(self):
         expect = 'type sfixed1downto_2_list_t is array (natural range <>) of sfixed(1 downto -2);'
         assert self.dut._pyha_typedef() == expect
-
-    def test_pyha_init(self):
-        expect = 'self.\\next\\.\\out\\ := self.\\out\\;'
-        assert expect == self.dut._pyha_init()
-
-        expect = 'T_0.pyha_init_next(self.\\out\\(0));\n' \
-                 'T_0.pyha_init_next(self.\\out\\(1));'
-        assert expect == self.dut_sub._pyha_init()
-
-    def test_pyha_update_registers(self):
-        expect = 'self.\\out\\ := self.\\next\\.\\out\\;'
-        assert expect == self.dut._pyha_update_registers()
-
-        expect = 'T_0.pyha_update_registers(self.\\out\\(0));\n' \
-                 'T_0.pyha_update_registers(self.\\out\\(1));'
-        assert expect == self.dut_sub._pyha_update_registers()
-
-    def test_pyha_reset(self):
-        expect = 'self.\\next\\.\out\ := (Sfix(0.0, 1, -2), Sfix(0.0, 1, -2));\n'
-        assert expect == self.dut._pyha_reset()
-
-    def test_pyha_reset_ints(self):
-        d = [1, 2]
-        dut = VHDLList('out', d, d)
-        expect = 'self.\\next\\.\out\ := (1, 2);\n'
-        assert expect == dut._pyha_reset()
-
-        expect = 'self.dummy.\\next\\.\out\ := (1, 2);\n'
-        assert expect == dut._pyha_reset('self.dummy')
-
-    def test_pyha_reset_submodules(self):
-        class C2(Hardware):
-            def __init__(self):
-                self.regor = False
-
-        class A2(Hardware):
-            def __init__(self, reg_init):
-                self.reg = reg_init
-                self.submodule = C2()
-
-        sublist = [A2(2), A2(128)]
-        s = VHDLList('sublist', sublist, sublist)
-
-        expect = 'self.sublist(0).\\next\\.reg := 2;\n' \
-                 'self.sublist(0).submodule.\\next\\.regor := False;\n' \
-                 'self.sublist(1).\\next\\.reg := 128;\n' \
-                 'self.sublist(1).submodule.\\next\\.regor := False;\n'
-        assert expect == s._pyha_reset()
 
     def test_pyha_type_is_compatible(self):
         a = VHDLList('name', [1, 2], [1, 2])
@@ -224,98 +159,6 @@ class TestVHDLModule:
         expect = 'T_0.pyha_update_registers(self.name);'
         assert self.dut._pyha_update_registers() == expect
 
-    def test_pyha_reset(self):
-        expect = 'self.name.\\next\\.a := 0;\n' \
-                 'self.name.\\next\\.b := Sfix(0.0, 0, -17);\n'
-        assert self.dut._pyha_reset() == expect
-
-    def test_pyha_reset_recursive(self):
-        class Label(Hardware):
-            def __init__(self):
-                self.register = Sfix(0.563, 0, -18)
-
-        class C3(Hardware):
-            def __init__(self):
-                self.nested_list = [Label(), Label()]
-                self.regor = False
-
-        class A3(Hardware):
-            def __init__(self, reg_init):
-                self.reg = reg_init
-                self.submodule = C3()
-
-        class B3(Hardware):
-            def __init__(self):
-                self.ror = 554
-                self.sublist = [A3(2), A3(128)]
-
-        dut = VHDLModule('name', B3(), B3())
-        expect = 'self.name.\\next\\.\\ror\\ := 554;\n' \
-                 'self.name.sublist(0).\\next\\.reg := 2;\n' \
-                 'self.name.sublist(0).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
-                 'self.name.sublist(0).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
-                 'self.name.sublist(0).submodule.\\next\\.regor := False;\n' \
-                 'self.name.sublist(1).\\next\\.reg := 128;\n' \
-                 'self.name.sublist(1).submodule.nested_list(0).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
-                 'self.name.sublist(1).submodule.nested_list(1).\\next\\.\\register\\ := Sfix(0.5629997253417969, 0, -18);\n' \
-                 'self.name.sublist(1).submodule.\\next\\.regor := False;\n'
-        assert dut._pyha_reset() == expect
-
-    def test_pyha_reset_lazy_sfix(self):
-        """ Test that lazy Sfix values will take correct bound after 'main' execution"""
-
-        class A4(Hardware):
-            def __init__(self):
-                self.a = [Sfix()] * 2
-                self.b = [Sfix(left=1)] * 2
-                self.c = [Sfix(right=-4)] * 2
-
-            def main(self, a):
-                self.a[0] = a
-                self.b[0] = a
-                self.c[0] = a
-                return self.a[0], self.b[0], self.c[0]
-
-        dut = A4()
-        dut.main(Sfix(0.1, 0, -17))
-        dut._pyha_update_registers()
-
-        dut = VHDLModule('name', dut, dut)
-
-        expect = 'self.name.\\next\\.a := (Sfix(0.0, 0, -17), Sfix(0.0, 0, -17));\n' \
-                 'self.name.\\next\\.b := (Sfix(0.0, 1, -17), Sfix(0.0, 1, -17));\n' \
-                 'self.name.\\next\\.c := (Sfix(0.0, 0, -4), Sfix(0.0, 0, -4));\n'
-
-        assert expect == dut._pyha_reset()
-
-    def test_pyha_reset_constants(self):
-        class A(Hardware):
-            def __init__(self):
-                self.REG = 1
-
-        class T(Hardware):
-            def __init__(self):
-                self.A = 0
-                self.UNDER_SCORE = 1
-                self.c = 2
-                self.REGISTER = 3
-                self.ARR = [4, 5]
-                self.arrr = [4, 5]
-                self.m = A()
-                self.out = [A(), A()]
-
-        dut = VHDLModule('name', T(), T())
-
-        expect = 'self.name.A := 0;\n' \
-                 'self.name.UNDER_SCORE := 1;\n' \
-                 'self.name.\\REGISTER\\ := 3;\n' \
-                 'self.name.ARR := (4, 5);\n' \
-                 'self.name.m.REG := 1;\n' \
-                 'self.name.\\out\\(0).REG := 1;\n' \
-                 'self.name.\\out\\(1).REG := 1;'
-
-        assert dut._pyha_reset_constants() == expect
-
     def test_pyha_type_is_compatible(self):
         class A(Hardware):
             def __init__(self, init):
@@ -435,11 +278,6 @@ class TestVHDLEnum:
         dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
         expect = 1
         assert dut._pyha_reset_value() == expect
-
-    def test_pyha_reset(self):
-        dut = VHDLEnum('name', self.T.ENUM0, self.T.ENUM1)
-        expect = 'self.\\next\\.name := 1;\n'
-        assert dut._pyha_reset() == expect
 
 
 def test_get_conversion_vars_int():

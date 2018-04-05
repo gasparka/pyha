@@ -194,7 +194,7 @@ class CocotbAuto:
             subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
         except subprocess.CalledProcessError as err:
             logger.error('Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
-            os._exit(0)
+            # os._exit(0)
             # sys.exit(0)
 
             raise Exception(

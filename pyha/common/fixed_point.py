@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from pyha.common.context_managers import ContextManagerRefCounted, SimPath, NoTrace
+from pyha.common.context_managers import ContextManagerRefCounted, SimPath
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sfix')
@@ -442,9 +442,8 @@ def scalb(x: Sfix, i: int) -> Sfix:
     >>> scalb(a, -8)
     0.001953125 [-8:-25]
     """
-    with NoTrace():
-        n = 2 ** i
-        return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
+    n = 2 ** i
+    return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
 
 
 default_sfix = Sfix(0, 0, -17, overflow_style='saturate',

@@ -1,7 +1,7 @@
 import textwrap
 
-from pyha.common.util import tabber
-from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type
+from pyha.common.util import tabber, formatter, is_constant, const_filter
+from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type, VHDLList
 from pyha.conversion.redbaron_mods import file_header
 
 
@@ -110,6 +110,18 @@ class TopGenerator:
 
         return ', '.join([inputs, outputs])
 
+
+    def make_reset(self):
+        o = VHDLModule('-', self.simulated_object)
+        data = [x._pyha_reset(filter_func=lambda x: not is_constant(x._name)) for x in o.elems]
+        return formatter(data)
+
+    def make_constants(self):
+        o = VHDLModule('-', self.simulated_object)
+
+        data = [x._pyha_reset(filter_func=const_filter) for x in o.elems]
+        return formatter(data)
+
     def make(self):
 
         # http://stackoverflow.com/questions/8782630/how-to-detect-compiler
@@ -137,14 +149,22 @@ class TopGenerator:
                     function init_regs return {DUT_NAME}.self_t is
                         variable self: {DUT_NAME}.self_t;
                     begin
-                          {DUT_NAME}.pyha_reset(self);
+                {RESET_COMMANDS}
+                          return self;
+                    end function;
+                    
+                    function init_constants return {DUT_NAME}.self_t_const is
+                        variable self: {DUT_NAME}.self_t_const;
+                    begin
+                {INIT_CONSTANTS_COMMANDS}
                           return self;
                     end function;
 
                     signal self: {DUT_NAME}.self_t := init_regs;
+                    constant self_const: {DUT_NAME}.self_t_const := init_constants;
                 begin
                     process(clk, rst_n)
-                        variable self_var: {DUT_NAME}.self_t;
+                        variable self_next: {DUT_NAME}.self_t;
                         -- input variables
                 {INPUT_VARIABLES}
 
@@ -152,28 +172,24 @@ class TopGenerator:
                 {OUTPUT_VARIABLES}
 
                     begin
-                        self_var := self;
+                        self_next := self;
 
                         --convert slv to normal types
                 {INPUT_TYPE_CONVERSIONS}
 
                         --call the main entry
-                        {DUT_NAME}.pyha_init_next(self_var);
-                        {DUT_NAME}.pyha_reset_constants(self_var);
-                        {DUT_NAME}.main(self_var, {CALL_ARGUMENTS});
+                        {DUT_NAME}.main(self, self_next, self_const, {CALL_ARGUMENTS});
 
                         --convert normal types to slv
                 {OUTPUT_TYPE_CONVERSIONS}
 
 
                         if (not rst_n) then
-                            {DUT_NAME}.pyha_reset(self_var);
-                            self <= self_var;
+                            self <= init_regs;
                         elsif rising_edge(clk) then
                             -- look #153 if you want enable
                             --if enable then
-                                {DUT_NAME}.pyha_update_registers(self_var);
-                                self <= self_var;
+                                self <= self_next;
                             --end if;
                         end if;
 
@@ -191,6 +207,8 @@ class TopGenerator:
         sockets['ENTITY_OUTPUTS'] = tab(
             self.make_entity_outputs()[:-1])  # -1 removes the last ';', VHDL has some retarded rules
         sockets['INPUT_VARIABLES'] = tab(self.make_input_variables())
+        sockets['RESET_COMMANDS'] = tab(self.make_reset())
+        sockets['INIT_CONSTANTS_COMMANDS'] = tab(self.make_constants())
         sockets['OUTPUT_VARIABLES'] = tab(self.make_output_variables())
         sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
         sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.make_output_type_conversions())
