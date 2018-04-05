@@ -486,7 +486,7 @@ class VHDLList(BaseVHDLType):
                 return ''
 
         if not self.elements_compatible_typed:
-            return ''.join(x._pyha_reset(filter_func=filter_func) for x in self.elems)
+            return ''.join(x._pyha_reset(prefix, filter_func=filter_func) for x in self.elems)
 
         name = self._pyha_name()
         if self.not_submodules_list:
