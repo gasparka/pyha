@@ -290,6 +290,13 @@ class Sfix:
                     right,
                     init_only=True)
 
+    def __truediv__(self, other):
+        return Sfix(self.val / other,
+                    self.left,
+                    self.right,
+                    init_only=True,
+                    signed=self.signed)
+
     def __mod__(self, other):
         return Sfix(self.val % other,
                     self.left,
