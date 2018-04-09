@@ -130,9 +130,10 @@ class Conversion:
                     self.childs.append(Conversion(node.current, node))
 
             if self.is_root:
+                logger.info(f'Creating top.vhd ...')
                 self.top_vhdl = TopGenerator(obj)
 
-                # maybe some input/output is a convertable module?
+                # maybe some input/output is a convertible module?
                 for node in self.inputs:
                     conv(self, node)
 
@@ -152,6 +153,7 @@ class Conversion:
                 conv(self, node)
 
             self.red_node = get_objects_rednode(obj)
+            logger.info(f'{self.class_name} to VHDL ...')
             self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
             self.vhdl_conversion = str(self.conv)
