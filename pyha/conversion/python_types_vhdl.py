@@ -11,6 +11,7 @@ import numpy as np
 from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
+from pyha.common.float import Float
 from pyha.common.util import is_constant
 
 logging.basicConfig(level=logging.INFO)
@@ -293,6 +294,50 @@ class VHDLSfix(BaseVHDLType):
         if type(self.current) != type(other.current):
             return False
         return self.current.left == other.current.left and self.current.right == other.current.right and self.current.signed == other.current.signed
+
+    def _pyha_to_python_value(self):
+        if self.current.right == 0:  # no fractional bits
+            return int(float(self.current))
+        else:
+            return float(self.current)
+
+    def _pyha_serialize(self):
+        val = self.current.fixed_value()
+        return to_twoscomplement(len(self.current), val)
+
+    def _pyha_deserialize(self, serial):
+        if self.current.signed:
+            val = to_signed_int(int(serial, 2), len(self.current))
+        else:
+            val = int(serial, 2)
+        return val * 2 ** self.current.right
+
+
+class VHDLFloatNEW(BaseVHDLType):
+    def _pyha_type(self):
+            return 'float(8 downto -23)'
+
+    def _pyha_bitwidth(self) -> int:
+        return 32
+
+    def _pyha_reset_value(self):
+        return 'to_float({}, 8, 23)'.format(self.initial.val)
+
+    def _pyha_stdlogic_type(self) -> str:
+        return 'std_logic_vector(31 downto 0)'
+
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
+        return '{} := to_float({}, {}, {});\n'.format(out_var_name, in_name, 8, 23)
+
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
+                                                          0 + out_index_offset, in_name)
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if type(self.current) != type(other.current):
+            return False
+        return True
 
     def _pyha_to_python_value(self):
         if self.current.right == 0:  # no fractional bits
@@ -782,6 +827,9 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return VHDLComplex(name, current_val, initial_val, parent)
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val, parent)
+    elif type(current_val) == Float:
+        return VHDLFloatNEW(name, current_val, initial_val, parent)
+
     elif type(current_val) == PyhaList:
         if Conversion.in_progress.enabled and isinstance(current_val[0], float):
             # logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
@@ -813,6 +861,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
             return VHDLList(name, list(current_val), list(initial_val), parent)
         except:
             return VHDLList(name, list(current_val), list(current_val), parent)
+
 
     print(type(current_val))
     assert 0
