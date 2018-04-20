@@ -116,10 +116,13 @@ def process_outputs(delay_compensate, ret, output_callback=None):
 
 
 _last_trained_object = None
-
+_ran_gate_simulation = False
 
 def get_last_trained_object():
     return _last_trained_object
+
+def get_ran_gate_simulation():
+    return _ran_gate_simulation
 
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
@@ -163,6 +166,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         }
 
     """
+    global _ran_gate_simulation
+    _ran_gate_simulation = False
 
     def types_from_pyha_to_python(pyha_types):
         returns = pyha_types # can be the case for builtins ie. int
@@ -312,7 +317,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             elif not have_ghdl():
                 logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
             else:
-
+                _ran_gate_simulation = True
                 vhdl_sim = VHDLSimulation(Path(conversion_path), fix_model, 'GATE')
                 ret = vhdl_sim.main(*args)
 

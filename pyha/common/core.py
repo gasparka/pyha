@@ -180,7 +180,8 @@ class Meta(type):
                 if isinstance(v, np.ndarray):
                     v = np_to_py(v)
 
-                if isinstance(v, list):
+                from pyha.common.ram import RAM
+                if isinstance(v, list) and not isinstance(ret, RAM):
                     v = PyhaList(v, ret.__class__.__name__, k)
                     ret.__dict__[k] = v
 

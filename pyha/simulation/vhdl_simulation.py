@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -14,6 +15,8 @@ logger = logging.getLogger('sim')
 
 
 class VHDLSimulation:
+    last_logic_elements = 0
+    last_memory_bits = 0
     def __init__(self, base_path, model, sim_type):
         self.sim_type = sim_type
         self.base_path = base_path
@@ -77,7 +80,7 @@ class VHDLSimulation:
 
     def make_quartus_project(self):
         rules = {}
-        rules['DEVICE'] = 'EP4CE40F23C8'
+        rules['DEVICE'] = 'EP4CE40F23C8' # tried to change this to MAX10 but GATE simulation breaks (encrypted cores not usable in GHDL)
         rules['TOP_LEVEL_ENTITY'] = 'top'
         rules['PROJECT_OUTPUT_DIRECTORY'] = 'output_files'
 
@@ -109,13 +112,17 @@ class VHDLSimulation:
 
     def make_quartus_netlist(self):
         logger.info('Running quartus map...will take time.')
-        make_process = subprocess.call(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
-        assert make_process == 0
+        subprocess.run(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
+
+        result = open(str(self.quartus_path) + '/output_files/quartus_project.map.summary').readlines()
+        for l in result:
+            logger.info(l[:-1])
+
+        VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':')+1:-1].replace(',', ''))
+        VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':')+1:-1].replace(',', ''))
 
         logger.info('Running netlist writer.')
-        make_process = subprocess.call(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
-        assert make_process == 0
-
+        subprocess.run(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
         return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
 

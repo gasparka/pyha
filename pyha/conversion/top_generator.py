@@ -1,10 +1,11 @@
 import textwrap
 
+from pyha.common.ram import RAM
 from pyha.common.util import tabber, formatter, is_constant, const_filter
-from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type, VHDLList
+from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type, VHDLList, escape_reserved_vhdl
 from pyha.conversion.redbaron_mods import file_header
 
-
+from mpmath import mpf
 class NotTrainedError(Exception):
     pass
 
@@ -20,6 +21,7 @@ class NoOutputsError(Exception):
 class TopGenerator:
     def __init__(self, simulated_object):
         self.simulated_object = simulated_object
+        self.simulated_object_vhdl = VHDLModule('-', self.simulated_object)
 
         # 0 or 1 calls wont propagate register outputs
         if self.simulated_object.main.calls == 0:
@@ -110,16 +112,41 @@ class TopGenerator:
 
         return ', '.join([inputs, outputs])
 
-
     def make_reset(self):
-        o = VHDLModule('-', self.simulated_object)
-        data = [x._pyha_reset(filter_func=lambda x: not is_constant(x._name)) for x in o.elems]
+        data = [x._pyha_reset(filter_func=lambda x: not is_constant(x._name)) for x in self.simulated_object_vhdl.elems]
         return formatter(data)
 
     def make_constants(self):
-        o = VHDLModule('-', self.simulated_object)
+        data = [x._pyha_reset(filter_func=const_filter) for x in self.simulated_object_vhdl.elems]
+        return formatter(data)
 
-        data = [x._pyha_reset(filter_func=const_filter) for x in o.elems]
+    def get_ram_names(self):
+
+        def escape_name(name):
+            return escape_reserved_vhdl(name.replace('[', '(').replace(']', ')'))
+
+        def recu(base='', obj=None):
+            ret = []
+            for elem in obj.elems:
+                if isinstance(elem.current, RAM):
+                    ret.append(base + escape_name(elem._name))
+                elif isinstance(elem, VHDLModule):
+                    ret.extend(recu(base + escape_name(elem._name) + '.', elem))
+                elif isinstance(elem, VHDLList):
+                    ret.extend(recu(base + escape_name(elem._name), elem))
+            return ret
+
+        ret = recu('', self.simulated_object_vhdl)
+        return ret
+
+    def make_ram_resets(self, rams):
+        data = [f'self.{x} <= self.{x};' for x in rams]
+        return formatter(data)
+
+    def make_ram_edge(self, rams):
+        data = [f'\tself.{name}.data(self_next.{name}.write_address) <= self_next.{name}.write_value;\n' \
+                f'\tself.{name}.read_reg <= self.{name}.data(self_next.{name}.read_address);\n\n' for name in rams]
+
         return formatter(data)
 
     def make(self):
@@ -186,10 +213,13 @@ class TopGenerator:
 
                         if (not rst_n) then
                             self <= init_regs;
+                {RAM_HOLD_VALUE}
                         elsif rising_edge(clk) then
                             -- look #153 if you want enable
                             --if enable then
                                 self <= self_next;
+                                
+                {RAM_ON_EDGE}
                             --end if;
                         end if;
 
@@ -213,6 +243,13 @@ class TopGenerator:
         sockets['INPUT_TYPE_CONVERSIONS'] = tab(self.make_input_type_conversions())
         sockets['OUTPUT_TYPE_CONVERSIONS'] = tab(self.make_output_type_conversions())
         sockets['CALL_ARGUMENTS'] = self.make_call_arguments()
+
+        # Handle rams.
+        # 1. on reset RAMS must keep the old value, or Quartus refuses to infer RAM
+        # 2. read and write logic must be in top level 'rising_edge', or Quartus refuses to infer RAM
+        rams = self.get_ram_names()
+        sockets['RAM_HOLD_VALUE'] = tab(self.make_ram_resets(rams))
+        sockets['RAM_ON_EDGE'] = tab(self.make_ram_edge(rams))
 
         res = template.format(**sockets)
 

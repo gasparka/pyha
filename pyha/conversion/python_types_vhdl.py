@@ -183,8 +183,11 @@ class VHDLInt(BaseVHDLType):
                                                                                    0 + out_index_offset, in_name)
 
     def _pyha_type_is_compatible(self, other) -> bool:
-        if type(self.current) != type(other.current):
+        if isinstance(self.current, bool) or isinstance(other.current, bool):
+            # python bool isinstance of int....
             return False
+        if isinstance(self.current, int) and isinstance(other.current, int):
+            return True
         return True
 
     def _pyha_to_python_value(self):
