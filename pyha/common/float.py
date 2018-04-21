@@ -21,6 +21,10 @@ def ilog2(A):
 
 
 class Float:
+
+    # 00000110001001001101110 201326
+    # 196608.0
+    # 201216.0
     def __init__(self, val):
         self.val = val
         self.sign = 0
@@ -29,9 +33,9 @@ class Float:
             val = -val
 
         self.exponent = ilog2(val)
-        t = int(val * 2 ** (23)) # quantize
-        self.mantissa = t / 2 ** (23 + self.exponent) - 1
-        # self.mantissa = (val / (2.0 ** self.exponent)) - 1
+        self.mantissa = (val / 2 ** self.exponent) - 1
+        self.mantissa = int(self.mantissa * 2 ** 23) / 2 ** 23 # quantize
+
         print(self.sign, self.exponent, self.mantissa)
 
     def __float__(self):

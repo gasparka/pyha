@@ -325,7 +325,7 @@ class VHDLFloatNEW(BaseVHDLType):
         return 32
 
     def _pyha_reset_value(self):
-        return f'to_float({self.initial.val:.32f}, 8, 23)'
+        return f'to_float({self.initial.val:.16e}, 8, 23)'
 
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector(31 downto 0)'

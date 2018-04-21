@@ -3,6 +3,11 @@ import collections
 import numpy as np
 
 
+def to_real(x):
+    """ Use to print VHDL variables as float: example print(to_real(x))"""
+    return x
+
+
 def is_power2(num):
     # Author: A.Polino
     'states if a number is a power of two'
@@ -24,7 +29,7 @@ def const_filter(x):
     from pyha.conversion.python_types_vhdl import VHDLList
     from pyha.conversion.python_types_vhdl import VHDLModule
     return is_constant(x._name) or isinstance(x, VHDLModule) or (
-                isinstance(x, VHDLList) and not x.not_submodules_list)
+            isinstance(x, VHDLList) and not x.not_submodules_list)
 
 
 def tabber(str):
