@@ -5,7 +5,6 @@ from pyha.common.util import tabber, formatter, is_constant, const_filter
 from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type, VHDLList, escape_reserved_vhdl
 from pyha.conversion.redbaron_mods import file_header
 
-from mpmath import mpf
 class NotTrainedError(Exception):
     pass
 
@@ -84,10 +83,10 @@ class TopGenerator:
                 use ieee.std_logic_1164.all;
                 use ieee.numeric_std.all;
                 use ieee.fixed_pkg.all;
-                use ieee.float_pkg.all;
                 use ieee.math_real.all;
 
             library work;
+                use work.float_noround_pkg.all;
                 use work.complex_pkg.all;
                 use work.PyhaUtil.all;
                 use work.Typedefs.all;

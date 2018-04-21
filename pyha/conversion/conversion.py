@@ -198,6 +198,7 @@ class Conversion:
                 
             library work;
                 use work.complex_pkg.all;
+                use work.float_noround_pkg.all;
                 use work.PyhaUtil.all;
                 use work.all;
 

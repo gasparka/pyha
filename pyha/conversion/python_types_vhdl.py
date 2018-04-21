@@ -160,8 +160,12 @@ class BaseVHDLType:
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
-            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current,
-                                                               abs(self.current - other.current)))
+            try:
+                err = abs(self.current - other.current)
+            except:
+                err = 'Unknown'
+
+            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current, err))
         return eq
 
 
@@ -321,7 +325,7 @@ class VHDLFloatNEW(BaseVHDLType):
         return 32
 
     def _pyha_reset_value(self):
-        return 'to_float({}, 8, 23)'.format(self.initial.val)
+        return f'to_float({self.initial.val:.32f}, 8, 23)'
 
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector(31 downto 0)'
@@ -348,13 +352,13 @@ class VHDLFloatNEW(BaseVHDLType):
     def _pyha_serialize(self):
         val = self.current.fixed_value()
         return to_twoscomplement(len(self.current), val)
-
+    # 0:01111101:00001010001111010111000
     def _pyha_deserialize(self, serial):
-        if self.current.signed:
-            val = to_signed_int(int(serial, 2), len(self.current))
-        else:
-            val = int(serial, 2)
-        return val * 2 ** self.current.right
+        ret = copy.copy(self.current)
+        ret.sign = int(serial[0], 2)
+        ret.exponent = int(serial[1:9], 2) - 127
+        ret.mantissa = int(serial[9:], 2) * 2 ** -23
+        return ret
 
 
 class VHDLComplex(BaseVHDLType):

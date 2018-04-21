@@ -66,6 +66,11 @@ class VHDLSimulation:
         # add all conversion files as src
         src += self.conv.write_vhdl_files(self.src_path)
 
+        # copy FPHDL dependencies to src - these are only neede by quartus
+        fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
+        shutil.copyfile(fphdl_path / 'float_noround_pkg.vhdl', self.src_util_path / 'float_noround_pkg.vhdl')
+        src = [self.src_util_path / 'float_noround_pkg.vhdl'] + src
+
         if self.sim_type == 'GATE':
             # copy FPHDL dependencies to src - these are only neede by quartus
             fphdl_path = Path(pyha.__path__[0]) / '../fphdl'

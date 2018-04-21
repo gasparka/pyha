@@ -495,11 +495,11 @@ class ClassNodeVHDL(NodeVHDL):
                 use ieee.std_logic_1164.all;
                 use ieee.numeric_std.all;
                 use ieee.fixed_float_types.all;
-                use ieee.float_pkg.all;
                 use ieee.fixed_pkg.all;
                 use ieee.math_real.all;
 
             library work;
+                use work.float_noround_pkg.all;
                 use work.complex_pkg.all;
                 use work.PyhaUtil.all;
                 use work.Typedefs.all;
