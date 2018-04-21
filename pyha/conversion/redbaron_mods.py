@@ -5,7 +5,7 @@ from contextlib import suppress
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
     IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, RedBaron, \
-    BinaryOperatorNode, ComplexNode
+    BinaryOperatorNode, ComplexNode, AssociativeParenthesisNode
 from redbaron.base_nodes import LineProxyList
 
 import pyha
@@ -279,16 +279,20 @@ class CallNodeVHDL(NodeVHDL):
     def __str__(self):
         base = '(' + ', '.join(str(x) for x in self.value) + ')'
 
-        # find if this call is part of assignment node?
+        # find if this call is part of assignment node or AssociativeParenthesisNode
         p = self.red_node.parent
         is_assign = False
+        is_assoc = False
         while p is not None:
             if type(p) == AssignmentNode:
                 is_assign = True
                 break
+            if type(p) == AssociativeParenthesisNode:
+                is_assoc = True
+                break
             p = p.parent
 
-        if not is_assign and isinstance(self.red_node.next_recursive, (EndlNode, CommentNode)):
+        if not is_assign and not is_assoc and isinstance(self.red_node.next_recursive, (EndlNode, CommentNode)):
             if not isinstance(self.red_node.parent.parent, CallArgumentNode):  # dont add ; for last argument
                 base += ';'
         return base
