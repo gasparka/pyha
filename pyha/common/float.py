@@ -36,7 +36,7 @@ class Float:
         self.mantissa = (val / 2 ** self.exponent) - 1
         self.mantissa = int(self.mantissa * 2 ** 23) / 2 ** 23 # quantize
 
-        print(self.sign, self.exponent, self.mantissa)
+        # print(self.sign, self.exponent, self.mantissa)
 
     def __float__(self):
         res = (self.mantissa+1) * (2 ** self.exponent)

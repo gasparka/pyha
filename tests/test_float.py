@@ -5,7 +5,7 @@ import numpy as np
 from pyha.common.util import to_real
 
 
-def test_float():
+def test_float_init():
     class Dut(Hardware):
         def __init__(self, mem):
             # self.counter = Sfix(0.26, 0, -17)
@@ -25,6 +25,26 @@ def test_float():
     inp = list(range(len(rnd)))
 
     sims = simulate(dut, inp, simulations=['PYHA',
+                                           # 'RTL',
+                                           'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_loopback():
+    class Dut(Hardware):
+        def main(self, i):
+            return i
+
+    # 0.6294942904206591
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    rnd = [Float(x) for x in orig]
+    dut = Dut()
+
+    sims = simulate(dut, rnd, simulations=['PYHA',
                                            'RTL',
                                            # 'GATE'
                                            ],

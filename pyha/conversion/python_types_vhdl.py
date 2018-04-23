@@ -350,7 +350,12 @@ class VHDLFloatNEW(BaseVHDLType):
             return float(self.current)
 
     def _pyha_serialize(self):
-        val = self.current.fixed_value()
+        sign = '1' if self.current.sign else '0'
+        exp = f'{self.current.exponent + 127:08b}'
+        man = f'{int(self.current.mantissa * 2 ** 23):023b}'
+        result = sign + exp + man
+        return result
+
         return to_twoscomplement(len(self.current), val)
     # 0:01111101:00001010001111010111000
     def _pyha_deserialize(self, serial):
