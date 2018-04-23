@@ -332,7 +332,7 @@ class VHDLFloatNEW(BaseVHDLType):
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
-        return '{} := to_float({}, {}, {});\n'.format(out_var_name, in_name, 8, 23)
+        return '{} := to_float(STD_ULOGIC_VECTOR({}), {}, {});\n'.format(out_var_name, in_name, 8, 23)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,

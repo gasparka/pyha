@@ -8,12 +8,9 @@ from pyha.common.util import to_real
 def test_float_init():
     class Dut(Hardware):
         def __init__(self, mem):
-            # self.counter = Sfix(0.26, 0, -17)
             self.mem = mem
 
         def main(self, i):
-            # print(to_real(self.mem[i]))
-            # print(self.mem[i])
             return self.mem[i]
 
     # 0.6294942904206591
@@ -37,7 +34,6 @@ def test_loopback():
         def main(self, i):
             return i
 
-    # 0.6294942904206591
     N = 1024 * 2
     gain = 2**np.random.uniform(-64, 64, N)
     orig = (np.random.rand(N) * 2 -1) * gain
@@ -46,7 +42,83 @@ def test_loopback():
 
     sims = simulate(dut, rnd, simulations=['PYHA',
                                            'RTL',
+                                           'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_multiply():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a * b
+            return r
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    a = [Float(x) for x in orig]
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    b = [Float(x) for x in orig]
+    # a = [Float(0.1)]
+    # b = [Float(0.1)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                           'RTL',
+                                           'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_add():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    N = 32
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    a = [Float(x) for x in orig]
+
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    b = [Float(x) for x in orig]
+    # a = [Float(0.1)]
+    # b = [Float(0.1)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                           'RTL',
                                            # 'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+
+def test_add_single():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return a, b, r
+
+    a = [Float(0.1)]
+    b = [Float(0.000000001)]
+    dut = Dut()
+    from mpmath import mp, mpf
+    mp.prec = 26
+
+    r = mpf(0.1) + mpf(0.000000001)
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                           'RTL',
+                                           'GATE'
                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)

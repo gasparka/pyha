@@ -26,7 +26,7 @@ class Float:
     # 196608.0
     # 201216.0
     def __init__(self, val):
-        self.val = val
+        self.init_val = val
         self.sign = 0
         if val < 0.0:
             self.sign = 1
@@ -35,8 +35,16 @@ class Float:
         self.exponent = ilog2(val)
         self.mantissa = (val / 2 ** self.exponent) - 1
         self.mantissa = int(self.mantissa * 2 ** 23) / 2 ** 23 # quantize
+        # self.val = float(self)
 
         # print(self.sign, self.exponent, self.mantissa)
+
+    def __mul__(self, other):
+        return Float(float(self) * float(other))
+
+    def __add__(self, other):
+        diff = abs(self.exponent - other.exponent)
+        return Float(float(self) + float(other))
 
     def __float__(self):
         res = (self.mantissa+1) * (2 ** self.exponent)
@@ -46,9 +54,8 @@ class Float:
 
     def get_binary(self):
         '00111110100001010001111010111000'
-        ret = f'{self.sign}:{self.exponent:08b}:{int(self.mantissa*2**24):023b}'
+        ret = f'{self.sign}:{self.exponent+127:08b}:{int(self.mantissa*2**23):023b}'
         return ret
-
 
     def __str__(self):
         return f'{float(self):.15f} {self.get_binary()}'
