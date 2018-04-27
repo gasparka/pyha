@@ -1,8 +1,82 @@
+from math import isclose
+
 from pyha import Hardware, simulate, sims_close, Sfix
 from pyha.common.float import Float
 import numpy as np
 
 from pyha.common.util import to_real
+
+
+def test_new():
+
+    # N = 1024 * 2
+    # gain = 2**np.random.uniform(-64, 64, N)
+    # orig = (np.random.rand(N) * 2 -1) * gain
+    #
+    # for x in orig:
+    #     assert isclose(x, float(Float(x, 8, 24)), rel_tol=1e-7)
+
+    # -1.3494254532907835e-11
+    1.019051006184196e-15
+    6.896275528661367e+16
+    print(Float(1.019051006184196e-15, 8, 24) + Float(6.896275528661367e+16, 8, 24))
+
+    f = Float(-1.3494254532907835e-11, 8, 24)
+    print(f)
+
+    f = Float(0.1, 6, 9)
+    print(f)
+
+    f = Float(1.0, 6, 9)
+    print(f)
+
+    f = Float(-1.0, 6, 9)
+    print(f)
+
+
+def test_new_mult():
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 -1) * gain
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 -1) * gain
+
+    for a, b in zip(origa, origb):
+        expected = a * b
+        real = Float(a, 8, 24) * Float(b, 8, 24)
+        assert isclose(real, expected, rel_tol=1e-6)
+
+
+def test_new_add():
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 -1) * gain
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 -1) * gain
+
+    for a, b in zip(origa, origb):
+        expected = a + b
+        real = float(Float(a, 8, 24) + Float(b, 8, 24))
+        assert isclose(real, expected, rel_tol=1e-5)
+
+
+def test_new_sub():
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 -1) * gain
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 -1) * gain
+
+    for a, b in zip(origa, origb):
+        expected = a - b
+        real = float(Float(a, 8, 24) - Float(b, 8, 24))
+        assert isclose(real, expected, rel_tol=1e-5)
 
 
 def test_float_init():
