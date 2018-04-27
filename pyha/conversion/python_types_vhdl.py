@@ -165,7 +165,8 @@ class BaseVHDLType:
             except:
                 err = 'Unknown'
 
-            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current, err))
+            logger.error('{} {} != {} ({})'.format(name, self.current, other.current, err))
+            logger.error('{} {} != {} ({})'.format(name, self.current, other.current, err))
         return eq
 
 
@@ -325,7 +326,7 @@ class VHDLFloatNEW(BaseVHDLType):
         return 32
 
     def _pyha_reset_value(self):
-        return f'to_float({self.initial.val:.16e}, 8, 23)'
+        return f'to_float({self.initial.init_val:.16e}, 8, 23)'
 
     def _pyha_stdlogic_type(self) -> str:
         return 'std_logic_vector(31 downto 0)'
