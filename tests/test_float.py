@@ -6,6 +6,33 @@ import numpy as np
 
 from pyha.common.util import to_real
 
+def test_tests():
+    print(Float(1.0))
+    print(Float(-1.0))
+    print(Float(-1.0) * Float(-1.0))
+    print(Float(-2.0), Float(-2.0) * Float(-2.0))
+
+
+
+def test_loopbackkk():
+    class Dut(Hardware):
+        def main(self, i):
+            return i
+
+    N = 1024 * 2
+    gain = 2**np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 -1) * gain
+    # orig = [0.1, 0.2, 0.3]
+    rnd = [Float(x) for x in orig]
+    dut = Dut()
+
+    sims = simulate(dut, rnd, simulations=['PYHA',
+                                           'RTL',
+                                           # 'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 def test_new():
 
@@ -17,6 +44,9 @@ def test_new():
     #     assert isclose(x, float(Float(x, 8, 24)), rel_tol=1e-7)
 
     # -1.3494254532907835e-11
+    print(Float(1.0))
+    print(Float(-1.0))
+
     1.019051006184196e-15
     6.896275528661367e+16
     print(Float(1.019051006184196e-15, 8, 24) + Float(6.896275528661367e+16, 8, 24))

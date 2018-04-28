@@ -320,20 +320,21 @@ class VHDLSfix(BaseVHDLType):
 
 class VHDLFloatNEW(BaseVHDLType):
     def _pyha_type(self):
-            return 'float(8 downto -23)'
+            return f'float_t({self.current.exponent_bits-1} downto -{self.current.fractional_bits})'
 
     def _pyha_bitwidth(self) -> int:
-        return 32
+        return self.current.exponent_bits + self.current.fractional_bits
 
     def _pyha_reset_value(self):
+        assert 0
         return f'to_float({self.initial.init_val:.16e}, 8, 23)'
 
     def _pyha_stdlogic_type(self) -> str:
-        return 'std_logic_vector(31 downto 0)'
+        return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
-        return '{} := to_float(STD_ULOGIC_VECTOR({}), {}, {});\n'.format(out_var_name, in_name, 8, 23)
+        return '{} := Float({}, {}, {});\n'.format(out_var_name, in_name, self.current.exponent_bits, self.current.fractional_bits)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
@@ -351,19 +352,14 @@ class VHDLFloatNEW(BaseVHDLType):
             return float(self.current)
 
     def _pyha_serialize(self):
-        sign = '1' if self.current.sign else '0'
-        exp = f'{self.current.exponent + 127:08b}'
-        man = f'{int(self.current.mantissa * 2 ** 23):023b}'
-        result = sign + exp + man
+        result = self.current._get_exponent_bits() + self.current._get_fractional_bits()
         return result
 
-        return to_twoscomplement(len(self.current), val)
-    # 0:01111101:00001010001111010111000
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
-        ret.sign = int(serial[0], 2)
-        ret.exponent = int(serial[1:9], 2) - 127
-        ret.mantissa = int(serial[9:], 2) * 2 ** -23
+        ret.exponent = int(serial[0:self.current.exponent_bits], 2)
+        wtf = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
+        ret.fractional = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
         return ret
 
 

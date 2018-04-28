@@ -47,9 +47,14 @@ class Float:
     def __float__(self):
         return self.fractional * 2 ** self.exponent
 
+    def _get_exponent_bits(self):
+        return f'{self.exponent:0{self.exponent_bits}b}'
+
+    def _get_fractional_bits(self):
+        return f'{int(self.fractional * 2 ** (self.fractional_bits-1)):0{self.fractional_bits}b}'
+
     def get_binary(self):
-        '00111110100001010001111010111000'
-        ret = f'{self.exponent:0{self.exponent_bits}b}:{int(self.fractional * 2 ** self.fractional_bits):0{self.fractional_bits}b}'
+        ret = f'{self._get_exponent_bits()}:{self._get_fractional_bits()}'
         return ret
 
     def __mul__(self, other):
@@ -65,13 +70,12 @@ class Float:
         if self.exponent <= other.exponent:
             new_exponent = other.exponent
             new_fractional = other.fractional + (self.fractional / 2 ** diff)
-            new_fractional = int(new_fractional * 2 ** (self.fractional_bits - 1)) / 2 ** (self.fractional_bits - 1)
-            new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         else:
             new_exponent = self.exponent
             new_fractional = self.fractional + (other.fractional / 2 ** diff)
-            new_fractional = int(new_fractional * 2 ** (self.fractional_bits - 1)) / 2 ** (self.fractional_bits - 1)
-            new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
+
+        new_fractional = int(new_fractional * 2 ** (self.fractional_bits - 1)) / 2 ** (self.fractional_bits - 1)
+        new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
     def __sub__(self, other):
