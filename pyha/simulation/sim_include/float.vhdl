@@ -21,8 +21,6 @@ library ieee;
     function Float(a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t is
         variable result: float_t(exponent_bits-1 downto -fractional_bits);
     begin
-      report to_string(result'length);
-      report to_string(a'length);
       result := UNRESOLVED_float_t(a);
       return result;
     end function;

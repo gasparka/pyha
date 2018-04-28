@@ -2,6 +2,13 @@ import collections
 
 import numpy as np
 
+def to_twoscomplement(bits, value):
+    # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
+    if value < 0:
+        value = (1 << bits) + value
+    formatstring = '{:0%ib}' % bits
+    return formatstring.format(value)
+
 
 def to_real(x):
     """ Use to print VHDL variables as float: example print(to_real(x))"""

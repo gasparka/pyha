@@ -12,7 +12,7 @@ from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 from pyha.common.float import Float
-from pyha.common.util import is_constant
+from pyha.common.util import is_constant, to_twoscomplement
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
@@ -67,14 +67,6 @@ def to_signed_int(number, bit_length):
         return number | ~mask
     else:
         return number & mask
-
-
-def to_twoscomplement(bits, value):
-    # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
-    if value < 0:
-        value = (1 << bits) + value
-    formatstring = '{:0%ib}' % bits
-    return formatstring.format(value)
 
 
 class BaseVHDLType:
@@ -357,8 +349,7 @@ class VHDLFloatNEW(BaseVHDLType):
 
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
-        ret.exponent = int(serial[0:self.current.exponent_bits], 2)
-        wtf = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
+        ret.exponent = to_signed_int(int(serial[0:self.current.exponent_bits], 2), self.current.exponent_bits)
         ret.fractional = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
         return ret
 

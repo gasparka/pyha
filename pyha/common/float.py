@@ -14,6 +14,8 @@ from math import log2
 # 0.75994873 * 0.799591064 = 0.607648214
 # 14 + 16 = 30
 # 0.607648214 * 2 ** 30
+from pyha.common.util import to_twoscomplement
+
 
 class Float:
 
@@ -34,13 +36,15 @@ class Float:
 
         max_fractional = 1.0 - 2**-(self.fractional_bits-1)
         min_fractional = -1.0
-        while self.fractional > max_fractional or self.fractional < min_fractional:
-            self.exponent += 1
-            self.fractional /= 2
 
         while 0 < self.fractional < 0.5 or 0 > self.fractional >= -0.5:
             self.exponent -= 1
             self.fractional *= 2
+
+        while self.fractional > max_fractional or self.fractional < min_fractional:
+            self.exponent += 1
+            self.fractional /= 2
+
 
         self.fractional = int(round(self.fractional * 2 ** (self.fractional_bits-1))) / 2 ** (self.fractional_bits-1) # quantize
 
@@ -48,10 +52,10 @@ class Float:
         return self.fractional * 2 ** self.exponent
 
     def _get_exponent_bits(self):
-        return f'{self.exponent:0{self.exponent_bits}b}'
+        return to_twoscomplement(self.exponent_bits, self.exponent)
 
     def _get_fractional_bits(self):
-        return f'{int(self.fractional * 2 ** (self.fractional_bits-1)):0{self.fractional_bits}b}'
+        return to_twoscomplement(self.fractional_bits, int(self.fractional * 2 ** (self.fractional_bits-1)))
 
     def get_binary(self):
         ret = f'{self._get_exponent_bits()}:{self._get_fractional_bits()}'
@@ -69,6 +73,8 @@ class Float:
 
         if self.exponent <= other.exponent:
             new_exponent = other.exponent
+            smaller = self
+            larger = other
             new_fractional = other.fractional + (self.fractional / 2 ** diff)
         else:
             new_exponent = self.exponent

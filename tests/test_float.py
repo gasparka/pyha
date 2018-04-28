@@ -4,7 +4,8 @@ from pyha import Hardware, simulate, sims_close, Sfix
 from pyha.common.float import Float
 import numpy as np
 
-from pyha.common.util import to_real
+from pyha.common.util import to_real, to_twoscomplement
+
 
 def test_tests():
     print(Float(1.0))
@@ -13,29 +14,35 @@ def test_tests():
     print(Float(-2.0), Float(-2.0) * Float(-2.0))
 
 
+def test_init_sidecase():
+    """ This should not evaluate to fractional 1.0, instead 0.5 is correct """
+    a = Float(0.1248085669335865)
+    assert a.exponent == -2
+    assert a.fractional == 0.5
+
 
 def test_loopbackkk():
     class Dut(Hardware):
         def main(self, i):
             return i
 
+    # 0.1248085669335865
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 -1) * gain
-    # orig = [0.1, 0.2, 0.3]
+    gain = 2 ** np.random.uniform(-8, 8, N)
+    orig = (np.random.rand(N) * 2 - 1) * gain
+    # orig = [0.1, 0.2, 0.3, -0.3, 125.0, -152.0, 0.00001, -64.000000000000000, -32.00, 64.000000000000000]
     rnd = [Float(x) for x in orig]
     dut = Dut()
 
     sims = simulate(dut, rnd, simulations=['PYHA',
                                            'RTL',
-                                           # 'GATE'
+                                           'GATE'
                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_new():
-
     # N = 1024 * 2
     # gain = 2**np.random.uniform(-64, 64, N)
     # orig = (np.random.rand(N) * 2 -1) * gain
@@ -66,12 +73,12 @@ def test_new():
 
 def test_new_mult():
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origa = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 - 1) * gain
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origb = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a * b
@@ -81,12 +88,12 @@ def test_new_mult():
 
 def test_new_add():
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origa = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 - 1) * gain
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origb = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a + b
@@ -96,12 +103,12 @@ def test_new_add():
 
 def test_new_sub():
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origa = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origa = (np.random.rand(N) * 2 - 1) * gain
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    origb = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a - b
@@ -119,8 +126,8 @@ def test_float_init():
 
     # 0.6294942904206591
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 - 1) * gain
     rnd = [Float(x) for x in orig]
     dut = Dut(rnd)
     inp = list(range(len(rnd)))
@@ -139,8 +146,8 @@ def test_loopback():
             return i
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 - 1) * gain
     rnd = [Float(x) for x in orig]
     dut = Dut()
 
@@ -159,22 +166,22 @@ def test_multiply():
             return r
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 - 1) * gain
     a = [Float(x) for x in orig]
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 -1) * gain
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N) * 2 - 1) * gain
     b = [Float(x) for x in orig]
     # a = [Float(0.1)]
     # b = [Float(0.1)]
     dut = Dut()
 
     sims = simulate(dut, a, b, simulations=['PYHA',
-                                           'RTL',
-                                           'GATE'
-                                           ],
+                                            'RTL',
+                                            'GATE'
+                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -186,11 +193,11 @@ def test_add_pos_pos():
             return r
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
+    gain = 2 ** np.random.uniform(-64, 64, N)
     orig = (np.random.rand(N)) * gain
     a = [Float(x) for x in orig]
 
-    gain = 2**np.random.uniform(-64, 64, N)
+    gain = 2 ** np.random.uniform(-64, 64, N)
     orig = (np.random.rand(N)) * gain
     b = [Float(x) for x in orig]
     # a = [Float(0.1)]
@@ -198,9 +205,9 @@ def test_add_pos_pos():
     dut = Dut()
 
     sims = simulate(dut, a, b, simulations=['PYHA',
-                                           'RTL',
-                                           'GATE'
-                                           ],
+                                            'RTL',
+                                            'GATE'
+                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -212,11 +219,11 @@ def test_add_neg_pos():
             return r
 
     N = 1024 * 2
-    gain = 2**np.random.uniform(-64, 64, N)
+    gain = 2 ** np.random.uniform(-64, 64, N)
     orig = (np.random.rand(N) * -1) * gain
     a = [Float(x) for x in orig]
 
-    gain = 2**np.random.uniform(-64, 64, N)
+    gain = 2 ** np.random.uniform(-64, 64, N)
     orig = (np.random.rand(N)) * gain
     b = [Float(x) for x in orig]
     # a = [Float(0.1)]
@@ -224,9 +231,9 @@ def test_add_neg_pos():
     dut = Dut()
 
     sims = simulate(dut, a, b, simulations=['PYHA',
-                                           'RTL',
-                                           # 'GATE'
-                                           ],
+                                            'RTL',
+                                            # 'GATE'
+                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -249,18 +256,16 @@ def test_add_single():
     r = mpf(0.1) + mpf(0.000000001)
 
     sims = simulate(dut, a, b, simulations=['PYHA',
-                                           'RTL',
-                                           # 'GATE'
-                                           ],
+                                            'RTL',
+                                            # 'GATE'
+                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_float_single():
-
     # 0.003999948501587
     # 0.003999999724328518 VHDL
-
 
     class Dut(Hardware):
         def __init__(self, mem):
