@@ -41,6 +41,36 @@ def test_loopbackkk():
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+def test_adddd_pos_pos():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    N = 128
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N)) * gain
+    a = [Float(x) for x in orig]
+
+    gain = 2 ** np.random.uniform(-64, 64, N)
+    orig = (np.random.rand(N)) * gain
+    b = [Float(x) for x in orig]
+    # a = [Float(0.1)]
+    # b = [Float(-0.1)]
+
+    a = [Float(0.1)]
+    b = [Float(-0.1)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
 
 def test_new():
     # N = 1024 * 2
