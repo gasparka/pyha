@@ -288,7 +288,8 @@ def test_add_random():
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
-def test_sub():
+def test_sub_normalize():
+    """ Python normalization resulted in X.50, neede to use // instead of / """
     shrink_bits = 6
 
     class Dut(Hardware):

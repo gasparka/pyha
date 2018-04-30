@@ -264,11 +264,11 @@ library ieee;
           larger_fractional := smaller_fractional;
           smaller_fractional := get_fractional(larger);
       end if;
-      report "Larger fractional : " & to_string(larger_fractional);
-      report "Smaller after >>  : " & to_string(smaller_fractional);
+      -- report "Larger fractional : " & to_string(larger_fractional);
+      -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       new_fractional := resize(larger_fractional, larger_fractional'length+1) - resize(smaller_fractional, smaller_fractional'length+1);
-      report "larger - smaller  : " & to_string(new_fractional);
+      -- report "larger - smaller  : " & to_string(new_fractional);
 
       fractional_sign := new_fractional(new_fractional'left);
       new_exponent := get_exponent(larger);
@@ -280,10 +280,10 @@ library ieee;
           result := (others=>'0');
           return result;
       end if;
-      report "Leftmost: " & to_string(leftmost);
+      -- report "Leftmost: " & to_string(leftmost);
 
       new_fractional := shift_left(new_fractional, leftmost);
-      report "fract normal      : " & to_string(new_fractional);
+      -- report "fract normal      : " & to_string(new_fractional);
 
       new_exponent := get_exponent(larger);
       -- report "exponent          : " & to_string(new_exponent);

@@ -15,10 +15,8 @@ from math import log2
 # 14 + 16 = 30
 # 0.607648214 * 2 ** 30
 from pyha.common.util import to_twoscomplement
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('float')
-
 
 def quantize(val, bits, rounding=False):
     if rounding:
@@ -26,10 +24,8 @@ def quantize(val, bits, rounding=False):
     else:
         return int(val * 2 ** bits) / 2 ** bits
 
-
 def get_bits(val, bits):
     return to_twoscomplement(bits, int(val))
-
 
 class Float:
 
@@ -44,28 +40,34 @@ class Float:
         if isinstance(val, tuple):
             self.exponent = val[0]
             self.fractional = val[1]
-            self.normalize()
+            self.normalize(lossy=True)
             self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
         else:
             self.exponent = 0
             self.fractional = val
-            self.normalize()
+            self.normalize(lossy=False)
             self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=True)
 
-    def normalize(self):
+    def normalize(self, lossy=False):
         max_fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
         min_fractional = -1.0
 
         while 0 < self.fractional < 0.5 or 0 > self.fractional >= -0.5:
             self.exponent -= 1
-            self.fractional *= 2
+            if lossy:
+                self.fractional = (int(self.fractional * 2 ** (self.fractional_bits - 1)) * 2) / 2 ** (self.fractional_bits - 1)
+            else:
+                self.fractional *= 2
 
         while self.fractional > max_fractional or self.fractional < min_fractional:
             self.exponent += 1
-            self.fractional /= 2
+            if lossy:
+                self.fractional = (int(self.fractional * 2 ** (self.fractional_bits - 1)) // 2) / 2 ** (self.fractional_bits - 1)
+            else:
+                self.fractional /= 2
 
-        assert self.exponent <= (2 ** self.exponent_bits / 2 - 1)
-        assert self.exponent >= -(2 ** self.exponent_bits / 2)
+        assert self.exponent <= (2**self.exponent_bits/2-1)
+        assert self.exponent >= -(2**self.exponent_bits/2)
 
     def __float__(self):
         return self.fractional * 2 ** self.exponent
@@ -102,6 +104,7 @@ class Float:
         new_fractional = quantize(new_fractional, self.fractional_bits - 1, rounding=False)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
+
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
@@ -117,18 +120,15 @@ class Float:
             left_fract = quantize(self.fractional / 2 ** diff, self.fractional_bits - 1, rounding=False)
             right_fract = other.fractional
 
-        logger.info(
-            f'Left fract: {to_twoscomplement(self.fractional_bits+1, int(left_fract * 2 ** (self.fractional_bits - 1)))}')
-        logger.info(
-            f'right fract: {to_twoscomplement(self.fractional_bits+1, int(right_fract * 2 ** (self.fractional_bits - 1)))}')
+        logger.info(f'Left fract: {to_twoscomplement(self.fractional_bits+1, int(left_fract * 2 ** (self.fractional_bits - 1)))}')
+        logger.info(f'right fract: {to_twoscomplement(self.fractional_bits+1, int(right_fract * 2 ** (self.fractional_bits - 1)))}')
         new_fractional = left_fract - right_fract
 
-        logger.info(
-            f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+        logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new_fractional = quantize(new_fractional, self.fractional_bits - 1, rounding=False)
-        logger.info(
-            f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+        logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
