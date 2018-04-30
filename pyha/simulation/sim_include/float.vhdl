@@ -16,6 +16,7 @@ library ieee;
 
     function "+" (l, r : float_t) return float_t;
     function "-" (l, r : float_t) return float_t;
+    function "*" (l, r : float_t) return float_t;
 
   end package;
 
@@ -295,6 +296,43 @@ library ieee;
       -- report "Result            : " & to_string(result);
       return result;
     end function "-";
+
+
+    function "*" (l, r : float_t) return float_t is
+      variable result : float_t (l'left downto l'right);
+      variable new_exponent : signed (l'left downto 0);
+      variable fractional_mult: signed (-l'right*2-1 downto 0);
+      variable new_fractional: signed (-l'right downto 0);
+      variable leftmost: integer;
+      variable head: signed(2 downto 0);
+    begin
+      new_exponent := get_exponent(l) + get_exponent(r);
+      -- report "new_exponent: " & to_string(new_exponent);
+
+      fractional_mult := get_fractional(l)  * get_fractional(r);
+      -- report "fractional_mult: " & to_string(fractional_mult);
+
+      head := fractional_mult(fractional_mult'left downto fractional_mult'left-2);
+
+      if head(head'left-1) = not head(head'left) then
+        --overflow, very unlikely, but for example -1.0 * -1.0
+        leftmost := 1;
+        new_fractional := fractional_mult(fractional_mult'left downto fractional_mult'left-9);
+
+      elsif head(head'left-2) = not head(head'left) then
+        --normal
+        leftmost := 0;
+        new_fractional := fractional_mult(fractional_mult'left-1 downto fractional_mult'left-10);
+      else
+        --underflow
+        leftmost := -1;
+        new_fractional := fractional_mult(fractional_mult'left-2 downto fractional_mult'left-11);
+      end if;
+
+      new_exponent := new_exponent + leftmost;
+      result := float_t(new_exponent & new_fractional(new_fractional'left downto new_fractional'right+1));
+      return result;
+    end function "*";
 
 
    constant NSLV : STD_ULOGIC_VECTOR (0 downto 1) := (others => '0');

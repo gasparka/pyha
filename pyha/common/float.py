@@ -85,7 +85,11 @@ class Float:
     def __mul__(self, other):
         new_exponent = self.exponent + other.exponent
         new_fractional = self.fractional * other.fractional
+
+        logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
         new_fractional = int(new_fractional * 2 ** (self.fractional_bits - 1)) / 2 ** (self.fractional_bits - 1)
+        logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 

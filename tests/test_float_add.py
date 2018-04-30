@@ -1,3 +1,5 @@
+from math import isclose
+
 import pytest
 
 from pyha import Hardware, simulate, sims_close
@@ -371,3 +373,63 @@ def test_sub_random():
                                             # 'GATE'
                                             ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+class TestMultiply:
+    def test_basic(self):
+        class Dut(Hardware):
+            def main(self, a, b):
+                r = a * b
+                return r
+
+        a = [Float(0.1)]
+        b = [Float(0.1)]
+        dut = Dut()
+
+        sims = simulate(dut, a, b, simulations=['PYHA',
+                                                # 'RTL',
+                                                'GATE'
+                                                ],
+                        conversion_path='/home/gaspar/git/pyha/playground'
+                        )
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_random(self):
+        class Dut(Hardware):
+            def main(self, a, b):
+                r = a * b
+                return r
+
+        N = 2 ** 10
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        orig = (np.random.rand(N)) * gain
+        a = [Float(x) for x in orig]
+
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        orig = (np.random.rand(N)) * gain
+        b = [Float(x) for x in orig]
+        dut = Dut()
+
+        sims = simulate(dut, a, b, simulations=['PYHA',
+                                                'RTL',
+                                                # 'GATE'
+                                                ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_pyimp_bug1(self):
+        a = 1.039062500000000
+        b = 0.006103515625000
+
+        expected = a * b
+        real = float(Float(a) * Float(b))
+        print(real, expected)
+        assert isclose(real, expected, rel_tol=1e-6)
+
+    def test_pyimp_bug2(self):
+        a = 20.625000000000000
+        b = 92.000000000000000
+
+        expected = a * b
+        real = float(Float(a) * Float(b))
+        print(real, expected)
+        assert isclose(real, expected, rel_tol=1e-6)
