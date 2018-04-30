@@ -44,10 +44,10 @@ library ieee;
       -- report to_string(arg'left) & to_string(arg'right);
       for INDEX in arg(arg'left -1 downto arg'right)'range loop
         if ARG(INDEX) = not arg(arg'high) then
-          return INDEX - 7;
+          return arg'left -1 - INDEX;
         end if;
       end loop;
-      return -1;
+      return arg'left;
     end function find_leftmost;
 
     function "+" (l, r : float_t) return float_t is
@@ -60,6 +60,7 @@ library ieee;
       variable final_fractional: signed (-l'right-1 downto 0);
       variable leftmost: integer;
       variable fractional_sign : std_logic;
+      variable exp_compensate : integer;
     begin
       exponent_l := get_exponent(l);
       exponent_r := get_exponent(r);
@@ -86,6 +87,7 @@ library ieee;
       smaller_fractional := get_fractional(smaller);
       -- report "Smaller fractional: " & to_string(smaller_fractional);
       smaller_fractional := shift_right(smaller_fractional, to_integer(exp_diff));
+
       -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
@@ -98,80 +100,82 @@ library ieee;
       new_exponent := get_exponent(larger);
       -- report "exponent   : " & to_string(new_exponent);
       -- report "new_fractional'left :" & to_string(new_fractional'left);
-      if new_fractional(new_fractional'left-1) = not fractional_sign then
-        -- report "Branch  overflow";
-        new_exponent := new_exponent + 1;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left downto new_fractional'right+1);
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-2) = not fractional_sign  then
-        -- report "Branch  already normal";
-        new_exponent := new_exponent;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-1 downto new_fractional'right);
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-3) = not fractional_sign  then
-        -- report "Branch  underflow -1";
-        new_exponent := new_exponent - 1;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-2 downto new_fractional'right) & '0';
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-4) = not fractional_sign  then
-        -- report "Branch  underflow -2";
-        new_exponent := new_exponent - 2;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-3 downto new_fractional'right) & "00";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-5) = not fractional_sign  then
-        -- report "Branch  underflow -3";
-        new_exponent := new_exponent - 3;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-4 downto new_fractional'right) & "000";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-6) = not fractional_sign  then
-        -- report "Branch  underflow -4";
-        new_exponent := new_exponent - 4;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-5 downto new_fractional'right) & "0000";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-7) = not fractional_sign  then
-        -- report "Branch  underflow -5";
-        new_exponent := new_exponent - 5;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-6 downto new_fractional'right) & "00000";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-8) = not fractional_sign  then
-        -- report "Branch  underflow -6";
-        new_exponent := new_exponent - 6;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-7 downto new_fractional'right) & "000000";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      elsif new_fractional(new_fractional'left-9) = not fractional_sign  then
-        -- report "Branch  underflow -7";
-        new_exponent := new_exponent - 7;
-        -- report "exponent normal   : " & to_string(new_exponent);
-
-        final_fractional :=  new_fractional(new_fractional'left-8 downto new_fractional'right) & "0000000";
-        -- report "fraction normal   : " & to_string(final_fractional);
-      else
-        -- report "Result is ZERO or minimal NEG";
-        if fractional_sign then
-          new_exponent := new_exponent - 8;
-          final_fractional := fractional_sign & "00000000";
-        else
-          new_exponent := (others=>'0');
-          final_fractional := (others=>'0');
-        end if;
-      end if;
-      return float_t(new_exponent & final_fractional);
+      -- if new_fractional(new_fractional'left-1) = not fractional_sign then
+      --   -- report "Branch  overflow";
+      --   exp_compensate := 1;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left downto new_fractional'right+1);
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-2) = not fractional_sign  then
+      --   -- report "Branch  already normal";
+      --   exp_compensate := 0;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-1 downto new_fractional'right);
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-3) = not fractional_sign  then
+      --   -- report "Branch  underflow -1";
+      --   exp_compensate := -1;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-2 downto new_fractional'right) & '0';
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-4) = not fractional_sign  then
+      --   -- report "Branch  underflow -2";
+      --   exp_compensate := -2;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-3 downto new_fractional'right) & "00";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-5) = not fractional_sign  then
+      --   -- report "Branch  underflow -3";
+      --   exp_compensate := -3;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-4 downto new_fractional'right) & "000";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-6) = not fractional_sign  then
+      --   -- report "Branch  underflow -4";
+      --   exp_compensate := -4;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-5 downto new_fractional'right) & "0000";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-7) = not fractional_sign  then
+      --   -- report "Branch  underflow -5";
+      --   exp_compensate := -5;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-6 downto new_fractional'right) & "00000";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-8) = not fractional_sign  then
+      --   -- report "Branch  underflow -6";
+      --   exp_compensate := -6;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-7 downto new_fractional'right) & "000000";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- elsif new_fractional(new_fractional'left-9) = not fractional_sign  then
+      --   -- report "Branch  underflow -7";
+      --   exp_compensate := -7;
+      --   -- report "exponent normal   : " & to_string(new_exponent);
+      --
+      --   final_fractional :=  new_fractional(new_fractional'left-8 downto new_fractional'right) & "0000000";
+      --   -- report "fraction normal   : " & to_string(final_fractional);
+      -- else
+      --   -- report "Result is ZERO or minimal NEG";
+      --   if fractional_sign then
+      --     exp_compensate := -8;
+      --     final_fractional := fractional_sign & "00000000";
+      --   else
+      --     exp_compensate := 0;
+      --     new_exponent := (others=>'0');
+      --     final_fractional := (others=>'0');
+      --   end if;
+      -- end if;
+      -- new_exponent := new_exponent + exp_compensate;
+      -- return float_t(new_exponent & final_fractional);
 
 
 
@@ -179,25 +183,31 @@ library ieee;
       --   -- report "Result is ZERO!";
       --   result := (others=>'0');
       --   return result;
+      -- elsif new_fractional = -1 then
+      --     exp_compensate := -8;
+      --     final_fractional := fractional_sign & "00000000";
       -- else
-      --   new_new_fractional := resize(new_fractional, new_fractional'length+1);
-      --   report "new_new_fractional: " & to_string(new_new_fractional);
-      --   leftmost := find_leftmost(new_new_fractional);
-      --   report "Leftmost: " & to_string(leftmost);
-      --
-      --   -- report "Shift: " & to_string(shift_right(new_fractional, leftmost));
-      --   new_new_fractional := shift_left(new_new_fractional, leftmost);
-      --   report "fract normal      : " & to_string(new_new_fractional);
-      --
-      --   new_exponent := get_exponent(larger);
-      --   report "exponent          : " & to_string(new_exponent);
-      --   new_exponent := new_exponent + to_signed(Leftmost, new_exponent'length) -1;
-      --   report "exponent normal   : " & to_string(new_exponent);
-      --
-      --   result := UNRESOLVED_float_t(new_exponent & new_new_fractional(new_new_fractional'left-1 downto new_new_fractional'right+1));
-      --
-      --   -- report "Result            : " & to_string(result);
-      --   return result;
+        leftmost := find_leftmost(new_fractional);
+        if leftmost = new_fractional'left and fractional_sign = '0' then
+            -- note that when leftmost is 9 but sign is 1, then we are dealing with minimal negative number
+            -- report "Result is ZERO!";
+            result := (others=>'0');
+            return result;
+        end if;
+        -- report "Leftmost: " & to_string(leftmost);
+
+        new_fractional := shift_left(new_fractional, leftmost);
+        -- report "fract normal      : " & to_string(new_fractional);
+
+        new_exponent := get_exponent(larger);
+        -- report "exponent          : " & to_string(new_exponent);
+        new_exponent := new_exponent - to_signed(leftmost, new_exponent'length) + 1;
+        -- report "exponent normal   : " & to_string(new_exponent);
+
+        result := float_t(new_exponent & new_fractional(new_fractional'left downto new_fractional'right+1));
+
+        -- report "Result            : " & to_string(result);
+        return result;
       -- end if;
     end function "+";
 

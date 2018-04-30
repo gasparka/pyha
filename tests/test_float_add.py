@@ -4,6 +4,8 @@ from pyha import Hardware, simulate, sims_close
 from pyha.common.float import Float
 import numpy as np
 
+from pyha.simulation.vhdl_simulation import VHDLSimulation
+
 
 @pytest.mark.parametrize('base', [1, 0, 0.0000432402, 1238893.123, 0.0000000002342, 324788980])
 def test_same(base):
@@ -16,8 +18,7 @@ def test_same(base):
     b = [Float(base), Float(base), Float(-base), Float(-base)]
 
     dut = Dut()
-    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'])
 
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -35,8 +36,7 @@ def test_exponent_overflow():
     b = [Float(base), Float(base), Float(-base), Float(-base)]
 
     dut = Dut()
-    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'])
 
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -54,8 +54,7 @@ def test_ones():
     b = [Float(base), Float(-base)]
 
     dut = Dut()
-    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'])
 
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -75,8 +74,7 @@ def test_no_round():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -95,8 +93,7 @@ def test_no_rr():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -116,8 +113,7 @@ def test_no_rrrr():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -140,8 +136,7 @@ def test_random():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
 
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -161,8 +156,7 @@ def test_normalize_grows():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -181,8 +175,7 @@ def test_normalize_no_action():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -201,8 +194,7 @@ def test_normalize_shrink1():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
@@ -221,9 +213,9 @@ def test_normalize_shrink2():
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 @pytest.mark.parametrize('shrink_bits', [1, 2, 3, 4, 5, 6, 7])
 def test_normalize_shrink3(shrink_bits):
@@ -234,7 +226,7 @@ def test_normalize_shrink3(shrink_bits):
             r = a + b
             return r
 
-    low = 1.0 - (2**-shrink_bits)
+    low = 1.0 - (2 ** -shrink_bits)
     a = [Float(0.99), Float(-0.99)]
     b = [Float(-low), Float(low)]
     dut = Dut()
@@ -242,6 +234,54 @@ def test_normalize_shrink3(shrink_bits):
     sims = simulate(dut, a, b, simulations=['PYHA',
                                             'RTL',
                                             # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+                                            ])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_normalize_minimal_negative():
+    """ Second case is 'negative zero', or minimal negative number """
+
+    shrink_bits = 6
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    low = 1.0 - (2 ** -shrink_bits)
+    a = [Float(0.99), Float(-0.99)]
+    b = [Float(-low), Float(low)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+# 4: 128
+
+# 5: 139
+# 6: 148 (+9)
+# 7: 153 (+5)
+# 8: 161 (+8)
+# 9: 167 (+6)
+# 10:173 (+6)
+def test_add_resources():
+    """ Result already normalized """
+
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    a = [Float(0.99, 5, 9)]
+    b = [Float(-0.000051, 5, 9)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'GATE'
+                                            ],
+                    conversion_path='/home/gaspar/git/pyha/playground'
+                    )
+    assert VHDLSimulation.last_logic_elements == 128
