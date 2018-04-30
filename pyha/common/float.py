@@ -15,8 +15,10 @@ from math import log2
 # 14 + 16 = 30
 # 0.607648214 * 2 ** 30
 from pyha.common.util import to_twoscomplement
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('float')
+
 
 def quantize(val, bits, rounding=False):
     if rounding:
@@ -24,8 +26,10 @@ def quantize(val, bits, rounding=False):
     else:
         return int(val * 2 ** bits) / 2 ** bits
 
+
 def get_bits(val, bits):
     return to_twoscomplement(bits, int(val))
+
 
 class Float:
 
@@ -60,8 +64,8 @@ class Float:
             self.exponent += 1
             self.fractional /= 2
 
-        assert self.exponent <= (2**self.exponent_bits/2-1)
-        assert self.exponent >= -(2**self.exponent_bits/2)
+        assert self.exponent <= (2 ** self.exponent_bits / 2 - 1)
+        assert self.exponent >= -(2 ** self.exponent_bits / 2)
 
     def __float__(self):
         return self.fractional * 2 ** self.exponent
@@ -86,24 +90,48 @@ class Float:
     def __add__(self, other):
         diff = abs(self.exponent - other.exponent)
 
-        if self.exponent <= other.exponent:
-            new_exponent = other.exponent
-            new_fractional = other.fractional + (self.fractional / 2 ** diff)
-        else:
+        if self.exponent >= other.exponent:
             new_exponent = self.exponent
             new_fractional = self.fractional + (other.fractional / 2 ** diff)
+        else:
+            new_exponent = other.exponent
+            new_fractional = other.fractional + (self.fractional / 2 ** diff)
 
-        logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+        # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new_fractional = quantize(new_fractional, self.fractional_bits - 1, rounding=False)
-        logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-
+        # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
     def __sub__(self, other):
-        return self + (-other)
+        diff = abs(self.exponent - other.exponent)
+
+        if self.exponent >= other.exponent:
+            new_exponent = self.exponent
+            left_fract = self.fractional
+            right_fract = quantize(other.fractional / 2 ** diff, self.fractional_bits - 1, rounding=False)
+        else:
+            new_exponent = other.exponent
+            left_fract = quantize(self.fractional / 2 ** diff, self.fractional_bits - 1, rounding=False)
+            right_fract = other.fractional
+
+        logger.info(
+            f'Left fract: {to_twoscomplement(self.fractional_bits+1, int(left_fract * 2 ** (self.fractional_bits - 1)))}')
+        logger.info(
+            f'right fract: {to_twoscomplement(self.fractional_bits+1, int(right_fract * 2 ** (self.fractional_bits - 1)))}')
+        new_fractional = left_fract - right_fract
+
+        logger.info(
+            f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+
+        new_fractional = quantize(new_fractional, self.fractional_bits - 1, rounding=False)
+        logger.info(
+            f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+
+        new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
+        return new
 
     def __neg__(self):
         return Float(-float(self), self.exponent_bits, self.fractional_bits)

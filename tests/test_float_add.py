@@ -117,30 +117,6 @@ def test_no_rrrr():
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
-def test_random():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a + b
-            return r
-
-    N = 1024 * 2
-    gain = 2 ** np.random.uniform(-16, 16, N)
-    orig = (np.random.rand(N)) * gain
-    a = [Float(x) for x in orig]
-
-    gain = 2 ** np.random.uniform(-16, 16, N)
-    orig = (np.random.rand(N)) * gain
-    b = [Float(x) for x in orig]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ])
-
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
 def test_normalize_grows():
     """ Add grows by one bit """
 
@@ -242,6 +218,7 @@ def test_normalize_minimal_negative():
     """ Second case is 'negative zero', or minimal negative number """
 
     shrink_bits = 6
+
     class Dut(Hardware):
         def main(self, a, b):
             r = a + b
@@ -284,4 +261,112 @@ def test_add_resources():
                                             ],
                     conversion_path='/home/gaspar/git/pyha/playground'
                     )
-    assert VHDLSimulation.last_logic_elements == 128
+    assert VHDLSimulation.last_logic_elements == 123
+
+
+def test_add_random():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    N = 2 ** 15
+    gain = 2 ** np.random.uniform(-8, 8, N)
+    orig = (np.random.rand(N)) * gain
+    a = [Float(x) for x in orig]
+
+    gain = 2 ** np.random.uniform(-8, 8, N)
+    orig = (np.random.rand(N)) * gain
+    b = [Float(x) for x in orig]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ])
+
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_sub():
+    shrink_bits = 6
+
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a - b
+            return r
+
+    low = 1.0 - (2 ** -shrink_bits)
+    # a = [Float(0.99), Float(-0.99)]
+    # b = [Float(-low), Float(low)]
+    a = [Float(-0.99)]
+    b = [Float(low)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_sub_resources():
+    """ Result already normalized """
+
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a - b
+            return r
+
+    a = [Float(0.99, 5, 9)]
+    b = [Float(-0.000051, 5, 9)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'GATE'
+                                            ],
+                    conversion_path='/home/gaspar/git/pyha/playground'
+                    )
+    assert VHDLSimulation.last_logic_elements == 131
+
+
+def test_suber():
+    """ Bug in - routine """
+
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a - b
+            return r
+
+    a = [Float(0.000006556510925)]
+    b = [Float(2000.000000000000000)]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+def test_sub_random():
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a - b
+            return r
+
+    N = 2 ** 15
+    gain = 2 ** np.random.uniform(-8, 8, N)
+    orig = (np.random.rand(N)) * gain
+    a = [Float(x) for x in orig]
+
+    gain = 2 ** np.random.uniform(-8, 8, N)
+    orig = (np.random.rand(N)) * gain
+    b = [Float(x) for x in orig]
+    dut = Dut()
+
+    sims = simulate(dut, a, b, simulations=['PYHA',
+                                            'RTL',
+                                            # 'GATE'
+                                            ])
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
