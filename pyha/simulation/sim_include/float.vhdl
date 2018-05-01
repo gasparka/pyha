@@ -307,32 +307,32 @@ library ieee;
       variable head: signed(2 downto 0);
     begin
       new_exponent := get_exponent(l) + get_exponent(r);
-      report "new_exponent: " & to_string(new_exponent);
+      -- report "new_exponent: " & to_string(new_exponent);
 
       fractional_mult := get_fractional(l)  * get_fractional(r);
-      report "fractional_mult: " & to_string(fractional_mult);
+      -- report "fractional_mult: " & to_string(fractional_mult);
 
       head := fractional_mult(fractional_mult'left downto fractional_mult'left-2);
 
       if head(head'left-1) = not head(head'left) then
-        report "Compensating overflow..";
+        -- report "Compensating overflow..";
         leftmost := 1;
         new_fractional := fractional_mult(fractional_mult'left downto fractional_mult'left-9);
 
       elsif head(head'left-2) = not head(head'left) then
-        report "Result already normal..";
+        -- report "Result already normal..";
         leftmost := 0;
         new_fractional := fractional_mult(fractional_mult'left-1 downto fractional_mult'left-10);
       else
-        report "Compensating underflow..";
+        -- report "Compensating underflow..";
         leftmost := -1;
         new_fractional := fractional_mult(fractional_mult'left-2 downto fractional_mult'left-11);
       end if;
 
 
       new_exponent := new_exponent + leftmost;
-      report "Normal exponent :" & to_string(new_exponent);
-      report "Normal fraction :" & to_string(new_fractional);
+      -- report "Normal exponent :" & to_string(new_exponent);
+      -- report "Normal fraction :" & to_string(new_fractional);
       result := float_t(new_exponent & new_fractional(new_fractional'left downto new_fractional'right+1));
       return result;
     end function "*";
