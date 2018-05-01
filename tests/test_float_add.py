@@ -2,7 +2,7 @@ from math import isclose
 
 import pytest
 
-from pyha import Hardware, simulate, sims_close
+from pyha import Hardware, simulate, sims_close, hardware_sims_equal
 from pyha.common.float import Float
 import numpy as np
 
@@ -376,60 +376,98 @@ def test_sub_random():
 
 
 class TestMultiply:
-    def test_basic(self):
+    def setup(self):
         class Dut(Hardware):
             def main(self, a, b):
                 r = a * b
                 return r
 
-        a = [Float(0.1)]
-        b = [Float(0.1)]
-        dut = Dut()
+        self.dut = Dut()
 
-        sims = simulate(dut, a, b, simulations=['PYHA',
-                                                # 'RTL',
-                                                'GATE'
-                                                ],
+    def test_basic(self):
+        a = 0.1
+        b = 0.1
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ],
                         conversion_path='/home/gaspar/git/pyha/playground'
                         )
-        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_random(self):
-        class Dut(Hardware):
-            def main(self, a, b):
-                r = a * b
-                return r
-
-        N = 2 ** 10
+        N = 2**12
         gain = 2 ** np.random.uniform(-8, 8, N)
-        orig = (np.random.rand(N)) * gain
-        a = [Float(x) for x in orig]
+        b = (np.random.rand(N)) * gain
 
         gain = 2 ** np.random.uniform(-8, 8, N)
-        orig = (np.random.rand(N)) * gain
-        b = [Float(x) for x in orig]
-        dut = Dut()
+        a = (np.random.rand(N)) * gain
 
-        sims = simulate(dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
-        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+
+        assert hardware_sims_equal(sims)
+        sims_close(sims, rtol=1e-2, atol=1e-9)
+        pass
+
+    def test_low_precision(self):
+        """ Due to low bitwidth"""
+        a = 0.004253224423436781
+        b = 17.429206550940457
+
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_pyimp_bug1(self):
         a = 1.039062500000000
         b = 0.006103515625000
 
-        expected = a * b
-        real = float(Float(a) * Float(b))
-        print(real, expected)
-        assert isclose(real, expected, rel_tol=1e-6)
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-2, atol=1e-9)
 
     def test_pyimp_bug2(self):
         a = 20.625000000000000
         b = 92.000000000000000
 
-        expected = a * b
-        real = float(Float(a) * Float(b))
-        print(real, expected)
-        assert isclose(real, expected, rel_tol=1e-6)
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
+
+    def test_pyimp_bug3(self):
+        a = 25.92627651759698
+        b = 21.710133331565316
+
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-2, atol=1e-9)
+
+    def test_pyimp_bug4(self):
+        """ Py implentation failed to normalize by 1 bit """
+        a = 1.2125418755917348
+        b = 0.006447032941809564
+
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-2, atol=1e-9)
+
+    def test_pyimp_bug5(self):
+        """ Py failed at normalzing 1.0, which in turn overflowed in RTL """
+        a = 0.031226401706880076
+        b = 0.0013305734842478762
+
+        # 0.007817297415263467
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+class TestNormalize:
+    def test_bug(self):
+        """ Normalizing constants used to quantize..this is horrible """
+        val = 0.0013305734842478762
+        assert isclose(Float(val), val, rel_tol=1e-2)
+
+    def test_case(self):
+        val = 17.429206550940457
+        assert isclose(Float(val), val, rel_tol=1e-2)

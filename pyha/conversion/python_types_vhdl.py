@@ -813,7 +813,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return VHDLInt(name, current_val, initial_val, parent)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val, parent)
-    elif type(current_val) == float:
+    elif type(current_val) == float or type(current_val) == np.float64:
         if Conversion.in_progress.enabled:
             # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
