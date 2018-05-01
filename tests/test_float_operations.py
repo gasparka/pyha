@@ -1,13 +1,34 @@
 from math import isclose
 
 import pytest
+from scipy import signal
 
-from pyha import Hardware, simulate, sims_close, hardware_sims_equal
+from pyha import Hardware, simulate, sims_close, hardware_sims_equal, Sfix
 from pyha.common.float import Float
 import numpy as np
 
+from pyha.simulation.simulation_interface import get_ran_gate_simulation
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
+
+class TestAdd:
+    def setup(self):
+        class Dut(Hardware):
+            def main(self, a, b):
+                r = a + b
+                return r
+
+        self.dut = Dut()
+
+    def test_exponent_overflow(self):
+        """ Adding values with 0 and -16 exponents results in difference in 16, which does not fit in 5 bits... """
+        a = 0.7
+        b = 2 ** -17
+        print(Float(b).exponent)
+
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0, 5, 9), Float(0.0, 5, 9)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
 @pytest.mark.parametrize('base', [1, 0, 0.0000432402, 1238893.123, 0.0000000002342, 324788980])
 def test_same(base):
@@ -388,16 +409,24 @@ class TestMultiply:
         a = 0.1
         b = 0.1
         sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
-                                                     'RTL',
-                                                     # 'GATE'
-                                                     ],
-                        conversion_path='/home/gaspar/git/pyha/playground'
+                                                                                       'RTL',
+                                                                                       # 'GATE'
+                                                                                       ],
                         )
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
+    def test_resources(self):
+        a = 0.99
+        b = -0.000051
+
+        simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA', 'GATE'])
+        if not get_ran_gate_simulation():
+            pytest.skip('Gate did not run..')
+        assert VHDLSimulation.last_logic_elements == 27 # 5, 9
+
     def test_random(self):
-        N = 2**12
+        N = 2 ** 12
         gain = 2 ** np.random.uniform(-8, 8, N)
         b = (np.random.rand(N)) * gain
 
@@ -462,12 +491,179 @@ class TestMultiply:
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
+
 class TestNormalize:
     def test_bug(self):
-        """ Normalizing constants used to quantize..this is horrible """
+        """ Normalizing used to quantize, this should be turned off for constants """
         val = 0.0013305734842478762
         assert isclose(Float(val), val, rel_tol=1e-2)
 
     def test_case(self):
         val = 17.429206550940457
         assert isclose(Float(val), val, rel_tol=1e-2)
+
+
+
+def test_speed():
+    # mult: 142.82 MHz
+    # add: 75.87 MHz
+    # add: 78.38 MHz @ 10M16SAU169C8G
+
+    class Dut(Hardware):
+        def __init__(self):
+            self.reg = Float()
+            self.ina = Float()
+            self.inb = Float()
+
+        def main(self, a, b):
+            self.ina = a
+            self.inb = b
+            self.reg = self.ina + self.inb
+            return self.reg
+
+    a = 0.99
+    b = -0.000051
+
+    simulate(Dut(), a, b, input_types=([Float(), Float()]), simulations=['PYHA', 'GATE'],
+             conversion_path='/home/gaspar/git/pyha/playground')
+    if not get_ran_gate_simulation():
+        pytest.skip('Gate did not run..')
+    assert VHDLSimulation.last_logic_elements == 27 # 5, 9
+
+
+def test_window_constants():
+    # 5, 9 1602
+    # 4, 9 1602
+    # 3, 9 1602
+    # 3, 8 1000
+    # 3, 7 581
+    # 4, 7 581
+    # 5, 7 581
+    # 5, 6 355
+    class Dut(Hardware):
+        def __init__(self, M):
+            self.WINDOW = [Float(x, 5, 7) for x in np.hamming(M)]
+
+        def main(self, i):
+            return self.WINDOW[i]
+
+    M = 1024 * 2 * 2 * 2
+    inp = list(range(M))
+    d = Dut(M)
+    sims = simulate(d, inp, simulations=['PYHA',
+                                         # 'RTL'
+                                         'GATE'
+                                         ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+
+
+
+def test_junn():
+    # 5, 9 6,470
+    # 4, 9 6,128
+    # 4, 8 4,883
+    # 4, 7 3,627
+    # 3, 7 2,630
+    def W(k, N):
+        """ e^-j*2*PI*k*n/N, argument k = k * n """
+        return np.exp(-1j * (2 * np.pi / N) * k)
+
+    class Dut(Hardware):
+        def __init__(self, M):
+            exp = 3
+            frac = 7
+            self.WINDOW_REAL = [Float(W(i, M).real, exp, frac) for i in range(M)]
+            self.WINDOW_IMAG = [Float(W(i, M).imag, exp, frac) for i in range(M)]
+
+        def main(self, i):
+            return self.WINDOW_REAL[i], self.WINDOW_IMAG[i]
+
+    M = 1024 * 2 * 2 * 2
+    inp = list(range(M))
+    d = Dut(M)
+    sims = simulate(d, inp, simulations=['PYHA',
+                                         # 'RTL'
+                                         'GATE'
+                                         ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+
+
+def test_float_fir():
+    # class FIRFloat(Hardware):
+    #     def __init__(self, taps):
+    #         self.DELAY = 2
+    #
+    #         self.TAPS = [Float(x) for x in np.array(taps).tolist()]
+    #         self.TAPS_ORIG = taps
+    #
+    #         # registers
+    #         self.acc = [Float()] * len(taps)
+    #         self.mul = [Float()] * len(taps)
+    #         # self.out = Float()
+    #
+    #     def main(self, x):
+    #         """ Transposed FIR structure """
+    #         self.acc[0] = x * self.TAPS[-1]
+    #         for i in range(1, len(self.acc)):
+    #             self.mul[i] = x * self.TAPS[len(self.TAPS) - 1 - i]
+    #             self.acc[i] = self.acc[i - 1] + self.mul[i]
+    #
+    #         return self.acc[-1]
+    #
+    #     def model_main(self, x):
+    #         return signal.lfilter(self.TAPS_ORIG, [1.0], x)
+
+    class FIRFloat(Hardware):
+        def __init__(self, taps):
+            self.DELAY = 2
+            self.TAPS = np.array(taps).tolist()
+
+            # registers
+            self.acc = [Sfix(left=1, right=-23)] * len(taps)
+            self.out = Sfix(left=0, right=-17, overflow_style='saturate')
+
+        def main(self, x):
+            """ Transposed FIR structure """
+            self.acc[0] = x * self.TAPS[-1]
+            for i in range(1, len(self.acc)):
+                self.acc[i] = self.acc[i - 1] + x * self.TAPS[len(self.TAPS) - 1 - i]
+
+            self.out = self.acc[-1]
+            return self.out
+
+        def model_main(self, x):
+            return signal.lfilter(self.TAPS, [1.0], x)
+
+    np.random.seed(0)
+    taps = signal.remez(128, [0, 0.1, 0.2, 0.5], [1, 0])
+    dut = FIRFloat(taps)
+    inp = np.random.uniform(-1, 1, 1024)
+
+    # sims = simulate(dut, inp, input_types=[Float()], simulations=['MODEL', 'PYHA',
+    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
+
+                                                                  'RTL',
+                                                                  # 'GATE'
+                                           ],
+                    conversion_path='/home/gaspar/git/pyha/playground')
+
+    hw = [float(x) for x in sims['PYHA']]
+    import matplotlib
+    import matplotlib.pyplot as plt
+    plt.magnitude_spectrum(sims['MODEL'], window=matplotlib.mlab.window_none, scale='dB')
+    plt.magnitude_spectrum(hw, window=matplotlib.mlab.window_none, scale='dB')
+    plt.show()
+
+    plt.plot(sims['MODEL'])
+    plt.plot(hw)
+    plt.show()
+    # plt.phase_spectrum(sims['MODEL'], window=matplotlib.mlab.window_none)
+    # plt.phase_spectrum(hw, window=matplotlib.mlab.window_none)
+    # plt.show()
+    assert sims_close(sims)

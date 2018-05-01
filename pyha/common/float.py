@@ -34,7 +34,7 @@ class Float:
     # 00000110001001001101110 201326
     # 196608.0
     # 201216.0
-    def __init__(self, val=0.0, exponent_bits=6, fractional_bits=9):
+    def __init__(self, val=0.0, exponent_bits=5, fractional_bits=9):
         self.init_val = val
         self.fractional_bits = fractional_bits
         self.exponent_bits = exponent_bits
@@ -49,6 +49,20 @@ class Float:
             self.fractional = val
             self.normalize(lossy=False)
             self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=True)
+
+    def saturate(self):
+        # todo: tests
+        if self.exponent > (2**self.exponent_bits/2-1):
+            self.exponent = int(2**self.exponent_bits/2-1)
+            if self.fractional > 0:
+                self.fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
+            else:
+                self.fractional = -1.0
+            logger.warning(f'SATURATE {self.init_val} -> {self}')
+        elif self.exponent < -(2**self.exponent_bits/2):
+            self.exponent = 0
+            self.fractional = 0.0
+            logger.warning(f'SATURATE {self.init_val} -> {self}')
 
     def normalize(self, lossy=False):
         max_fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
@@ -71,8 +85,7 @@ class Float:
             else:
                 self.fractional /= 2
 
-        assert self.exponent <= (2**self.exponent_bits/2-1)
-        assert self.exponent >= -(2**self.exponent_bits/2)
+        self.saturate()
 
     def __float__(self):
         return self.fractional * 2 ** self.exponent

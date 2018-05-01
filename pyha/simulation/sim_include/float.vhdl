@@ -11,6 +11,7 @@ library ieee;
     subtype float_t is UNRESOLVED_float_t;
 
     function Float(a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t;
+    function Float(value: real; a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t;
     function to_slv (arg : float_t) return STD_LOGIC_VECTOR;
     function to_sulv (arg : float_t)return STD_ULOGIC_VECTOR;
 
@@ -25,7 +26,14 @@ library ieee;
     function Float(a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t is
         variable result: float_t(exponent_bits-1 downto -fractional_bits);
     begin
-      result := UNRESOLVED_float_t(a);
+      result := float_t(a);
+      return result;
+    end function;
+
+    function Float(value: real; a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t is
+        variable result: float_t(exponent_bits-1 downto -fractional_bits);
+    begin
+      result := float_t(a);
       return result;
     end function;
 
@@ -56,7 +64,7 @@ library ieee;
       variable result : float_t (l'left downto l'right);
       variable exponent_l, exponent_r, new_exponent, larger_exponent, smaller_exponent : signed (l'left downto 0);
       variable smaller, larger: float_t(l'range);
-      variable exp_diff: signed (l'left downto 0); -- bug..need 1 more bit
+      variable exp_diff: signed (l'left+1 downto 0); -- bug..need 1 more bit
       variable smaller_fractional, larger_fractional: signed (-l'right-1 downto 0);
       variable new_fractional: signed (-l'right downto 0);
       variable final_fractional: signed (-l'right-1 downto 0);
@@ -66,10 +74,10 @@ library ieee;
     begin
       exponent_l := get_exponent(l);
       exponent_r := get_exponent(r);
-      -- report "Expoent left: " & to_string(exponent_l);
-      -- report "Expoent right: " & to_string(exponent_r);
+      -- report "Expoent left: " & to_string(to_integer(exponent_l));
+      -- report "Expoent right: " & to_string(to_integer(exponent_r));
 
-      exp_diff := get_exponent(l) - get_exponent(r);
+      exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
       if exp_diff(exp_diff'left) = '0' then
         -- report "Left has bigger/equal exponent";
         smaller := r;
@@ -90,7 +98,6 @@ library ieee;
       smaller_fractional := get_fractional(smaller);
       -- report "Smaller fractional: " & to_string(smaller_fractional);
       smaller_fractional := shift_right(smaller_fractional, to_integer(abs(exp_diff)));
-
       -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
@@ -218,7 +225,7 @@ library ieee;
       variable result : float_t (l'left downto l'right);
       variable exponent_l, exponent_r, new_exponent, larger_exponent, smaller_exponent : signed (l'left downto 0);
       variable smaller, larger: float_t(l'range);
-      variable exp_diff: signed (l'left downto 0); -- bug..need 1 more bit
+      variable exp_diff: signed (l'left+1 downto 0);
       variable smaller_fractional, larger_fractional: signed (-l'right-1 downto 0);
       variable new_fractional: signed (-l'right downto 0);
       variable final_fractional: signed (-l'right-1 downto 0);
@@ -232,7 +239,7 @@ library ieee;
       -- report "Expoent left: " & to_string(exponent_l);
       -- report "Expoent right: " & to_string(exponent_r);
 
-      exp_diff := get_exponent(l) - get_exponent(r);
+      exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
       if exp_diff(exp_diff'left) = '0' then
         -- report "Left has bigger/equal exponent";
         smaller := r;

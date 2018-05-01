@@ -318,8 +318,8 @@ class VHDLFloatNEW(BaseVHDLType):
         return self.current.exponent_bits + self.current.fractional_bits
 
     def _pyha_reset_value(self):
-        assert 0
-        return f'to_float({self.initial.init_val:.16e}, 8, 23)'
+        return 'Float({}, "{}", {}, {})'.format(float(self.current), self._pyha_serialize(), self.current.exponent_bits,
+                                            self.current.fractional_bits)
 
     def _pyha_stdlogic_type(self) -> str:
         return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
