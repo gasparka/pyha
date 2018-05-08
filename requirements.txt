@@ -6,4 +6,4 @@ pytest==3.3.2
 parse==1.8.2
 six==1.11.0
 pandas
-tqdm
+tqdm==4.23.3
