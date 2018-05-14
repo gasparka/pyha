@@ -567,6 +567,9 @@ def test_junn():
     # 4, 8 4,883
     # 4, 7 3,627
     # 3, 7 2,630
+
+    # 0, -8 Sfix 2,683
+    # 0, -9 Sfix 3,514
     def W(k, N):
         """ e^-j*2*PI*k*n/N, argument k = k * n """
         return np.exp(-1j * (2 * np.pi / N) * k)
@@ -575,8 +578,10 @@ def test_junn():
         def __init__(self, M):
             exp = 3
             frac = 7
-            self.WINDOW_REAL = [Float(W(i, M).real, exp, frac) for i in range(M)]
-            self.WINDOW_IMAG = [Float(W(i, M).imag, exp, frac) for i in range(M)]
+            # self.WINDOW_REAL = [Float(W(i, M).real, exp, frac) for i in range(M)]
+            # self.WINDOW_IMAG = [Float(W(i, M).imag, exp, frac) for i in range(M)]
+            self.WINDOW_REAL = [Sfix(W(i, M).real, 0, -9) for i in range(M)]
+            self.WINDOW_IMAG = [Sfix(W(i, M).imag, 0, -9) for i in range(M)]
 
         def main(self, i):
             return self.WINDOW_REAL[i], self.WINDOW_IMAG[i]
@@ -595,61 +600,82 @@ def test_junn():
 
 
 def test_float_fir():
-    # class FIRFloat(Hardware):
-    #     def __init__(self, taps):
-    #         self.DELAY = 2
-    #
-    #         self.TAPS = [Float(x) for x in np.array(taps).tolist()]
-    #         self.TAPS_ORIG = taps
-    #
-    #         # registers
-    #         self.acc = [Float()] * len(taps)
-    #         self.mul = [Float()] * len(taps)
-    #         # self.out = Float()
-    #
-    #     def main(self, x):
-    #         """ Transposed FIR structure """
-    #         self.acc[0] = x * self.TAPS[-1]
-    #         for i in range(1, len(self.acc)):
-    #             self.mul[i] = x * self.TAPS[len(self.TAPS) - 1 - i]
-    #             self.acc[i] = self.acc[i - 1] + self.mul[i]
-    #
-    #         return self.acc[-1]
-    #
-    #     def model_main(self, x):
-    #         return signal.lfilter(self.TAPS_ORIG, [1.0], x)
+    # SFix
+    # INFO:sim:Total logic elements : 1,695
+    # INFO:sim:    Total combinational functions : 1,680
+    # INFO:sim:    Dedicated logic registers : 1,581
+    # INFO:sim:Total registers : 1581
+    # INFO:sim:Total pins : 38
+    # INFO:sim:Total virtual pins : 0
+    # INFO:sim:Total memory bits : 0
+    # INFO:sim:Embedded Multiplier 9-bit elements : 46
+
+    # Float
+    # INFO:sim:Family : Cyclone IV E
+    # INFO:sim:Total logic elements : 9,333
+    # INFO:sim:    Total combinational functions : 9,331
+    # INFO:sim:    Dedicated logic registers : 1,312
+    # INFO:sim:Total registers : 1312
+    # INFO:sim:Total pins : 30
+    # INFO:sim:Total virtual pins : 0
+    # INFO:sim:Total memory bits : 0
+    # INFO:sim:Embedded Multiplier 9-bit elements : 0
 
     class FIRFloat(Hardware):
         def __init__(self, taps):
             self.DELAY = 2
-            self.TAPS = np.array(taps).tolist()
+
+            self.TAPS = [Float(x) for x in np.array(taps).tolist()]
+            self.TAPS_ORIG = taps
 
             # registers
-            self.acc = [Sfix(left=1, right=-23)] * len(taps)
-            self.out = Sfix(left=0, right=-17, overflow_style='saturate')
+            self.acc = [Float()] * len(taps)
+            self.mul = [Float()] * len(taps)
+            # self.out = Float()
 
         def main(self, x):
             """ Transposed FIR structure """
             self.acc[0] = x * self.TAPS[-1]
             for i in range(1, len(self.acc)):
-                self.acc[i] = self.acc[i - 1] + x * self.TAPS[len(self.TAPS) - 1 - i]
+                self.mul[i] = x * self.TAPS[len(self.TAPS) - 1 - i]
+                self.acc[i] = self.acc[i - 1] + self.mul[i]
 
-            self.out = self.acc[-1]
-            return self.out
+            return self.acc[-1]
 
         def model_main(self, x):
-            return signal.lfilter(self.TAPS, [1.0], x)
+            return signal.lfilter(self.TAPS_ORIG, [1.0], x)
+
+    # class FIRFloat(Hardware):
+    #     def __init__(self, taps):
+    #         self.DELAY = 2
+    #         self.TAPS = np.array(taps).tolist()
+    #
+    #         # registers
+    #         self.acc = [Sfix(left=1, right=-23)] * len(taps)
+    #         self.out = Sfix(left=0, right=-17, overflow_style='saturate')
+    #
+    #     def main(self, x):
+    #         """ Transposed FIR structure """
+    #         self.acc[0] = x * self.TAPS[-1]
+    #         for i in range(1, len(self.acc)):
+    #             self.acc[i] = self.acc[i - 1] + x * self.TAPS[len(self.TAPS) - 1 - i]
+    #
+    #         self.out = self.acc[-1]
+    #         return self.out
+    #
+    #     def model_main(self, x):
+    #         return signal.lfilter(self.TAPS, [1.0], x)
 
     np.random.seed(0)
-    taps = signal.remez(128, [0, 0.1, 0.2, 0.5], [1, 0])
+    taps = signal.remez(64, [0, 0.1, 0.2, 0.5], [1, 0])
     dut = FIRFloat(taps)
     inp = np.random.uniform(-1, 1, 1024)
 
-    # sims = simulate(dut, inp, input_types=[Float()], simulations=['MODEL', 'PYHA',
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
+    sims = simulate(dut, inp, input_types=[Float()], simulations=['MODEL', 'PYHA',
+    # sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
 
-                                                                  'RTL',
-                                                                  # 'GATE'
+                                                                  # 'RTL',
+                                                                  'GATE'
                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
 
@@ -667,3 +693,44 @@ def test_float_fir():
     # plt.phase_spectrum(hw, window=matplotlib.mlab.window_none)
     # plt.show()
     assert sims_close(sims)
+
+
+def test_lut():
+    def build_lut():
+        lut = [-1] * 1024
+        for i in range(-16, 16, 1):
+            for j in range(-16, 16, 1):
+                r = abs(i - j)
+                index = ((i & 0x1F) << 5) | (j & 0x1F)
+                # if r > 8:
+                #     r = 0
+                # lut[index] = r
+                if r <= 8:
+                    print(f'if i = {index} then\n ret_0 := {r}; \n end if;\n')
+                # print(i, j, r, index)
+
+        return lut
+
+    lut = build_lut()
+
+    # class Dut(Hardware):
+    #     def __init__(self):
+    #         self.LUT = build_lut()
+    #
+    #     def main(self, i):
+    #         return self.LUT[i]
+    #
+    # M = 1024
+    # inp = list(range(M))
+    # d = Dut()
+    # sims = simulate(d, inp, simulations=['PYHA',
+    #                                      # 'RTL'
+    #                                      'GATE'
+    #                                      ],
+    #                 conversion_path='/home/gaspar/git/pyha/playground')
+    # assert hardware_sims_equal(sims)
+    # assert sims_close(sims, rtol=1e-1, atol=1e-9)
+    #
+    # from pyeda.inter import *
+    # X = ttvars('x', 4)
+    # f1 = truthtable(X, "0000011111------")
