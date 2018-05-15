@@ -47,7 +47,7 @@ class Float:
             self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
         else:
             self.exponent = 0
-            self.fractional = val
+            self.fractional = float(val)
             self.normalize(lossy=False)
             self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=True)
 
