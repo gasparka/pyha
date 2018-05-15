@@ -7,6 +7,8 @@ import numpy as np
 from pyha.common.util import to_real, to_twoscomplement
 
 
+def test_junk():
+
 def test_tests():
     print(Float(1.0))
     print(Float(-1.0))

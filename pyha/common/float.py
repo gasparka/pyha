@@ -31,11 +31,11 @@ def get_bits(val, bits):
     return to_twoscomplement(bits, int(val))
 
 class Float:
-
+    radix = 32
     # 00000110001001001101110 201326
     # 196608.0
     # 201216.0
-    def __init__(self, val=0.0, exponent_bits=3, fractional_bits=9):
+    def __init__(self, val=0.0, exponent_bits=3, fractional_bits=15):
         self.init_val = val
         self.fractional_bits = fractional_bits
         self.exponent_bits = exponent_bits
@@ -71,26 +71,25 @@ class Float:
         # max_fractional = 1.0
         min_fractional = -1.0
 
-        while 0 < self.fractional < 0.5 or 0 > self.fractional >= -0.5:
+        lim = (1/Float.radix)
+        while 0 < self.fractional < lim or 0 > self.fractional >= -lim:
             self.exponent -= 1
-            # if lossy:
-            #     self.fractional = (int(self.fractional * 2 ** (self.fractional_bits - 1)) * 2) / 2 ** (self.fractional_bits - 1)
-            # else:
-            self.fractional *= 2
+            self.fractional *= Float.radix
             if lossy:
                 self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
 
         while self.fractional > max_fractional or self.fractional < min_fractional:
             self.exponent += 1
             if lossy:
-                self.fractional = (int(self.fractional * 2 ** (self.fractional_bits - 1)) // 2) / 2 ** (self.fractional_bits - 1)
+                coef = 2 ** (self.fractional_bits - 1)
+                self.fractional = (int(self.fractional * coef) // Float.radix) / coef
             else:
-                self.fractional /= 2
+                self.fractional /= Float.radix
 
         self.saturate()
 
     def __float__(self):
-        return self.fractional * 2 ** self.exponent
+        return self.fractional * Float.radix ** self.exponent
 
     def _get_exponent_bits(self):
         return to_twoscomplement(self.exponent_bits, self.exponent)
@@ -122,10 +121,10 @@ class Float:
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            new_fractional = self.fractional + (other.fractional / 2 ** diff)
+            new_fractional = self.fractional + (other.fractional / Float.radix ** diff)
         else:
             new_exponent = other.exponent
-            new_fractional = other.fractional + (self.fractional / 2 ** diff)
+            new_fractional = other.fractional + (self.fractional / Float.radix ** diff)
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 

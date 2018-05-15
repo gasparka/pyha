@@ -11,7 +11,12 @@ from pyha.simulation.simulation_interface import get_ran_gate_simulation
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
+
+def test_junk():
+    Float(0.1)
+
 class TestAdd:
+    # todo: test exp diff overflow...
     def setup(self):
         class Dut(Hardware):
             def main(self, a, b):
@@ -19,6 +24,34 @@ class TestAdd:
                 return r
 
         self.dut = Dut()
+
+    def test_no_normal(self):
+        """ Needs no normalization """
+        a = 0.1
+        b = 0.1
+
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+    def test_input_normal(self):
+        """ Needs only input normalization """
+        a = 0.1
+        b = 0.01
+
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+    def test_sub(self):
+        """ Needs only input normalization """
+        a = 0.1
+        b = -0.09999
+
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_exponent_overflow(self):
         """ Adding values with 0 and -16 exponents results in difference in 16, which does not fit in 5 bits... """
