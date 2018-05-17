@@ -3,48 +3,46 @@ from math import isclose
 from pyha.common.float import Float
 import numpy as np
 
+N = 2**15
+exp_bits = 8
+fra_bits = 32
+
 def test_new_mult():
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origa = (np.random.rand(N) * 2 - 1) * gain
 
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a * b
-        real = Float(a, 8, 24) * Float(b, 8, 24)
+        real = Float(a, exp_bits, fra_bits) * Float(b, exp_bits, fra_bits)
         assert isclose(real, expected, rel_tol=1e-6)
 
 
 def test_new_add():
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origa = (np.random.rand(N) * 2 - 1) * gain
 
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a + b
-        real = float(Float(a, 8, 24) + Float(b, 8, 24))
+        real = float(Float(a, exp_bits, fra_bits) + Float(b, exp_bits, fra_bits))
         assert isclose(real, expected, rel_tol=1e-5)
 
 
 def test_new_sub():
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origa = (np.random.rand(N) * 2 - 1) * gain
 
-    N = 1024 * 2
     gain = 2 ** np.random.uniform(-32, 32, N)
     origb = (np.random.rand(N) * 2 - 1) * gain
 
     for a, b in zip(origa, origb):
         expected = a - b
-        real = float(Float(a, 8, 24) - Float(b, 8, 24))
+        real = float(Float(a, exp_bits, fra_bits) - Float(b, exp_bits, fra_bits))
         assert isclose(real, expected, rel_tol=1e-5)
 
 
@@ -54,6 +52,6 @@ def test_suber():
     b = 2000.000000000000000
 
     expected = a - b
-    real = float(Float(a) - Float(b))
+    real = float(Float(a, exp_bits, fra_bits) - Float(b, exp_bits, fra_bits))
     print(real, expected)
     assert isclose(real, expected, rel_tol=1e-6)

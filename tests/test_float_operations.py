@@ -11,9 +11,27 @@ from pyha.simulation.simulation_interface import get_ran_gate_simulation
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
-
 def test_junk():
     Float(0.1)
+
+
+def test_exponent_overflow():
+    pytest.skip('overflows')
+
+    class Dut(Hardware):
+        def main(self, a, b):
+            r = a + b
+            return r
+
+    base = 0.000000000002342
+    a = [Float(base), Float(-base), Float(base), Float(-base)]
+    b = [Float(base), Float(base), Float(-base), Float(-base)]
+
+    dut = Dut()
+    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'])
+
+    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
 
 class TestAdd:
     # todo: test exp diff overflow...
@@ -30,7 +48,8 @@ class TestAdd:
         a = 0.1
         b = 0.1
 
-        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
@@ -39,7 +58,8 @@ class TestAdd:
         a = 0.1
         b = 0.01
 
-        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
@@ -61,7 +81,8 @@ class TestAdd:
         b = 2 ** -17
         print(Float(b).exponent)
 
-        sims = simulate(self.dut, a, b, input_types=([Float(0.0, 5, 9), Float(0.0, 5, 9)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0, 5, 9), Float(0.0, 5, 9)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
@@ -85,9 +106,10 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_need_normalize1(self):
-        assert Float.radix == 32
+        if Float.radix != 32:
+            pytest.skip('Test only for 32 radix')
         a = 0.12
-        b = -a*0.9
+        b = -a * 0.9
 
         sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
                         simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
@@ -96,9 +118,10 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_need_normalize2(self):
-        assert Float.radix == 32
+        if Float.radix != 32:
+            pytest.skip('Test only for 32 radix')
         a = 0.12
-        b = -a*0.995
+        b = -a * 0.995
 
         sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
                         simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
@@ -107,9 +130,10 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_result_zero(self):
-        assert Float.radix == 32
+        if Float.radix != 32:
+            pytest.skip('Test only for 32 radix')
         a = 0.12
-        b = -a*0.9999
+        b = -a * 0.9999
 
         sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
                         simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
@@ -124,9 +148,9 @@ class TestAdd:
         b = [Float(0.045410156250000)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_bug_invalid_norm(self):
@@ -134,9 +158,9 @@ class TestAdd:
         a = [Float(6432.000000000000000)]
         b = [Float(4224.000000000000000)]
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_normalize_grows(self):
@@ -145,9 +169,9 @@ class TestAdd:
         a = [Float(0.990)]
         b = [Float(0.990)]
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_normalize_no_action(self):
@@ -157,9 +181,9 @@ class TestAdd:
         b = [Float(-0.000051)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_normalize_shrink1(self):
@@ -169,9 +193,9 @@ class TestAdd:
         b = [Float(-0.51), Float(0.51), Float(0.5315), Float(-0.5315)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_normalize_shrink2(self):
@@ -180,9 +204,9 @@ class TestAdd:
         b = [Float(-0.751), Float(0.751)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     @pytest.mark.parametrize('shrink_bits', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
@@ -194,9 +218,9 @@ class TestAdd:
         b = [Float(-low), Float(low)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     @pytest.mark.parametrize('base', [1, 0, 0.0000432402, 12380, 0.0000000002342, 3247])
@@ -218,9 +242,9 @@ class TestAdd:
         b = [Float(-low), Float(low)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_bug(self):
@@ -230,15 +254,15 @@ class TestAdd:
         b = [Float(1112.000000000000000)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
         '1112.000000000000000 011:000001000101100'
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_add_random(self):
 
-        N = 2**12
+        N = 2 ** 12
         gain = 2 ** np.random.uniform(-8, 8, N)
         orig = (np.random.rand(N)) * gain
         a = [Float(x) for x in orig]
@@ -248,9 +272,9 @@ class TestAdd:
         b = [Float(x) for x in orig]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'RTL',
-                                                # 'GATE'
-                                                ])
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
 
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -263,7 +287,9 @@ class TestAdd:
         # 9: 167 (+6)
         # 10:173 (+6)
 
-        # NEW 32 radix: 113
+        # NEW 32 radix: 113 (3, 15)
+        # radix 16: 79 (3, 12)
+        # radix 16: 88 (4, 12)
 
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
@@ -272,80 +298,64 @@ class TestAdd:
         b = [Float(-0.000051)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'GATE'
-                                                ],
+                                                     'GATE'
+                                                     ],
                         conversion_path='/home/gaspar/git/pyha/playground'
                         )
         assert VHDLSimulation.last_logic_elements == 123
 
+    # def test_add_resources2(self):
+    #     # 4: 128
+    #     # 5: 139
+    #     # 6: 148 (+9)
+    #     # 7: 153 (+5)
+    #     # 8: 161 (+8)
+    #     # 9: 167 (+6)
+    #     # 10:173 (+6)
+    #
+    #     # NEW 32 radix: 113
+    #
+    #     a = [Sfix(0.99, 0, -17)]
+    #     b = [Sfix(-0.000051, 0, -17)]
+    #
+    #     sims = simulate(self.dut, a, b, simulations=['PYHA',
+    #                                             'GATE'
+    #                                             ],
+    #                     conversion_path='/home/gaspar/git/pyha/playground'
+    #                     )
+    #     assert VHDLSimulation.last_logic_elements == 123
 
 
-    def test_add_resources2(self):
-        # 4: 128
-        # 5: 139
-        # 6: 148 (+9)
-        # 7: 153 (+5)
-        # 8: 161 (+8)
-        # 9: 167 (+6)
-        # 10:173 (+6)
-
-        # NEW 32 radix: 113
-
-        a = [Sfix(0.99, 0, -17)]
-        b = [Sfix(-0.000051, 0, -17)]
-
-        sims = simulate(self.dut, a, b, simulations=['PYHA',
-                                                'GATE'
-                                                ],
-                        conversion_path='/home/gaspar/git/pyha/playground'
-                        )
-        assert VHDLSimulation.last_logic_elements == 123
-
-
-
-
-
-
-def test_exponent_overflow():
-    pytest.skip('overflows')
-
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a + b
-            return r
-
-    base = 0.000000000002342
-    a = [Float(base), Float(-base), Float(base), Float(-base)]
-    b = [Float(base), Float(base), Float(-base), Float(-base)]
-
-    dut = Dut()
-    sims = simulate(dut, a, b, simulations=['PYHA', 'RTL'])
-
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-
-def test_sub_normalize():
-    """ Python normalization resulted in X.50, neede to use // instead of / """
-    shrink_bits = 6
-
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a - b
-            return r
-
-    low = 1.0 - (2 ** -shrink_bits)
-    # a = [Float(0.99), Float(-0.99)]
-    # b = [Float(-low), Float(low)]
-    a = [Float(-0.99)]
-    b = [Float(low)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ])
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+# class TestSub:
+#     def setup(self):
+#         class Dut(Hardware):
+#             def main(self, a, b):
+#                 r = a - b
+#                 return r
+#
+#         self.dut = Dut()
+#
+#     def test_sub_normalize(self):
+#         """ Python normalization resulted in X.50, neede to use // instead of / """
+#         shrink_bits = 6
+#
+#         class Dut(Hardware):
+#             def main(self, a, b):
+#                 r = a - b
+#                 return r
+#
+#         low = 1.0 - (2 ** -shrink_bits)
+#         # a = [Float(0.99), Float(-0.99)]
+#         # b = [Float(-low), Float(low)]
+#         a = [Float(-0.99)]
+#         b = [Float(low)]
+#         dut = Dut()
+#
+#         sims = simulate(dut, a, b, simulations=['PYHA',
+#                                                 'RTL',
+#                                                 # 'GATE'
+#                                                 ])
+#         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_sub_resources():
@@ -411,6 +421,7 @@ def test_sub_random():
 
 
 class TestMultiply:
+    # todo -1 * -1
     def setup(self):
         class Dut(Hardware):
             def main(self, a, b):
@@ -418,6 +429,50 @@ class TestMultiply:
                 return r
 
         self.dut = Dut()
+
+    def test_one(self):
+        a = 1.0
+        b = 1.0
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
+                                                                                       'RTL',
+                                                                                       # 'GATE'
+                                                                                       ],
+                        )
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
+
+    def test_one1(self):
+        a = -1.0
+        b = 1.0
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
+                                                                                       'RTL',
+                                                                                       # 'GATE'
+                                                                                       ],
+                        )
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
+
+    def test_one2(self):
+        a = 1.0
+        b = -1.0
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
+                                                                                       'RTL',
+                                                                                       # 'GATE'
+                                                                                       ],
+                        )
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
+
+    def test_overflow(self):
+        a = -1.0
+        b = -1.0
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA',
+                                                                                       'RTL',
+                                                                                       # 'GATE'
+                                                                                       ],
+                        )
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_basic(self):
         a = 0.1
@@ -429,15 +484,6 @@ class TestMultiply:
                         )
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
-
-    def test_resources(self):
-        a = 0.99
-        b = -0.000051
-
-        simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA', 'GATE'])
-        if not get_ran_gate_simulation():
-            pytest.skip('Gate did not run..')
-        assert VHDLSimulation.last_logic_elements == 27 # 5, 9
 
     def test_random(self):
         N = 2 ** 12
@@ -505,6 +551,57 @@ class TestMultiply:
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
+    def test_resources(self):
+        a = 0.99
+        b = -0.000051
+
+        simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA', 'GATE'],
+                 conversion_path='/home/gaspar/git/pyha/playground'
+                 )
+        if not get_ran_gate_simulation():
+            pytest.skip('Gate did not run..')
+        assert VHDLSimulation.last_logic_elements == 27  # 5, 9
+
+
+class TestMultSfix:
+    def setup(self):
+        class Dut(Hardware):
+            def main(self, a, b):
+                r = a * b
+                return r
+
+        self.dut = Dut()
+
+    def test_basic(self):
+        a = 0.1
+        b = 0.5
+
+        # 0.007817297415263467
+        sims = simulate(self.dut, a, b, input_types=([Float(), Sfix(0, 0, -17)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
+    def test_resources(self):
+
+        class Dut(Hardware):
+            def __init__(self):
+                self.C = 0.52621
+
+            def main(self, a):
+                r = a * self.C
+                return r
+
+        d = Dut()
+        a = 0.99
+        b = -0.000051
+
+        simulate(d, a, input_types=([Float()]), simulations=['PYHA', 'GATE'],
+                 conversion_path='/home/gaspar/git/pyha/playground'
+                 )
+        if not get_ran_gate_simulation():
+            pytest.skip('Gate did not run..')
+        assert VHDLSimulation.last_logic_elements == 27  # 5, 9
+
 
 class TestNormalize:
     def test_bug(self):
@@ -515,7 +612,6 @@ class TestNormalize:
     def test_case(self):
         val = 17.429206550940457
         assert isclose(Float(val), val, rel_tol=1e-2)
-
 
 
 def test_speed():
@@ -542,7 +638,7 @@ def test_speed():
              conversion_path='/home/gaspar/git/pyha/playground')
     if not get_ran_gate_simulation():
         pytest.skip('Gate did not run..')
-    assert VHDLSimulation.last_logic_elements == 27 # 5, 9
+    assert VHDLSimulation.last_logic_elements == 27  # 5, 9
 
 
 def test_window_constants():
@@ -571,8 +667,6 @@ def test_window_constants():
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert hardware_sims_equal(sims)
     assert sims_close(sims, rtol=1e-1, atol=1e-9)
-
-
 
 
 def test_junn():
@@ -612,7 +706,6 @@ def test_junn():
     assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
 
-
 def test_float_fir():
     # SFix
     # INFO:sim:Total logic elements : 1,695
@@ -635,11 +728,29 @@ def test_float_fir():
     # INFO:sim:Total memory bits : 0
     # INFO:sim:Embedded Multiplier 9-bit elements : 0
 
+    # Float radix 16 4, 12
+    # INFO:sim:Analysis & Synthesis Status : Successful - Wed May 16 16:02:34 2018
+    # INFO:sim:Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Lite Edition
+    # INFO:sim:Revision Name : quartus_project
+    # INFO:sim:Top-level Entity Name : top
+    # INFO:sim:Family : Cyclone IV E
+    # INFO:sim:Total logic elements : 8,171
+    # INFO:sim:    Total combinational functions : 8,170
+    # INFO:sim:    Dedicated logic registers : 1,504
+    # INFO:sim:Total registers : 1504
+    # INFO:sim:Total pins : 34
+    # INFO:sim:Total virtual pins : 0
+    # INFO:sim:Total memory bits : 0
+    # INFO:sim:Embedded Multiplier 9-bit elements : 0
+    # INFO:sim:Total PLLs : 0
+    # INFO:sim:Running netlist writer.
+
     class FIRFloat(Hardware):
         def __init__(self, taps):
             self.DELAY = 2
 
-            self.TAPS = [Float(x) for x in np.array(taps).tolist()]
+            # self.TAPS = [Float(x) for x in np.array(taps).tolist()]
+            self.TAPS = np.array(taps).tolist()
             self.TAPS_ORIG = taps
 
             # registers
@@ -686,11 +797,11 @@ def test_float_fir():
     inp = np.random.uniform(-1, 1, 1024)
 
     sims = simulate(dut, inp, input_types=[Float()], simulations=['MODEL', 'PYHA',
-    # sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
+                                                                  # sims = simulate(dut, inp, simulations=['MODEL', 'PYHA',
 
                                                                   # 'RTL',
-                                                                  'GATE'
-                                           ],
+                                                                  # 'GATE'
+                                                                  ],
                     conversion_path='/home/gaspar/git/pyha/playground')
 
     hw = [float(x) for x in sims['PYHA']]
