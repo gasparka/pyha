@@ -68,11 +68,14 @@ library ieee;
       variable exp_diff: signed (l'left+1 downto 0);
       variable abs_exp_diff: natural;
       variable smaller_fractional, larger_fractional: signed (-l'right-1 downto 0);
+      variable smaller_fractional_shifted: signed (-l'right-1 downto 0);
       variable new_fractional: signed (-l'right downto 0);
-      variable final_fractional: signed (-l'right-1 downto 0);
       variable leftmost: integer;
       variable fractional_sign : std_logic;
       variable exp_add : integer;
+
+      variable final_fractional: signed (-l'right-1 downto 0);
+      variable final_exponent : signed (l'left downto 0);
 
       variable comp : std_logic_vector(4 downto 0);
       variable first, second, third: boolean;
@@ -103,23 +106,35 @@ library ieee;
 
 
       -- 114 LUT
-      if abs_exp_diff = 1 then
-        smaller_fractional_shifted := shift_right(smaller_fractional, 5);
-      end if;
+      if abs_exp_diff = 0 then
+        smaller_fractional := smaller_fractional;
+      elsif abs_exp_diff = 1 then
+        smaller_fractional := shift_right(smaller_fractional, 5);
       elsif abs_exp_diff = 2 then
         smaller_fractional := shift_right(smaller_fractional, 10);
-      elsif abs_exp_diff > 2 then
-        smaller_fractional := shift_right(smaller_fractional, 15);
-      -- elsif abs_exp_diff(2) = '1' then
-      --   smaller_fractional := shift_right(smaller_fractional, 16);
+      else
+        smaller_fractional := (others => '0');
       end if;
+      -- smaller_fractional := shift_right(smaller_fractional, abs_exp_diff * 5);
+      -- smaller_fractional_shifted :+
+      -- if abs_exp_diff = 1 then
+      --   smaller_fractional_shifted := shift_right(smaller_fractional, 5);
+      -- end if;
+      --
+      -- if abs_exp_diff = 1 then
+      --   smaller_fractional_shifted := shift_right(smaller_fractional, 10);
+      -- end if;
+      --
+      -- if abs_exp_diff > 2 then
+      --   smaller_fractional_shifted := shift_right(smaller_fractional, 15);
+      -- end if;
 
       -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
       -- report "Larger fractional : " & to_string(larger_fractional);
 
-      new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional'length+1);
+      new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional_shifted'length+1);
       -- report "larger + smaller  : " & to_string(new_fractional);
 
       fractional_sign := new_fractional(new_fractional'left);
@@ -130,34 +145,55 @@ library ieee;
       comp := (others=>fractional_sign);
 
       first := std_logic_vector(new_fractional(new_fractional'left-2 downto new_fractional'left-6)) = comp;
-      second := std_logic_vector(new_fractional(new_fractional'left-7 downto new_fractional'left-12)) = comp;
-      third := std_logic_vector(new_fractional(new_fractional'left-13 downto new_fractional'right)) = comp;
+      second := std_logic_vector(new_fractional(new_fractional'left-7 downto new_fractional'left-11)) = comp;
+      -- third := std_logic_vector(new_fractional(new_fractional'left-13 downto new_fractional'right)) = comp;
 
       -- report "first   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-1 downto new_fractional'left-6)));
       -- report "third   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-11 downto new_fractional'right)));
       -- report "comp   : " & to_string(comp);
       -- report "flags   : " & to_string(first)& to_string(second)& to_string(third);
       -- exp_add := 0;
-      if new_fractional(new_fractional'left-1) /= fractional_sign then
-        -- report "Handling overflow!";
-        new_fractional := shift_right(new_fractional, 5);
-        -- exp_add := 1;
-        new_exponent := new_exponent + 1;
-      elsif  first and second and third then
-        -- report "Handling uf 2";
-        new_fractional := (others=>'0');
-        new_exponent := (others=>'0');
-      elsif  first and second then
-        -- report "Handling uf 2";
-        new_fractional := shift_left(new_fractional, 10);
-        new_exponent := new_exponent -2;
-      elsif first then
-        -- report "Handling uf 1";
-        new_fractional := shift_left(new_fractional, 5);
-        new_exponent := new_exponent - 1;
+      -- if new_fractional(new_fractional'left-1) /= fractional_sign then
+      --   -- report "Handling overflow!";
+      --   new_fractional := shift_right(new_fractional, 5);
+      --   -- exp_add := 1;
+      --   new_exponent := new_exponent + 1;
+      -- elsif  first and second and third then
+      --   -- report "Handling uf 2";
+      --   new_fractional := (others=>'0');
+      --   new_exponent := (others=>'0');
+      -- elsif  first and second then
+      --   -- report "Handling uf 2";
+      --   new_fractional := shift_left(new_fractional, 10);
+      --   new_exponent := new_exponent -2;
+      -- elsif first then
+      --   -- report "Handling uf 1";
+      --   new_fractional := shift_left(new_fractional, 5);
+      --   new_exponent := new_exponent - 1;
+      -- end if;
+
+      final_fractional := new_fractional(new_fractional'left-1 downto new_fractional'right);
+      final_exponent := new_exponent;
+
+      if first then
+        final_fractional := shift_left(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
+        final_exponent := new_exponent - 1;
       end if;
 
-      result := float_t(new_exponent & new_fractional(new_fractional'left-1 downto new_fractional'right));
+      if  first and second then
+        -- report "Handling uf 2";
+        final_fractional := shift_left(new_fractional, 10)(new_fractional'left-1 downto new_fractional'right);
+        final_exponent := new_exponent -2;
+      end if;
+
+      if new_fractional(new_fractional'left-1) /= fractional_sign then
+        -- report "Handling overflow!";
+        final_fractional := shift_right(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
+        final_exponent := new_exponent + 1;
+      end if;
+
+
+      result := float_t(final_exponent & final_fractional);
       return result;
     end function "+";
 

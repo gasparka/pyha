@@ -209,18 +209,20 @@ class TestAdd:
                                                      ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-    @pytest.mark.parametrize('shrink_bits', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    @pytest.mark.parametrize('shrink_bits', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
     def test_normalize_shrink3(self, shrink_bits):
         """ Result needs shifting left """
 
         low = 1.0 - (2 ** -shrink_bits)
-        a = [Float(0.99), Float(-0.99)]
+        a = [Float(1.0), Float(-0.99)]
         b = [Float(-low), Float(low)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
                                                      'RTL',
                                                      # 'GATE'
                                                      ])
+        print(sims)
+
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     @pytest.mark.parametrize('base', [1, 0, 0.0000432402, 12380, 0.0000000002342, 3247])
