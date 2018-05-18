@@ -74,7 +74,7 @@ library ieee;
       variable fractional_sign : std_logic;
       variable exp_add : integer;
 
-      variable comp : std_logic_vector(3 downto 0);
+      variable comp : std_logic_vector(4 downto 0);
       variable first, second, third: boolean;
     begin
       exponent_l := get_exponent(l);
@@ -104,11 +104,12 @@ library ieee;
 
       -- 114 LUT
       if abs_exp_diff = 1 then
-        smaller_fractional := shift_right(smaller_fractional, 4);
+        smaller_fractional_shifted := shift_right(smaller_fractional, 5);
+      end if;
       elsif abs_exp_diff = 2 then
-        smaller_fractional := shift_right(smaller_fractional, 8);
+        smaller_fractional := shift_right(smaller_fractional, 10);
       elsif abs_exp_diff > 2 then
-        smaller_fractional := shift_right(smaller_fractional, 12);
+        smaller_fractional := shift_right(smaller_fractional, 15);
       -- elsif abs_exp_diff(2) = '1' then
       --   smaller_fractional := shift_right(smaller_fractional, 16);
       end if;
@@ -128,9 +129,9 @@ library ieee;
 
       comp := (others=>fractional_sign);
 
-      first := std_logic_vector(new_fractional(new_fractional'left-2 downto new_fractional'left-5)) = comp;
-      second := std_logic_vector(new_fractional(new_fractional'left-6 downto new_fractional'left-10)) = comp;
-      -- third := std_logic_vector(new_fractional(new_fractional'left-11 downto new_fractional'right)) = comp;
+      first := std_logic_vector(new_fractional(new_fractional'left-2 downto new_fractional'left-6)) = comp;
+      second := std_logic_vector(new_fractional(new_fractional'left-7 downto new_fractional'left-12)) = comp;
+      third := std_logic_vector(new_fractional(new_fractional'left-13 downto new_fractional'right)) = comp;
 
       -- report "first   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-1 downto new_fractional'left-6)));
       -- report "third   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-11 downto new_fractional'right)));
@@ -139,16 +140,20 @@ library ieee;
       -- exp_add := 0;
       if new_fractional(new_fractional'left-1) /= fractional_sign then
         -- report "Handling overflow!";
-        new_fractional := shift_right(new_fractional, 4);
+        new_fractional := shift_right(new_fractional, 5);
         -- exp_add := 1;
         new_exponent := new_exponent + 1;
+      elsif  first and second and third then
+        -- report "Handling uf 2";
+        new_fractional := (others=>'0');
+        new_exponent := (others=>'0');
       elsif  first and second then
         -- report "Handling uf 2";
-        new_fractional := shift_left(new_fractional, 8);
+        new_fractional := shift_left(new_fractional, 10);
         new_exponent := new_exponent -2;
       elsif first then
         -- report "Handling uf 1";
-        new_fractional := shift_left(new_fractional, 4);
+        new_fractional := shift_left(new_fractional, 5);
         new_exponent := new_exponent - 1;
       end if;
 
@@ -243,46 +248,59 @@ library ieee;
     function "*" (l, r : float_t) return float_t is
       variable result : float_t (l'left downto l'right);
       variable new_exponent : signed (l'left downto 0);
+      variable tmp_exponent: signed (l'left+1 downto 0);
+      variable res_exp : signed (l'left+2 downto 0);
+      variable tmp_tmp_exponent : signed (l'left+2 downto 0);
       variable fractional_mult: signed (-l'right*2-1 downto 0);
       variable new_fractional: signed (-l'right-1 downto 0);
-      variable leftmost: integer;
+      variable exp_add: signed(1 downto 0);
       variable head: signed(2 downto 0);
 
-      variable fractional_sign : std_logic;
-      variable comp : std_logic_vector(3 downto 0);
-      variable first, second, third: boolean;
+      variable sign_result : std_logic;
+      variable comp : std_logic_vector(4 downto 0);
+      variable needs_normalize: boolean;
+      variable exp_undeflow_on_normalization: boolean := False;
+      variable exp_underflow: boolean := False;
+      variable overflows: boolean := False;
     begin
-      new_exponent := get_exponent(l) + get_exponent(r);
-      -- report "new_exponent: " & to_string(new_exponent);
+
+      tmp_exponent := resize(get_exponent(l), tmp_exponent'length) + resize(get_exponent(r), tmp_exponent'length);
 
       fractional_mult := get_fractional(l) * get_fractional(r);
       -- report "fractional_mult: " & to_string(fractional_mult);
+      sign_result := fractional_mult(fractional_mult'left);
 
-      head := fractional_mult(fractional_mult'left downto fractional_mult'left-2);
-      fractional_sign := fractional_mult(fractional_mult'left);
+      comp := (others=>sign_result);
+      needs_normalize := std_logic_vector(fractional_mult(fractional_mult'left-2 downto fractional_mult'left-6)) = comp;
+      overflows := fractional_mult(fractional_mult'left-1) /= sign_result;
 
-      comp := (others=>fractional_sign);
-      -- report "comp: " & to_string(comp);
-      -- report "f: " & to_string(std_logic_vector(fractional_mult(fractional_mult'left-2 downto fractional_mult'left-5)));
-      first := std_logic_vector(fractional_mult(fractional_mult'left-2 downto fractional_mult'left-5)) = comp;
 
-      -- new_fractional := fractional_mult(fractional_mult'left-1 downto fractional_mult'left-new_fractional'length-1+1);
-      if fractional_mult(fractional_mult'left-1) /= fractional_sign then
-        -- report "Handling overflow!";
-        -- report "len: " & to_string(new_fractional'length);
-        -- report "fractional_mult: " & to_string(fractional_mult(fractional_mult'left downto fractional_mult'left-new_fractional'length+1));
-        -- new_fractional := fractional_mult(fractional_mult'left downto fractional_mult'left-new_fractional'length+1);
-        fractional_mult := shift_right(fractional_mult, 4);
-        new_exponent := new_exponent + 1;
-      elsif  first then
-        -- report "Handling uf";
+      new_fractional := fractional_mult(fractional_mult'left-1 downto fractional_mult'left-new_fractional'length-1+1);
+      res_exp := resize(tmp_exponent, res_exp'length);
+      if  needs_normalize then
+        -- report "needs_normalize";
         -- report "fractional_mult: " & to_string(fractional_mult(fractional_mult'left-5 downto fractional_mult'left-new_fractional'length-5+1));
         -- new_fractional := fractional_mult(fractional_mult'left-5 downto fractional_mult'left-new_fractional'length-5+1);
-        fractional_mult := shift_left(fractional_mult, 4);
-        new_exponent := new_exponent - 1;
+        -- fractional_mult := shift_left(fractional_mult, 5);
+        new_fractional := fractional_mult(fractional_mult'left-6 downto fractional_mult'left-6-new_fractional'length+1);
+        res_exp := resize(tmp_exponent, res_exp'length) - 1;
       end if;
 
-      result := float_t(new_exponent & fractional_mult(fractional_mult'left-1 downto fractional_mult'left-new_fractional'length-1+1));
+      if overflows then
+        -- report "Handling overflow!";
+        -- this must have positive result? since it can only happen if multiplying two negative numbers..
+        new_fractional := "00000" & fractional_mult(fractional_mult'left-1 downto fractional_mult'left-new_fractional'length+5);
+        res_exp := resize(tmp_exponent, res_exp'length) + 1;
+      end if;
+
+      if res_exp < -4 then
+        -- report "Handling expoment underflow!";
+        res_exp := to_signed(-4, res_exp'length);
+        new_fractional := (others => '0');
+      end if;
+
+      new_exponent := res_exp(res_exp'left-2 downto 0);
+      result := float_t(new_exponent & new_fractional);
       return result;
 
     end function "*";

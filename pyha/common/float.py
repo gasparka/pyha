@@ -71,30 +71,43 @@ class Float:
                 self.fractional = -1.0
             logger.warning(f'SATURATE1 {original} -> {self}')
         elif self.exponent < -(2 ** self.exponent_bits / 2):
-            self.exponent = 0
-            self.fractional = 0.0
+            self.exponent = int(-(2 ** self.exponent_bits / 2))
+            if self.fractional > 0:
+                self.fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
+            else:
+                self.fractional = -1.0
             logger.warning(f'SATURATE2 {original} -> {self}')
 
     def normalize(self, lossy=False):
         max_fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
         # max_fractional = 1.0
         min_fractional = -1.0
-
+        # ncount = 0
         lim = (1 / Float.radix)
         while 0 < self.fractional < lim or 0 > self.fractional >= -lim:
+            # ncount += 1
+            # if lossy and ncount > 2:
+            #     print('Skip normal')
+            #     break
             self.exponent -= 1
             self.fractional *= Float.radix
             if lossy:
                 self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
 
         while self.fractional > max_fractional or self.fractional < min_fractional:
+            # ncount += 1
+            # if lossy and ncount > 2:
+            #     print('Skip normal')
+            #     break
             self.exponent += 1
             if lossy:
                 coef = 2 ** (self.fractional_bits - 1)
                 self.fractional = (int(self.fractional * coef) // Float.radix) / coef
             else:
                 self.fractional /= Float.radix
-
+        # if lossy:
+        #     assert ncount <= 2
+        # print(ncount)
         self.saturate()
 
     def __float__(self):

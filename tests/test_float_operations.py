@@ -551,6 +551,28 @@ class TestMultiply:
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
+    def test_arg_zero(self):
+        N = 2 ** 12
+
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        a = (np.random.rand(N)) * gain
+
+        b = [0] * len(a)
+
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_undefflow(self):
+        a = 0.00001
+        b = 0.00001
+
+        # 0.007817297415263467
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
     def test_resources(self):
         a = 0.99
         b = -0.000051
@@ -577,12 +599,12 @@ class TestMultSfix:
         b = 0.5
 
         # 0.007817297415263467
-        sims = simulate(self.dut, a, b, input_types=([Float(), Sfix(0, 0, -17)]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        sims = simulate(self.dut, a, b, input_types=([Float(), Sfix(0, 0, -17)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_resources(self):
-
         class Dut(Hardware):
             def __init__(self):
                 self.C = 0.52621
@@ -678,6 +700,7 @@ def test_junn():
 
     # 0, -8 Sfix 2,683
     # 0, -9 Sfix 3,514
+    # 0, -10 Sfix 3,514
     def W(k, N):
         """ e^-j*2*PI*k*n/N, argument k = k * n """
         return np.exp(-1j * (2 * np.pi / N) * k)
@@ -688,8 +711,8 @@ def test_junn():
             frac = 7
             # self.WINDOW_REAL = [Float(W(i, M).real, exp, frac) for i in range(M)]
             # self.WINDOW_IMAG = [Float(W(i, M).imag, exp, frac) for i in range(M)]
-            self.WINDOW_REAL = [Sfix(W(i, M).real, 0, -9) for i in range(M)]
-            self.WINDOW_IMAG = [Sfix(W(i, M).imag, 0, -9) for i in range(M)]
+            self.WINDOW_REAL = [Sfix(W(i, M).real, 0, -10) for i in range(M)]
+            self.WINDOW_IMAG = [Sfix(W(i, M).imag, 0, -10) for i in range(M)]
 
         def main(self, i):
             return self.WINDOW_REAL[i], self.WINDOW_IMAG[i]
