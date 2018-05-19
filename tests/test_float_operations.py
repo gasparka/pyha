@@ -11,8 +11,7 @@ from pyha.simulation.simulation_interface import get_ran_gate_simulation
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
-def test_junk():
-    Float(0.1)
+# TODO: VERY IMPORTANT THAT TESTS IN THIS FILE CHECK EXPONENT NOT ONLY RETURNED FLOAT VALUE!
 
 
 def test_exponent_overflow():
@@ -50,6 +49,7 @@ class TestAdd:
 
         sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
                         simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
@@ -95,6 +95,16 @@ class TestAdd:
 
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+
+    def test_result_zero(self):
+        a = 1.0
+        b = -1.0
+
+        sims = simulate(self.dut, a, b, input_types=([Float(0.0), Float(0.0)]),
+                        simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
+
     def test_overflow(self):
         """ Addition overflows ie. need to normalize the result """
         a = -1.0
@@ -129,7 +139,7 @@ class TestAdd:
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
-    def test_result_zero(self):
+    def test_result_near_zero(self):
         if Float.radix != 32:
             pytest.skip('Test only for 32 radix')
         a = 0.12
@@ -234,6 +244,17 @@ class TestAdd:
 
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+    def test_same_args_bug(self):
+        """ Exponent undeflow... """
+        a = [Float(-0.0000000002342)]
+        b = [Float(0.0000000002342)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
     def test_normalize_minimal_negative(self):
         """ Second case is 'negative zero', or minimal negative number """
 
@@ -264,12 +285,12 @@ class TestAdd:
 
     def test_add_random(self):
 
-        N = 2 ** 12
-        gain = 2 ** np.random.uniform(-8, 8, N)
+        N = 2 ** 14
+        gain = 2 ** np.random.uniform(-16, 8, N)
         orig = (np.random.rand(N)) * gain
         a = [Float(x) for x in orig]
 
-        gain = 2 ** np.random.uniform(-8, 8, N)
+        gain = 2 ** np.random.uniform(-16, 8, N)
         orig = (np.random.rand(N)) * gain
         b = [Float(x) for x in orig]
 
@@ -295,6 +316,11 @@ class TestAdd:
 
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
+
+
+        # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
+        # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
+
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]

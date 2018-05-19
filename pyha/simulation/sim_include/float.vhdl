@@ -105,7 +105,6 @@ library ieee;
       -- report "Smaller fractional: " & to_string(smaller_fractional);
 
 
-      -- 114 LUT
       if abs_exp_diff = 0 then
         smaller_fractional := smaller_fractional;
       elsif abs_exp_diff = 1 then
@@ -129,13 +128,13 @@ library ieee;
       --   smaller_fractional_shifted := shift_right(smaller_fractional, 15);
       -- end if;
 
-      -- report "Smaller after >>  : " & to_string(smaller_fractional);
+      report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
-      -- report "Larger fractional : " & to_string(larger_fractional);
+      report "Larger fractional : " & to_string(larger_fractional);
 
       new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional_shifted'length+1);
-      -- report "larger + smaller  : " & to_string(new_fractional);
+      report "larger + smaller  : " & to_string(new_fractional);
 
       fractional_sign := new_fractional(new_fractional'left);
       new_exponent := get_exponent(larger);
@@ -146,10 +145,11 @@ library ieee;
 
       first := std_logic_vector(new_fractional(new_fractional'left-2 downto new_fractional'left-6)) = comp;
       second := std_logic_vector(new_fractional(new_fractional'left-7 downto new_fractional'left-11)) = comp;
-      -- third := std_logic_vector(new_fractional(new_fractional'left-13 downto new_fractional'right)) = comp;
+      third := std_logic_vector(new_fractional(new_fractional'left-12 downto new_fractional'right)) = comp(comp'left downto 1);
 
       -- report "first   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-1 downto new_fractional'left-6)));
-      -- report "third   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-11 downto new_fractional'right)));
+      -- report "first   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-2 downto new_fractional'left-6)) );
+      -- report "sec   : " & to_string(std_logic_vector(new_fractional(new_fractional'left-7 downto new_fractional'left-11)) );
       -- report "comp   : " & to_string(comp);
       -- report "flags   : " & to_string(first)& to_string(second)& to_string(third);
       -- exp_add := 0;
@@ -176,18 +176,25 @@ library ieee;
       final_exponent := new_exponent;
 
       if first then
+        report "first";
         final_fractional := shift_left(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := new_exponent - 1;
       end if;
 
       if  first and second then
-        -- report "Handling uf 2";
+        report "first and second";
         final_fractional := shift_left(new_fractional, 10)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := new_exponent -2;
       end if;
 
+      if  first and second and third then
+        report "first and second and third";
+        final_fractional := (others=>'0');
+        final_exponent := (others=>'0');
+      end if;
+
       if new_fractional(new_fractional'left-1) /= fractional_sign then
-        -- report "Handling overflow!";
+        report "Handling overflow!";
         final_fractional := shift_right(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := new_exponent + 1;
       end if;

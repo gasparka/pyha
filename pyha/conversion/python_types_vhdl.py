@@ -158,7 +158,6 @@ class BaseVHDLType:
                 err = 'Unknown'
 
             logger.error('{} {} != {} ({})'.format(name, self.current, other.current, err))
-            logger.error('{} {} != {} ({})'.format(name, self.current, other.current, err))
         return eq
 
 
@@ -352,6 +351,21 @@ class VHDLFloatNEW(BaseVHDLType):
         ret.exponent = to_signed_int(int(serial[0:self.current.exponent_bits], 2), self.current.exponent_bits)
         ret.fractional = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
         return ret
+
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+        try:
+            if self.current.exponent != other.current.exponent:
+                logger.error('Shit exponent! {} {} != {}'.format(name, self.current, other.current))
+                return False
+
+            if not isclose(self.current.fractional,  other.current.fractional, rel_tol=1e-9, abs_tol=1e-9):
+                logger.error('Shit mantissa! {} {} != {}'.format(name, self.current, other.current))
+                return False
+            return True
+        except AttributeError: # one is float
+            return  isclose(float(self.current),  float(other.current), rel_tol=rtol, abs_tol=atol)
+
+
 
 
 class VHDLComplex(BaseVHDLType):
