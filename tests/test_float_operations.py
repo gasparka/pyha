@@ -321,6 +321,8 @@ class TestAdd:
         # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
+        # R32, 3, 15 -> final signed 122
+
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]

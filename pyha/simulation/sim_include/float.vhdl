@@ -128,13 +128,13 @@ library ieee;
       --   smaller_fractional_shifted := shift_right(smaller_fractional, 15);
       -- end if;
 
-      report "Smaller after >>  : " & to_string(smaller_fractional);
+      -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
-      report "Larger fractional : " & to_string(larger_fractional);
+      -- report "Larger fractional : " & to_string(larger_fractional);
 
       new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional_shifted'length+1);
-      report "larger + smaller  : " & to_string(new_fractional);
+      -- report "larger + smaller  : " & to_string(new_fractional);
 
       fractional_sign := new_fractional(new_fractional'left);
       new_exponent := get_exponent(larger);

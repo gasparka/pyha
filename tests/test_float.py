@@ -7,20 +7,38 @@ import numpy as np
 from pyha.common.util import to_real, to_twoscomplement
 
 
-def test_junk():
+class TestInit:
+    """ Test that float is correctly constructed and VHDL loopback works """
 
-def test_tests():
-    print(Float(1.0))
-    print(Float(-1.0))
-    print(Float(-1.0) * Float(-1.0))
-    print(Float(-2.0), Float(-2.0) * Float(-2.0))
+    def test_one(self):
+        a = Float(1.0)
+        assert a.sign == 1
+        assert a.exponent == 1
+        assert a.fractional == 1 / Float.radix
+        assert float(a) == 1.0
+
+    def test_negone(self):
+        a = Float(-1.0)
+        assert a.sign == -1
+        assert a.exponent == 1
+        assert a.fractional == 1 / Float.radix
+        assert float(a) == -1.0
+
+    def test_init_sidecase(self):
+        a = Float(0.1248085669335865)
+        assert a.sign == 1
+        assert a.exponent == 0
+        assert a.fractional == 0.12481689453125
+
+    def test_random(self):
+        np.random.seed(0)
+        N = 2**17
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        input = (np.random.rand(N) * 2 - 1) * gain
+        output = [float(Float(x)) for x in input]
+        np.testing.assert_allclose(input, output, rtol=1e-3)
 
 
-def test_init_sidecase():
-    """ This should not evaluate to fractional 1.0, instead 0.5 is correct """
-    a = Float(0.1248085669335865)
-    assert a.exponent == -2
-    assert a.fractional == 0.5
 
 
 def test_loopbackkk():
@@ -42,37 +60,6 @@ def test_loopbackkk():
                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-def test_adddd_pos_pos():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a + b
-            return r
-
-    N = 128
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N)) * gain
-    a = [Float(x) for x in orig]
-
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N)) * gain
-    b = [Float(x) for x in orig]
-    # a = [Float(0.1)]
-    # b = [Float(-0.1)]
-
-    a = [Float(0.1)]
-    b = [Float(-0.1)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
-
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
 
 
 def test_float_init():
@@ -114,110 +101,6 @@ def test_loopback():
                                            'RTL',
                                            'GATE'
                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def test_multiply():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a * b
-            return r
-
-    N = 1024 * 2
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 - 1) * gain
-    a = [Float(x) for x in orig]
-
-    N = 1024 * 2
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * 2 - 1) * gain
-    b = [Float(x) for x in orig]
-    # a = [Float(0.1)]
-    # b = [Float(0.1)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def test_add_pos_pos():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a + b
-            return r
-
-    N = 1024 * 2
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N)) * gain
-    a = [Float(x) for x in orig]
-
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N)) * gain
-    b = [Float(x) for x in orig]
-    # a = [Float(0.1)]
-    # b = [Float(0.1)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def test_add_neg_pos():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a + b
-            return r
-
-    N = 1024 * 2
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N) * -1) * gain
-    a = [Float(x) for x in orig]
-
-    gain = 2 ** np.random.uniform(-64, 64, N)
-    orig = (np.random.rand(N)) * gain
-    b = [Float(x) for x in orig]
-    # a = [Float(0.1)]
-    # b = [Float(0.1)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground')
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def test_add_single():
-    # <class 'list'>: [0.100000001490116 0:01111011:10011001100110011001101]
-    class Dut(Hardware):
-        def main(self, a, b):
-            print(to_real(a))
-            print(to_real(b))
-            r = a + b
-            return a, b, r
-
-    a = [Float(0.1), Float(0.1)]
-    b = [Float(-0.01), Float(0.01)]
-    dut = Dut()
-    from mpmath import mp, mpf
-    mp.prec = 26
-
-    r = mpf(0.1) + mpf(0.000000001)
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
