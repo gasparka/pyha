@@ -356,9 +356,9 @@ library ieee;
         new_fractional := (others => '0');
       end if;
 
-      if fractional_mult(fractional_mult'left downto fractional_mult'left+1-new_fractional'length) = "10000000000000" then
-        new_fractional(0) := '1';
-      end if;
+      -- if fractional_mult(fractional_mult'left downto fractional_mult'left+1-new_fractional'length) = "10000000000000" then
+      --   new_fractional(0) := '1';
+      -- end if;
 
       new_exponent := res_exp(res_exp'left-2 downto 0);
       new_sign := get_sign(l) xor get_sign(r);
