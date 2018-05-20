@@ -340,6 +340,7 @@ class TestAdd:
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
         # R32, 3, 15 -> final signed 122
+        # R32, 3, 15 -> final UNSign 137
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]
@@ -533,7 +534,7 @@ class TestMultiply:
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_random(self):
-        N = 2 ** 12
+        N = 2**12
         gain = 2 ** np.random.uniform(-8, 8, N)
         b = (np.random.rand(N)) * gain
 
@@ -543,8 +544,17 @@ class TestMultiply:
         sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
 
         assert hardware_sims_equal(sims)
-        sims_close(sims, rtol=1e-2, atol=1e-9)
-        pass
+        # sims_close(sims, rtol=1e-2, atol=1e-9)
+        # pass
+
+    def test_bug(self):
+        """ Underflows exponent """
+        a = 0.00028989960671009095
+        b = 8.758479182399817e-05
+
+        sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['PYHA', 'RTL'])
+        assert hardware_sims_equal(sims)
+        assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_low_precision(self):
         """ Due to low bitwidth"""
@@ -621,6 +631,7 @@ class TestMultiply:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_resources(self):
+        # UNSIGNED: 26 LUT
         a = 0.99
         b = -0.000051
 
@@ -687,6 +698,7 @@ def test_speed():
     # mult: 142.82 MHz
     # add: 75.87 MHz
     # add: 78.38 MHz @ 10M16SAU169C8G
+    # add UNSIGNED: 84.89 MHz
 
     class Dut(Hardware):
         def __init__(self):

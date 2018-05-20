@@ -73,10 +73,11 @@ class Float:
             logger.warning(f'SATURATE1 {original} -> {self}')
         elif self.exponent < -(2 ** self.exponent_bits / 2):
             self.exponent = int(-(2 ** self.exponent_bits / 2))
-            if self.fractional > 0:
-                self.fractional = 1.0 - 2 ** -(self.fractional_bits)
-            else:
-                self.fractional = -1.0
+            self.fractional = 0.0
+            # if self.fractional > 0:
+            #     self.fractional = 1.0 - 2 ** -(self.fractional_bits)
+            # else:
+            #     self.fractional = -1.0
             logger.warning(f'SATURATE2 {original} -> {self}')
 
     def normalize(self, lossy=False):
@@ -122,6 +123,8 @@ class Float:
             new_exponent = self.exponent + other.exponent
             new_fractional = self.fractional * other.fractional
 
+        new_sign = self.sign ^ other.sign
+
         if new_fractional == 0.0:
             new_exponent = 0
 
@@ -129,7 +132,7 @@ class Float:
         # new_fractional = int(new_fractional * 2 ** (self.fractional_bits*2 - 1)) / 2 ** (self.fractional_bits*2 - 1)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
-        new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
+        new = Float((new_sign, new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
     def __add__(self, other):
