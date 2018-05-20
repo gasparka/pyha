@@ -44,7 +44,7 @@ class Float:
 
     def __init__(self, val=0.0, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
         self.init_val = val
-        self.sign = -1 if val < 0 else 1
+        self.sign = int(val < 0)
         self.fractional_bits = fractional_bits
         self.exponent_bits = exponent_bits
 
@@ -101,7 +101,7 @@ class Float:
         self.saturate()
 
     def __float__(self):
-        return self.sign * self.fractional * Float.radix ** self.exponent
+        return ((-1) ** self.sign) * self.fractional * Float.radix ** self.exponent
 
     def _get_exponent_bits(self):
         return to_twoscomplement(self.exponent_bits, self.exponent)
@@ -110,7 +110,7 @@ class Float:
         return to_twoscomplement(self.fractional_bits, int(self.fractional * 2 ** self.fractional_bits))
 
     def get_binary(self):
-        ret = f'{"-" if self.sign == -1 else "+"}:{self._get_exponent_bits()}:{self._get_fractional_bits()}'
+        ret = f'{"-" if self.sign else "+"}:{self._get_exponent_bits()}:{self._get_fractional_bits()}'
         return ret
 
     def __mul__(self, other):

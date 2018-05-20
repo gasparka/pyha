@@ -311,10 +311,10 @@ class VHDLSfix(BaseVHDLType):
 
 class VHDLFloatNEW(BaseVHDLType):
     def _pyha_type(self):
-            return f'float_t({self.current.exponent_bits-1} downto -{self.current.fractional_bits})'
+            return f'float_t({self.current.exponent_bits} downto -{self.current.fractional_bits})'
 
     def _pyha_bitwidth(self) -> int:
-        return self.current.exponent_bits + self.current.fractional_bits
+        return self.current.exponent_bits + self.current.fractional_bits + 1
 
     def _pyha_reset_value(self):
         return 'Float({}, "{}", {}, {})'.format(float(self.current), self._pyha_serialize(), self.current.exponent_bits,
@@ -343,13 +343,15 @@ class VHDLFloatNEW(BaseVHDLType):
             return float(self.current)
 
     def _pyha_serialize(self):
-        result = self.current._get_exponent_bits() + self.current._get_fractional_bits()
+        result = str(self.current.sign)  + self.current._get_exponent_bits() + self.current._get_fractional_bits()
         return result
 
     def _pyha_deserialize(self, serial):
         ret = copy.copy(self.current)
+        ret.sign = int(serial[0], 2)
+        serial = serial[1:]
         ret.exponent = to_signed_int(int(serial[0:self.current.exponent_bits], 2), self.current.exponent_bits)
-        ret.fractional = to_signed_int(int(serial[self.current.exponent_bits:], 2), self.current.fractional_bits) / 2 ** (self.current.fractional_bits-1)
+        ret.fractional = int(serial[self.current.exponent_bits:], 2) / 2 ** self.current.fractional_bits
         return ret
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):

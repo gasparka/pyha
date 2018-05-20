@@ -25,14 +25,14 @@ library ieee;
   package body float_noround_pkg is
 
     function Float(a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t is
-        variable result: float_t(exponent_bits-1 downto -fractional_bits);
+        variable result: float_t(exponent_bits downto -fractional_bits);
     begin
       result := float_t(a);
       return result;
     end function;
 
     function Float(value: real; a:std_logic_vector; exponent_bits, fractional_bits:integer) return float_t is
-        variable result: float_t(exponent_bits-1 downto -fractional_bits);
+        variable result: float_t(exponent_bits downto -fractional_bits);
     begin
       result := float_t(a);
       return result;
