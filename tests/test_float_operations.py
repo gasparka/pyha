@@ -95,7 +95,6 @@ class TestAdd:
 
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-
     def test_result_zero(self):
         a = 1.0
         b = -1.0
@@ -184,8 +183,14 @@ class TestAdd:
                                                      ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-    def test_normalize_no_action(self):
-        """ Result already normalized """
+    def test_no_add(self):
+        """ Difference between operands is too big ie. add has no effect at all """
+
+        # 0.989990234375000 - 0.000051021575928
+        # Out[8]: 0.989939212799072
+
+        # 0.989929199218750 +:000:11111101011011
+        # 0.989990234375000 +:000:11111101011100
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]
@@ -226,6 +231,20 @@ class TestAdd:
         low = 1.0 - (2 ** -shrink_bits)
         a = [Float(1.0), Float(-0.99)]
         b = [Float(-low), Float(low)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_unsiged_sub_bug(self):
+        """ Exponents here are equal..but in case of unsigned math we must always subtract smaller exponent from larger.. ie. full comparison is needed in hardware! """
+
+        low = 1.0 - (2 ** -7)
+        a = [Float(-0.99)]
+        b = [Float(low)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
                                                      'RTL',
@@ -317,12 +336,10 @@ class TestAdd:
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
 
-
         # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
         # R32, 3, 15 -> final signed 122
-
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]

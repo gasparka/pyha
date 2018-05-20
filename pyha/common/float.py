@@ -44,16 +44,17 @@ class Float:
 
     def __init__(self, val=0.0, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
         self.init_val = val
-        self.sign = int(val < 0)
         self.fractional_bits = fractional_bits
         self.exponent_bits = exponent_bits
 
         if isinstance(val, tuple):
-            self.exponent = val[0]
-            self.fractional = val[1]
+            self.sign = val[0]
+            self.exponent = val[1]
+            self.fractional = val[2]
             self.normalize(lossy=True)
             self.fractional = quantize(self.fractional, self.fractional_bits, rounding=False)
         else:
+            self.sign = int(val < 0)
             self.exponent = 0
             self.fractional = abs(float(val))
             # m, e = math.frexp(val)
@@ -136,17 +137,29 @@ class Float:
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            new_fractional = self.fractional + (other.fractional / Float.radix ** diff)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            if self.sign == other.sign:
+                new_fractional = abs(self.fractional + o)
+            else:
+                new_fractional = abs(self.fractional - o)
         else:
             new_exponent = other.exponent
-            new_fractional = other.fractional + (self.fractional / Float.radix ** diff)
+            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            if self.sign == other.sign:
+                new_fractional = abs(other.fractional + o)
+            else:
+                new_fractional = abs(other.fractional - o)
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new_fractional = quantize(new_fractional, self.fractional_bits, rounding=False)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
+        if self.fractional > other.fractional:
+            new_sign = self.sign
+        else:
+            new_sign = other.sign
 
-        new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
+        new = Float((new_sign, new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
     def __sub__(self, other):
