@@ -829,7 +829,7 @@ def test_float_fir():
 
     class FIRFloat(Hardware):
         def __init__(self, taps):
-            self.DELAY = 1
+            self.DELAY = 2
 
             self.TAPS = [Float(x) for x in np.array(taps).tolist()]
             # self.TAPS = np.array(taps).tolist()
@@ -850,7 +850,6 @@ def test_float_fir():
             return self.acc[-1]
 
         def model_main(self, x):
-            # return x
             return signal.lfilter(self.TAPS_ORIG, [1.0], x)
 
     # class FIRFloat(Hardware):
@@ -876,7 +875,6 @@ def test_float_fir():
 
     np.random.seed(0)
     taps = signal.remez(64, [0, 0.1, 0.2, 0.5], [1, 0])
-    # taps = [0.001, 0.564]
     dut = FIRFloat(taps)
     inp = np.random.uniform(-1, 1, 1024)
 
