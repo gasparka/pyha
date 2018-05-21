@@ -184,8 +184,17 @@ class TestAdd:
                                                      ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-    def test_normalize_no_action(self):
-        """ Result already normalized """
+    def test_preadjust_minimal(self):
+        """ B gets shifted to minimal value ie. -1 (in integer form)
+        Bug: in python i used to quantize with int(), which for this case turns -0.8 -> 0
+        Correct is to use math.floor() -0.8 -> -1
+        """
+
+        # 0.989990234375000 - 0.000051021575928
+        # Out[8]: 0.989939212799072
+
+        # 0.989929199218750 +:000:11111101011011
+        # 0.989990234375000 +:000:11111101011100
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]

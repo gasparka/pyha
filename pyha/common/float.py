@@ -1,5 +1,6 @@
 import logging
 from math import log2
+import math
 
 # mult:
 # big * big
@@ -27,7 +28,7 @@ def quantize(val, bits, rounding=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
-        return int(val * 2 ** bits) / 2 ** bits
+        return math.floor(val * 2 ** bits) / 2 ** bits
 
 
 def get_bits(val, bits):
@@ -138,7 +139,8 @@ class Float:
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            new_fractional = self.fractional + (other.fractional / Float.radix ** diff)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits - 1, rounding=False)
+            new_fractional = self.fractional + o
         else:
             new_exponent = other.exponent
             new_fractional = other.fractional + (self.fractional / Float.radix ** diff)
