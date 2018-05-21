@@ -19,6 +19,43 @@ def test_new_mult():
         real = Float(a, exp_bits, fra_bits) * Float(b, exp_bits, fra_bits)
         assert isclose(real, expected, rel_tol=1e-6)
 
+def test_add_sign():
+    """ Bug: addition resulted in wrong sign """
+
+    ai = 0.05305128887213797
+    bi = -2.16405947606799e-07
+
+    a = Float(ai, exp_bits, fra_bits)
+    b = Float(bi , exp_bits, fra_bits)
+
+    result = a + b
+    expected = ai + bi
+
+    assert isclose(float(result), expected, rel_tol=1e-5)
+
+
+    ai = -7.124850106849597e-09
+    bi = -1.3869622091703274e-08
+
+    a = Float(ai, exp_bits, fra_bits)
+    b = Float(bi , exp_bits, fra_bits)
+
+    result = a + b
+    expected = ai + bi
+
+    assert isclose(float(result), expected, rel_tol=1e-5)
+
+    ai = -4.454377473702924
+    bi = 1.4396189355044617
+
+    a = Float(ai, exp_bits, fra_bits)
+    b = Float(bi , exp_bits, fra_bits)
+
+    result = a + b
+    expected = ai + bi
+
+    assert isclose(float(result), expected, rel_tol=1e-5)
+
 
 def test_new_add():
     gain = 2 ** np.random.uniform(-32, 32, N)

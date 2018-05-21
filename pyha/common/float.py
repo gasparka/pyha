@@ -153,10 +153,12 @@ class Float:
             else:
                 new_fractional = other.fractional - o
 
-        if new_fractional < 0:
-            new_sign = 0
-        else:
+        if self.sign == other.sign:
+            new_sign = self.sign
+        elif new_fractional < 0:
             new_sign = 1
+        else:
+            new_sign = 0
 
         new_fractional = abs(new_fractional)
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
