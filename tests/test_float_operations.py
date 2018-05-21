@@ -4,7 +4,7 @@ import pytest
 from scipy import signal
 
 from pyha import Hardware, simulate, sims_close, hardware_sims_equal, Sfix
-from pyha.common.float import Float
+from pyha.common.float import Float, quantize, default_fractional_bits
 import numpy as np
 
 from pyha.simulation.simulation_interface import get_ran_gate_simulation
@@ -12,6 +12,15 @@ from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
 # TODO: VERY IMPORTANT THAT TESTS IN THIS FILE CHECK EXPONENT NOT ONLY RETURNED FLOAT VALUE!
+
+
+def test_quantization_negative():
+    a = quantize(-0.000051, default_fractional_bits-1)
+    assert a != 0 # invalid value when using int() for quantization!
+
+    # any negative number shall not be quantized to 0
+    a = quantize(-0.00000000000051, 1)
+    assert a != 0 # invalid value when using int() for quantization!
 
 
 def test_exponent_overflow():
@@ -198,6 +207,25 @@ class TestAdd:
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+    def test_preadjust_minimal2(self):
+
+
+        # 0.989990234375000 - 0.000051021575928
+        # Out[8]: 0.989939212799072
+
+        # 0.989929199218750 +:000:11111101011011
+        # 0.989990234375000 +:000:11111101011100
+
+        a = [Float(0.99)]
+        b = [Float(-0.00000051)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
                                                      'RTL',

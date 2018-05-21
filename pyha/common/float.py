@@ -28,7 +28,11 @@ def quantize(val, bits, rounding=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
-        return math.floor(val * 2 ** bits) / 2 ** bits
+        if val >= 0.0:
+            return math.ceil(val * 2 ** bits) / 2 ** bits
+        else:
+            return math.floor(val * 2 ** bits) / 2 ** bits
+        # return int(val * 2 ** bits) / 2 ** bits
 
 
 def get_bits(val, bits):
