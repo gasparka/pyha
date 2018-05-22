@@ -201,15 +201,15 @@ class Meta(type):
             ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
             # decorate all methods -> for locals discovery
-            for method_str in dir(ret):
-                # if not inspect.ismethod()
-                if method_str in SKIP_FUNCTIONS:
-                    continue
-                method = getattr(ret, method_str)
-                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                        method) and method.__class__.__name__ == 'method':
-                    new = PyhaFunc(method)
-                    ret.__dict__[method_str] = new
+            # for method_str in dir(ret):
+            #     # if not inspect.ismethod()
+            #     if method_str in SKIP_FUNCTIONS:
+            #         continue
+            #     method = getattr(ret, method_str)
+            #     if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+            #             method) and method.__class__.__name__ == 'method':
+            #         new = PyhaFunc(method)
+            #         ret.__dict__[method_str] = new
 
         del cls._pyha_is_initialization
         return ret

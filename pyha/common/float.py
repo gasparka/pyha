@@ -1,6 +1,7 @@
 import logging
 from math import log2
 import math
+import numpy as np
 
 # mult:
 # big * big
@@ -28,31 +29,37 @@ def quantize(val, bits, rounding=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
-        if val >= 0.0:
-            return math.ceil(val * 2 ** bits) / 2 ** bits
-        else:
-            return math.floor(val * 2 ** bits) / 2 ** bits
-        # return int(val * 2 ** bits) / 2 ** bits
+        # return round(val * 2 ** bits) / 2 ** bits
+        # if val >= 0.0:
+        #     return math.ceil(val * 2 ** bits) / 2 ** bits
+        # else:
+        #     return math.floor(val * 2 ** bits) / 2 ** bits
+        return int(val * 2 ** bits) / 2 ** bits
 
 
 def get_bits(val, bits):
     return to_twoscomplement(bits, int(val))
 
 
-default_exponent_bits = 3
-default_fractional_bits = 15
-
 
 class Float:
     radix = 32
+    use_float16 = False
+    default_exponent_bits = 3
+    default_fractional_bits = 15
 
     # 00000110001001001101110 201326
     # 196608.0
     # 201216.0
     def __init__(self, val=0.0, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
         self.init_val = val
-        self.fractional_bits = fractional_bits
-        self.exponent_bits = exponent_bits
+        self.fractional_bits = self.default_fractional_bits
+        self.exponent_bits = self.default_exponent_bits
+
+        # print(self.use_float16)
+        if self.use_float16:
+            self.float_val = np.float16(val)
+            return
 
         if isinstance(val, tuple):
             self.exponent = val[0]
@@ -74,16 +81,19 @@ class Float:
                 self.fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
             else:
                 self.fractional = -1.0
-            logger.warning(f'SATURATE1 {original} -> {self}')
+            # logger.warning(f'SATURATE1 {original} -> {self}')
         elif self.exponent < -(2 ** self.exponent_bits / 2):
             self.exponent = int(-(2 ** self.exponent_bits / 2))
-            if self.fractional > 0:
-                self.fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
-            else:
-                self.fractional = -1.0
-            logger.warning(f'SATURATE2 {original} -> {self}')
+            # self.exponent = 0
+            self.fractional = 0.0
+            # if self.fractional > 0:
+            #     self.fractional = 1.0 - 2 ** -(self.fractional_bits - 1)
+            # else:
+            #     self.fractional = -1.0
+            # logger.warning(f'SATURATE2 {original} -> {self}')
 
     def normalize(self, lossy=False):
+        # lossy = False
         if self.fractional == 0:
             self.exponent = 0
             return
@@ -92,12 +102,16 @@ class Float:
         min_fractional = -1.0
         lim = (1 / Float.radix)
         while 0 < self.fractional < lim or 0 > self.fractional >= -lim:
+            if self.exponent == -(2 ** self.exponent_bits / 2):
+                return
             self.exponent -= 1
             self.fractional *= Float.radix
             if lossy:
                 self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
 
         while self.fractional > max_fractional or self.fractional < min_fractional:
+            if self.exponent == (2 ** self.exponent_bits / 2 - 1):
+                return
             self.exponent += 1
             if lossy:
                 coef = 2 ** (self.fractional_bits - 1)
@@ -108,6 +122,8 @@ class Float:
         self.saturate()
 
     def __float__(self):
+        if self.use_float16:
+            return float(self.float_val)
         return self.fractional * Float.radix ** self.exponent
 
     def _get_exponent_bits(self):
@@ -121,6 +137,11 @@ class Float:
         return ret
 
     def __mul__(self, other):
+        if self.use_float16:
+            return Float(self.float_val * other.float_val)
+
+        # return Float(float(self) * float(other))
+
         if isinstance(other, Sfix):
             new_exponent = self.exponent
             new_fractional = self.fractional * other.val
@@ -128,8 +149,8 @@ class Float:
             new_exponent = self.exponent + other.exponent
             new_fractional = self.fractional * other.fractional
 
-        if new_fractional == 0.0:
-            new_exponent = 0
+        # if new_fractional == 0.0:
+        #     new_exponent = 0
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
         # new_fractional = int(new_fractional * 2 ** (self.fractional_bits*2 - 1)) / 2 ** (self.fractional_bits*2 - 1)
@@ -139,25 +160,34 @@ class Float:
         return new
 
     def __add__(self, other):
+        if self.use_float16:
+            return Float(self.float_val + other.float_val)
+
+        # return Float(float(self) + float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits - 1, rounding=False)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits +4, rounding=False)
             new_fractional = self.fractional + o
         else:
             new_exponent = other.exponent
-            new_fractional = other.fractional + (self.fractional / Float.radix ** diff)
+            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits +4, rounding=False)
+            new_fractional = other.fractional + o
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
-        new_fractional = quantize(new_fractional, self.fractional_bits - 1, rounding=False)
+        new_fractional = quantize(new_fractional, self.fractional_bits+4, rounding=False)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
 
     def __sub__(self, other):
+        if self.use_float16:
+            return Float(self.float_val - other.float_val)
+
+        return Float(float(self) - float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
@@ -198,7 +228,7 @@ class Float:
 
 
 class ComplexFloat:
-    def __init__(self, val=0.0 + 0.0j, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
+    def __init__(self, val=0.0 + 0.0j, exponent_bits=Float.default_exponent_bits, fractional_bits=Float.default_fractional_bits):
         if isinstance(val, tuple):
             self.real = val[0]
             self.imag = val[1]
