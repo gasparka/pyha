@@ -29,12 +29,13 @@ def quantize(val, bits, rounding=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
+        return math.floor(val * 2 ** bits + 0.5) / 2 ** bits
         # return round(val * 2 ** bits) / 2 ** bits
-        # if val >= 0.0:
+        # if val <= 0.0:
         #     return math.ceil(val * 2 ** bits) / 2 ** bits
         # else:
         #     return math.floor(val * 2 ** bits) / 2 ** bits
-        return int(val * 2 ** bits) / 2 ** bits
+        return int((val * 2 ** bits) + 0.5 ) / 2 ** bits
 
 
 def get_bits(val, bits):
@@ -119,12 +120,32 @@ class Float:
             else:
                 self.fractional /= Float.radix
 
+
+        # while self.exponent < (2 ** self.exponent_bits / 2 - 1):
+        #     self.exponent += 1
+        #     if lossy:
+        #         coef = 2 ** (self.fractional_bits - 1)
+        #         self.fractional = (int(self.fractional * coef) // Float.radix) / coef
+        #     else:
+        #         self.fractional /= Float.radix
+        #
+        # # if self.fractional == float("inf") or self.fractional == float("-inf"):
+        # #     assert 0
+        #
+        # if self.exponent < (2 ** self.exponent_bits / 2 - 1):
+        #     assert 0
+            # return
+        # print('SATURETE')
         self.saturate()
 
     def __float__(self):
         if self.use_float16:
             return float(self.float_val)
-        return self.fractional * Float.radix ** self.exponent
+
+        val = self.fractional * Float.radix ** self.exponent
+        if val == float("inf") or val == float("-inf") or val == float('nan'):
+            assert 0
+        return val
 
     def _get_exponent_bits(self):
         return to_twoscomplement(self.exponent_bits, self.exponent)
@@ -163,21 +184,24 @@ class Float:
         if self.use_float16:
             return Float(self.float_val + other.float_val)
 
+        guard = 3
         # return Float(float(self) + float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits +4, rounding=False)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
             new_fractional = self.fractional + o
+            # new_fractional = self.fractional + other.fractional / Float.radix ** diff
         else:
             new_exponent = other.exponent
-            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits +4, rounding=False)
+            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
             new_fractional = other.fractional + o
+            # new_fractional = other.fractional + self.fractional / Float.radix ** diff
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
-        new_fractional = quantize(new_fractional, self.fractional_bits+4, rounding=False)
+        new_fractional = quantize(new_fractional, self.fractional_bits + guard, rounding=False)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
