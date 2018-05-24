@@ -45,8 +45,8 @@ class Float:
 
     def __init__(self, val=0.0, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
         self.init_val = val
-        self.fractional_bits = self.default_fractional_bits
-        self.exponent_bits = self.default_exponent_bits
+        self.fractional_bits = fractional_bits
+        self.exponent_bits = exponent_bits
 
         # print(self.use_float16)
         if self.use_float16:
@@ -78,7 +78,8 @@ class Float:
                 self.fractional = -1.0
             logger.warning(f'SATURATE1 {original} -> {self}')
         elif self.exponent < -(2 ** self.exponent_bits / 2):
-            self.exponent = int(-(2 ** self.exponent_bits / 2))
+            # self.exponent = int(-(2 ** self.exponent_bits / 2))
+            self.exponent = 0
             self.fractional = 0.0
             # if self.fractional > 0:
             #     self.fractional = 1.0 - 2 ** -(self.fractional_bits)
@@ -152,44 +153,24 @@ class Float:
         if self.use_float16:
             return Float(self.float_val + other.float_val)
 
-        guard = 4
+        guard = 0
         # return Float(float(self) + float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
-            if self.sign == other.sign:
-                new_fractional = self.fractional + o
-            else:
-                new_fractional = self.fractional - o
+            a = ((-1) ** other.sign) * quantize(other.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            b = ((-1) ** self.sign) * self.fractional
         else:
             new_exponent = other.exponent
-            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
-            if self.sign == other.sign:
-                new_fractional = other.fractional + o
-            else:
-                new_fractional = other.fractional - o
+            a = ((-1) ** self.sign) * quantize(self.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            b = ((-1) ** other.sign) * other.fractional
 
 
-
-
-        if self.sign == other.sign:
-            new_sign = self.sign
-        elif new_fractional < 0:
-            new_sign = 1
-        else:
-            new_sign = 0
-
-        new_fractional = new_fractional
-        # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-
-        new_fractional = quantize(new_fractional, self.fractional_bits + guard, rounding=False)
-        # # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-        # if self.fractional > other.fractional:
-        #     new_sign = self.sign
-        # else:
-        #     new_sign = other.sign
+        new_fractional = a + b
+        new_fractional = quantize(new_fractional, self.fractional_bits, rounding=False)
+        new_sign = 1 if new_fractional < 0 else 0
+        new_fractional = abs(new_fractional)
 
         new = Float((new_sign, new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
         return new
