@@ -25,17 +25,14 @@ logger = logging.getLogger('float')
 
 # todo: should i use math.floor(fix) instead of int() ie. int() is wrong on negative numbers
 
-def quantize(val, bits, rounding=False):
+def quantize(val, bits, rounding=False, shit=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
-        return math.floor(val * 2 ** bits + 0.5) / 2 ** bits
-        # return round(val * 2 ** bits) / 2 ** bits
-        # if val <= 0.0:
-        #     return math.ceil(val * 2 ** bits) / 2 ** bits
+        # if not shit:
+        #     return math.floor(val * 2 ** bits + 0.5) / 2 ** bits
         # else:
-        #     return math.floor(val * 2 ** bits) / 2 ** bits
-        return int((val * 2 ** bits) + 0.5 ) / 2 ** bits
+        return int(val * 2 ** bits) / 2 ** bits
 
 
 def get_bits(val, bits):
@@ -103,16 +100,16 @@ class Float:
         min_fractional = -1.0
         lim = (1 / Float.radix)
         while 0 < self.fractional < lim or 0 > self.fractional >= -lim:
-            if self.exponent == -(2 ** self.exponent_bits / 2):
-                return
+            # if self.exponent == -(2 ** self.exponent_bits / 2):
+            #     return
             self.exponent -= 1
             self.fractional *= Float.radix
             if lossy:
                 self.fractional = quantize(self.fractional, self.fractional_bits - 1, rounding=False)
 
         while self.fractional > max_fractional or self.fractional < min_fractional:
-            if self.exponent == (2 ** self.exponent_bits / 2 - 1):
-                return
+            # if self.exponent == (2 ** self.exponent_bits / 2 - 1):
+            #     return
             self.exponent += 1
             if lossy:
                 coef = 2 ** (self.fractional_bits - 1)
@@ -184,24 +181,29 @@ class Float:
         if self.use_float16:
             return Float(self.float_val + other.float_val)
 
-        guard = 3
+        guard = -1
         # return Float(float(self) + float(other))
         diff = abs(self.exponent - other.exponent)
 
+        def quant(val, bits, rounding=False, shit=False):
+            return math.floor(val * 2 ** bits) / 2 ** bits
+
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
+            o = quant(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
             new_fractional = self.fractional + o
+
+            # return int(val * 2 ** bits) / 2 ** bits
             # new_fractional = self.fractional + other.fractional / Float.radix ** diff
         else:
             new_exponent = other.exponent
-            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
+            o = quant(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
             new_fractional = other.fractional + o
             # new_fractional = other.fractional + self.fractional / Float.radix ** diff
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
-        new_fractional = quantize(new_fractional, self.fractional_bits + guard, rounding=False)
+        new_fractional = quantize(new_fractional, self.fractional_bits + guard, rounding=False, shit=False)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)

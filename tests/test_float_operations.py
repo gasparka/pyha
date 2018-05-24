@@ -4,7 +4,7 @@ import pytest
 from scipy import signal
 
 from pyha import Hardware, simulate, sims_close, hardware_sims_equal, Sfix
-from pyha.common.float import Float, quantize, default_fractional_bits
+from pyha.common.float import Float, quantize
 import numpy as np
 
 from pyha.simulation.simulation_interface import get_ran_gate_simulation
@@ -15,9 +15,6 @@ from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
 def test_quantization_negative():
-    a = quantize(-0.000051, default_fractional_bits-1)
-    assert a != 0 # invalid value when using int() for quantization!
-
     # any negative number shall not be quantized to 0
     a = quantize(-0.00000000000051, 1)
     assert a != 0 # invalid value when using int() for quantization!

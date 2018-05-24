@@ -62,13 +62,13 @@ library ieee;
     end function find_leftmost;
 
     function "+" (l, r : float_t) return float_t is
+      -- constant GUARD_BITS : integer := 5
       variable result : float_t (l'left downto l'right);
       variable exponent_l, exponent_r, new_exponent, larger_exponent, smaller_exponent : signed (l'left downto 0);
       variable smaller, larger: float_t(l'range);
       variable exp_diff: signed (l'left+1 downto 0);
       variable abs_exp_diff: natural;
       variable smaller_fractional, larger_fractional: signed (-l'right-1 downto 0);
-      variable smaller_fractional_shifted: signed (-l'right-1 downto 0);
       variable new_fractional: signed (-l'right downto 0);
       variable leftmost: integer;
       variable fractional_sign : std_logic;
@@ -82,29 +82,27 @@ library ieee;
     begin
       exponent_l := get_exponent(l);
       exponent_r := get_exponent(r);
-      -- report "Expoent left: " & to_string(to_integer(exponent_l));
-      -- report "Expoent right: " & to_string(to_integer(exponent_r));
+      report "Start addition";
+      report "Left  : " & to_string(exponent_l) & " " & to_string(get_fractional(l));
+      report "Right : " & to_string(exponent_r) & " " & to_string(get_fractional(r));
 
       exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
-      -- report "Exponent diff: " & to_string(exp_diff);
+      report "Exponents difference: " & to_string(exp_diff);
 
       if exp_diff(exp_diff'left) = '0' then
-        -- report "Left has bigger/equal exponent";
+        report "Left has bigger/equal exponent";
         smaller := r;
         larger := l;
       else
-        -- report "Right has bigger exponent";
+        report "Right has bigger exponent";
         smaller := l;
         larger := r;
       end if;
 
       abs_exp_diff := to_integer(unsigned(abs(exp_diff)));
-      -- report "ABS Exponent diff: " & to_string(abs_exp_diff);
+      report "ABS Exponents difference: " & to_string(abs_exp_diff);
 
       smaller_fractional := get_fractional(smaller);
-      -- report "Smaller fractional: " & to_string(smaller_fractional);
-
-
       if abs_exp_diff = 0 then
         smaller_fractional := smaller_fractional;
       elsif abs_exp_diff = 1 then
@@ -114,26 +112,13 @@ library ieee;
       else
         smaller_fractional := (others => '0');
       end if;
-      -- smaller_fractional := shift_right(smaller_fractional, abs_exp_diff * 5);
-      -- smaller_fractional_shifted :+
-      -- if abs_exp_diff = 1 then
-      --   smaller_fractional_shifted := shift_right(smaller_fractional, 5);
-      -- end if;
-      --
-      -- if abs_exp_diff = 1 then
-      --   smaller_fractional_shifted := shift_right(smaller_fractional, 10);
-      -- end if;
-      --
-      -- if abs_exp_diff > 2 then
-      --   smaller_fractional_shifted := shift_right(smaller_fractional, 15);
-      -- end if;
 
       report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
       report "Larger fractional : " & to_string(larger_fractional);
 
-      new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional_shifted'length+1);
+      new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional'length+1);
       report "larger + smaller  : " & to_string(new_fractional);
 
       fractional_sign := new_fractional(new_fractional'left);
