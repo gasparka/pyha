@@ -171,7 +171,11 @@ class Float:
         #     new_exponent = 0
 
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-        # new_fractional = int(new_fractional * 2 ** (self.fractional_bits*2 - 1)) / 2 ** (self.fractional_bits*2 - 1)
+
+        def quant(val, bits, rounding=False, shit=False):
+            return math.floor(val * 2 ** bits) / 2 ** bits
+
+        # new_fractional = quant(new_fractional, self.fractional_bits)
         # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
         new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
@@ -190,14 +194,14 @@ class Float:
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quant(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
             new_fractional = self.fractional + o
 
             # return int(val * 2 ** bits) / 2 ** bits
             # new_fractional = self.fractional + other.fractional / Float.radix ** diff
         else:
             new_exponent = other.exponent
-            o = quant(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
+            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False, shit=False)
             new_fractional = other.fractional + o
             # new_fractional = other.fractional + self.fractional / Float.radix ** diff
 
