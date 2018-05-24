@@ -1,6 +1,7 @@
 import logging
 import math
 from math import log2
+import numpy as np
 
 # mult:
 # big * big
@@ -28,6 +29,7 @@ def quantize(val, bits, rounding=False):
     if rounding:
         return round(val * 2 ** bits) / 2 ** bits
     else:
+        # return round(val * 2 ** bits) / 2 ** bits
         return int(val * 2 ** bits) / 2 ** bits
 
 
@@ -35,17 +37,21 @@ def get_bits(val, bits):
     return to_twoscomplement(bits, int(val))
 
 
-default_exponent_bits = 3
-default_fractional_bits = 14
-
-
 class Float:
     radix = 32
+    use_float16 = False
+    default_exponent_bits = 3
+    default_fractional_bits = 14
 
     def __init__(self, val=0.0, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
         self.init_val = val
-        self.fractional_bits = fractional_bits
-        self.exponent_bits = exponent_bits
+        self.fractional_bits = self.default_fractional_bits
+        self.exponent_bits = self.default_exponent_bits
+
+        # print(self.use_float16)
+        if self.use_float16:
+            self.float_val = np.float16(val)
+            return
 
         if isinstance(val, tuple):
             self.sign = val[0]
@@ -103,6 +109,8 @@ class Float:
         self.saturate()
 
     def __float__(self):
+        if self.use_float16:
+            return float(self.float_val)
         return ((-1) ** self.sign) * self.fractional * Float.radix ** self.exponent
 
     def _get_exponent_bits(self):
@@ -116,6 +124,11 @@ class Float:
         return ret
 
     def __mul__(self, other):
+        if self.use_float16:
+            return Float(self.float_val * other.float_val)
+
+        # return Float(float(self) * float(other))
+
         if isinstance(other, Sfix):
             new_exponent = self.exponent
             new_fractional = self.fractional * other.val
@@ -136,22 +149,30 @@ class Float:
         return new
 
     def __add__(self, other):
+        if self.use_float16:
+            return Float(self.float_val + other.float_val)
+
+        guard = 4
+        # return Float(float(self) + float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
             new_exponent = self.exponent
-            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            o = quantize(other.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
             if self.sign == other.sign:
                 new_fractional = self.fractional + o
             else:
                 new_fractional = self.fractional - o
         else:
             new_exponent = other.exponent
-            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits, rounding=False)
+            o = quantize(self.fractional / Float.radix ** diff, self.fractional_bits + guard, rounding=False)
             if self.sign == other.sign:
                 new_fractional = other.fractional + o
             else:
                 new_fractional = other.fractional - o
+
+
+
 
         if self.sign == other.sign:
             new_sign = self.sign
@@ -160,10 +181,10 @@ class Float:
         else:
             new_sign = 0
 
-        new_fractional = abs(new_fractional)
+        new_fractional = new_fractional
         # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
 
-        new_fractional = quantize(new_fractional, self.fractional_bits, rounding=False)
+        new_fractional = quantize(new_fractional, self.fractional_bits + guard, rounding=False)
         # # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
         # if self.fractional > other.fractional:
         #     new_sign = self.sign
@@ -174,6 +195,10 @@ class Float:
         return new
 
     def __sub__(self, other):
+        if self.use_float16:
+            return Float(self.float_val - other.float_val)
+
+        return Float(float(self) - float(other))
         diff = abs(self.exponent - other.exponent)
 
         if self.exponent >= other.exponent:
@@ -214,7 +239,7 @@ class Float:
 
 
 class ComplexFloat:
-    def __init__(self, val=0.0 + 0.0j, exponent_bits=default_exponent_bits, fractional_bits=default_fractional_bits):
+    def __init__(self, val=0.0 + 0.0j, exponent_bits=Float.default_exponent_bits, fractional_bits=Float.default_fractional_bits):
         if isinstance(val, tuple):
             self.real = val[0]
             self.imag = val[1]
