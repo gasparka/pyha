@@ -88,7 +88,7 @@ class Float:
             logger.warning(f'SATURATE2 {original} -> {self}')
 
     def normalize(self, lossy=False):
-        if self.fractional == 0:
+        if self.fractional == 0: # TODO: test
             self.exponent = 0
             return
         max_fractional = 1.0 - 2 ** -(self.fractional_bits)
