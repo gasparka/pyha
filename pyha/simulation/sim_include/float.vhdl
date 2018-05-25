@@ -329,8 +329,9 @@ library ieee;
         res_exp := resize(tmp_exponent, res_exp'length) - 1;
       end if;
 
-      if res_exp < -4 then
+      if res_exp < -4 or to_integer(new_fractional) = 0 then
         report "Handling expoment underflow!";
+        new_sign := '0';
         res_exp := to_signed(-4, res_exp'length);
         new_fractional := (others => '0');
       end if;

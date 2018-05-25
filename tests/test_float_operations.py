@@ -639,11 +639,11 @@ class TestMultiply:
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_random(self):
-        N = 2 ** 12
-        gain = 2 ** np.random.uniform(-8, 8, N)
+        N = 2 ** 13
+        gain = 2 ** np.random.uniform(-16, 6, N)
         b = (np.random.rand(N)) * gain
 
-        gain = 2 ** np.random.uniform(-8, 8, N)
+        gain = 2 ** np.random.uniform(-16, 6, N)
         a = (np.random.rand(N)) * gain
 
         sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])

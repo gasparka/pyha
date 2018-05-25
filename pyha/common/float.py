@@ -108,6 +108,7 @@ class Float:
                 self.fractional = -1.0
             logger.warning(f'SATURATE1 {original} -> {self}')
         elif self.exponent < -(2 ** self.exponent_bits / 2):
+            self.sign = 0
             self.exponent = -(2 ** self.exponent_bits // 2)
             self.fractional = 0.0
             # if self.fractional > 0:
@@ -160,13 +161,13 @@ class Float:
         # return Float(float(self) * float(other))
 
         if isinstance(other, Sfix):
-            new_exponent = self.exponent
-            new_fractional = self.fractional * other.val
+            new = float(self) * other.val
+            return Float(new, self.exponent_bits, self.fractional_bits)
         else:
             new_exponent = self.exponent + other.exponent
             new_fractional = self.fractional * other.fractional
 
-        new_sign = self.sign ^ other.sign
+            new_sign = self.sign ^ other.sign
 
         if new_fractional == 0.0:
             new_exponent = 0
