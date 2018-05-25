@@ -311,21 +311,25 @@ class VHDLSfix(BaseVHDLType):
 
 class VHDLFloatNEW(BaseVHDLType):
     def _pyha_type(self):
-            return f'float_t({self.current.exponent_bits} downto -{self.current.fractional_bits})'
+        return f'float_t({self.current.exponent_bits} downto -{self.current.fractional_bits})'
 
     def _pyha_bitwidth(self) -> int:
         return self.current.exponent_bits + self.current.fractional_bits + 1
 
     def _pyha_reset_value(self):
-        return 'Float({}, "{}", {}, {})'.format(float(self.current), self._pyha_serialize(), self.current.exponent_bits,
-                                            self.current.fractional_bits)
+
+        serial = str(self.initial.sign) + self.initial._get_exponent_bits() + self.initial._get_fractional_bits()
+        return 'Float({}, "{}", {}, {})'.format(float(self.initial), serial,
+                                                self.current.exponent_bits,
+                                                self.current.fractional_bits)
 
     def _pyha_stdlogic_type(self) -> str:
         return f'std_logic_vector({self._pyha_bitwidth()-1} downto 0)'
 
     def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
         in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
-        return '{} := Float({}, {}, {});\n'.format(out_var_name, in_name, self.current.exponent_bits, self.current.fractional_bits)
+        return '{} := Float({}, {}, {});\n'.format(out_var_name, in_name, self.current.exponent_bits,
+                                                   self.current.fractional_bits)
 
     def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
         return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
@@ -343,7 +347,7 @@ class VHDLFloatNEW(BaseVHDLType):
             return float(self.current)
 
     def _pyha_serialize(self):
-        result = str(self.current.sign)  + self.current._get_exponent_bits() + self.current._get_fractional_bits()
+        result = str(self.current.sign) + self.current._get_exponent_bits() + self.current._get_fractional_bits()
         return result
 
     def _pyha_deserialize(self, serial):
@@ -356,18 +360,25 @@ class VHDLFloatNEW(BaseVHDLType):
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
         try:
+            if self.current.sign != other.current.sign:
+                logger.error('Shit sign! {} {} != {}'.format(name, self.current, other.current))
+                return False
+
             if self.current.exponent != other.current.exponent:
                 logger.error('Shit exponent! {} {} != {}'.format(name, self.current, other.current))
                 return False
 
-            if not isclose(self.current.fractional,  other.current.fractional, rel_tol=1e-9, abs_tol=1e-9):
+            if not isclose(self.current.fractional, other.current.fractional, rel_tol=1e-9, abs_tol=1e-9):
                 logger.error('Shit mantissa! {} {} != {}'.format(name, self.current, other.current))
                 return False
-            return True
-        except AttributeError: # one is float
-            return  isclose(float(self.current),  float(other.current), rel_tol=rtol, abs_tol=atol)
 
+            return super()._pyha_is_equal(other, name, rtol, atol) # just in case
+        except AttributeError:  # one is float
+            return super()._pyha_is_equal(other, name, rtol, atol)
+            # return  isclose(float(self.current),  float(other.current), rel_tol=rtol, abs_tol=atol)
 
+    def __init__(self, var_name, current, initial=None, parent=None):
+        super().__init__(var_name, current, initial, parent)
 
 
 class VHDLComplex(BaseVHDLType):
@@ -671,7 +682,7 @@ class VHDLModule(BaseVHDLType):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
 
     def _pyha_type(self):
-        return '{}.self_t{}'.format(self._pyha_module_name(),TypeAppendHack)
+        return '{}.self_t{}'.format(self._pyha_module_name(), TypeAppendHack)
 
     def _pyha_arr_type_name(self):
         elem_type = self._pyha_type()
@@ -874,7 +885,6 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
             return VHDLList(name, list(current_val), list(initial_val), parent)
         except:
             return VHDLList(name, list(current_val), list(current_val), parent)
-
 
     print(type(current_val))
     assert 0

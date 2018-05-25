@@ -26,6 +26,20 @@ class TestInit:
         assert a.exponent == 0
         assert a.fractional == 0.12481689453125
 
+    def test_zero_minimum_exponent(self):
+        """ Encode 0 with minimal exponent, else zero values may kill additions """
+        a = Float(0.000000001)
+        assert a.sign == 0
+        assert a.exponent == -4
+        assert a.fractional == 0.0
+
+    def test_no_negative_zero_init(self):
+        """ Try to avoid negative zero if possible """
+        a = Float(-0.000000001)
+        assert a.sign == 0
+        assert a.exponent == -4
+        assert a.fractional == 0.0
+
     def test_random(self):
         np.random.seed(0)
         N = 2 ** 16

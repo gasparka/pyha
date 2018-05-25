@@ -17,7 +17,7 @@ from pyha.simulation.vhdl_simulation import VHDLSimulation
 def test_quantization_negative():
     # any negative number shall not be quantized to 0
     a = quantize(-0.00000000000051, 1)
-    assert a != 0 # invalid value when using int() for quantization!
+    assert a != 0  # invalid value when using int() for quantization!
 
 
 def test_exponent_overflow():
@@ -191,13 +191,6 @@ class TestAdd:
 
     def test_no_add(self):
         """ Difference between operands is too big ie. add has no effect at all """
-
-        # 0.989990234375000 - 0.000051021575928
-        # Out[8]: 0.989939212799072
-
-        # 0.989929199218750 +:000:11111101011011
-        # 0.989990234375000 +:000:11111101011100
-
         a = [Float(0.99)]
         b = [Float(-0.000051)]
 
@@ -207,16 +200,7 @@ class TestAdd:
                                                      ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-
     def test_preadjust_minimal2(self):
-
-
-        # 0.989990234375000 - 0.000051021575928
-        # Out[8]: 0.989939212799072
-
-        # 0.989929199218750 +:000:11111101011011
-        # 0.989990234375000 +:000:11111101011100
-
         a = [Float(0.99)]
         b = [Float(-0.00000051)]
 
@@ -345,6 +329,63 @@ class TestAdd:
 
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+    def test_sign_bug(self):
+
+        a = [Float(1.625000000000000)]
+        b = [Float(-0.611755371093750)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+        a = [Float(0.095031738281250)]
+        b = [Float(-2.0548964193706665)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+        a = [Float(0.05305128887213797)]
+        b = [Float(-2.16405947606799e-07)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+        a = [Float(-7.124850106849597e-09)]
+        b = [Float(-1.3869622091703274e-08)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+        a = [Float(-4.454377473702924)]
+        b = [Float(1.4396189355044617)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_exponent_underflow(self):
+        a = [Float(0.0000001)]
+        b = [Float(-0.000000095)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
     def test_add_resources(self):
         # 4: 128
         # 5: 139
@@ -360,7 +401,6 @@ class TestAdd:
 
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
-
 
         # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
@@ -398,6 +438,45 @@ class TestAdd:
     #                     conversion_path='/home/gaspar/git/pyha/playground'
     #                     )
     #     assert VHDLSimulation.last_logic_elements == 123
+
+
+class TestAccumulator:
+    def setup(self):
+        class Accumulator(Hardware):
+            def __init__(self):
+                self.DELAY = 1
+                self.acc = Float(0.0)
+
+            def main(self, x):
+                self.acc += x
+                return self.acc
+
+        self.dut = Accumulator()
+
+    def test_normal(self):
+        inp = np.random.normal(size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_normal_abs(self):
+        inp = np.random.normal(size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_uniform(self):
+        inp = np.random.uniform(-1, 1, size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_uniform_pos(self):
+        inp = np.random.uniform(0, 1, size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_uniform_neg(self):
+        inp = np.random.uniform(-1, 0, size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 # class TestSub:
@@ -560,7 +639,7 @@ class TestMultiply:
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_random(self):
-        N = 2**12
+        N = 2 ** 12
         gain = 2 ** np.random.uniform(-8, 8, N)
         b = (np.random.rand(N)) * gain
 

@@ -216,7 +216,9 @@ class CocotbAuto:
             raise Exception(msg)
 
         # print(result.stdout.decode())
-        logger.info(f'VHDL reports: \n{tabber(result.stderr.decode())}')
+        logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
+
+        logger.info(f'VHDL stderr: \n{tabber(result.stderr.decode())}')
         # print(result.stderr.decode())
 
         out = np.load(str(self.base_path / 'output.npy'))
