@@ -91,14 +91,14 @@ library ieee;
     begin
       exponent_l := get_exponent(l);
       exponent_r := get_exponent(r);
-      report "Left  : " & to_string(get_sign(l)) & " " & to_string(exponent_l) & " " & to_string(get_fractional(l));
-      report "Right : " & to_string(get_sign(r)) & " " & to_string(exponent_r) & " " & to_string(get_fractional(r));
+      -- report "Left  : " & to_string(get_sign(l)) & " " & to_string(exponent_l) & " " & to_string(get_fractional(l));
+      -- report "Right : " & to_string(get_sign(r)) & " " & to_string(exponent_r) & " " & to_string(get_fractional(r));
 
       -- report "Expoent left: " & to_string(to_integer(exponent_l));
       -- report "Expoent right: " & to_string(to_integer(exponent_r));
 
       exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
-      report "Exponents difference: " & to_string(exp_diff);
+      -- report "Exponents difference: " & to_string(exp_diff);
 
       if exp_diff(exp_diff'left) = '0' then
         if to_integer(exp_diff) = 0 and  get_fractional(l) < get_fractional(r) then
@@ -116,7 +116,7 @@ library ieee;
       new_sign := get_sign(larger);
 
       abs_exp_diff := to_integer(unsigned(abs(exp_diff)));
-      report "ABS Exponents difference: " & to_string(abs_exp_diff);
+      -- report "ABS Exponents difference: " & to_string(abs_exp_diff);
 
       smaller_fractional := get_fractional(smaller);
       if abs_exp_diff = 0 then
@@ -129,19 +129,19 @@ library ieee;
         smaller_fractional := (others => '0');
       end if;
 
-      report "Smaller after >>  : " & to_string(smaller_fractional);
+      -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
       -- report "Larger fractional : " & to_string(larger_fractional);
       add_or_sub := get_sign(larger) = get_sign(smaller);
       if add_or_sub then
-        report "+";
+        -- report "+";
         new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional'length+1);
       else
-        report "-";
+        -- report "-";
         new_fractional := resize(larger_fractional, larger_fractional'length+1) - resize(smaller_fractional, smaller_fractional'length+1);
       end if;
-      report "sum  : " & to_string(new_fractional);
+      -- report "sum  : " & to_string(new_fractional);
 
       -- fractional_sign := new_fractional(new_fractional'left);
       new_exponent := get_exponent(larger);
@@ -183,32 +183,32 @@ library ieee;
       final_exponent := resize(new_exponent, final_exponent'length);
 
       if first then
-        report "first";
+        -- report "first";
         final_fractional := shift_left(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := resize(new_exponent, final_exponent'length) - 1;
       end if;
 
       if  first and second then
-        report "first and second";
+        -- report "first and second";
         final_fractional := shift_left(new_fractional, 10)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := resize(new_exponent, final_exponent'length) -2;
       end if;
 
       if  (first and second and third) or to_integer(final_exponent) < -4 then
-        report "first and second and third or exponent underflow";
+        -- report "first and second and third or exponent underflow";
         final_fractional := (others=>'0');
         final_exponent := to_signed(-4, final_exponent'length);
         new_sign := '0';
       end if;
 
       if new_fractional(new_fractional'left) = '1' then
-        report "Handling overflow!";
+        -- report "Handling overflow!";
         final_fractional := shift_right(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := resize(new_exponent, final_exponent'length) + 1;
       end if;
 
 
-      report "Result : " & to_string(new_sign) & " " & to_string(final_exponent(final_exponent'left-1 downto 0)) & " " & to_string(final_fractional);
+      -- report "Result : " & to_string(new_sign) & " " & to_string(final_exponent(final_exponent'left-1 downto 0)) & " " & to_string(final_fractional);
       result := float_t(new_sign & std_logic_vector(final_exponent(final_exponent'left-1 downto 0)) & std_logic_vector(final_fractional));
       return result;
     end function "+";
@@ -332,13 +332,11 @@ library ieee;
       if res_exp < -4 or to_integer(new_fractional) = 0 then
         report "Handling expoment underflow!";
         new_sign := '0';
-        res_exp := to_signed(-4, res_exp'length);
         new_fractional := (others => '0');
+        new_exponent := to_signed(-4, new_exponent'length);
+        result := float_t(new_sign & std_logic_vector(new_exponent) & std_logic_vector(new_fractional));
+        return result;
       end if;
-
-      -- if fractional_mult(fractional_mult'left downto fractional_mult'left+1-new_fractional'length) = "10000000000000" then
-      --   new_fractional(0) := '1';
-      -- end if;
 
       new_exponent := res_exp(res_exp'left-2 downto 0);
       new_sign := get_sign(l) xor get_sign(r);

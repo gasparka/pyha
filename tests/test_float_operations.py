@@ -406,7 +406,7 @@ class TestAdd:
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
         # R32, 3, 15 -> final signed 122
-        # R32, 3, 15 -> final UNSign 137
+        # R32, 3, 15 -> final UNSign 145 (verified, works as PY, safe 0)
 
         a = [Float(0.99)]
         b = [Float(-0.000051)]
@@ -726,7 +726,7 @@ class TestMultiply:
         assert hardware_sims_equal(sims)
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-    def test_undefflow(self):
+    def test_underflow(self):
         a = 0.00001
         b = 0.00001
 
@@ -737,6 +737,7 @@ class TestMultiply:
 
     def test_resources(self):
         # UNSIGNED: 26 LUT
+        # safe Zero: 44
         a = 0.99
         b = -0.000051
 
