@@ -121,8 +121,6 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_need_normalize1(self):
-        if Float.radix != 32:
-            pytest.skip('Test only for 32 radix')
         a = 0.12
         b = -a * 0.9
 
@@ -133,8 +131,6 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_need_normalize2(self):
-        if Float.radix != 32:
-            pytest.skip('Test only for 32 radix')
         a = 0.12
         b = -a * 0.995
 
@@ -145,8 +141,6 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-1, atol=1e-9)
 
     def test_result_near_zero(self):
-        if Float.radix != 32:
-            pytest.skip('Test only for 32 radix')
         a = 0.12
         b = -a * 0.9999
 
@@ -402,14 +396,19 @@ class TestAdd:
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
 
+
         # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
         # R32, 3, 15 -> final signed 122
-        # R32, 3, 15 -> final UNSign 145 (verified, works as PY, safe 0)
+        # R32, 3, 15 -> final UNSign 140 (verified, works as PY, safe 0)
 
-        a = [Float(0.99)]
-        b = [Float(-0.000051)]
+
+        # NEW 80
+
+
+        a = [Float(0.99, 3, 14)]
+        b = [Float(-0.000051, 3, 14)]
 
         sims = simulate(self.dut, a, b, simulations=['PYHA',
                                                      'GATE'

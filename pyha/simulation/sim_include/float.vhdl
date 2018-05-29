@@ -72,7 +72,7 @@ library ieee;
       variable exponent_l, exponent_r, new_exponent : signed (l'left-1 downto 0);
       variable smaller, larger: float_t(l'range);
       variable exp_diff: signed (l'left downto 0);
-      variable abs_exp_diff: natural;
+      variable abs_exp_diff: integer;
       variable smaller_fractional, larger_fractional: unsigned (-l'right-1 downto 0);
       -- variable smaller_fractional_shifted: signed (-l'right-1 downto 0);
       variable new_fractional: unsigned (-l'right downto 0);
@@ -88,6 +88,8 @@ library ieee;
       variable first, second, third: boolean;
       variable add_or_sub : boolean;
       variable l_small: boolean;
+      variable exp_equal, left_fract_smaller: boolean;
+      variable small_1, small_2, small_3: unsigned (-l'right-1 downto 0);
     begin
       exponent_l := get_exponent(l);
       exponent_r := get_exponent(r);
@@ -98,20 +100,17 @@ library ieee;
       -- report "Expoent right: " & to_string(to_integer(exponent_r));
 
       exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
+      exp_equal := exponent_l = exponent_r;
+      left_fract_smaller := get_fractional(l) < get_fractional(r);
       -- report "Exponents difference: " & to_string(exp_diff);
 
-      if exp_diff(exp_diff'left) = '0' then
-        if to_integer(exp_diff) = 0 and  get_fractional(l) < get_fractional(r) then
-          smaller := l;
-          larger := r;
-        else
-          smaller := r;
-          larger := l;
-        end if;
-      else
-        -- report "Right has bigger exponent";
+      if exp_diff(exp_diff'left) = '1' or (exp_equal and left_fract_smaller) then
         smaller := l;
         larger := r;
+      else
+        -- report "Right has bigger exponent";
+        smaller := r;
+        larger := l;
       end if;
       new_sign := get_sign(larger);
 
@@ -128,6 +127,33 @@ library ieee;
       else
         smaller_fractional := (others => '0');
       end if;
+
+      -- if abs_exp_diff > 6 then
+      --   small_1 := shift_right(get_fractional(smaller), 6);
+      -- else
+      --   small_1 := get_fractional(smaller);
+
+      -- if unsigned(abs(exp_diff))(2) then
+      --   small_1 := shift_right(get_fractional(smaller), 8);
+      -- else
+      --   small_1 := get_fractional(smaller);
+      -- end if;
+      --
+      -- if unsigned(abs(exp_diff))(1) then
+      --   small_2 := shift_right(small_1, 4);
+      -- else
+      --   small_2 := small_1;
+      -- end if;
+      --
+      -- if unsigned(abs(exp_diff))(0) then
+      --   small_3 := shift_right(small_2, 2);
+      -- else
+      --   small_3 := small_2;
+      -- end if;
+
+      --
+      -- result := float_t(new_sign & std_logic_vector(get_exponent(larger)) & std_logic_vector(smaller_fractional));
+      -- return result;
 
       -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
