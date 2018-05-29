@@ -748,6 +748,40 @@ class TestMultiply:
         assert VHDLSimulation.last_logic_elements == 27  # 5, 9
 
 
+class TestFIR:
+    class FIR(Hardware):
+        def __init__(self, taps):
+            self.DELAY = 2
+
+            self.TAPS = [Float(x) for x in np.array(taps).tolist()]
+            self.TAPS_ORIG = taps
+
+            # registers
+            self.acc = [Float()] * len(taps)
+            self.mul = [Float()] * len(taps)
+
+        def main(self, x):
+            """ Transposed FIR structure """
+            self.acc[0] = x * self.TAPS[-1]
+            for i in range(1, len(self.acc)):
+                self.mul[i] = x * self.TAPS[len(self.TAPS) - 1 - i]
+                self.acc[i] = self.acc[i - 1] + self.mul[i]
+
+            return self.acc[-1]
+
+        def model_main(self, x):
+            return signal.lfilter(self.TAPS_ORIG, [1.0], x)
+
+
+    def test(self):
+        taps = signal.remez(128, [0, 0.1, 0.155, 0.5], [1, 0])
+        inp = np.random.uniform(-1, 1, 1024) / 2 / 2 / 2 / 2 / 2 / 2 / 2
+
+        sims = simulate(self.FIR(taps), inp, input_types=([Float()]), simulations=['PYHA', 'GATE'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert hardware_sims_equal(sims)
+
+
 class TestMultSfix:
     def setup(self):
         class Dut(Hardware):
@@ -804,6 +838,10 @@ def test_speed():
     # add: 75.87 MHz
     # add: 78.38 MHz @ 10M16SAU169C8G
     # add UNSIGNED: 84.89 MHz
+
+
+    # unsigned: 82.05 MHz (C4)  81.66 MHz (MAX)
+    # 2 regs retime: 101.57
 
     class Dut(Hardware):
         def __init__(self):

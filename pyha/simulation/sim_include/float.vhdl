@@ -102,6 +102,7 @@ library ieee;
       exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
       exp_equal := exponent_l = exponent_r;
       left_fract_smaller := get_fractional(l) < get_fractional(r);
+      add_or_sub := get_sign(l) = get_sign(r);
       -- report "Exponents difference: " & to_string(exp_diff);
 
       if exp_diff(exp_diff'left) = '1' or (exp_equal and left_fract_smaller) then
@@ -159,7 +160,6 @@ library ieee;
 
       larger_fractional := get_fractional(larger);
       -- report "Larger fractional : " & to_string(larger_fractional);
-      add_or_sub := get_sign(larger) = get_sign(smaller);
       if add_or_sub then
         -- report "+";
         new_fractional := resize(larger_fractional, larger_fractional'length+1) + resize(smaller_fractional, smaller_fractional'length+1);
