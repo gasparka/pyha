@@ -306,7 +306,6 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_add_random(self):
-
         N = 2 ** 14
         gain = 2 ** np.random.uniform(-16, 8, N)
         orig = (np.random.rand(N)) * gain
@@ -324,7 +323,6 @@ class TestAdd:
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
     def test_sign_bug(self):
-
         a = [Float(1.625000000000000)]
         b = [Float(-0.611755371093750)]
 
@@ -396,16 +394,13 @@ class TestAdd:
         # 36 bit fixed point adder: 37
         # 18 bit fixed point adder: 19
 
-
         # preadd R32 3, 15: Total logic elements : 47 (43 with unsigned)
         # preadd R16 4, 14, : Total logic elements : 56 (with dynamic shifter)
 
         # R32, 3, 15 -> final signed 122
         # R32, 3, 15 -> final UNSign 140 (verified, works as PY, safe 0)
 
-
         # NEW 80
-
 
         a = [Float(0.99, 3, 14)]
         b = [Float(-0.000051, 3, 14)]
@@ -417,26 +412,17 @@ class TestAdd:
                         )
         assert VHDLSimulation.last_logic_elements == 123
 
-    # def test_add_resources2(self):
-    #     # 4: 128
-    #     # 5: 139
-    #     # 6: 148 (+9)
-    #     # 7: 153 (+5)
-    #     # 8: 161 (+8)
-    #     # 9: 167 (+6)
-    #     # 10:173 (+6)
-    #
-    #     # NEW 32 radix: 113
-    #
-    #     a = [Sfix(0.99, 0, -17)]
-    #     b = [Sfix(-0.000051, 0, -17)]
-    #
-    #     sims = simulate(self.dut, a, b, simulations=['PYHA',
-    #                                             'GATE'
-    #                                             ],
-    #                     conversion_path='/home/gaspar/git/pyha/playground'
-    #                     )
-    #     assert VHDLSimulation.last_logic_elements == 123
+    def test_small_bug(self):
+        """  Interesting bug where 2 normalizing conditions (0 and overflow) fired at the same time... resulting in wrong sign"""
+        a = [Float(-0.000000855536200)]
+        b = [Float(-1.0936355228858843e-07)]
+        # -1.0936355228858843e-07
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 class TestAccumulator:
@@ -454,6 +440,11 @@ class TestAccumulator:
 
     def test_normal(self):
         inp = np.random.normal(size=1024 * 2 * 2)
+        sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+    def test_normal_small(self):
+        inp = np.random.normal(size=1024 * 2 * 2) * 0.0000001
         sims = simulate(self.dut, inp, input_types=[Float()], simulations=['PYHA', 'RTL'])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
@@ -638,11 +629,11 @@ class TestMultiply:
         assert sims_close(sims, rtol=1e-3, atol=1e-9)
 
     def test_random(self):
-        N = 2 ** 13
-        gain = 2 ** np.random.uniform(-16, 6, N)
+        N = 2 ** 15
+        gain = 2 ** np.random.uniform(-128, 6, N)
         b = (np.random.rand(N)) * gain
 
-        gain = 2 ** np.random.uniform(-16, 6, N)
+        gain = 2 ** np.random.uniform(-128, 6, N)
         a = (np.random.rand(N)) * gain
 
         sims = simulate(self.dut, a, b, input_types=([Float(), Float()]), simulations=['MODEL_FLOAT', 'PYHA', 'RTL'])
@@ -772,12 +763,19 @@ class TestFIR:
         def model_main(self, x):
             return signal.lfilter(self.TAPS_ORIG, [1.0], x)
 
+    def test_simple(self):
+        taps = signal.remez(32, [0, 0.1, 0.155, 0.5], [1, 0])
+        inp = np.random.uniform(-1, 1, 1024)
 
-    def test(self):
-        taps = signal.remez(128, [0, 0.1, 0.155, 0.5], [1, 0])
+        sims = simulate(self.FIR(taps), inp, input_types=([Float()]), simulations=['PYHA', 'RTL'],
+                        conversion_path='/home/gaspar/git/pyha/playground')
+        assert hardware_sims_equal(sims)
+
+    def test_small_input(self):
+        taps = np.random.uniform(-1, 1, 128) / 2 / 2 / 2 / 2 / 2 / 2 / 2
         inp = np.random.uniform(-1, 1, 1024) / 2 / 2 / 2 / 2 / 2 / 2 / 2
 
-        sims = simulate(self.FIR(taps), inp, input_types=([Float()]), simulations=['PYHA', 'GATE'],
+        sims = simulate(self.FIR(taps), inp, input_types=([Float()]), simulations=['PYHA', 'RTL'],
                         conversion_path='/home/gaspar/git/pyha/playground')
         assert hardware_sims_equal(sims)
 
@@ -838,7 +836,6 @@ def test_speed():
     # add: 75.87 MHz
     # add: 78.38 MHz @ 10M16SAU169C8G
     # add UNSIGNED: 84.89 MHz
-
 
     # unsigned: 82.05 MHz (C4)  81.66 MHz (MAX)
     # 2 regs retime: 101.57

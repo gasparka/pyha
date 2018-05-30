@@ -221,16 +221,17 @@ library ieee;
       end if;
 
       if  (first and second and third) or to_integer(final_exponent) < -4 then
-        -- report "first and second and third or exponent underflow";
+        report "first and second and third or exponent underflow";
         final_fractional := (others=>'0');
         final_exponent := to_signed(-4, final_exponent'length);
         new_sign := '0';
       end if;
 
       if new_fractional(new_fractional'left) = '1' then
-        -- report "Handling overflow!";
+        report "Handling overflow!";
         final_fractional := shift_right(new_fractional, 5)(new_fractional'left-1 downto new_fractional'right);
         final_exponent := resize(new_exponent, final_exponent'length) + 1;
+        new_sign := get_sign(larger);
       end if;
 
 
