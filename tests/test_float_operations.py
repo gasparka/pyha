@@ -469,36 +469,48 @@ class TestAccumulator:
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
-# class TestSub:
-#     def setup(self):
-#         class Dut(Hardware):
-#             def main(self, a, b):
-#                 r = a - b
-#                 return r
-#
-#         self.dut = Dut()
-#
-#     def test_sub_normalize(self):
-#         """ Python normalization resulted in X.50, neede to use // instead of / """
-#         shrink_bits = 6
-#
-#         class Dut(Hardware):
-#             def main(self, a, b):
-#                 r = a - b
-#                 return r
-#
-#         low = 1.0 - (2 ** -shrink_bits)
-#         # a = [Float(0.99), Float(-0.99)]
-#         # b = [Float(-low), Float(low)]
-#         a = [Float(-0.99)]
-#         b = [Float(low)]
-#         dut = Dut()
-#
-#         sims = simulate(dut, a, b, simulations=['PYHA',
-#                                                 'RTL',
-#                                                 # 'GATE'
-#                                                 ])
-#         assert sims_close(sims, rtol=1e-9, atol=1e-9)
+class TestNegate:
+    def setup(self):
+        class Dut(Hardware):
+            def main(self, a):
+                r = -a
+                return r
+
+        self.dut = Dut()
+
+    def test_random(self):
+        N = 2 ** 12
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        orig = (np.random.rand(N)) * gain
+        a = [Float(x) for x in orig]
+
+        sims = simulate(self.dut, a, simulations=['PYHA',
+                                                  'RTL',
+                                                  ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+
+
+class TestSub:
+    def setup(self):
+        class Dut(Hardware):
+            def main(self, a, b):
+                r = a - b
+                return r
+
+        self.dut = Dut()
+
+    def test_sub_normalize(self):
+        """ Python normalization resulted in X.50, needed to use // instead of / """
+        shrink_bits = 6
+        low = 1.0 - (2 ** -shrink_bits)
+        a = [Float(0.99), Float(-0.99)]
+        b = [Float(-low), Float(low)]
+
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
 
 def test_sub_resources():

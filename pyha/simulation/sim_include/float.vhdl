@@ -18,6 +18,7 @@ library ieee;
     function "+" (l, r : float_t) return float_t;
     -- function "-" (l, r : float_t) return float_t;
     function "*" (l, r : float_t) return float_t;
+    function "-" (l : float_t) return float_t;
     -- function "*" (l : float_t; r: sfixed) return float_t;
 
   end package;
@@ -240,6 +241,15 @@ library ieee;
       return result;
     end function "+";
 
+
+    function "-" (l : float_t) return float_t is
+      variable result : float_t (l'left downto l'right);
+    begin
+      result := float_t((get_sign(l) xor '1') & std_logic_vector(get_exponent(l)) & std_logic_vector(get_fractional(l)));
+      return result;
+    end function "-";
+
+
     -- function "-" (l, r : float_t) return float_t is
     --   variable result : float_t (l'left downto l'right);
     --   variable exponent_l, exponent_r, new_exponent, larger_exponent, smaller_exponent : signed (l'left downto 0);
@@ -253,73 +263,11 @@ library ieee;
     --   variable exp_compensate : integer;
     --   variable flip: boolean;
     -- begin
-    --   exponent_l := get_exponent(l);
-    --   exponent_r := get_exponent(r);
-    --   -- report "Expoent left: " & to_string(exponent_l);
-    --   -- report "Expoent right: " & to_string(exponent_r);
     --
-    --   exp_diff := resize(exponent_l, exponent_l'length+1) - exponent_r;
-    --   if exp_diff(exp_diff'left) = '0' then
-    --     -- report "Left has bigger/equal exponent";
-    --     smaller := r;
-    --     larger := l;
-    --     flip := False;
-    --   else
-    --     -- report "Right has bigger exponent";
-    --     smaller := l;
-    --     larger := r;
-    --     flip := True;
-    --   end if;
-    --
-    --   -- larger_exponent := get_exponent(larger);
-    --   -- smaller_exponent := -get_exponent(smaller);
-    --   -- report "Larger exponent  : " & to_string(larger_exponent);
-    --   -- report "Smaller exponent : " & to_string(smaller_exponent);
-    --   -- exp_diff := unsigned(get_exponent(larger) - get_exponent(smaller));
-    --   -- report "Exponent diff: " & to_string(exp_diff);
-    --
-    --   smaller_fractional := get_fractional(smaller);
-    --   -- report "Smaller fractional: " & to_string(smaller_fractional);
-    --   smaller_fractional := shift_right(smaller_fractional, to_integer(abs(exp_diff)));
-    --
-    --   -- report "Smaller after >>  : " & to_string(smaller_fractional);
-    --
-    --   larger_fractional := get_fractional(larger);
-    --   -- report "Larger fractional : " & to_string(larger_fractional);
-    --
-    --   if flip then
-    --       larger_fractional := smaller_fractional;
-    --       smaller_fractional := get_fractional(larger);
-    --   end if;
-    --   -- report "Larger fractional : " & to_string(larger_fractional);
-    --   -- report "Smaller after >>  : " & to_string(smaller_fractional);
-    --
-    --   new_fractional := resize(larger_fractional, larger_fractional'length+1) - resize(smaller_fractional, smaller_fractional'length+1);
-    --   -- report "larger - smaller  : " & to_string(new_fractional);
-    --
-    --   fractional_sign := new_fractional(new_fractional'left);
-    --   new_exponent := get_exponent(larger);
-    --
-    --   leftmost := find_leftmost(new_fractional);
-    --   if leftmost = new_fractional'left and fractional_sign = '0' then
-    --       -- note that when leftmost is 9 but sign is 1, then we are dealing with minimal negative number
-    --       -- report "Result is ZERO!";
-    --       result := (others=>'0');
-    --       return result;
-    --   end if;
-    --   -- report "Leftmost: " & to_string(leftmost);
-    --
-    --   new_fractional := shift_left(new_fractional, leftmost);
-    --   -- report "fract normal      : " & to_string(new_fractional);
-    --
-    --   new_exponent := get_exponent(larger);
-    --   -- report "exponent          : " & to_string(new_exponent);
-    --   new_exponent := new_exponent - to_signed(leftmost, new_exponent'length) + 1;
-    --   -- report "exponent normal   : " & to_string(new_exponent);
+    --   r_neg =
     --
     --   result := float_t(new_exponent & new_fractional(new_fractional'left downto new_fractional'right+1));
     --
-    --   -- report "Result            : " & to_string(result);
     --   return result;
     -- end function "-";
     --
