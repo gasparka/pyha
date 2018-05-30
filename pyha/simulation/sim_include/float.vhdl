@@ -19,6 +19,7 @@ library ieee;
     -- function "-" (l, r : float_t) return float_t;
     function "*" (l, r : float_t) return float_t;
     function "-" (l : float_t) return float_t;
+    function "-" (l, r : float_t) return float_t;
     -- function "*" (l : float_t; r: sfixed) return float_t;
 
   end package;
@@ -250,26 +251,12 @@ library ieee;
     end function "-";
 
 
-    -- function "-" (l, r : float_t) return float_t is
-    --   variable result : float_t (l'left downto l'right);
-    --   variable exponent_l, exponent_r, new_exponent, larger_exponent, smaller_exponent : signed (l'left downto 0);
-    --   variable smaller, larger: float_t(l'range);
-    --   variable exp_diff: signed (l'left+1 downto 0);
-    --   variable smaller_fractional, larger_fractional: signed (-l'right-1 downto 0);
-    --   variable new_fractional: signed (-l'right downto 0);
-    --   variable final_fractional: signed (-l'right-1 downto 0);
-    --   variable leftmost: integer;
-    --   variable fractional_sign : std_logic;
-    --   variable exp_compensate : integer;
-    --   variable flip: boolean;
-    -- begin
-    --
-    --   r_neg =
-    --
-    --   result := float_t(new_exponent & new_fractional(new_fractional'left downto new_fractional'right+1));
-    --
-    --   return result;
-    -- end function "-";
+    function "-" (l, r : float_t) return float_t is
+      variable result : float_t (l'left downto l'right);
+    begin
+      result := l + (-r);
+      return result;
+    end function "-";
     --
     --
     function "*" (l, r : float_t) return float_t is

@@ -206,38 +206,13 @@ class Float:
         return new
 
     def __sub__(self, other):
-        if force_format.enabled and force_format.float16_mode:
-            return Float(self.float_val - other.float_val)
-
-        return Float(float(self) - float(other))
-        diff = abs(self.exponent - other.exponent)
-
-        if self.exponent >= other.exponent:
-            new_exponent = self.exponent
-            left_fract = self.fractional
-            right_fract = other.fractional / self.radix ** diff
-        else:
-            new_exponent = other.exponent
-            left_fract = self.fractional / self.radix ** diff
-            right_fract = other.fractional
-
-        # logger.info(f'Left fract: {to_twoscomplement(self.fractional_bits+1, int(left_fract * 2 ** (self.fractional_bits - 1)))}')
-        # logger.info(f'right fract: {to_twoscomplement(self.fractional_bits+1, int(right_fract * 2 ** (self.fractional_bits - 1)))}')
-        new_fractional = left_fract - right_fract
-
-        # logger.info(f'Prequant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-
-        new_fractional = quantize(new_fractional, self.fractional_bits, rounding=False)
-        # logger.info(f'Postquant: {to_twoscomplement(self.fractional_bits+1, int(new_fractional * 2 ** (self.fractional_bits - 1)))}')
-
-        new = Float((new_exponent, new_fractional), self.exponent_bits, self.fractional_bits)
-        return new
+        return self + (-other)
 
     def __call__(self, x: float):
         return Float(x, self.exponent_bits, self.fractional_bits)
 
     def __neg__(self):
-        return Float(-float(self), self.exponent_bits, self.fractional_bits)
+        return Float((self.sign ^ 1, self.exponent, self.fractional), self.exponent_bits, self.fractional_bits)
 
     def __str__(self):
         return f'{float(self):.15f} {self.get_binary()}'

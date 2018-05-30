@@ -512,67 +512,45 @@ class TestSub:
                                                      ])
         assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
+    def test_suber(self):
+        """ Bug in - routine """
 
-def test_sub_resources():
-    """ Result already normalized """
+        a = [Float(0.000006556510925)]
+        b = [Float(2000.000000000000000)]
 
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a - b
-            return r
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-    a = [Float(0.99, 5, 9)]
-    b = [Float(-0.000051, 5, 9)]
-    dut = Dut()
+    def test_sub_random(self):
+        N = 2 ** 15
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        orig = (np.random.rand(N)) * gain
+        a = [Float(x) for x in orig]
 
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'GATE'
-                                            ],
-                    conversion_path='/home/gaspar/git/pyha/playground'
-                    )
-    assert VHDLSimulation.last_logic_elements == 131
+        gain = 2 ** np.random.uniform(-8, 8, N)
+        orig = (np.random.rand(N)) * gain
+        b = [Float(x) for x in orig]
 
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'RTL',
+                                                     # 'GATE'
+                                                     ])
+        assert sims_close(sims, rtol=1e-9, atol=1e-9)
 
-def test_suber():
-    """ Bug in - routine """
+    def test_sub_resources(self):
+        # 141
+        a = [Float(0.99)]
+        b = [Float(-0.000051)]
 
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a - b
-            return r
-
-    a = [Float(0.000006556510925)]
-    b = [Float(2000.000000000000000)]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ])
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
-
-
-def test_sub_random():
-    class Dut(Hardware):
-        def main(self, a, b):
-            r = a - b
-            return r
-
-    N = 2 ** 15
-    gain = 2 ** np.random.uniform(-8, 8, N)
-    orig = (np.random.rand(N)) * gain
-    a = [Float(x) for x in orig]
-
-    gain = 2 ** np.random.uniform(-8, 8, N)
-    orig = (np.random.rand(N)) * gain
-    b = [Float(x) for x in orig]
-    dut = Dut()
-
-    sims = simulate(dut, a, b, simulations=['PYHA',
-                                            'RTL',
-                                            # 'GATE'
-                                            ])
-    assert sims_close(sims, rtol=1e-9, atol=1e-9)
+        sims = simulate(self.dut, a, b, simulations=['PYHA',
+                                                     'GATE'
+                                                     ],
+                        conversion_path='/home/gaspar/git/pyha/playground'
+                        )
+        assert VHDLSimulation.last_logic_elements == 141
 
 
 class TestMultiply:
