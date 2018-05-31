@@ -131,33 +131,6 @@ library ieee;
         smaller_fractional := (others => '0');
       end if;
 
-      -- if abs_exp_diff > 6 then
-      --   small_1 := shift_right(get_fractional(smaller), 6);
-      -- else
-      --   small_1 := get_fractional(smaller);
-
-      -- if unsigned(abs(exp_diff))(2) then
-      --   small_1 := shift_right(get_fractional(smaller), 8);
-      -- else
-      --   small_1 := get_fractional(smaller);
-      -- end if;
-      --
-      -- if unsigned(abs(exp_diff))(1) then
-      --   small_2 := shift_right(small_1, 4);
-      -- else
-      --   small_2 := small_1;
-      -- end if;
-      --
-      -- if unsigned(abs(exp_diff))(0) then
-      --   small_3 := shift_right(small_2, 2);
-      -- else
-      --   small_3 := small_2;
-      -- end if;
-
-      --
-      -- result := float_t(new_sign & std_logic_vector(get_exponent(larger)) & std_logic_vector(smaller_fractional));
-      -- return result;
-
       -- report "Smaller after >>  : " & to_string(smaller_fractional);
 
       larger_fractional := get_fractional(larger);
