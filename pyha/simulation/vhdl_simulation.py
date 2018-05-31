@@ -58,6 +58,10 @@ class VHDLSimulation:
                         self.src_util_path / 'float.vhdl')
         src += [self.src_util_path / 'float.vhdl']
 
+        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/complex_float.vhdl',
+                        self.src_util_path / 'complex_float.vhdl')
+        src += [self.src_util_path / 'complex_float.vhdl']
+
         # copy pyha_util to src dir
         shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl',
                         self.src_util_path / 'pyha_util.vhdl')

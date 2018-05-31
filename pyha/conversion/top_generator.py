@@ -88,6 +88,7 @@ class TopGenerator:
             library work;
                 use work.float_noround_pkg.all;
                 use work.complex_pkg.all;
+                use work.complex_float_pkg.all;
                 use work.PyhaUtil.all;
                 use work.Typedefs.all;
                 use work.all;""")
