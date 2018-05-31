@@ -11,7 +11,7 @@ import numpy as np
 from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
-from pyha.common.float import Float
+from pyha.common.float import Float, ComplexFloat
 from pyha.common.util import is_constant, to_twoscomplement
 
 logging.basicConfig(level=logging.INFO)
@@ -350,12 +350,17 @@ class VHDLFloatNEW(BaseVHDLType):
         result = str(self.current.sign) + self.current._get_exponent_bits() + self.current._get_fractional_bits()
         return result
 
-    def _pyha_deserialize(self, serial):
-        ret = copy.copy(self.current)
+    @staticmethod
+    def deserialize(serial, ret):
         ret.sign = int(serial[0], 2)
         serial = serial[1:]
-        ret.exponent = to_signed_int(int(serial[0:self.current.exponent_bits], 2), self.current.exponent_bits)
-        ret.fractional = int(serial[self.current.exponent_bits:], 2) / 2 ** self.current.fractional_bits
+        ret.exponent = to_signed_int(int(serial[0:ret.exponent_bits], 2), ret.exponent_bits)
+        ret.fractional = int(serial[ret.exponent_bits:], 2) / 2 ** ret.fractional_bits
+        return ret
+
+    def _pyha_deserialize(self, serial):
+        ret = copy.copy(self.current)
+        ret = VHDLFloatNEW.deserialize(serial, ret)
         return ret
 
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
@@ -380,6 +385,65 @@ class VHDLFloatNEW(BaseVHDLType):
     def __init__(self, var_name, current, initial=None, parent=None):
         super().__init__(var_name, current, initial, parent)
 
+class VHDLComplexFloat(BaseVHDLType):
+    def _pyha_type(self):
+        return f'complex_float_t({self.current.real.exponent_bits*2+1} downto {self.current.real.fractional_bits*2})'
+
+    def _pyha_bitwidth(self) -> int:
+        lefts = (self.current.real.exponent_bits + 1) * 2
+        rights = self.current.real.fractional_bits * 2
+        return lefts + rights
+
+    # def _pyha_reset_value(self):
+    #     val = self.initial.val
+    #     left = self.current.left
+    #     right = self.current.right
+    #     return f'Complex({val.real}, {val.imag}, {left}, {right})'
+
+    def _pyha_stdlogic_type(self) -> str:
+        return 'std_logic_vector({} downto 0)'.format(self._pyha_bitwidth() - 1)
+
+    def _pyha_convert_from_stdlogic(self, out_var_name, in_var_name, in_index_offset=0) -> str:
+        in_name = '{}({} downto {})'.format(in_var_name, in_index_offset + self._pyha_bitwidth() - 1, in_index_offset)
+        return '{} := Complex({}, {}, {});\n'.format(out_var_name, in_name, self.current.real.exponent_bits, self.current.real.fractional_bits)
+
+    def _pyha_convert_to_stdlogic(self, out_name, in_name, out_index_offset=0) -> str:
+        return '{}({} downto {}) <= to_slv({});\n'.format(out_name, self._pyha_bitwidth() - 1 + out_index_offset,
+                                                          0 + out_index_offset, in_name)
+
+    def _pyha_type_is_compatible(self, other) -> bool:
+        if isinstance(self.current, complex) and isinstance(other.current, complex):
+            return True
+
+        if type(self.current) != type(other.current):
+            return False
+        return self.current.real.exponent_bits == other.current.real.exponent_bits and self.current.real.fractional_bits == other.current.real.fractional_bits
+
+    def _pyha_serialize(self):
+        real_bits = str(self.current.real.sign) + self.current.real._get_exponent_bits() + self.current.real._get_fractional_bits()
+        imag_bits = str(self.current.imag.sign) + self.current.imag._get_exponent_bits() + self.current.imag._get_fractional_bits()
+        return real_bits + imag_bits
+
+    def _pyha_deserialize(self, serial):
+        len = self._pyha_bitwidth() // 2
+
+        real = copy.copy(self.current.real)
+        real = VHDLFloatNEW.deserialize(serial[:len], real)
+
+        imag = copy.copy(self.current.imag)
+        imag = VHDLFloatNEW.deserialize(serial[len:], imag)
+
+        val = float(real) + float(imag) * 1j
+        return val
+
+    def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
+
+        eq1 = isclose(self.current.real, other.current.real, rel_tol=rtol, abs_tol=atol)
+        eq2 = isclose(self.current.imag, other.current.imag, rel_tol=rtol, abs_tol=atol)
+        eq = eq1 and eq2
+        if not eq:
+            logger.error('{} {} != {}'.format(name, self.current, other.current))
+        return eq
 
 class VHDLComplex(BaseVHDLType):
     def __log_none_bounds(self):
@@ -853,6 +917,8 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return VHDLSfix(name, current_val, initial_val, parent)
     elif type(current_val) == Float:
         return VHDLFloatNEW(name, current_val, initial_val, parent)
+    elif type(current_val) == ComplexFloat:
+        return VHDLComplexFloat(name, current_val, initial_val, parent)
 
     elif type(current_val) == PyhaList:
         if Conversion.in_progress.enabled and isinstance(current_val[0], float):

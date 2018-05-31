@@ -213,6 +213,7 @@ class CocotbAuto:
         if result.returncode != 0:
             msg = f'Build with GHDL/Cocotb failed:\n{tabber(result.stderr.decode())}'
             logger.error(msg)
+            logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
             raise Exception(msg)
 
         # print(result.stdout.decode())
