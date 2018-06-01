@@ -17,4 +17,4 @@ class TestInit:
                                                                         # 'GATE'
                                                                         ],
                         conversion_path='/home/gaspar/git/pyha/playground')
-        assert sims_close(sims, rtol=1e-9, atol=1e-9)
+40        assert sims_close(sims, rtol=1e-9, atol=1e-9)
