@@ -987,6 +987,31 @@ def test_print(converter):
     assert expect == str(conv)
 
 
+def test_print_real(converter):
+    code = 'print(to_real(self.mem[i]))'
+    expect = 'report to_string(to_real(self.mem(i)));'
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
+def test_print_real_block(converter):
+    """ Had excess ; """
+    code = """\
+        if a:
+            print(to_real(self.mem[i]))
+        """
+
+    expect = textwrap.dedent("""\
+        if a then
+            report to_string(to_real(self.mem(i)));
+            
+        end if;""")
+
+    conv = converter(code)
+    assert expect == str(conv)
+
+
 def test_print_multiarg(converter):
     code = 'print(a, b)'
     expect = 'report to_string(to_real(a));'
@@ -1023,8 +1048,8 @@ class TestDefNodeConv:
         dut.a(1, False, Sfix(0.5, 1, -2), [1, 2])
 
         expect = 'self:in self_t; ' \
-                 'self_next:inout self_t; '\
-                 'constant self_const: self_t_const; '\
+                 'self_next:inout self_t; ' \
+                 'constant self_const: self_t_const; ' \
                  'i: integer; ' \
                  'b: boolean; ' \
                  'f: sfixed(1 downto -2); ' \
