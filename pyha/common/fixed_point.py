@@ -328,6 +328,10 @@ class Sfix:
         # THIS CAN WRAP!
         return Sfix(o, self.left, self.right)
 
+    def scalb(self, i):
+        n = 2 ** i
+        return Sfix(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+
     def __abs__(self):
         return Sfix(abs(self.val),
                     self.left + 1,
@@ -437,7 +441,7 @@ def right_index(x: Sfix) -> int:
     return x.right
 
 
-def scalb(x: Sfix, i: int) -> Sfix:
+def scalb(x, i):
     """
     This is like ``>>``/``<<``, but without precision loss i.e. it changes the fixed-point format.
 
@@ -449,9 +453,7 @@ def scalb(x: Sfix, i: int) -> Sfix:
     >>> scalb(a, -8)
     0.001953125 [-8:-25]
     """
-    n = 2 ** i
-    return Sfix(x.val * n, x.left + i, x.right + i, overflow_style='saturate', round_style='round')
-
+    return x.scalb(i)
 
 default_sfix = Sfix(0, 0, -17, overflow_style='saturate',
                     round_style='round')
