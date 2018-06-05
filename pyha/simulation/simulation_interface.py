@@ -118,8 +118,10 @@ def process_outputs(delay_compensate, ret, output_callback=None):
 _last_trained_object = None
 _ran_gate_simulation = False
 
+
 def get_last_trained_object():
     return _last_trained_object
+
 
 def get_ran_gate_simulation():
     return _ran_gate_simulation
@@ -170,7 +172,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     _ran_gate_simulation = False
 
     def types_from_pyha_to_python(pyha_types):
-        returns = pyha_types # can be the case for builtins ie. int
+        returns = pyha_types  # can be the case for builtins ie. int
         if isinstance(pyha_types, tuple):  # multiple return
             pyvals = []
             for val in pyha_types:
@@ -201,7 +203,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     else:
         conversion_path = str(Path(conversion_path).expanduser())  # turn ~ into path
         try:
-            shutil.rmtree(conversion_path) # clear folder
+            shutil.rmtree(conversion_path)  # clear folder
         except:
             pass
         os.makedirs(conversion_path)
@@ -336,7 +338,8 @@ def hardware_sims_equal(simulation_results):
     :returns: True if equal
     """
     # make a copy without the 'MODEL' simulation
-    sims = {k: v for k, v in simulation_results.items() if k != 'MODEL' and k != 'MODEL_PYHA'}
+    logger.info(f'Testing hardware simulations equality...')
+    sims = {k: v for k, v in simulation_results.items() if 'MODEL' not in k}
     return sims_close(sims, rtol=1e-16, atol=1e-16)
 
 

@@ -197,15 +197,20 @@ class CocotbAuto:
 
         np.save(str(self.base_path / 'input.npy'), indata)
 
-        try:
-            subprocess.run("make", env=self.environment, cwd=str(self.base_path), check=True)
-        except subprocess.CalledProcessError as err:
-            logger.error('Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
-            # os._exit(0)
-            # sys.exit(0)
 
-            raise Exception(
-                'Build with GHDL/Cocotb failed. See the converted sources for possible errors (run out of Notebook to actually see stdout and GHDL errors...)')
+        result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if result.returncode != 0:
+            msg = f'Build with GHDL/Cocotb failed:\n{tabber(result.stderr.decode())}'
+            logger.error(msg)
+            logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
+            raise Exception(msg)
+
+        # print(result.stdout.decode())
+        logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
+
+        logger.info(f'VHDL stderr: \n{tabber(result.stderr.decode())}')
+        # print(result.stderr.decode())
 
         out = np.load(str(self.base_path / 'output.npy'))
         outp = out.astype(object).T

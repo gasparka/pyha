@@ -11,7 +11,8 @@ import numpy as np
 from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
-from pyha.common.util import is_constant
+from pyha.common.float import Float, ComplexFloat
+from pyha.common.util import is_constant, to_twoscomplement
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
@@ -66,14 +67,6 @@ def to_signed_int(number, bit_length):
         return number | ~mask
     else:
         return number & mask
-
-
-def to_twoscomplement(bits, value):
-    # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
-    if value < 0:
-        value = (1 << bits) + value
-    formatstring = '{:0%ib}' % bits
-    return formatstring.format(value)
 
 
 class BaseVHDLType:
@@ -613,7 +606,7 @@ class VHDLModule(BaseVHDLType):
         return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
 
     def _pyha_type(self):
-        return '{}.self_t{}'.format(self._pyha_module_name(),TypeAppendHack)
+        return '{}.self_t{}'.format(self._pyha_module_name(), TypeAppendHack)
 
     def _pyha_arr_type_name(self):
         elem_type = self._pyha_type()
@@ -771,7 +764,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
         return VHDLInt(name, current_val, initial_val, parent)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val, parent)
-    elif type(current_val) == float:
+    elif type(current_val) == float or type(current_val) == np.float64:
         if Conversion.in_progress.enabled:
             # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None

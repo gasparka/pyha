@@ -1,6 +1,18 @@
 import collections
-
+import matplotlib.pyplot as plt
 import numpy as np
+
+def to_twoscomplement(bits, value):
+    # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
+    if value < 0:
+        value = (1 << bits) + value
+    formatstring = '{:0%ib}' % bits
+    return formatstring.format(value)
+
+
+def to_real(x):
+    """ Use to print VHDL variables as float: example print(to_real(x))"""
+    return x
 
 
 def is_power2(num):
@@ -24,7 +36,7 @@ def const_filter(x):
     from pyha.conversion.python_types_vhdl import VHDLList
     from pyha.conversion.python_types_vhdl import VHDLModule
     return is_constant(x._name) or isinstance(x, VHDLModule) or (
-                isinstance(x, VHDLList) and not x.not_submodules_list)
+            isinstance(x, VHDLList) and not x.not_submodules_list)
 
 
 def tabber(str):
@@ -87,3 +99,20 @@ def np_to_py(array):
         return float(array)
     else:
         return array
+
+
+def snr(pure, noisy):
+    sig_pow = np.mean(np.abs(pure))
+    error = np.array(pure) - np.array(noisy)
+    err_pow = np.mean(np.abs(error))
+
+    snr_db = 20 * np.log10(sig_pow / err_pow)
+    return snr_db
+
+
+def show_plot():
+    plt.tight_layout()
+    plt.grid()
+    if plt.gca().get_legend_handles_labels() != ([], []):
+        plt.legend()
+    plt.show()
