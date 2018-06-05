@@ -1,13 +1,11 @@
 import logging
 import os
-import re
 import shutil
 import subprocess
 from pathlib import Path
-
 import numpy as np
-
 import pyha
+from pyha.common.util import tabber
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 

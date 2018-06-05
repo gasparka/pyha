@@ -11,7 +11,6 @@ import numpy as np
 from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
-from pyha.common.float import Float, ComplexFloat
 from pyha.common.util import is_constant, to_twoscomplement
 
 logging.basicConfig(level=logging.INFO)
