@@ -218,5 +218,9 @@ class Complex:
         # TODO: how to handle this in model code, should it always wrap?
         return Complex(self.val * 2 ** other, self.left, self.right)
 
+    def scalb(self, i):
+        n = 2 ** i
+        return Complex(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')
