@@ -444,6 +444,7 @@ def right_index(x: Sfix) -> int:
 def scalb(x, i):
     """
     This is like ``>>``/``<<``, but without precision loss i.e. it changes the fixed-point format.
+    In general 'i' can only be constant, changing the fixed-point format dynamically makes little sense in FPGA.
 
     >>> a = Sfix(0.5, 0, -17)
     >>> a

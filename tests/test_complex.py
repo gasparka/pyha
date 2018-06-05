@@ -1,4 +1,4 @@
-from pyha import Hardware, simulate, sims_close, Complex, hardware_sims_equal
+from pyha import Hardware, simulate, sims_close, Complex, hardware_sims_equal, scalb
 import numpy as np
 
 from pyha.common.shift_register import ShiftRegister
@@ -139,6 +139,52 @@ def test_lshift():
     sims = simulate(dut, a, b)
     assert hardware_sims_equal(sims)
     # assert sims_close(sims)
+
+
+def test_scalb():
+    class T(Hardware):
+        def __init__(self, scalbi):
+            self.SCALB_I = scalbi
+
+        def main(self, a):
+            # ret = scalb(a, b)
+            return scalb(a, self.SCALB_I)
+
+    dut = T(-1)
+    a = [0.125 + 0.25j]
+
+    sims = simulate(dut, a)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+    dut = T(0)
+    sims = simulate(dut, a)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+    dut = T(1)
+    sims = simulate(dut, a)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+
+def test_scalb_bug():
+    """ Result with negative integer bits were mishandled.. """
+    # TODO: probably not fully resolved...
+    class T(Hardware):
+        def __init__(self, scalbi):
+            self.SCALB_I = scalbi
+
+        def main(self, a):
+            ret = scalb(a, self.SCALB_I)
+            return ret
+
+    dut = T(-1)
+    a = [0.125 + 0.25j]
+
+    sims = simulate(dut, a)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
 
 
 def test_part_access():

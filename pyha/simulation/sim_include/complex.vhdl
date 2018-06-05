@@ -34,6 +34,7 @@ package complex_pkg is
   function "-" (l : complex_t; r: real) return complex_t;
   function "sra" (l: complex_t; r: integer) return complex_t;
   function "sla" (l: complex_t; r: integer) return complex_t;
+  function scalb (l: complex_t; r: integer) return complex_t;
 
   function get_real(a: complex_t) return sfixed;
   function get_imag(a: complex_t) return sfixed;
@@ -62,8 +63,8 @@ package body complex_pkg is
   end function;
 
   function get_real(a: complex_t) return sfixed is
-    constant left_index : integer := a'left / 2;
-    constant right_index : integer := a'right / 2;
+    constant left_index : integer := integer(floor(real(a'left) / 2.0));
+    constant right_index : integer := integer(floor(real(a'right) / 2.0));
     variable slv : std_logic_vector (a'length-1 downto 0);
     variable result : sfixed (left_index downto right_index);
   begin
@@ -73,8 +74,8 @@ package body complex_pkg is
   end function;
 
   function get_imag(a: complex_t) return sfixed is
-    constant left_index : integer := a'left / 2;
-    constant right_index : integer := a'right / 2;
+    constant left_index : integer := integer(floor(real(a'left) / 2.0));
+    constant right_index : integer := integer(floor(real(a'right) / 2.0));
     variable slv : std_logic_vector (a'length-1 downto 0);
     variable result : sfixed (left_index downto right_index);
   begin
@@ -210,6 +211,16 @@ package body complex_pkg is
     result := Complex(new_real, new_imag);
     return result;
   end function "sla";
+
+  function scalb (l: complex_t; r: integer) return complex_t is
+    variable new_real, new_imag : sfixed (l'left/2+r downto l'right/2+r);
+    variable result : complex_t (complex_left(new_real'left) downto complex_right(new_real'right));
+  begin
+    new_real := scalb(get_real(l), r);
+    new_imag := scalb(get_imag(l), r);
+    result := Complex(new_real, new_imag);
+    return result;
+  end function scalb;
 
 
   constant NSLV : STD_ULOGIC_VECTOR (0 downto 1) := (others => '0');
