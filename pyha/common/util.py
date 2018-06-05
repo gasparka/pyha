@@ -1,5 +1,4 @@
 import collections
-import matplotlib.pyplot as plt
 import numpy as np
 
 def to_twoscomplement(bits, value):
@@ -111,6 +110,7 @@ def snr(pure, noisy):
 
 
 def show_plot():
+    import matplotlib.pyplot as plt
     plt.tight_layout()
     plt.grid()
     if plt.gca().get_legend_handles_labels() != ([], []):
