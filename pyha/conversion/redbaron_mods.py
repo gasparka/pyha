@@ -136,7 +136,7 @@ class BinaryOperatorNodeVHDL(ComparisonNodeVHDL):
         elif self.value == '^':
             self.value = 'xor'
         elif self.value == '%':
-            self.value = 'rem'
+            self.value = 'mod'
 
         return f'{self.first} {self.value} {self.second}'
 

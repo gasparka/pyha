@@ -1,10 +1,7 @@
 import os
-import subprocess
 from enum import Enum
 from unittest.mock import patch, MagicMock
-
 import numpy as np
-import pyha
 import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
@@ -12,6 +9,23 @@ from pyha.common.fixed_point import Sfix
 from pyha.conversion.top_generator import NoOutputsError
 from pyha.simulation.simulation_interface import simulate, assert_equals, sims_close, \
     assert_sim_match
+
+def test_mod():
+    """ Horrible bug: % was mapped to 'rem' which is shit for negative numbers + takes more resources..."""
+    class T(Hardware):
+        def __init__(self):
+            self.DELAY = 1
+            self.comp = 0
+
+        def main(self, x):
+            self.comp = (x - 8) % 512
+            return self.comp
+
+    dut = T()
+    inputs = [0, 1, 2, 3, 4, 5, 6]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
 
 
 class TestSubmoduleAssign:
