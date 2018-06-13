@@ -210,12 +210,12 @@ class TopGenerator:
                 {OUTPUT_TYPE_CONVERSIONS}
 
 
-                        if (not rst_n) then
+                        if (rst_n = '0') then
                             self <= init_regs;
                 {RAM_HOLD_VALUE}
                         elsif rising_edge(clk) then
                             -- look #153 if you want enable
-                            --if enable then
+                            --if enable = '1' then
                                 self <= self_next;
                                 
                 {RAM_ON_EDGE}
