@@ -1123,6 +1123,20 @@ def transform_call(red_node):
 
     """
 
+    def find_line_node(red_obj):
+        line_node = red_obj
+        while True:
+            if type(line_node.next) == EndlNode:
+                break
+            if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
+                if not (hasattr(line_node.parent, 'test') and (
+                        line_node.parent.test == atom  # if WE are the if condition, skip
+                        or line_node.parent.test == atom.parent)):  # if WE are the if condition (part of condition)
+                    break
+
+            line_node = line_node.parent
+        return line_node
+
     is_hack = False
 
     # make sure each created variable is unique by appending this number and incrementing
@@ -1159,6 +1173,12 @@ def transform_call(red_node):
         try:
             target_func_obj = super_getattr(convert_obj, str(target_func_name))
         except:  # happend for: (self.conjugate(complex_in) * complex_in).real
+            continue
+
+        if not target_func_obj.calls:
+            # function is not simulated...
+            line_node = find_line_node(atom)
+            line_node.replace(f'# comment out because not called in simulation: {line_node.dumps()}')
             continue
 
         prefix = atom.copy()
@@ -1222,17 +1242,7 @@ def transform_call(red_node):
                 # call.value[-1].target = f'ret_{j}'
 
             # need to add new source line before the CURRENT line..search for the node with linenodes
-            line_node = atom
-            while True:
-                if type(line_node.next) == EndlNode:
-                    break
-                if hasattr(line_node.parent, 'value') and type(line_node.parent.value) == LineProxyList:
-                    if not (hasattr(line_node.parent, 'test') and (
-                            line_node.parent.test == atom  # if WE are the if condition, skip
-                            or line_node.parent.test == atom.parent)):  # if WE are the if condition (part of condition)
-                        break
-
-                line_node = line_node.parent
+            line_node = find_line_node(atom)
 
             # add function call BEFORE the CURRENT line
             if line_node != atom:  # equality means that value is not assigned to anything

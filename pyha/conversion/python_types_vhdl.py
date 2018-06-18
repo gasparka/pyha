@@ -11,7 +11,7 @@ import numpy as np
 from pyha import Complex
 from pyha.common.core import PyhaFunc, Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
-from pyha.common.util import is_constant, to_twoscomplement
+from pyha.common.util import is_constant, to_twoscomplement, to_signed_int
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
@@ -57,15 +57,6 @@ def escape_reserved_vhdl(x: str) -> str:
     if x.lower() in vhdl_reserved_names or x[0] == '_':
         return '\\{}\\'.format(x)  # "escape" reserved name
     return x
-
-
-def to_signed_int(number, bit_length):
-    # http://stackoverflow.com/questions/1375897/how-to-get-the-signed-integer-value-of-a-long-in-python
-    mask = (2 ** bit_length) - 1
-    if number & (1 << (bit_length - 1)):
-        return number | ~mask
-    else:
-        return number & mask
 
 
 class BaseVHDLType:

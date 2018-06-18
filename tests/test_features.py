@@ -10,6 +10,31 @@ from pyha.conversion.top_generator import NoOutputsError
 from pyha.simulation.simulation_interface import simulate, assert_equals, sims_close, \
     assert_sim_match
 
+
+def test_func_call_not_simulated():
+    """ One of the functions is not simulated and code fails to determine the return type ->
+     delete functions calls that have not been called during simulation"""
+    class T(Hardware):
+        def b(self):
+            return 1
+
+        def a(self):
+            return True
+
+        def main(self, cond):
+            if cond:
+                return self.a()
+            else:
+                return self.b()
+
+
+    dut = T()
+    inputs = [True, True, True]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
+
+
 def test_mod():
     """ Horrible bug: % was mapped to 'rem' which is shit for negative numbers + takes more resources..."""
     class T(Hardware):
