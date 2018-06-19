@@ -16,6 +16,7 @@ def test_func_call_not_simulated():
      delete functions calls that have not been called during simulation"""
     class T(Hardware):
         def b(self):
+            l = 123 # b should NOT be parsed, or this line gives error (no type information)
             return 1
 
         def a(self):

@@ -10,7 +10,7 @@ from redbaron.base_nodes import LineProxyList
 
 import pyha
 from pyha import Complex
-from pyha.common.core import SKIP_FUNCTIONS, Hardware
+from pyha.common.core import SKIP_FUNCTIONS, Hardware, PyhaFunc
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter, is_constant, const_filter
 from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList, \
@@ -751,11 +751,23 @@ def convert(red: Node, obj=None):
     set_convert_obj(obj)
 
     # delete all non convertable functions from redbaron AST
+    # coding style is akward because of some redbaron bugs...
     while True:
         f = red.find('def', name=lambda x: x in SKIP_FUNCTIONS or x[:2] == '__' or x[:5] == '_pyha')
         if not f:
             break
         f.parent.remove(f)
+
+    # delete functions that were not simulated
+    # problem was that some transforms may still parse (e.g find all assignments in the design) these and run into trouble as no type info exists
+    for k, v in obj.__dict__.items():
+        if isinstance(v, PyhaFunc):
+            if not v.calls:
+                f = red.find('def', name=lambda x: x == k)
+                if not f:
+                    continue
+                f.parent.remove(f)
+
 
     # run RedBaron based conversions before parsing
     transform_preprocessor(red)
