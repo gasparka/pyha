@@ -14,9 +14,10 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
 def test_func_call_not_simulated():
     """ One of the functions is not simulated and code fails to determine the return type ->
      delete functions calls that have not been called during simulation"""
+
     class T(Hardware):
         def b(self):
-            l = 123 # b should NOT be parsed, or this line gives error (no type information)
+            l = 123  # b should NOT be parsed, or this line gives error (no type information)
             return 1
 
         def a(self):
@@ -28,7 +29,6 @@ def test_func_call_not_simulated():
             else:
                 return self.b()
 
-
     dut = T()
     inputs = [True, True, True]
 
@@ -38,6 +38,7 @@ def test_func_call_not_simulated():
 
 def test_mod():
     """ Horrible bug: % was mapped to 'rem' which is shit for negative numbers + takes more resources..."""
+
     class T(Hardware):
         def __init__(self):
             self.DELAY = 1
@@ -1449,6 +1450,20 @@ class TestInterface:
         sims = simulate(dut, x, simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims, expected=x)
 
+    def test_input_custom_sfix_list(self):
+        """ Failed to convert """
+        # TODO: this is fucked up
+
+        class T13(Hardware):
+            def main(self, x):
+                return x
+
+        dut = T13()
+        x = [[0.0000001, 0.000002], [0.00000003, 0.000000004]]
+
+        sims = simulate(dut, x, input_types=[Sfix(0, 0, -35)], simulations=['PYHA', 'RTL', 'GATE'])
+        assert sims_close(sims, expected=x)
+
 
 class TestInOutOrdering:
     """ Had problems with the serialize/deserialise ordering, some stuff was flipped """
@@ -1599,7 +1614,6 @@ class TestFloatToSfix:
         assert dut.reg.round_style == 'truncate'
         assert dut.reg.overflow_style == 'wrap'
 
-
     def test_complex_list(self):
         class Listy(Hardware):
             def __init__(self):
@@ -1615,7 +1629,6 @@ class TestFloatToSfix:
         # make sure the overall defaults are restored (however conversion is done with saturate and round)
         assert dut.l[0].round_style == 'truncate'
         assert dut.l[0].overflow_style == 'wrap'
-
 
     def test_basic(self):
         dut = self.D()

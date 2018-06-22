@@ -43,25 +43,29 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
         return ret
 
     args = list(args)
+
+    def is_list(x):
+        return isinstance(x, (list, np.ndarray))
+
     with SimPath('inputs'):
         for i, arg in enumerate(args):
             arg = get_iterable(arg)
-            if any(isinstance(x, float) for x in arg):
+
+            if  to_types is not None and not is_list(arg[0]):
+                args[i] = convert_arg(None, arg, i)
+            elif any(isinstance(x, float) for x in arg):
                 args[i] = convert_arg(default_sfix, arg, i)
 
             elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
                 args[i] = convert_arg(default_complex, arg, i)
 
-            elif to_types is not None:
-                args[i] = convert_arg(None, arg, i)
-
             elif isinstance(arg[0], Hardware):
                 for x in arg:
                     x._pyha_floats_to_fixed()
 
-            elif isinstance(arg[0], (list, np.ndarray)):
+            elif is_list(arg[0]):
                 # input is 2D array -> turn into packets (1D list of Stream objects)
-                args[i] = convert_input_types(arg, silence=True)  # dont apply input callback here..
+                args[i] = convert_input_types(arg, silence=True, to_types=to_types)  # dont apply input callback here..
 
     if input_callback:
         for i in range(len(args)):
