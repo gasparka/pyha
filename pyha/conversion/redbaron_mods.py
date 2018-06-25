@@ -1114,8 +1114,8 @@ def transform_call(red_node):
     Converts Python style function calls to VHDL style:
     self.d(a) -> d(self, a)
 
-    If function owner is not exactly 'self' then 'unknown_type' is prepended.
-    self.next.moving_average.main(x) -> unknown_type.main(self.next.moving_average, x)
+    If function owner is not exactly 'self' then 'type' is prepended.
+    self.next.moving_average.main(x) -> type.main(self.next.moving_average, x)
 
     self.d(a) -> d(self, a)
     self.next.d(a) -> d(self.next, a)
@@ -1167,10 +1167,14 @@ def transform_call(red_node):
         if call is None:  # this atomtrailer has no function call
             continue
 
-        if call.call is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
-            atom = atomtrailers[i + 1]
-            call = atom.call
-            is_hack = True
+        wat = call.call
+        if wat is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
+            try:
+                atom = atomtrailers[i + 1]
+                call = atom.call
+                is_hack = True
+            except:
+                continue # no idea what is going on here...
 
             if call is None:  # this atomtrailer has no function call
                 continue
