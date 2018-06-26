@@ -8,4 +8,4 @@ sphinx-rtd-theme==0.2.4
 twine==1.9.1
 sphinx-autobuild==0.7.1
 snakeviz
-asv
+asv==0.2.1
