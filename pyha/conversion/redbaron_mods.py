@@ -760,13 +760,14 @@ def convert(red: Node, obj=None):
 
     # delete functions that were not simulated
     # problem was that some transforms may still parse (e.g find all assignments in the design) these and run into trouble as no type info exists
-    for k, v in obj.__dict__.items():
-        if isinstance(v, PyhaFunc):
-            if not v.calls:
-                f = red.find('def', name=lambda x: x == k)
-                if not f:
-                    continue
-                f.parent.remove(f)
+    if obj is not None:
+        for k, v in obj.__dict__.items():
+            if isinstance(v, PyhaFunc):
+                if not v.calls:
+                    f = red.find('def', name=lambda x: x == k)
+                    if not f:
+                        continue
+                    f.parent.remove(f)
 
 
     # run RedBaron based conversions before parsing
