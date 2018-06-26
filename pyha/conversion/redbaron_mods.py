@@ -1065,8 +1065,8 @@ def transform_auto_resize(red_node):
                 else:
                     node.value = f'resize({node.value}, {var_t.left-1}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
         elif isinstance(var_t, (Complex)):
-            if isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second,
-                                                                           BinaryOperatorNode):  # handle mul case: 1+1*1j
+            if isinstance(node.value, (BinaryOperatorNode)) \
+                    and (isinstance(node.value.second, BinaryOperatorNode) and isinstance(node.value.second.second, ComplexNode)):  # handle mul case: 1+1*1j
                 node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.first}, {var_t.left}, {var_t.right})'
             elif isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second,
                                                                              ComplexNode):  # normal case: 1+1j

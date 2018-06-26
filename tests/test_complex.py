@@ -294,3 +294,24 @@ def test_floatconst_operations():
     sims = simulate(dut, a)
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
+
+def test_complex_constants():
+    class T(Hardware):
+        def __init__(self):
+            self.DELAY = 1
+            self.reg = Complex(0, 0, -17)
+            self.reg2 = Complex(0, 0, -17)
+            self.reg3 = Complex(0, 0, -17)
+
+        def main(self, x):
+            self.reg = self.reg + x - (x * x) # this was incorrectly parsed as complex constant!
+            self.reg2 = 0.0 + 0.5j
+            self.reg3 = 0.0 + 0.5*1j
+            return self.reg, self.reg2
+
+    dut = T()
+    inputs = [0+0j, 0.1+0.2j, -0.1+0.3j]
+
+    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+                    conversion_path='/home/gaspar/git/pyhacores/playground')
+    assert sims_close(sims)
