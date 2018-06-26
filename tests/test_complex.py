@@ -170,6 +170,7 @@ def test_scalb():
 
 def test_scalb_bug():
     """ Result with negative integer bits were mishandled.. """
+
     # TODO: probably not fully resolved...
     class T(Hardware):
         def __init__(self, scalbi):
@@ -244,6 +245,23 @@ def test_sub_float():
     b = np.random.uniform(-1, 1, 256)
 
     sims = simulate(dut, a, b)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+
+def test_sub_uneven_types():
+    """ Failed if a and b were different sizes, bug was in minimum function, that acted as maximum """
+
+    class T(Hardware):
+        def main(self, a, b):
+            return a - b
+
+    dut = T()
+    a = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
+    b = np.random.uniform(-1, 1, 256)
+
+    sims = simulate(dut, a, b, input_types=[Complex(0, 0, -17), Complex(0, 0, -18)], simulations=['PYHA', 'RTL'],
+                    conversion_path='/home/gaspar/git/pyhacores/playground')
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 

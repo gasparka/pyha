@@ -116,7 +116,7 @@ package body complex_pkg is
 
   function minimum(a, b: integer) return integer is
   begin
-    if a > b then
+    if a < b then
       return a;
     end if;
     return b;
