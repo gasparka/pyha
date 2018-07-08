@@ -14,6 +14,7 @@ from tqdm import tqdm
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath, AutoResize
+from pyha.common.core import PyhaFunc
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.stream import packetize, Stream, unpacketize
 from pyha.common.util import get_iterable, np_to_py
@@ -51,7 +52,7 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
         for i, arg in enumerate(args):
             arg = get_iterable(arg)
 
-            if  to_types is not None and not is_list(arg[0]):
+            if to_types is not None and not is_list(arg[0]):
                 args[i] = convert_arg(None, arg, i)
             elif any(isinstance(x, float) for x in arg):
                 args[i] = convert_arg(default_sfix, arg, i)
@@ -220,6 +221,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
+
+    # Speed up simulation if VHDL conversion is not required!
+    if 'RTL' not in simulations and 'GATE' not in simulations:
+        PyhaFunc.bypass = True
+        logger.info(f'Enabled fast simulation')
+    else:
+        PyhaFunc.bypass = False
 
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
