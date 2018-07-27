@@ -6,9 +6,28 @@ import pytest
 from pyha.common.complex import Complex
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
+from pyha.common.ram import RAM
 from pyha.conversion.top_generator import NoOutputsError
 from pyha.simulation.simulation_interface import simulate, assert_equals, sims_close, \
     assert_sim_match
+
+
+def test_list_of_rams():
+    class T(Hardware):
+        def __init__(self):
+            self.ram = [RAM([Sfix(0.0, 0, -17)] * 128), RAM([Sfix(0.0, 0, -17)] * 128)]
+
+        def main(self, ram_select, ram_index, write_data):
+            self.ram[ram_select].delayed_write(ram_index, write_data)
+            other = int(not ram_select)
+            r = self.ram[other].delayed_read(ram_index)
+            return r
+
+    dut = T()
+    inputs = [[0, 1, 0, 1, 0, 1, 1, 0], [0, 1, 2, 3, 4, 5, 6, 7], [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]]
+
+    sims = simulate(dut, *inputs, simulations=['PYHA', 'RTL', 'GATE'])
+    assert sims_close(sims)
 
 
 def test_sfix_call_argument():
@@ -19,7 +38,6 @@ def test_sfix_call_argument():
         def main(self, x):
             res = self.b(Sfix(0.0, 0, -17))
             return res
-
 
     dut = T()
     inputs = [True, True, True]

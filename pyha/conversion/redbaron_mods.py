@@ -386,7 +386,10 @@ class GetitemNodeVHDL(NodeVHDL):
         return ret[1:]
 
     def is_negative_indexing(self, obj):
-        return isinstance(obj, UnitaryOperatorNodeVHDL) and int(str(obj)) < 0
+        try:
+            return isinstance(obj, UnitaryOperatorNodeVHDL) and int(str(obj)) < 0
+        except ValueError:
+            return False
 
     def __str__(self):
         if self.is_negative_indexing(self.value):
