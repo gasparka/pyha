@@ -1170,15 +1170,20 @@ def transform_call(red_node):
 
         wat = call.call
         if wat is not None:  # one of the arguments is a call -> process it first (i expect it is next in the list)
-            try:
-                atom = atomtrailers[i + 1]
-                call = atom.call
-                is_hack = True
-            except:
-                continue # no idea what is going on here...
 
-            if call is None:  # this atomtrailer has no function call
-                continue
+            call_index = wat.previous.index_on_parent
+            if call_index == 0:  # input is something like x() -> len(), Sfix() ....
+                pass
+            else:
+                try:
+                    atom = atomtrailers[i + 1]
+                    call = atom.call
+                    is_hack = True
+                except:
+                    continue # no idea what is going on here...
+
+                if call is None:  # this atomtrailer has no function call
+                    continue
 
         call_index = call.previous.index_on_parent
         if call_index == 0:  # input is something like x() -> len(), Sfix() ....

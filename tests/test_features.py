@@ -11,6 +11,23 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
+def test_sfix_call_argument():
+    class T(Hardware):
+        def b(self, x):
+            return x
+
+        def main(self, x):
+            res = self.b(Sfix(0.0, 0, -17))
+            return res
+
+
+    dut = T()
+    inputs = [True, True, True]
+
+    sims = simulate(dut, inputs)
+    assert sims_close(sims)
+
+
 def test_func_call_not_simulated():
     """ One of the functions is not simulated and code fails to determine the return type ->
      delete functions calls that have not been called during simulation"""
