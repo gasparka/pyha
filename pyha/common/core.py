@@ -22,6 +22,9 @@ class PyhaFunc:
     """ All functions of a Pyha class will be wrapped in this object, calls to original function are done with 'profiler hack' in
     order to save the local variables. """
 
+    # if true, just call the function.. 10 x faster (but VHDL generation not supported)
+    bypass = False
+
     class TraceManager:
         """ Enables nested functions calls, thanks to ref counting """
         last_call_locals = {}
@@ -140,6 +143,9 @@ class PyhaFunc:
                 self.output_types[i] = v
 
     def __call__(self, *args, **kwargs):
+        if PyhaFunc.bypass:
+            return self.func(*args, **kwargs)
+
         self.update_input_types(args, kwargs)
         self.calls += 1
 
