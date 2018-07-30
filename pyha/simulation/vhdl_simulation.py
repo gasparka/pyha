@@ -15,6 +15,8 @@ logger = logging.getLogger('sim')
 class VHDLSimulation:
     last_logic_elements = 0
     last_memory_bits = 0
+    last_multiplier = 0
+
     def __init__(self, base_path, model, sim_type):
         self.sim_type = sim_type
         self.base_path = base_path
@@ -45,7 +47,6 @@ class VHDLSimulation:
 
     def get_conversion_sources(self):
         # NB! order of files added to src matters!
-
 
         shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/complex.vhdl',
                         self.src_util_path / 'complex.vhdl')
@@ -78,7 +79,8 @@ class VHDLSimulation:
 
     def make_quartus_project(self):
         rules = {}
-        rules['DEVICE'] = 'EP4CE40F23C8' # tried to change this to MAX10 but GATE simulation breaks (encrypted cores not usable in GHDL)
+        rules[
+            'DEVICE'] = 'EP4CE40F23C8'  # tried to change this to MAX10 but GATE simulation breaks (encrypted cores not usable in GHDL)
         rules['TOP_LEVEL_ENTITY'] = 'top'
         rules['PROJECT_OUTPUT_DIRECTORY'] = 'output_files'
 
@@ -116,8 +118,9 @@ class VHDLSimulation:
         for l in result:
             logger.info(l[:-1])
 
-        VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':')+1:-1].replace(',', ''))
-        VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':')+1:-1].replace(',', ''))
+        VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':') + 1:-1].replace(',', ''))
+        VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':') + 1:-1].replace(',', ''))
+        VHDLSimulation.last_multiplier = int(result[12][result[12].find(':') + 1:-1].replace(',', ''))
 
         logger.info('Running netlist writer.')
         subprocess.run(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
@@ -194,7 +197,6 @@ class CocotbAuto:
             indata.append(l)
 
         np.save(str(self.base_path / 'input.npy'), indata)
-
 
         result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
 
