@@ -118,9 +118,12 @@ class VHDLSimulation:
         for l in result:
             logger.info(l[:-1])
 
-        VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':') + 1:-1].replace(',', ''))
-        VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':') + 1:-1].replace(',', ''))
-        VHDLSimulation.last_multiplier = int(result[12][result[12].find(':') + 1:-1].replace(',', ''))
+        try:
+            VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':') + 1:-1].replace(',', ''))
+            VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':') + 1:-1].replace(',', ''))
+            VHDLSimulation.last_multiplier = int(result[12][result[12].find(':') + 1:-1].replace(',', ''))
+        except:
+            pass
 
         logger.info('Running netlist writer.')
         subprocess.run(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
