@@ -120,14 +120,7 @@ def process_outputs(delay_compensate, ret, output_callback=None):
     return ret
 
 
-_last_trained_object = None
 _ran_gate_simulation = False
-
-
-def get_last_trained_object():
-    return _last_trained_object
-
-
 def get_ran_gate_simulation():
     return _ran_gate_simulation
 
@@ -214,11 +207,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         os.makedirs(conversion_path)
 
     out = {}
-    if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-        fix_model = deepcopy(model)  # make sure we dont mess up original model, this copy is cheap
-        logger.info(f'Converting model to hardware types ...')
-        fix_model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
-
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
 
@@ -293,15 +281,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
-                        returns = fix_model.main(*input)
+                        returns = model.main(*input)
                         returns = types_from_pyha_to_python(returns)
                         ret.append(returns)
-                        fix_model._pyha_update_registers()
+                        model._pyha_update_registers()
 
             ret = process_outputs(delay_compensate, ret, output_callback)
 
-            global _last_trained_object
-            _last_trained_object = fix_model
             out['PYHA'] = ret
             logger.info(f'OK!')
 
@@ -317,7 +303,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             elif not have_ghdl():
                 logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
             else:
-                vhdl_sim = VHDLSimulation(Path(conversion_path), fix_model, 'RTL')
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
                 ret = vhdl_sim.main(*args)
 
                 out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
@@ -337,7 +323,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
             else:
                 _ran_gate_simulation = True
-                vhdl_sim = VHDLSimulation(Path(conversion_path), fix_model, 'GATE')
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
                 out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
@@ -399,7 +385,6 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             result = False
 
     return result
-
 
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """ Legacy """

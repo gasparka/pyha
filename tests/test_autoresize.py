@@ -1,6 +1,6 @@
 from pyha import simulate, sims_close
 from pyha.common.complex import Complex
-from pyha.common.context_managers import AutoResize
+from pyha.common.context_managers import AutoResize, RegisterBehaviour
 from pyha.common.core import Hardware, PyhaList
 from pyha.common.fixed_point import Sfix
 from pyha.simulation.simulation_interface import assert_sim_match
@@ -97,17 +97,17 @@ class TestSfixList:
 
     def test_basic(self):
         dut = self.A1('saturate', 'round')
+        with RegisterBehaviour.enable():
+            with AutoResize.enable():
+                dut.main(Sfix(0.1, 2, -27))
 
-        with AutoResize.enable():
-            dut.main(Sfix(0.1, 2, -27))
+                assert dut.a._pyha_next[0].left == 0
+                assert dut.a._pyha_next[0].right == -4
+                assert dut.a._pyha_next[0].val == 0.125
 
-            assert dut.a._pyha_next[0].left == 0
-            assert dut.a._pyha_next[0].right == -4
-            assert dut.a._pyha_next[0].val == 0.125
-
-            assert dut.a._pyha_next[1].left == 0
-            assert dut.a._pyha_next[1].right == -4
-            assert dut.a._pyha_next[1].val == 0.125
+                assert dut.a._pyha_next[1].left == 0
+                assert dut.a._pyha_next[1].right == -4
+                assert dut.a._pyha_next[1].val == 0.125
 
     def test_round(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
