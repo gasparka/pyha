@@ -12,6 +12,26 @@ from pyha.simulation.simulation_interface import simulate, assert_equals, sims_c
     assert_sim_match
 
 
+def test_model_pyha_sim():
+    """ Pyha sim converts floats into Sfix, make sure 'MODEL' is still runnable by giving it deepcopy of original dut"""
+    class T(Hardware):
+        def __init__(self):
+            self.coef = 0.123
+
+        def main(self, inp):
+            return inp * self.coef
+
+        def model_main(self, inp):
+            return np.array(inp) * self.coef
+
+
+    dut = T()
+    inputs = [0.1, 0.2, 0.3, 0.4]
+
+    sims = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sims)
+
+
 def test_list_of_rams():
     class T(Hardware):
         def __init__(self):

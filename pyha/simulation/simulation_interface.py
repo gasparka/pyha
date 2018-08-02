@@ -207,6 +207,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         os.makedirs(conversion_path)
 
     out = {}
+
+    if 'MODEL' in simulations:
+        float_model = deepcopy(model)
+
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
 
@@ -226,10 +230,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         if 'MODEL' in simulations:
             logger.info(f'Running "MODEL" simulation...')
 
-            if not hasattr(model, 'model_main'):
+            if not hasattr(float_model, 'model_main'):
                 logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
             else:
-                r = model.model_main(*args)
+                r = float_model.model_main(*args)
                 r = np_to_py(r)
                 if isinstance(r, tuple):
                     r = list(r)
