@@ -222,12 +222,17 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
 
-    # Speed up simulation if VHDL conversion is not required!
-    if 'RTL' not in simulations and 'GATE' not in simulations:
-        PyhaFunc.bypass = True
-        logger.info(f'Enabled fast simulation')
-    else:
-        PyhaFunc.bypass = False
+    if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
+        logger.info(f'Converting model to hardware types ...')
+        model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
+
+
+    # # Speed up simulation if VHDL conversion is not required!
+    # if 'RTL' not in simulations and 'GATE' not in simulations:
+    #     PyhaFunc.bypass = True
+    #     logger.info(f'Enabled fast simulation (model cannot be converted to VHDL)')
+    # else:
+    #     PyhaFunc.bypass = False
 
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
