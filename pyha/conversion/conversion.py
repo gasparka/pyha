@@ -19,6 +19,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
 
 
+def convertToVHDL(simulated_object, output_dir):
+    from pyha.simulation.vhdl_simulation import VHDLSimulation
+    return VHDLSimulation(Path(output_dir), simulated_object, 'GATE', make_files_only=True)
+
+
 def get_objects_rednode(obj):
     """
     Returns the RedBaron node for the class instance.

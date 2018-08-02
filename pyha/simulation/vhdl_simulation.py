@@ -17,7 +17,7 @@ class VHDLSimulation:
     last_memory_bits = 0
     last_multiplier = 0
 
-    def __init__(self, base_path, model, sim_type):
+    def __init__(self, base_path, model, sim_type, make_files_only=False):
         self.sim_type = sim_type
         self.base_path = base_path
 
@@ -38,12 +38,14 @@ class VHDLSimulation:
         self.conv = Conversion(self.model)
 
         src = self.get_conversion_sources()
-        if self.sim_type == 'GATE':
-            self.make_quartus_project()
-            vho = self.make_quartus_netlist()
-            src = [str(vho)]
 
-        self.cocoauto = CocotbAuto(self.base_path, src, self.conv)
+        self.make_quartus_project()
+        if not make_files_only:
+            if self.sim_type == 'GATE':
+                vho = self.make_quartus_netlist()
+                src = [str(vho)]
+
+            self.cocoauto = CocotbAuto(self.base_path, src, self.conv)
 
     def get_conversion_sources(self):
         # NB! order of files added to src matters!
