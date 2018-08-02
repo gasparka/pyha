@@ -252,9 +252,12 @@ package body complex_pkg is
   end function;
 
   function Complex(real, imag:sfixed) return complex_t is
-    variable result : complex_t (complex_left(real'left) downto complex_right(real'right));
+    variable left : integer := maximum(real'left, imag'left);
+    variable right : integer := real'right;
+    variable result : complex_t (complex_left(left) downto complex_right(right));
   begin
-    result := complex_t(to_slv(real) & to_slv(imag));
+
+    result := complex_t(to_slv(resize(real, left, right)) & to_slv(resize(imag, left, right)));
     return result;
   end function;
 
