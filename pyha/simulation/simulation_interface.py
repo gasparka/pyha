@@ -126,7 +126,7 @@ def get_ran_gate_simulation():
 
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
-             output_callback=None):
+             output_callback=None, discard_last_n_outputs=None):
     """
     Run simulations on model.
 
@@ -332,6 +332,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
                 out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
                 logger.info(f'OK!')
+
+    if discard_last_n_outputs:
+        for key, value in out.items():
+            out[key] = value[:-discard_last_n_outputs]
 
     logger.info('Simulations completed!')
     return out
