@@ -58,9 +58,9 @@ def run_dut(dut, in_data, out_count):   # pragma: no cover
 @cocotb.test()      # pragma: no cover
 def test_main(dut): # pragma: no cover
     import os
-    in_data = np.load(os.getcwd() + '/../input.npy')
+    in_data = np.load(os.getcwd() + '/input.npy')
 
     output_vars = int(os.environ['OUTPUT_VARIABLES'])
     hdl_out = yield run_dut(dut, in_data, output_vars)
 
-    np.save(os.getcwd() + '/../output.npy', hdl_out)
+    np.save(os.getcwd() + '/output.npy', hdl_out)

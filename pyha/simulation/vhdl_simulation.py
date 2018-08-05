@@ -178,7 +178,8 @@ class CocotbAuto:
         self.environment['TOPLEVEL'] = 'top'
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
-        self.environment['VHDL_SOURCES'] = ' '.join(str(x) for x in self.src)
+        srcstr = [str(x) for x in self.src]
+        self.environment['VHDL_SOURCES'] = ' '.join('.' + x[x.find('/src'):] for x in srcstr)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/sim_include/cocotb_simulation_top.py'
@@ -203,18 +204,26 @@ class CocotbAuto:
 
         np.save(str(self.base_path / 'input.npy'), indata)
 
-        result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
+        # self.environment['VHDL_SOURCES'] = [x[x.find('/src'):] for x in self.src]
 
-        if result.returncode != 0:
-            msg = f'Build with GHDL/Cocotb failed:\n{tabber(result.stderr.decode())}'
-            logger.error(msg)
-            # logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
-            raise Exception(msg)
+        # result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
+        result = subprocess.run(f"docker run "
+                                f"-u `id -u`" # without this docker creates files as ROOT, which fuck up everything
+                                f" -v ~/git/pyha/playground:/pyha_simulation simdoc make "
+                                f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "
+                                f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" ",
+                                shell=True)
+
+        # if result.returncode != 0:
+        #     msg = f'Build with GHDL/Cocotb failed:\n{tabber(result.stderr.decode())}'
+        #     logger.error(msg)
+        #     # logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
+        #     raise Exception(msg)
 
         # print(result.stdout.decode())
         # logger.info(f'VHDL stdout: \n{tabber(result.stdout.decode())}')
 
-        logger.info(f'VHDL stderr: \n{tabber(result.stderr.decode())}')
+        # logger.info(f'VHDL stderr: \n{tabber(result.stderr.decode())}')
         # print(result.stderr.decode())
 
         out = np.load(str(self.base_path / 'output.npy'))
