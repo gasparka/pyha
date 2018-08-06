@@ -69,7 +69,7 @@ class VHDLSimulation:
 
         if self.sim_type == 'GATE':
             # copy FPHDL dependencies to src - these are only neede by quartus
-            fphdl_path = Path(pyha.__path__[0]) / '../fphdl'
+            fphdl_path = Path(pyha.__path__[0] + '/simulation/fphdl')
             shutil.copyfile(fphdl_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
             shutil.copyfile(fphdl_path / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
             src += [self.src_util_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl']
