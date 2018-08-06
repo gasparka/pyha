@@ -443,29 +443,6 @@ class VHDLList(BaseVHDLType):
                                                                        self.elems[0]._pyha_type())
         return None  # arrays of submodules are already defined in each submodule package!
 
-    def _pyha_init(self):
-        if not self.elements_compatible_typed:
-            return '\n'.join(x._pyha_init() for x in self.elems)
-
-        if self.not_submodules_list:
-            return super()._pyha_init()
-
-        inits = ['{}.pyha_init_next(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
-                 for i in range(len(self.current))]
-        return '\n'.join(inits)
-
-    def _pyha_update_registers(self):
-        if not self.elements_compatible_typed:
-            return '\n'.join(x._pyha_update_registers() for x in self.elems)
-
-        if self.not_submodules_list:
-            return super()._pyha_update_registers()
-
-        inits = [
-            '{}.pyha_update_registers(self.{}({}));'.format(self.elems[0]._pyha_module_name(), self._pyha_name(), i)
-            for i in range(len(self.current))]
-        return '\n'.join(inits)
-
     def _pyha_reset(self, prefix='self', filter_func=None) -> str:
         if filter_func:
             if not filter_func(self):
@@ -604,12 +581,6 @@ class VHDLModule(BaseVHDLType):
         elem_type = elem_type.replace('(', '').replace(')', '').replace(' ', '').replace('-', '_').replace('.', '_')
         return '{}_list_t{}'.format(elem_type, TypeAppendHack)
 
-    def _pyha_init(self) -> str:
-        return '{}.pyha_init_next(self.{});'.format(self._pyha_module_name(), self._pyha_name())
-
-    def _pyha_update_registers(self):
-        return '{}.pyha_update_registers(self.{});'.format(self._pyha_module_name(), self._pyha_name())
-
     def _pyha_reset(self, prefix='self', filter_func=None):
         if filter_func:
             if not filter_func(self):
@@ -622,18 +593,6 @@ class VHDLModule(BaseVHDLType):
                 if self._name[0] != '[':
                     tmp_prefix += f'.{self._pyha_name()}'
             ret += sub._pyha_reset(tmp_prefix, filter_func=filter_func)  # recursive
-        return ret
-
-    def _pyha_recursive_object_assign(self, prefix='self', other_name="other"):
-        ret = ''
-        for i, sub in enumerate(self.elems):
-            tmp_prefix = prefix
-            tmp_other = other_name
-            if self._name != '-':
-                if self._name[0] != '[':
-                    tmp_prefix += f'.{self._pyha_name()}'
-                    tmp_other += f'.{self._pyha_name()}'
-            ret += sub._pyha_recursive_object_assign(tmp_prefix, tmp_other)  # recursive
         return ret
 
     def _pyha_type_is_compatible(self, other) -> bool:

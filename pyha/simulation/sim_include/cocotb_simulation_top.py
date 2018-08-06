@@ -5,7 +5,7 @@ from cocotb.clock import Clock                  # pragma: no cover
 from cocotb.result import ReturnValue           # pragma: no cover
 from cocotb.triggers import RisingEdge, Timer   # pragma: no cover
 from tqdm import tqdm                           # pragma: no cover
-import sys
+import sys                                      # pragma: no cover
 
 
 @cocotb.coroutine               # pragma: no cover

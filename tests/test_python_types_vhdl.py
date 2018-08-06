@@ -151,14 +151,6 @@ class TestVHDLModule:
         expect = 'T_0.self_t'
         assert self.dut._pyha_type() == expect
 
-    def test_pyha_init(self):
-        expect = 'T_0.pyha_init_next(self.name);'
-        assert self.dut._pyha_init() == expect
-
-    def test_pyha_update_registers(self):
-        expect = 'T_0.pyha_update_registers(self.name);'
-        assert self.dut._pyha_update_registers() == expect
-
     def test_pyha_type_is_compatible(self):
         class A(Hardware):
             def __init__(self, init):
