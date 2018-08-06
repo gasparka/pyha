@@ -212,7 +212,7 @@ class CocotbAuto:
         # result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
         cmd = f"docker run "\
             f"-u `id -u` "\
-            f" -v ~/git/pyha/playground:/pyha_simulation simdoc make "\
+            f" -v {self.base_path}:/pyha_simulation simdoc make "\
             f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "\
             f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" "\
             f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "

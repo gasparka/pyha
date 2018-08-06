@@ -1,9 +1,6 @@
-[submodule "cocotb"]
-	path = cocotb
-	url = https://github.com/potentialventures/cocotb
 [submodule "pyhacores"]
 	path = pyhacores
 	url = https://github.com/gasparka/pyhacores
 [submodule "fphdl"]
-	path = fphdl
+	path = pyha/simulation/fphdl
 	url = https://github.com/FPHDL/fphdl
