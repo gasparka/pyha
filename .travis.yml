@@ -1,9 +1,12 @@
 language: python
 
 dist: trusty
-sudo: false
+sudo: required # this is needed for docker!
 #group: deprecated-2017Q4  # with new we have some random errors
 python: 3.6
+
+services:
+  - docker
 
 install:
   - pip install .
