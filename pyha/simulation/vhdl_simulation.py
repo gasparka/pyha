@@ -49,13 +49,13 @@ class VHDLSimulation:
 
     def get_conversion_sources(self):
         # NB! order of files added to src matters!
-
-        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/complex.vhdl',
+        sim_inc = Path(pyha.__path__[0] + '/simulation/sim_include')
+        shutil.copyfile(sim_inc / 'complex.vhdl',
                         self.src_util_path / 'complex.vhdl')
         src = [self.src_util_path / 'complex.vhdl']
 
         # copy pyha_util to src dir
-        shutil.copyfile(pyha.__path__[0] + '/simulation/sim_include/pyha_util.vhdl',
+        shutil.copyfile(sim_inc / 'pyha_util.vhdl',
                         self.src_util_path / 'pyha_util.vhdl')
         src += [self.src_util_path / 'pyha_util.vhdl']
 
@@ -70,8 +70,8 @@ class VHDLSimulation:
         if self.sim_type == 'GATE':
             # copy FPHDL dependencies to src - these are only neede by quartus
             fphdl_path = Path(pyha.__path__[0] + '/simulation/fphdl')
-            shutil.copyfile(fphdl_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
-            shutil.copyfile(fphdl_path / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
+            shutil.copyfile(sim_inc / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
+            shutil.copyfile(sim_inc / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
             src += [self.src_util_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl']
 
         return src
