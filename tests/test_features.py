@@ -62,8 +62,7 @@ def test_sfix_call_argument():
     dut = T()
     inputs = [True, True, True]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL',  'GATE'],
-                    conversion_path='/home/gaspar/git/pyha/playground')
+    sims = simulate(dut, inputs)
     assert sims_close(sims)
 
 
