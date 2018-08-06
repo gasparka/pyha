@@ -169,9 +169,7 @@ class CocotbAuto:
         self.environment['GHDL_ARGS'] = '--std=08'
 
         if len(self.src) == 1:  # one file must be quartus netlist, need to simulate in 93 mode
-            ghdl_path = Path(shutil.which('ghdl'))
-            altera_libs = str(ghdl_path.parent.parent / 'lib/ghdl/altera')
-            self.environment['GHDL_ARGS'] = '-P' + altera_libs + ' --ieee=synopsys --no-vital-checks'
+            self.environment['GHDL_ARGS'] = '-P/quartus_sim_lib/ --ieee=synopsys --no-vital-checks'
 
         self.environment["PYTHONPATH"] = str(self.base_path)
 
@@ -179,7 +177,7 @@ class CocotbAuto:
         self.environment['MODULE'] = 'cocotb_simulation_top'
 
         srcstr = [str(x) for x in self.src]
-        self.environment['VHDL_SOURCES'] = ' '.join('.' + x[x.find('/src'):] for x in srcstr)
+        self.environment['VHDL_SOURCES'] = ' '.join('.' + x[len(str(self.base_path)):] for x in srcstr)
 
         # copy cocotb simulation top file
         coco_py = pyha.__path__[0] + '/simulation/sim_include/cocotb_simulation_top.py'
@@ -204,15 +202,22 @@ class CocotbAuto:
 
         np.save(str(self.base_path / 'input.npy'), indata)
 
+        # make sure output file does not exist
+        out_path = str(self.base_path / 'output.npy')
+        if os.path.exists(out_path):
+            os.remove(out_path)
+
         # self.environment['VHDL_SOURCES'] = [x[x.find('/src'):] for x in self.src]
 
         # result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
-        result = subprocess.run(f"docker run "
-                                f"-u `id -u`" # without this docker creates files as ROOT, which fuck up everything
-                                f" -v ~/git/pyha/playground:/pyha_simulation simdoc make "
-                                f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "
-                                f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" ",
-                                shell=True)
+        cmd = f"docker run "\
+            f"-u `id -u` "\
+            f" -v ~/git/pyha/playground:/pyha_simulation simdoc make "\
+            f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "\
+            f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" "\
+            f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "
+
+        result = subprocess.run(cmd, shell=True)
 
         # if result.returncode != 0:
         #     msg = f'Build with GHDL/Cocotb failed:\n{tabber(result.stderr.decode())}'
@@ -226,7 +231,7 @@ class CocotbAuto:
         # logger.info(f'VHDL stderr: \n{tabber(result.stderr.decode())}')
         # print(result.stderr.decode())
 
-        out = np.load(str(self.base_path / 'output.npy'))
+        out = np.load(out_path)
         outp = out.astype(object).T
 
         for i, row in enumerate(outp):
