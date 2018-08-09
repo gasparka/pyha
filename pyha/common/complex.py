@@ -141,7 +141,7 @@ class Complex:
         return Complex(self.val, left, right, overflow_style=overflow_style, round_style=round_style)
 
     def __complex__(self):
-        return self.val
+        return complex(self.val)
 
     def __eq__(self, other):
         if type(other) is type(self):
