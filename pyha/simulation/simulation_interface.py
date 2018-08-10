@@ -52,7 +52,7 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
 
             if to_types is not None and not is_list(arg[0]):
                 args[i] = convert_arg(None, arg, i)
-            elif any(isinstance(x, float) for x in arg):
+            elif any(isinstance(x, (float, np.floating)) for x in arg):
                 args[i] = convert_arg(default_sfix, arg, i)
 
             elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
