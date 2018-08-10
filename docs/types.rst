@@ -46,6 +46,13 @@ Example:
 Fixed-point
 -----------
 
+Fixed-point types follow the style set by the VHDL fixed point library by David Bishop, you should read the user manual.
+
+* deviations from that..ie >> means scalb
+
+Pyha has a auto-resize feature, meaning all assignments to registers will be forced to the type of the register.
+Pyha can also convert simulation inputs to fixed point numbers.
+
 .. _VHDL fixed point library: https://github.com/FPHDL/fphdl/blob/master/Fixed_ug.pdf
 
 
@@ -123,8 +130,8 @@ Example:
             self.sum = Point(0, 0)
 
         def main(self, a):
-            self.sum.x = a.x
-            self.sum.y = a.y
+            self.sum.x += a.x
+            self.sum.y += a.y
             return self.sum
 
 
@@ -132,3 +139,17 @@ Example:
     inp = [Point(1, 2), Point(3, 4)] # use Point() as input to simulation
     dut = PointAcc()
     sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+
+Shift registers
+---------------
+
+Two ways..the regular Python way and much more optimized ShiftRegister.
+
+
+RAM
+---
+
+
+ROM
+---
+
