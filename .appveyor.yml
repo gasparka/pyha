@@ -1,17 +1,15 @@
-image: Visual Studio 2017 # this gives docker
+#image: Visual Studio 2017 # this gives docker -> useless because it does not support Linux images.
 
 environment:
+  # In Appveyor we cant run RTL/GATE simulations because it does not support Linux-docker, or well only for $$$$$$
+  PYHA_SKIP_RTL: "True"
+  PYHA_SKIP_GATE: "True"
   matrix:
-
-    # For Python versions available on Appveyor, see
-    # http://www.appveyor.com/docs/installed-software#python
-    # The list here is complete (excluding Python 2.6, which
-    # isn't covered by this document) at the time of writing.
     - PYTHON: "C:\\Python36-x64"
+#    - PYTHON: "C:\\Python37-x64"
 
 install:
   - docker version
-  - docker-switch-linux
   - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
 
 build: off
