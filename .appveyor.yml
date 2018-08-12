@@ -1,4 +1,4 @@
-#image: Visual Studio 2017 # this gives docker -> useless because it does not support Linux images.
+image: Visual Studio 2017 # this gives docker -> useless because it does not support Linux images.
 
 environment:
   # In Appveyor we cant run RTL/GATE simulations because it does not support Linux-docker, or well only for $$$$$$
