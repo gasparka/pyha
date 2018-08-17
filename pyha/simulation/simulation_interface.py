@@ -119,8 +119,16 @@ def process_outputs(delay_compensate, ret, output_callback=None):
 
 
 _ran_gate_simulation = False
+
+
 def get_ran_gate_simulation():
+    global _ran_gate_simulation
     return _ran_gate_simulation
+
+
+def set_ran_gate_simulation(val):
+    global _ran_gate_simulation
+    _ran_gate_simulation = val
 
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
@@ -164,8 +172,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         }
 
     """
-    global _ran_gate_simulation
-    _ran_gate_simulation = False
+    set_ran_gate_simulation(False)
 
     def types_from_pyha_to_python(pyha_types):
         returns = pyha_types  # can be the case for builtins ie. int
@@ -216,13 +223,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'Converting model to hardware types ...')
         model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
 
-
     # # Speed up simulation if VHDL conversion is not required!
-    # if 'RTL' not in simulations and 'GATE' not in simulations:
-    #     PyhaFunc.bypass = True
-    #     logger.info(f'Enabled fast simulation (model cannot be converted to VHDL)')
-    # else:
-    #     PyhaFunc.bypass = False
+    if 'RTL' not in simulations and 'GATE' not in simulations:
+        from pyha.common.core import PyhaFunc
+        PyhaFunc.bypass = True
+        logger.info(f'Enabled fast simulation (model cannot be converted to VHDL)')
+    else:
+        from pyha.common.core import PyhaFunc
+        PyhaFunc.bypass = False
 
     with SimulationRunning.enable():
         if 'MODEL' in simulations:
@@ -231,8 +239,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             if not hasattr(float_model, 'model_main'):
                 logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
             else:
-                r = float_model.model_main(*args)
-                r = np_to_py(r)
+                r = float_model.model_main(*args).squeeze()
+                # r = np_to_py(r)
                 if isinstance(r, tuple):
                     r = list(r)
 
@@ -263,8 +271,12 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
         # prepare inputs and model for hardware simulations
         if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-            args = convert_input_types(args, input_types, input_callback=input_callback)
-            args = transpose(args)
+            if hasattr(model, '_pyha_simulation_input_callback'):
+                args = model._pyha_simulation_input_callback(args)
+                args = transpose([args])
+            else:
+                args = convert_input_types(args, input_types, input_callback=input_callback)
+                args = transpose(args)
 
             delay_compensate = 0
             with suppress(AttributeError):
@@ -277,7 +289,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
-            tmpargs = deepcopy(args)  # pyha MAY overwrite the inputs...
+            tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
             with RegisterBehaviour.enable():
@@ -288,7 +300,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         ret.append(returns)
                         model._pyha_update_registers()
 
-            ret = process_outputs(delay_compensate, ret, output_callback)
+            # ret = process_outputs(delay_compensate, ret, output_callback)
+            ret = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
 
             out['PYHA'] = ret
             logger.info(f'OK!')
@@ -308,7 +321,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
             ret = vhdl_sim.main(*args)
 
-            out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
+            # out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
+            out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
             logger.info(f'OK!')
 
         if 'GATE' in simulations:
@@ -324,11 +338,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             elif not have_ghdl():
                 logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
             else:
-                _ran_gate_simulation = True
+                set_ran_gate_simulation(True)
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
-                out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
+                # out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
+                out['GATE'] = process_outputs(delay_compensate, ret,
+                                              output_callback=model._pyha_simulation_output_callback)
                 logger.info(f'OK!')
 
     if discard_last_n_outputs:
@@ -337,6 +353,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     logger.info('Simulations completed!')
     return out
+
+
+def get_resource_usage():
+    assert get_ran_gate_simulation()
+    return VHDLSimulation.last_logic_elements, VHDLSimulation.last_memory_bits, VHDLSimulation.last_multiplier
 
 
 def hardware_sims_equal(simulation_results):
@@ -391,6 +412,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             result = False
 
     return result
+
 
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """ Legacy """
