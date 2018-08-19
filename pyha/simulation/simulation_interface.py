@@ -301,7 +301,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         model._pyha_update_registers()
 
             # ret = process_outputs(delay_compensate, ret, output_callback)
-            ret = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+            try:
+                ret = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+            except AttributeError:
+                ret = process_outputs(delay_compensate, ret)
 
             out['PYHA'] = ret
             logger.info(f'OK!')
@@ -322,7 +325,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             ret = vhdl_sim.main(*args)
 
             # out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
-            out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+            try:
+                out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+            except:
+                out['RTL'] = process_outputs(delay_compensate, ret)
             logger.info(f'OK!')
 
         if 'GATE' in simulations:
