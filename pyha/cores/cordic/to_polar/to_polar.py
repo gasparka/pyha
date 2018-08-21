@@ -1,5 +1,5 @@
 from pyha import Hardware, Sfix, simulate, sims_close, Complex
-from pyhacores.cordic import Cordic, CordicMode
+from pyha.cores import Cordic, CordicMode
 import numpy as np
 
 
