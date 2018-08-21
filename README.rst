@@ -11,10 +11,6 @@ pyha
 .. image:: https://img.shields.io/travis/gasparka/pyha.svg
     :target: https://travis-ci.org/gasparka/pyha
 
-.. image:: https://readthedocs.org/projects/pyha/badge/?version=develop
-    :target: http://pyha.readthedocs.io/en/develop/?badge=develop
-    :alt: Documentation Status
-
 .. image:: https://pyup.io/repos/github/gasparka/pyha/shield.svg
     :target: https://pyup.io/repos/github/gasparka/pyha/
     :alt: Updates
@@ -22,7 +18,6 @@ pyha
 .. image:: https://coveralls.io/repos/github/gasparka/pyha/badge.svg?branch=develop
     :target: https://coveralls.io/github/gasparka/pyha?branch=develop
 
-
 * Free software: Apache Software License 2.0
-* Documentation: https://pyha.readthedocs.io.
-* Install: TODO
+* Documentation: None, see examples in /pyha/cores
+* Install: ```pip install pyha```
