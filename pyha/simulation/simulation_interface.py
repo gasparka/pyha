@@ -325,8 +325,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
             elif Sfix._float_mode.enabled:
                 logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
-            elif not have_ghdl():
-                logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+            # TODO: test for docker instead...
+            # elif not have_ghdl():
+            #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
             else:
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
                 ret = vhdl_sim.main(*args)
