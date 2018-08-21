@@ -1,4 +1,4 @@
-redbaron==0.6.3
+redbaron==0.7
 scipy==1.0.0
 numpy==1.14.0
 scipy==1.0.0
