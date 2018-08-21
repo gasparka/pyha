@@ -148,7 +148,7 @@ def test_angle_randoms():
 
     dut = Angle()
     sim_out = simulate(dut, inputs)
-    assert sims_close(sim_out, expected=expect, rtol=1e-3)
+    assert sims_close(sim_out, expected=expect, rtol=1e-1)
 
 
 def test_angle_unit():
@@ -158,7 +158,7 @@ def test_angle_unit():
 
     dut = Angle()
     sim_out = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
-    sims_close(sim_out, expected=expect, rtol=1e-3)
+    sims_close(sim_out, expected=expect, rtol=1e-2)
 
 
 def test_angle_basic():

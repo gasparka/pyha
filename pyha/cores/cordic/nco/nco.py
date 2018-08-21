@@ -2,7 +2,7 @@ import pytest
 from pyha import Hardware, Sfix, Complex, simulate, sims_close
 import numpy as np
 
-from pyhacores.cordic import CordicMode, Cordic
+from pyha.cores.cordic import Cordic, CordicMode
 
 
 class NCO(Hardware):
@@ -15,7 +15,7 @@ class NCO(Hardware):
 
         :param cordic_iterations:
         """
-        self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION)
+        self.cordic = Cordic(cordic_iterations, CordicMode.ROTATION, precision=-19)
         self.phase_acc = Sfix(0, 0, -17, wrap_is_ok=True)
         self.out = Complex(0, 0, -17, overflow_style='saturate')
         self.DELAY = self.cordic.ITERATIONS + 1 + 1
@@ -71,4 +71,4 @@ def test_nco(period):
         sims.append('GATE')
 
     sim_out = simulate(dut, inputs, simulations=sims)
-    assert sims_close(sim_out, expect)
+    assert sims_close(sim_out, expect, rtol=1e-3)
