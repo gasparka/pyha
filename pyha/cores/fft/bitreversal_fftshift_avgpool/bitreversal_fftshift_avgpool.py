@@ -21,7 +21,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
     It performs bitreversal, fftshift and average pooling in one memory.
     """
     def __init__(self, fft_size, avg_freq_axis, avg_time_axis):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'), package_size=fft_size)
+        self._pyha_simulation_input_callback = DataIndexValidPackager(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
         self._pyha_simulation_output_callback = DataIndexValidDePackager()
 
         assert not (avg_freq_axis == 1 and avg_time_axis == 1)
