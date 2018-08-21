@@ -30,12 +30,9 @@ class DCRemoval(Hardware):
         return self.y
 
     def model_main(self, xl):
-        # for simple case this may be equal to ``xl -= np.mean(xl)``
         tmp = xl
         for mav in self.mavg:
             tmp = mav.model_main(tmp)
-
-        # this actually not quite equal to main, delay issues?
         y = xl - np.array([0, 0, 0, 0] + tmp.tolist()[:-4])
         return y
 
@@ -54,5 +51,5 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
+    sim_out = simulate(dut, input_signal)
     assert sims_close(sim_out)
