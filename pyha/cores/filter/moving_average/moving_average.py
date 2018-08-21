@@ -33,7 +33,7 @@ class MovingAverage(Hardware):
 
 
 @pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32])
-@pytest.mark.parametrize("input_power", [0.25, 0.001, 0.0001])
+@pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
     np.random.seed(0)
