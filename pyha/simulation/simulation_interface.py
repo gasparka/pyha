@@ -8,7 +8,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 from pyha import Hardware
@@ -19,7 +18,6 @@ from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
-pd.options.display.max_rows = 32
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
