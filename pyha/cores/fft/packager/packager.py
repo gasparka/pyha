@@ -12,6 +12,7 @@ class DataIndexValid(Hardware):
 
 class DataIndexValidPackager:
     def __init__(self, dtype=None, package_size=None):
+        assert package_size is None # not implemented
         self.package_size = package_size
         self.dtype = dtype
 
@@ -86,5 +87,5 @@ class Packager(Hardware):
 def test_packager(M, packets):
     dut = Packager(M)
     inp = np.random.uniform(-1, 1, M * packets) + np.random.uniform(-1, 1, M * packets) * 1j
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA'])
+    sims = simulate(dut, inp)
     assert sims_close(sims, rtol=1e-2)
