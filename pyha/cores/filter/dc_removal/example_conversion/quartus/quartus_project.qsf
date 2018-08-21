@@ -1,0 +1,16 @@
+set_global_assignment -name DEVICE EP4CE40F23C8
+set_global_assignment -name TOP_LEVEL_ENTITY top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
+set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST ON -section_id eda_simulation
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
+
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/util/complex.vhdl
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/util/pyha_util.vhdl
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/util/typedefs.vhdl
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/MovingAverage_0.vhd
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/DCRemoval_0.vhd
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/top.vhd
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/util/fixed_pkg_c.vhdl
+set_global_assignment -name VHDL_FILE /tmp/pyha_output/src/util/fixed_float_types_c.vhdl
