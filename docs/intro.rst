@@ -4,7 +4,7 @@ Introduction
 
 .. warning:: Most of this is outdated, i am currently working on the first release.
 
-XX years ago Jiri Gaisler released a paper called 'A Structured VHDL Design Method', that tells designers
+~15 years ago Jiri Gaisler released a paper called 'A Structured VHDL Design Method', that tells designers
 to use structrual methods like functions and stuff instead of the regular VHDL 'dataflow' way.
 Many have now adapted this method into everyday work.
 Tho this way method is limited to combinatory logic, for registers one had to still fallback to using
