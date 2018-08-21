@@ -5,7 +5,7 @@ flake8==3.5.0
 coverage==4.4.2
 Sphinx==1.6.5
 sphinx-rtd-theme==0.2.4
-twine==1.9.1
+twine==1.11.0
 sphinx-autobuild==0.7.1
 snakeviz
 asv
