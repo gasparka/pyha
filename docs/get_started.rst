@@ -1,0 +1,1 @@
+Preferred way is to choose an interesting core from *pyhacores* and play around in the notebook.

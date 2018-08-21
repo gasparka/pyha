@@ -4,6 +4,23 @@ Introduction
 
 .. warning:: Most of this is outdated, i am currently working on the first release.
 
+XX years ago Jiri Gaisler released a paper called 'A Structured VHDL Design Method', that tells designers
+to use structrual methods like functions and stuff instead of the regular VHDL 'dataflow' way.
+Many have now adapted this method into everyday work.
+Tho this way method is limited to combinatory logic, for registers one had to still fallback to using
+'dataflow' style i.e. signals and entities.
+
+Pyha proposes an extension to the 'Structured VHDL method' by allowing defining registers/compononets in structured way.
+Meaning that in VHDL you dont have to use signals and entities at all.
+
+It is all good and nice, but VHDL tends to be a little bit verbose, especially for testing. For this reason
+i have created Pyha, which is a Python overlay on the
+
+
+Currently the focus of pyha is on DSP systems, only because that is what i am interested in.
+I am very much interested in supporting users who wish to implement something different, like a processor?
+
+
 Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Main features:
