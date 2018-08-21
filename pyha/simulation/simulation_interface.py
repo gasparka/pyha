@@ -239,7 +239,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             if not hasattr(float_model, 'model_main'):
                 logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
             else:
-                r = float_model.model_main(*args).squeeze()
+                r = float_model.model_main(*args)
+
+                try:
+                    if r.size != 1:
+                        r = r.squeeze()
+                except:
+                    pass
+
                 # r = np_to_py(r)
                 if isinstance(r, tuple):
                     r = list(r)
@@ -312,23 +319,22 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         # From this point on we assume ARGS and MODEL have been transformed to fixed point
         if 'RTL' in simulations:
             logger.info(f'Running "RTL" simulation...')
-            # if 'PYHA' not in simulations:
-            #     raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
-            # elif 'PYHA_SKIP_RTL' in os.environ:
-            #     logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-            # elif Sfix._float_mode.enabled:
-            #     logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
-            # elif not have_ghdl():
-            #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-            # else:
-            vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
-            ret = vhdl_sim.main(*args)
+            if 'PYHA' not in simulations:
+                raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
+            elif 'PYHA_SKIP_RTL' in os.environ:
+                logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+            elif Sfix._float_mode.enabled:
+                logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
+            elif not have_ghdl():
+                logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+            else:
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
+                ret = vhdl_sim.main(*args)
 
-            # out['RTL'] = process_outputs(delay_compensate, ret, output_callback)
-            try:
-                out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
-            except:
-                out['RTL'] = process_outputs(delay_compensate, ret)
+                try:
+                    out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+                except:
+                    out['RTL'] = process_outputs(delay_compensate, ret)
             logger.info(f'OK!')
 
         if 'GATE' in simulations:
@@ -348,9 +354,12 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
                 ret = vhdl_sim.main(*args)
 
-                # out['GATE'] = process_outputs(delay_compensate, ret, output_callback)
-                out['GATE'] = process_outputs(delay_compensate, ret,
-                                              output_callback=model._pyha_simulation_output_callback)
+                try:
+                    out['GATE'] = process_outputs(delay_compensate, ret,
+                                                  output_callback=model._pyha_simulation_output_callback)
+                except:
+                    out['GATE'] = process_outputs(delay_compensate, ret)
+
                 logger.info(f'OK!')
 
     if discard_last_n_outputs:

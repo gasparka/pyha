@@ -50,7 +50,7 @@ def test_basic():
     assert sims_close(sim_out, expect, rtol=1e-2, atol=1e-4)
 
 
-@pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4, 8])
+@pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4])
 def test_nco(period):
     fs = 1024
     freq = 200
@@ -61,7 +61,7 @@ def test_nco(period):
 
     dut = NCO()
     sims = ['MODEL', 'PYHA', 'RTL']
-    if period == 16:
+    if period == 1:
         sims.append('GATE')
 
     sim_out = simulate(dut, input_signal, simulations=sims)

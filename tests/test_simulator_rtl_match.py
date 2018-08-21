@@ -184,7 +184,7 @@ def test_sfix_no_const_ref():
 
 
 @pytest.mark.slowtest
-@pytest.mark.parametrize('right', range(-1, -32, -1))
+@pytest.mark.parametrize('right', range(-1, -17, -1))
 @pytest.mark.parametrize('left', range(2))
 def test_sfix_wrap(left, right):
     class T9(Hardware):
@@ -196,7 +196,7 @@ def test_sfix_wrap(left, right):
             self.phase_acc = self.phase_acc + phase_inc
             return self.phase_acc
 
-    x = (np.random.rand(1024) * 2) - 1
+    x = (np.random.rand(128) * 2) - 1
     dut = T9(left, right)
     sims = simulate(dut, x, simulations=SIMULATIONS, input_types=[Sfix(0, left, right)])
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
@@ -232,7 +232,7 @@ def test_sfix_shift(shift_i):
             return left, right
 
     dut = T13()
-    x = (np.random.rand(1024) * 2) - 1
+    x = (np.random.rand(128) * 2) - 1
     i = [shift_i] * len(x)
     sims = simulate(dut, x, i, simulations=SIMULATIONS)
     assert sims_close(sims, rtol=1e-9, atol=1e-9)
