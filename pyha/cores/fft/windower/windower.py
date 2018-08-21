@@ -3,7 +3,7 @@ import pytest
 from pyha import Hardware, simulate, sims_close, Complex, Sfix
 from scipy.signal import get_window
 
-from pyhacores.fft.packager.packager import DataIndexValid, DataIndexValidPackager, DataIndexValidDePackager
+from pyha.cores import DataIndexValid, DataIndexValidPackager, DataIndexValidDePackager
 
 
 # 8 bit 9 was about 1k LE

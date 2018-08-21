@@ -3,8 +3,8 @@ import pytest
 from pyha import Hardware, simulate, sims_close, Complex, resize, scalb, Sfix
 import numpy as np
 from pyha.common.shift_register import ShiftRegister
-from pyhacores.fft.packager.packager import DataIndexValid, DataIndexValidDePackager, DataIndexValidPackager
-from pyhacores.utils import toggle_bit_reverse
+from pyha.cores import DataIndexValid, DataIndexValidDePackager, DataIndexValidPackager
+from pyha.cores.util import toggle_bit_reverse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('fft')
@@ -171,107 +171,107 @@ def test_all(fft_size, input_ordering, inverse):
 
 
 # low level tests, more for debugging
-class TestRev8:
-    def test_layer1(self):
-        input_signal = np.array(
-            [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j,
-             0.08 + 0.08j])
-        bitrev_input_signal = toggle_bit_reverse(input_signal)
-        input_control = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
-        expected = [6.00000000e-02 + 6.00000000e-02j, - 4.00000000e-02 - 4.00000000e-02j,
-                    1.00000000e-01 + 1.00000000e-01j, - 4.00000000e-02 + 4.00000000e-02j,
-                    8.00000000e-02 + 8.00000000e-02j, - 5.65685425e-02 - 3.46944695e-18j,
-                    1.20000000e-01 + 1.20000000e-01j, - 6.93889390e-18 + 5.65685425e-02j]
-        expected = np.array(expected) / 2
-
-        # (0.01 + 0.01j)(0.05 + 0.05j)(-0.04 - 0.04j)(1 + 0j)
-        # (0.03 + 0.03j)(0.07 + 0.07j)(-0.04 - 0.04j)(0 - 1j)
-        # (0.02 + 0.02j)(0.06 + 0.06j)(-0.04 - 0.04j)(0.7071067811865476 - 0.7071067811865475j)
-        # (0.04 + 0.04j)(0.08 + 0.08j)(-0.04 - 0.04j)(-0.7071067811865475 - 0.7071067811865476j)
-
-        with Sfix._float_mode:
-            dut = StageR2SDF(8, stage_nr=0, twiddle_bits=18, input_ordering='bitreversed')
-            sims = simulate(dut, bitrev_input_signal, input_control, simulations=['PYHA'])
-        np.testing.assert_allclose(expected, sims['PYHA'][0])
-
-    def test_layer2(self):
-        input_control = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        input_signal = [6.00000000e-02 + 6.00000000e-02j, - 4.00000000e-02 - 4.00000000e-02j,
-                        1.00000000e-01 + 1.00000000e-01j, - 4.00000000e-02 + 4.00000000e-02j,
-                        8.00000000e-02 + 8.00000000e-02j, - 5.65685425e-02 - 3.46944695e-18j,
-                        1.20000000e-01 + 1.20000000e-01j, - 6.93889390e-18 + 5.65685425e-02j]
-
-        expected = [1.60000000e-01 + 1.60000000e-01j, -8.00000000e-02 + 6.93889390e-18j,
-                    -4.00000000e-02 - 4.00000000e-02j, 6.93889390e-18 - 8.00000000e-02j,
-                    2.00000000e-01 + 2.00000000e-01j, -5.65685425e-02 + 5.65685425e-02j,
-                    -4.00000000e-02 + 4.00000000e-02j, - 5.65685425e-02 + 5.65685425e-02j]
-        expected = np.array(expected) / 2
-
-        # (0.060000000000000005 + 0.060000000000000005j)(0.1 + 0.1j)(-0.04 - 0.04j)(1 + 0j)
-        # (-0.04 - 0.04j)(-0.04000000000000001 + 0.04000000000000001j)(6.938893903907228e-18 - 0.08000000000000002j)(1 + 0j)
-        # (0.08 + 0.08j)(0.12 + 0.12j)(-0.039999999999999994 - 0.039999999999999994j)(6.123233995736766e-17 - 1j)
-        # (-0.056568542494923796 - 3.469446951953614e-18j)(-6.938893903907228e-18 + 0.0565685424949238j)(-0.05656854249492379 - 0.05656854249492381j)(6.123233995736766e-17 - 1j)
-
-        # (-0.04 - 0.04j)                                   (1 + 0j)
-        # (6.938893903907228e-18 - 0.08000000000000002j)    (1 + 0j)
-        # (-0.039999999999999994 - 0.039999999999999994j)   (0 - 1j)
-        # (-0.05656854249492379 - 0.05656854249492381j)     (0 - 1j)
-
-        # F4 - 0.04 - 0.04j[0:-17] *            0 - 1j
-        # F4 0 - 0.08j[0:-17] *                 1 + 0j
-        # F4 - 0.04 - 0.04j[0:-17] *            0 - 1j
-        # F4 - 0.0565685 - 0.0565685j[0:-17] *  1 + 0j
-
-        with Sfix._float_mode:
-            dut = StageR2SDF(8, stage_nr=1, twiddle_bits=18, input_ordering='bitreversed')
-            sims = simulate(dut, input_signal, input_control, simulations=['PYHA'])
-        np.testing.assert_allclose(expected, sims['PYHA'][0])
-
-    def test_full(self):
-        fft_size = 8
-        input_signal = np.array(
-            [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j,
-             0.08 + 0.08j])
-        bitrev_input_signal = toggle_bit_reverse(input_signal)
-
-        dut = R2SDF(fft_size, twiddle_bits=18, input_ordering='bitreversed')
-        rev_sims = simulate(dut, bitrev_input_signal, input_callback=package, output_callback=unpackage,
-                            simulations=['MODEL', 'PYHA'])
-        assert sims_close(rev_sims)
-
-
-class TestRev4:
-    def test_layer4(self):
-        input_signal = np.array([0.1 + 0.1j, 0.2 + 0.2j, 0.3 + 0.3j, 0.4 + 0.4j])
-        bitrev_input_signal = toggle_bit_reverse(input_signal)
-        input_control = [0, 1, 2, 3]
-
-        expected = [0.2 + 0.2j, -0.1 - 0.1j, 0.3 + 0.3j, -0.1 + 0.1j]
-
-        with Sfix._float_mode:
-            dut = StageR2SDF(4, stage_nr=0, twiddle_bits=18, input_ordering='bitreversed')
-            sims = simulate(dut, bitrev_input_signal, input_control, simulations=['PYHA'])
-        np.testing.assert_allclose(expected, sims['PYHA'][0])
-
-    def test_layer2(self):
-        input_signal = [0.2 + 0.2j, -0.1 - 0.1j, 0.3 + 0.3j, -0.1 + 0.1j]
-        input_control = [0, 1, 2, 3]
-
-        expected = [0.5 + 0.5j, -0.2 + 0.0j, -0.1 - 0.1j, 0.0 - 0.2j]
-        expected = np.array(expected) / 2
-
-        with Sfix._float_mode:
-            dut = StageR2SDF(4, stage_nr=1, twiddle_bits=18, input_ordering='bitreversed')
-            sims = simulate(dut, input_signal, input_control, simulations=['PYHA'])
-        np.testing.assert_allclose(expected, sims['PYHA'][0])
-
-    def test_full(self):
-        fft_size = 4
-        input_signal = np.array([0.1 + 0.1j, 0.2 + 0.2j, 0.3 + 0.3j, 0.4 + 0.4j])
-        bitrev_input_signal = toggle_bit_reverse(input_signal)
-
-        dut = R2SDF(fft_size, twiddle_bits=18, input_ordering='bitreversed')
-        rev_sims = simulate(dut, bitrev_input_signal, input_callback=package, output_callback=unpackage,
-                            simulations=['MODEL', 'PYHA'])
-        assert sims_close(rev_sims)
+# class TestRev8:
+#     def test_layer1(self):
+#         input_signal = np.array(
+#             [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j,
+#              0.08 + 0.08j])
+#         bitrev_input_signal = toggle_bit_reverse(input_signal)
+#         input_control = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+#
+#         expected = [6.00000000e-02 + 6.00000000e-02j, - 4.00000000e-02 - 4.00000000e-02j,
+#                     1.00000000e-01 + 1.00000000e-01j, - 4.00000000e-02 + 4.00000000e-02j,
+#                     8.00000000e-02 + 8.00000000e-02j, - 5.65685425e-02 - 3.46944695e-18j,
+#                     1.20000000e-01 + 1.20000000e-01j, - 6.93889390e-18 + 5.65685425e-02j]
+#         expected = np.array(expected) / 2
+#
+#         # (0.01 + 0.01j)(0.05 + 0.05j)(-0.04 - 0.04j)(1 + 0j)
+#         # (0.03 + 0.03j)(0.07 + 0.07j)(-0.04 - 0.04j)(0 - 1j)
+#         # (0.02 + 0.02j)(0.06 + 0.06j)(-0.04 - 0.04j)(0.7071067811865476 - 0.7071067811865475j)
+#         # (0.04 + 0.04j)(0.08 + 0.08j)(-0.04 - 0.04j)(-0.7071067811865475 - 0.7071067811865476j)
+#
+#         with Sfix._float_mode:
+#             dut = StageR2SDF(8, stage_nr=0, twiddle_bits=18, input_ordering='bitreversed')
+#             sims = simulate(dut, bitrev_input_signal, input_control, simulations=['PYHA'])
+#         np.testing.assert_allclose(expected, sims['PYHA'][0])
+#
+#     def test_layer2(self):
+#         input_control = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+#         input_signal = [6.00000000e-02 + 6.00000000e-02j, - 4.00000000e-02 - 4.00000000e-02j,
+#                         1.00000000e-01 + 1.00000000e-01j, - 4.00000000e-02 + 4.00000000e-02j,
+#                         8.00000000e-02 + 8.00000000e-02j, - 5.65685425e-02 - 3.46944695e-18j,
+#                         1.20000000e-01 + 1.20000000e-01j, - 6.93889390e-18 + 5.65685425e-02j]
+#
+#         expected = [1.60000000e-01 + 1.60000000e-01j, -8.00000000e-02 + 6.93889390e-18j,
+#                     -4.00000000e-02 - 4.00000000e-02j, 6.93889390e-18 - 8.00000000e-02j,
+#                     2.00000000e-01 + 2.00000000e-01j, -5.65685425e-02 + 5.65685425e-02j,
+#                     -4.00000000e-02 + 4.00000000e-02j, - 5.65685425e-02 + 5.65685425e-02j]
+#         expected = np.array(expected) / 2
+#
+#         # (0.060000000000000005 + 0.060000000000000005j)(0.1 + 0.1j)(-0.04 - 0.04j)(1 + 0j)
+#         # (-0.04 - 0.04j)(-0.04000000000000001 + 0.04000000000000001j)(6.938893903907228e-18 - 0.08000000000000002j)(1 + 0j)
+#         # (0.08 + 0.08j)(0.12 + 0.12j)(-0.039999999999999994 - 0.039999999999999994j)(6.123233995736766e-17 - 1j)
+#         # (-0.056568542494923796 - 3.469446951953614e-18j)(-6.938893903907228e-18 + 0.0565685424949238j)(-0.05656854249492379 - 0.05656854249492381j)(6.123233995736766e-17 - 1j)
+#
+#         # (-0.04 - 0.04j)                                   (1 + 0j)
+#         # (6.938893903907228e-18 - 0.08000000000000002j)    (1 + 0j)
+#         # (-0.039999999999999994 - 0.039999999999999994j)   (0 - 1j)
+#         # (-0.05656854249492379 - 0.05656854249492381j)     (0 - 1j)
+#
+#         # F4 - 0.04 - 0.04j[0:-17] *            0 - 1j
+#         # F4 0 - 0.08j[0:-17] *                 1 + 0j
+#         # F4 - 0.04 - 0.04j[0:-17] *            0 - 1j
+#         # F4 - 0.0565685 - 0.0565685j[0:-17] *  1 + 0j
+#
+#         with Sfix._float_mode:
+#             dut = StageR2SDF(8, stage_nr=1, twiddle_bits=18, input_ordering='bitreversed')
+#             sims = simulate(dut, input_signal, input_control, simulations=['PYHA'])
+#         np.testing.assert_allclose(expected, sims['PYHA'][0])
+#
+#     def test_full(self):
+#         fft_size = 8
+#         input_signal = np.array(
+#             [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j,
+#              0.08 + 0.08j])
+#         bitrev_input_signal = toggle_bit_reverse(input_signal)
+#
+#         dut = R2SDF(fft_size, twiddle_bits=18, input_ordering='bitreversed')
+#         rev_sims = simulate(dut, bitrev_input_signal, input_callback=package, output_callback=unpackage,
+#                             simulations=['MODEL', 'PYHA'])
+#         assert sims_close(rev_sims)
+#
+#
+# class TestRev4:
+#     def test_layer4(self):
+#         input_signal = np.array([0.1 + 0.1j, 0.2 + 0.2j, 0.3 + 0.3j, 0.4 + 0.4j])
+#         bitrev_input_signal = toggle_bit_reverse(input_signal)
+#         input_control = [0, 1, 2, 3]
+#
+#         expected = [0.2 + 0.2j, -0.1 - 0.1j, 0.3 + 0.3j, -0.1 + 0.1j]
+#
+#         with Sfix._float_mode:
+#             dut = StageR2SDF(4, stage_nr=0, twiddle_bits=18, input_ordering='bitreversed')
+#             sims = simulate(dut, bitrev_input_signal, input_control, simulations=['PYHA'])
+#         np.testing.assert_allclose(expected, sims['PYHA'][0])
+#
+#     def test_layer2(self):
+#         input_signal = [0.2 + 0.2j, -0.1 - 0.1j, 0.3 + 0.3j, -0.1 + 0.1j]
+#         input_control = [0, 1, 2, 3]
+#
+#         expected = [0.5 + 0.5j, -0.2 + 0.0j, -0.1 - 0.1j, 0.0 - 0.2j]
+#         expected = np.array(expected) / 2
+#
+#         with Sfix._float_mode:
+#             dut = StageR2SDF(4, stage_nr=1, twiddle_bits=18, input_ordering='bitreversed')
+#             sims = simulate(dut, input_signal, input_control, simulations=['PYHA'])
+#         np.testing.assert_allclose(expected, sims['PYHA'][0])
+#
+#     def test_full(self):
+#         fft_size = 4
+#         input_signal = np.array([0.1 + 0.1j, 0.2 + 0.2j, 0.3 + 0.3j, 0.4 + 0.4j])
+#         bitrev_input_signal = toggle_bit_reverse(input_signal)
+#
+#         dut = R2SDF(fft_size, twiddle_bits=18, input_ordering='bitreversed')
+#         rev_sims = simulate(dut, bitrev_input_signal, input_callback=package, output_callback=unpackage,
+#                             simulations=['MODEL', 'PYHA'])
+#         assert sims_close(rev_sims)

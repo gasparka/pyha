@@ -1,13 +1,8 @@
 import logging
 import pickle
-
 import numpy as np
-from data import load_iq
-
 from pyha import Hardware, simulate, hardware_sims_equal, sims_close, Complex
-
-from pyhacores.fft import Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataIndexValidDePackager
-from pyhacores.filter import DCRemoval
+from pyha.cores import DCRemoval, Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataIndexValidDePackager
 from scipy import signal
 
 logging.basicConfig(level=logging.INFO)

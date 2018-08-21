@@ -1,9 +1,7 @@
 import numpy as np
 import pytest
 from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index
-
-from pyhacores.fft import DataIndexValidPackager, DataIndexValidDePackager
-from pyhacores.fft.packager.packager import DataIndexValid
+from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
 
 
 class FFTPower(Hardware):

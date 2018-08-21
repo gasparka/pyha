@@ -3,8 +3,8 @@ from pyha import Hardware, simulate, sims_close, Sfix, resize, scalb
 import numpy as np
 from pyha.common.ram import RAM
 
-from pyhacores.fft import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
-from pyhacores.utils import toggle_bit_reverse
+from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
+from pyha.cores.util import toggle_bit_reverse
 
 
 def build_lut(fft_size, freq_axis_decimation):
