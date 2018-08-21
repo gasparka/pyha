@@ -47,7 +47,7 @@ def test_basic():
 
     dut = NCO()
     sim_out = simulate(dut, inputs)
-    assert sims_close(sim_out, expect)
+    assert sims_close(sim_out, expect, rtol=1e-2, atol=1e-4)
 
 
 @pytest.mark.parametrize('period', [0.25, 0.50, 0.75, 1, 2, 4, 8])

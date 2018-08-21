@@ -35,21 +35,23 @@ def test_simple():
 
 
 def test_symmetric():
+    np.random.seed(0)
     taps = [0.01, 0.02, 0.03, 0.04, 0.03, 0.02, 0.01]
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 64)
 
     sims = simulate(dut, inp)
-    assert sims_close(sims)
+    assert sims_close(sims, rtol=1e-3, atol=1e-3)
 
 
 def test_non_symmetric():
+    np.random.seed(0)
     taps = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07]
     dut = FIR(taps)
     inp = np.random.uniform(-1, 1, 128)
 
     sims = simulate(dut, inp)
-    assert sims_close(sims)
+    assert sims_close(sims, rtol=1e-3, atol=1e-3)
 
 
 def test_remez16():
@@ -59,7 +61,7 @@ def test_remez16():
     inp = np.random.uniform(-1, 1, 1024)
 
     sims = simulate(dut, inp)
-    assert sims_close(sims)
+    assert sims_close(sims, rtol=1e-3, atol=1e-3)
 
 
 def test_remez32():
@@ -69,7 +71,7 @@ def test_remez32():
     inp = np.random.uniform(-1, 1, 64)
 
     sims = simulate(dut, inp)
-    assert sims_close(sims)
+    assert sims_close(sims, rtol=1e-3, atol=1e-3)
 
 
 def test_remez128():
@@ -79,7 +81,7 @@ def test_remez128():
     inp = np.random.uniform(-1, 1, 128)
 
     sims = simulate(dut, inp)
-    assert sims_close(sims, rtol=1e-3)
+    assert sims_close(sims, rtol=1e-3, atol=1e-3)
 
 
 def test_sfix_bug():
@@ -90,4 +92,4 @@ def test_sfix_bug():
     inp = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
     sims = simulate(dut, inp)
-    assert sims_close(sims)
+    assert sims_close(sims, rtol=1e-2)

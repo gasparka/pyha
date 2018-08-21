@@ -13,4 +13,4 @@ from .fft.windower.windower import Windower
 from .fft.fft_core.r2sdf import R2SDF
 from .fft.bitreversal_fftshift_avgpool.bitreversal_fftshift_avgpool import BitreversalFFTshiftAVGPool
 from .fft.fft_power.fft_power import FFTPower
-from .fft.spectrogram.spectrogram import Spectrogram
+# from .fft.spectrogram.spectrogram import Spectrogram

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyhacores.utils import toggle_bit_reverse
+from pyha.cores.util import toggle_bit_reverse
 
 
 def W(k, N, inverse=False):
@@ -16,10 +16,10 @@ def pyfft_natural(inp, fft_size):
     """ Inputs natural, outputs bitreversed"""
     out = np.array([0. + 0.j] * fft_size)
 
-    sample_offset = fft_size//2
-    for i in range(fft_size//2):
+    sample_offset = fft_size // 2
+    for i in range(fft_size // 2):
         out[i] = inp[i] + inp[i + sample_offset]
-        out[i+sample_offset] = (inp[i] - inp[i + sample_offset]) * W(i, fft_size)
+        out[i + sample_offset] = (inp[i] - inp[i + sample_offset]) * W(i, fft_size)
 
     if sample_offset != 1:
         first = pyfft_natural(out[:sample_offset], sample_offset)
@@ -34,6 +34,7 @@ def butterfly(a, b, twiddle):
     print(a, b, a - b, twiddle)
     bb = (a - b) * twiddle
     return aa, bb
+
 
 def pyfft_rev(inp, fft_size):
     out = np.array([0. + 0.j] * fft_size)
@@ -77,31 +78,33 @@ def test_pyfft(fft_size):
     input_signal = np.random.uniform(-1, 1, fft_size) + np.random.uniform(-1, 1, fft_size) * 1j
     my = pyfft_natural(input_signal, fft_size)
     ref = np.fft.fft(input_signal, fft_size)
-    ref = toggle_bit_reverse(ref, fft_size)
+    ref = toggle_bit_reverse(ref)
 
     np.testing.assert_allclose(ref, my)
 
 
-def test_shit4():
+def test_rand():
     fft_size = 4
     input_signal = np.array(
-            [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j])
-    bitrev_input_signal = toggle_bit_reverse(input_signal, fft_size)
+        [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j])
+    bitrev_input_signal = toggle_bit_reverse(input_signal)
     my = pyfft_rev(bitrev_input_signal, fft_size)
 
-def test_shit():
+
+def test_rand2():
     fft_size = 8
     input_signal = np.array(
-            [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j, 0.08 + 0.08j])
-    bitrev_input_signal = toggle_bit_reverse(input_signal, fft_size)
+        [0.01 + 0.01j, 0.02 + 0.02j, 0.03 + 0.03j, 0.04 + 0.04j, 0.05 + 0.05j, 0.06 + 0.06j, 0.07 + 0.07j,
+         0.08 + 0.08j])
+    bitrev_input_signal = toggle_bit_reverse(input_signal)
     my = pyfft_rev(bitrev_input_signal, fft_size)
+
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8])
 def test_rev(fft_size):
     input_signal = np.random.uniform(-1, 1, fft_size) + np.random.uniform(-1, 1, fft_size) * 1j
     my = pyfft_rev(input_signal, fft_size)
-    input_signal = toggle_bit_reverse(input_signal, fft_size)
+    input_signal = toggle_bit_reverse(input_signal)
     ref = np.fft.fft(input_signal, fft_size)
 
     np.testing.assert_allclose(ref, my)
-
