@@ -34,5 +34,5 @@ class FFTPower(Hardware):
 def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA', 'RTL'])
+    sims = simulate(dut, inp)
     assert sims_close(sims)
