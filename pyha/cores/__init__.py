@@ -5,3 +5,5 @@ from .cordic.nco.nco import NCO
 from .filter.moving_average.moving_average import MovingAverage
 from .filter.dc_removal.dc_removal import DCRemoval
 from .filter.fir.fir import FIR
+
+from .radio.quadrature_demodulator.quadrature_demodulator import QuadratureDemodulator

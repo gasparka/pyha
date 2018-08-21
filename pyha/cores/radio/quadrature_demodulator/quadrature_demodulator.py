@@ -1,13 +1,6 @@
-from pathlib import Path
-
 import numpy as np
-import pytest
-from pyha import Hardware, Sfix, simulate, sims_close, Complex, resize, left_index, right_index
-
-import pyhacores
-from data import load_iq
-from pyhacores.cordic import Angle
-from pyhacores.util import ComplexConjugate, ComplexMultiply
+from pyha import Hardware, Sfix, simulate, sims_close, Complex
+from pyha.cores import Angle
 
 
 class QuadratureDemodulator(Hardware):
@@ -80,38 +73,3 @@ def test_fm_demodulation():
     dut = QuadratureDemodulator(gain=demod_gain)
     sims = simulate(dut, inp)
     assert sims_close(sims, expected=expect, rtol=1e-3)
-
-
-def test_demod_phantom2_signal():
-    path = Path(pyhacores.__path__[0]) / '../data/f2404_fs16.896_one_hop.iq'
-    iq = load_iq(str(path))[19000:20000]  # this part has only bits..i.e no noisy stuff
-
-    dut = QuadratureDemodulator(gain=1 / np.pi)
-    sims = simulate(dut, iq)
-
-    # import matplotlib.pyplot as plt
-    # plt.plot(sims['MODEL'], label='MODEL')
-    # plt.plot(sims['PYHA'], label='PYHA')
-    # plt.plot(sims['RTL'], label='RTL')
-    # plt.legend()
-    # plt.show()
-
-    assert sims_close(sims, atol=1e-4)
-
-
-def test_demod_phantom2_noise():
-    pytest.xfail('cant match noisy stuff with fixed point :(')
-    path = Path(pyhacores.__path__[0]) / '../data/f2404_fs16.896_one_hop.iq'
-    iq = load_iq(str(path))[:500]  # ONLY NOISE
-
-    dut = QuadratureDemodulator(gain=1 / np.pi)
-    sims = simulate(dut, iq)
-
-    # import matplotlib.pyplot as plt
-    # plt.plot(sims['MODEL'], label='MODEL')
-    # plt.plot(sims['PYHA'], label='PYHA')
-    # plt.plot(sims['RTL'], label='RTL')
-    # plt.legend()
-    # plt.show()
-
-    assert sims_close(sims, atol=1e-4)
