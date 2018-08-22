@@ -1,5 +1,4 @@
 import textwrap
-from enum import Enum
 
 import pytest
 from redbaron import RedBaron
@@ -1077,9 +1076,9 @@ class TestDefNodeConv:
         dut = T()
         dut.a(1)
 
-        expect = 'variable l: Typedefs.integer_list_t(0 to 1);\n' \
+        expect = 'variable b: boolean;\n' \
                  'variable i: integer;\n' \
-                 'variable b: boolean;'
+                 'variable l: Typedefs.integer_list_t(0 to 1);'
 
         conv = get_conversion(dut)
         func = conv.get_function('a')
