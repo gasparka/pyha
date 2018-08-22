@@ -5,11 +5,20 @@ import subprocess
 from pathlib import Path
 import numpy as np
 import pyha
-from pyha.common.util import tabber
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
 logger = logging.getLogger('sim')
+
+
+def quartus_map(cwd):
+    logger.info('Running quartus map...will take time.')
+    subprocess.run(['quartus_map', 'quartus_project'], cwd=cwd)
+
+
+def quartus_eda(cwd):
+    logger.info('Running netlist writer.')
+    subprocess.run(['quartus_eda', 'quartus_project'], cwd=cwd)
 
 
 class VHDLSimulation:
@@ -113,9 +122,9 @@ class VHDLSimulation:
             f.write('PROJECT_REVISION = "quartus_project"')
 
     def make_quartus_netlist(self):
-        logger.info('Running quartus map...will take time.')
-        subprocess.run(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
+        quartus_map(self.quartus_path)
 
+        # extract resource usage
         result = open(str(self.quartus_path) + '/output_files/quartus_project.map.summary').readlines()
         for l in result:
             logger.info(l[:-1])
@@ -127,8 +136,7 @@ class VHDLSimulation:
         except:
             pass
 
-        logger.info('Running netlist writer.')
-        subprocess.run(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
+        quartus_eda(self.quartus_path)
         return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
 
@@ -210,12 +218,12 @@ class CocotbAuto:
         # self.environment['VHDL_SOURCES'] = [x[x.find('/src'):] for x in self.src]
 
         # result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
-        cmd = f"docker run "\
-            f"-u `id -u` "\
-            f" -v {self.base_path}:/pyha_simulation gasparka/pyha_rtl_simulator make "\
-            f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "\
-            f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" "\
-            f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "
+        cmd = f"docker run " \
+              f"-u `id -u` " \
+              f" -v {self.base_path}:/pyha_simulation gasparka/pyha_rtl_simulator make " \
+              f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" " \
+              f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" " \
+              f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "
 
         result = subprocess.run(cmd, shell=True)
 
