@@ -4,9 +4,9 @@
 import os
 import sys
 
-try: # for pip >= 10
+try:  # for pip >= 10
     from pip._internal.req import parse_requirements
-except ImportError: # for pip <= 9.0.3
+except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 from setuptools import setup, find_packages
@@ -14,10 +14,8 @@ from setuptools import setup, find_packages
 if sys.version_info < (3, 6):
     sys.exit('Sorry, Python < 3.6 is not supported')
 
-
 with open('README.rst') as readme_file:
     readme = readme_file.read()
-
 
 # parse_requirements() returns generator of pip.req.InstallRequirement objects
 install_reqs = parse_requirements('requirements.txt', session=False)
@@ -25,6 +23,7 @@ requirements = [str(ir.req) for ir in install_reqs]
 
 extra_reqs = parse_requirements('requirements_dev.txt', session=False)
 extra_reqs = [str(ir.req) for ir in extra_reqs]
+
 
 def package_files(directory):
     paths = []
@@ -39,13 +38,11 @@ def package_files(directory):
     return paths
 
 
-extra_files = package_files('cocotb/')
-extra_files.extend(package_files('pyha/simulation/sim_include/'))
-extra_files.extend(package_files('fphdl/'))
+extra_files = package_files('pyha/simulation/sim_include/')
 
 setup(
     name='pyha',
-    version='0.0.7',
+    version='0.0.8',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
@@ -61,12 +58,5 @@ setup(
     install_requires=requirements,
     license="Apache Software License 2.0",
     zip_safe=False,
-    keywords='pyha',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
-    ],
+    keywords='pyha'
 )
