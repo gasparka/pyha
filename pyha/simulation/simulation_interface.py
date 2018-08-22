@@ -18,7 +18,6 @@ from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
 
@@ -337,30 +336,30 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             logger.info(f'OK!')
 
         if 'GATE' in simulations:
-            # logger.info(f'Running "GATE" simulation...')
-            logger.warning('SKIPPING **GATE** simulations -> this is temporary, until GATE simulation dependencies make it to the Docker image!')
-            # if 'PYHA' not in simulations:
-            #     raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
-            # elif 'PYHA_SKIP_GATE' in os.environ:
-            #     logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-            # elif Sfix._float_mode.enabled:
-            #     logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
-            # elif not have_quartus():
-            #     logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
-            # elif not have_ghdl():
-            #     logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
-            # else:
-            #     set_ran_gate_simulation(True)
-            #     vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
-            #     ret = vhdl_sim.main(*args)
-            #
-            #     try:
-            #         out['GATE'] = process_outputs(delay_compensate, ret,
-            #                                       output_callback=model._pyha_simulation_output_callback)
-            #     except:
-            #         out['GATE'] = process_outputs(delay_compensate, ret)
-            #
-            #     logger.info(f'OK!')
+            logger.info(f'Running "GATE" simulation...')
+            # logger.warning('SKIPPING **GATE** simulations -> this is temporary, until GATE simulation dependencies make it to the Docker image!')
+            if 'PYHA' not in simulations:
+                raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
+            elif 'PYHA_SKIP_GATE' in os.environ:
+                logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
+            elif Sfix._float_mode.enabled:
+                logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
+            elif not have_quartus():
+                logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
+            elif not have_ghdl():
+                logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
+            else:
+                set_ran_gate_simulation(True)
+                vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
+                ret = vhdl_sim.main(*args)
+
+                try:
+                    out['GATE'] = process_outputs(delay_compensate, ret,
+                                                  output_callback=model._pyha_simulation_output_callback)
+                except:
+                    out['GATE'] = process_outputs(delay_compensate, ret)
+
+                logger.info(f'OK!')
 
     if discard_last_n_outputs:
         for key, value in out.items():
