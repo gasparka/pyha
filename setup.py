@@ -42,7 +42,7 @@ extra_files = package_files('pyha/simulation/sim_include/')
 
 setup(
     name='pyha',
-    version='0.0.9',
+    version='0.0.10',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
