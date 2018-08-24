@@ -3,14 +3,33 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+
 import numpy as np
+
 import pyha
-from pyha.common.util import tabber
 from pyha.conversion.conversion import Conversion
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
 logger = logging.getLogger('sim')
 
+
+def quartus_map(cwd):
+    logger.info('Running quartus map...will take time.')
+
+    cmd = f"docker run -v /sys:/sys:ro -v {str(cwd)[:-8]}:/pyha_simulation -w='/pyha_simulation/quartus' gasparka/pyha_simulation_env quartus_map quartus_project"
+
+    # print(cmd)
+    # subprocess.run(['quartus_map', 'quartus_project'], cwd=cwd)
+    result = subprocess.run(cmd, shell=True)
+
+
+def quartus_eda(cwd):
+    logger.info('Running netlist writer.')
+    # subprocess.run(['quartus_eda', 'quartus_project'], cwd=cwd)
+
+    cmd = f"docker run -v /sys:/sys:ro -v {str(cwd)[:-8]}:/pyha_simulation -w='/pyha_simulation/quartus' gasparka/pyha_simulation_env quartus_eda quartus_project"
+
+    result = subprocess.run(cmd, shell=True)
 
 class VHDLSimulation:
     last_logic_elements = 0
@@ -99,9 +118,12 @@ class VHDLSimulation:
         for key, value in rules.items():
             buffer += f"set_global_assignment -name {key} {value!s}\n"
 
+        def to_relative_path(x):
+            return '../src/' + str(file)[len(str(self.src_path)):]
+
         buffer += "\n"
         for file in src:
-            buffer += f"set_global_assignment -name VHDL_FILE {file}\n"
+            buffer += f"set_global_assignment -name VHDL_FILE {to_relative_path(file)}\n"
 
         outpath = self.quartus_path / 'quartus_project.qsf'
         with outpath.open('w') as f:
@@ -113,9 +135,9 @@ class VHDLSimulation:
             f.write('PROJECT_REVISION = "quartus_project"')
 
     def make_quartus_netlist(self):
-        logger.info('Running quartus map...will take time.')
-        subprocess.run(['quartus_map', 'quartus_project'], cwd=self.quartus_path)
+        quartus_map(self.quartus_path)
 
+        # extract resource usage
         result = open(str(self.quartus_path) + '/output_files/quartus_project.map.summary').readlines()
         for l in result:
             logger.info(l[:-1])
@@ -127,8 +149,7 @@ class VHDLSimulation:
         except:
             pass
 
-        logger.info('Running netlist writer.')
-        subprocess.run(['quartus_eda', 'quartus_project'], cwd=self.quartus_path)
+        quartus_eda(self.quartus_path)
         return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
 
@@ -210,12 +231,12 @@ class CocotbAuto:
         # self.environment['VHDL_SOURCES'] = [x[x.find('/src'):] for x in self.src]
 
         # result = subprocess.run("make", env=self.environment, cwd=str(self.base_path), stderr=subprocess.PIPE)
-        cmd = f"docker run "\
-            f"-u `id -u` "\
-            f" -v {self.base_path}:/pyha_simulation gasparka/pyha_rtl_simulator make "\
-            f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" "\
-            f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" "\
-            f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "
+        cmd = f"docker run " \
+              f"-u `id -u` " \
+              f" -v {self.base_path}:/pyha_simulation gasparka/pyha_simulation_env make " \
+              f"VHDL_SOURCES=\"{self.environment['VHDL_SOURCES']}\" " \
+              f"OUTPUT_VARIABLES=\"{str(len(self.conversion.outputs))}\" " \
+              f"GHDL_ARGS=\"{self.environment['GHDL_ARGS']}\" "
 
         result = subprocess.run(cmd, shell=True)
 
