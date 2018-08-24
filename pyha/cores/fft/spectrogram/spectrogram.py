@@ -1,59 +1,61 @@
 import logging
-import pickle
+
 import numpy as np
 import pytest
-
-from pyha import Hardware, simulate, hardware_sims_equal, sims_close, Complex
-from pyha.cores import DCRemoval, Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataIndexValidDePackager
 from scipy import signal
+from scipy.signal import get_window
+
+from pyha import Hardware, simulate, sims_close, Complex
+from pyha.cores import DCRemoval, Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, \
+    DataIndexValidDePackager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spectrogram')
 
 
-class SpectrogramInputShaper:
-    """ Makes sure input is divisible to perform avg pooling! """
-
-    def __init__(self, nfft, avg_time_axis):
-        self.avg_time_axis = avg_time_axis
-        self.nfft = nfft
-
-    def __call__(self, input_signal):
-        input_signal = input_signal[0]
-        orig_len = len(input_signal)
-        new_end = np.floor(orig_len / self.nfft / self.avg_time_axis) * self.nfft * self.avg_time_axis
-        print(new_end, orig_len)
-        input_signal = input_signal[:new_end]
-
-        if orig_len != len(input_signal):
-            logger.warning(f'Throw away {orig_len - len(input_signal)} input samples to force divisability!')
-
-        return [Complex(x, 0, -17, overflow_style='saturate') for x in input_signal]
+# class SpectrogramInputShaper:
+#     """ Makes sure input is divisible to perform avg pooling! """
+#
+#     def __init__(self, nfft, avg_time_axis):
+#         self.avg_time_axis = avg_time_axis
+#         self.nfft = nfft
+#
+#     def __call__(self, input_signal):
+#         input_signal = input_signal[0]
+#         orig_len = len(input_signal)
+#         new_end = np.floor(orig_len / self.nfft / self.avg_time_axis) * self.nfft * self.avg_time_axis
+#         print(new_end, orig_len)
+#         input_signal = input_signal[:new_end]
+#
+#         if orig_len != len(input_signal):
+#             logger.warning(f'Throw away {orig_len - len(input_signal)} input samples to force divisability!')
+#
+#         return [Complex(x, 0, -17, overflow_style='saturate') for x in input_signal]
 
 
 class Spectrogram(Hardware):
-    def __init__(self, nfft, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
+    def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
                  window_bits=18):
-        self._pyha_simulation_input_callback = SpectrogramInputShaper(nfft, avg_time_axis)
         self._pyha_simulation_output_callback = DataIndexValidDePackager()
-        self.DECIMATE_BY = avg_freq_axis
-        self.NFFT = nfft
+        self.AVG_FREQ_AXIS = avg_freq_axis
+        self.AVG_TIME_AXIS = avg_time_axis
+        self.FFT_SIZE = fft_size
         self.WINDOW_TYPE = window_type
 
         # components
         self.dc_removal = DCRemoval(256, dtype=Complex)
-        self.pack = Packager(self.NFFT)
-        self.windower = Windower(nfft, self.WINDOW_TYPE, coefficient_bits=window_bits)
-        self.fft = R2SDF(nfft, twiddle_bits=fft_twiddle_bits)
+        self.pack = Packager(self.FFT_SIZE)
+        self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
+        self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()
-        self.dec = BitreversalFFTshiftAVGPool(nfft, avg_freq_axis, avg_time_axis)
+        self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
 
         # Note: Delay from DC-removal is not included, because it occurs before the 'packaging' making it irrelevant!
         self.DELAY = self.pack.DELAY + self.fft.DELAY + self.windower.DELAY + self.power.DELAY + self.dec.DELAY
 
     def main(self, x):
-        dc_out = self.dc_removal.main(x)
-        pack_out = self.pack.main(dc_out)
+        # dc_out = self.dc_removal.main(x)
+        pack_out = self.pack.main(x)
         window_out = self.windower.main(pack_out)
         fft_out = self.fft.main(window_out)
         power_out = self.power.main(fft_out)
@@ -61,28 +63,38 @@ class Spectrogram(Hardware):
         return dec_out
 
     def model_main(self, x):
-        dc_out = self.dc_removal.model_main(x)
-        pack_out = self.pack.model_main(dc_out)
-        window_out = self.windower.model_main(pack_out)
-        fft_out = self.fft.model_main(window_out)
-        power_out = self.power.model_main(fft_out)
-        dec_out = self.dec.model_main(power_out)
-        return dec_out
-        _, _, spectro_out = signal.spectrogram(x, 1, nperseg=self.NFFT, return_onesided=False, detrend=False,
-                                               noverlap=0, window='hanning')
+        no_dc = x - np.mean(x)
+        no_dc = x
+        resh = np.reshape(no_dc, (-1, self.FFT_SIZE))
+        windowed = resh * get_window(self.WINDOW_TYPE, self.FFT_SIZE)
+        transform = np.fft.fft(windowed) / self.FFT_SIZE
+        power = (transform * np.conj(transform)).real
 
-        # apply hardware style gain
-        # spectro_out /= self.NFFT
+        unshift = np.fft.fftshift(power, axes=1)
 
-        # fftshift
-        shifted = np.roll(spectro_out, self.NFFT // 2, axis=0)
+        # average in freq axis
+        avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
+        avg_y = np.average(avg_y, axis=1)
 
-        # # avg decimation
-        l = np.split(shifted, len(shifted) // self.DECIMATE_BY)
-        golden_output = np.average(l, axis=1).T
+        # average in time axis
+        avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
+        avg_x = np.average(avg_x, axis=1)
+        return avg_x
 
-        return golden_output
 
+@pytest.mark.parametrize("avg_freq_axis", [2, 4, 8])
+@pytest.mark.parametrize("avg_time_axis", [1, 2, 4])
+@pytest.mark.parametrize("fft_size", [256, 128])
+@pytest.mark.parametrize("input_power", [0.25, 0.001])
+def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
+    np.random.seed(0)
+    input_size = avg_time_axis * fft_size
+    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1, size=input_size) * 1j) * input_power
+    dut = Spectrogram(fft_size, avg_freq_axis, avg_time_axis)
+
+    orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
+    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sims, rtol=1e-2, atol=1e-3)
 
 def test_shit():
     pytest.skip()
