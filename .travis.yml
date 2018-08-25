@@ -12,11 +12,11 @@ services:
 
 install:
   - pip install .
-  - pip install pytest nbval nbdime
-  - pip install coveralls codeclimate-test-reporter
+  - pip install coveralls
+  - pip install codeclimate-test-reporter
 
 script:
-  - coverage run --source pyha -m pytest --nbval --nbdime
+  - coverage run --source pyha -m pytest
 
 after_success:
   - coveralls
