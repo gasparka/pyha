@@ -1,7 +1,9 @@
 import logging
+
 import numpy as np
 import pytest
 from scipy.signal import get_window
+
 from pyha import Hardware, simulate, sims_close, Complex
 from pyha.cores import DCRemoval, Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, \
     DataIndexValidDePackager
@@ -41,6 +43,8 @@ class Spectrogram(Hardware):
 
     def model_main(self, x):
         no_dc = x - np.mean(x)
+        no_dc = x
+        no_dc = self.dc_removal.model_main(x)
         resh = np.reshape(no_dc, (-1, self.FFT_SIZE))
         windowed = resh * get_window(self.WINDOW_TYPE, self.FFT_SIZE)
         transform = np.fft.fft(windowed) / self.FFT_SIZE
@@ -71,7 +75,7 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
     sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-6, atol=1e-6)
+    assert sims_close(sims, rtol=1e-5, atol=1e-5) # without DC removal, 1e-6 passes
 
 
 def test_simple():

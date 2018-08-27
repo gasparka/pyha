@@ -1,7 +1,10 @@
-from scipy import signal
-import pytest
-from pyha import Hardware, Sfix, simulate, sims_close, Complex, resize, scalb
 import numpy as np
+import pytest
+from scipy import signal
+
+from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
+from pyha.common.shift_register import ShiftRegister
+from pyha.cores import DataIndexValid, DataIndexValidPackager, DataIndexValidDePackager
 
 
 class MovingAverage(Hardware):
@@ -11,20 +14,30 @@ class MovingAverage(Hardware):
     """
 
     def __init__(self, window_len, dtype=Sfix):
+        self._pyha_simulation_input_callback = DataIndexValidPackager(
+            dtype=dtype(0.0, 0, -17, overflow_style='saturate'))
+        self._pyha_simulation_output_callback = DataIndexValidDePackager()
         self.WINDOW_LEN = window_len
         self.BIT_GROWTH = int(np.log2(window_len))
-        self.DELAY = 1
+        self.DELAY = 2
 
-        self.mem = [dtype()] * self.WINDOW_LEN
-        self.sum = dtype(0.0, 0, -17 - self.BIT_GROWTH)
+        self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
+        self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
-    def main(self, new_sample):
+        # rounding the output is necessary or there will be negative trend!
+        self.out = DataIndexValid(dtype(0, 0, -17, round_style='round'), valid=False)
+
+    def main(self, inp):
+        if not inp.valid:
+            return DataIndexValid(self.out.data, 0, valid=False)
+
         # add new element to shift register
-        scaled = scalb(new_sample, -self.BIT_GROWTH)
-        self.mem = [scaled] + self.mem[:-1]
+        self.shr.push_next(inp.data)
 
-        self.sum = self.sum + scaled - self.mem[-1]
-        return resize(self.sum, 0, -17)
+        self.acc = self.acc + inp.data - self.shr.peek()
+        self.out.data = scalb(self.acc, -self.BIT_GROWTH)
+        self.out.valid = True
+        return self.out
 
     def model_main(self, inputs):
         # can be expressed as FIR filter:

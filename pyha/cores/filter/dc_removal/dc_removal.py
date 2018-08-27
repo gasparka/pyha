@@ -1,39 +1,57 @@
+import numpy as np
 import pytest
 
 from pyha import Hardware, Sfix, simulate, sims_close, Complex
-import numpy as np
-
-from pyha.cores import MovingAverage
+from pyha.common.shift_register import ShiftRegister
+from pyha.cores import MovingAverage, DataIndexValidPackager, DataIndexValidDePackager
 
 
 class DCRemoval(Hardware):
     """
     Filter out DC component, based on: https://www.dsprelated.com/showarticle/58.php
-    Deviation from the article that there is no delay matching, which in my opinion is ~useless as the DC component is more or less stable.
     """
     def __init__(self, window_len, dtype=Sfix):
-        self.mavg = [MovingAverage(window_len, dtype), MovingAverage(window_len, dtype),
-                     MovingAverage(window_len, dtype), MovingAverage(window_len, dtype)]
+        self._pyha_simulation_input_callback = DataIndexValidPackager(
+            dtype=dtype(0.0, 0, -17, overflow_style='saturate'))
+        self._pyha_simulation_output_callback = DataIndexValidDePackager()
 
+        self.WINDOW_LEN = window_len
+        self.averages = [MovingAverage(window_len, dtype), MovingAverage(window_len, dtype)]
+
+        self.DELAY = self.averages[0].DELAY * len(self.averages) + 1
+
+        # input must be delayed by group delay, but we can use the SHR from the first averager to get the majority of the delay.
+        self.input_shr = ShiftRegister([dtype(0.0, 0, -17)] * (self.DELAY - 2))
         self.y = dtype(0, 0, -17)
 
-        self.DELAY = 1
-
     def main(self, x):
+        # delay input
+        first_delay = self.averages[0].shr.peek()
+        self.input_shr.push_next(first_delay)
+
         # run input signal over all the MA's
         var = x
-        for mav in self.mavg:
+        for mav in self.averages:
             var = mav.main(var)
 
         # dc-free signal
-        self.y = x - var
+        out = self.input_shr.peek()
+        if not var.valid:
+            self.y = out
+        else:
+            self.y = out - var.data
         return self.y
 
-    def model_main(self, xl):
-        tmp = xl
-        for mav in self.mavg:
+    def model_main(self, input_list):
+        input_list = np.array(input_list)
+        tmp = input_list
+        for mav in self.averages:
             tmp = mav.model_main(tmp)
-        y = xl - np.array([0, 0, 0, 0] + tmp.tolist()[:-4])
+
+        # delaying the input is important, without this you get 6db ripple...
+        group_delay = int(len(self.averages) * ((self.WINDOW_LEN - 1) / 2))
+        delayed_input = np.hstack([[0] * group_delay, input_list[:-group_delay]])
+        y = delayed_input - tmp
         return y
 
 
