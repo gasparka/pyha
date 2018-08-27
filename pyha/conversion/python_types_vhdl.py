@@ -142,7 +142,7 @@ class BaseVHDLType:
     def _pyha_is_equal(self, other, name='', rtol=1e-7, atol=0):
         eq = isclose(float(self.current), float(other.current), rel_tol=rtol, abs_tol=atol)
         if not eq:
-            logger.error('{} {:.5f} != {:.5f} ({:.5f})'.format(name, self.current, other.current,
+            logger.error('{} {:.6f} != {:.6f} ({:.6f})'.format(name, self.current, other.current,
                                                                abs(self.current - other.current)))
         return eq
 

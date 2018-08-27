@@ -31,6 +31,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.FFT_SIZE = fft_size
         self.LUT = build_lut(fft_size, avg_freq_axis)
         self.DELAY = fft_size + 1
+        self.delay_counter = self.DELAY
 
         self.time_axis_counter = self.AVG_TIME_AXIS
         self.state = True
@@ -44,7 +45,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         write_index = self.LUT[inp.index]
         write_index_future = self.LUT[(inp.index + 1) % self.FFT_SIZE]
         read = self.ram[write_ram].delayed_read(write_index_future)
-        res = resize(read + scalb(inp.data, -self.ACCUMULATION_BITS), 0, -35)
+        res = resize(read + inp.data, 0, -35)
         self.ram[write_ram].delayed_write(write_index, res)
 
         # output stage
@@ -58,6 +59,9 @@ class BitreversalFFTshiftAVGPool(Hardware):
             self.ram[read_ram].delayed_write(inp.index, Sfix(0.0, 0, -35))
 
     def main(self, inp):
+        if not inp.valid:
+            return DataIndexValid(Sfix(0.0, 0, -35), self.out_index, valid=False)
+
         # Quartus wants this IF to infer RAM...
         if self.state:
             self.work_ram(inp, 0, 1)
@@ -74,7 +78,12 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
             self.time_axis_counter = next_counter
 
-        out = DataIndexValid(read, index=self.out_index, valid=self.out_valid)
+        # make sure the first DELAY samples have 'invalid' flag
+        delay_over = self.delay_counter == 0
+        if not delay_over:
+            self.delay_counter -= 1
+
+        out = DataIndexValid(read >> self.ACCUMULATION_BITS, index=self.out_index, valid=self.out_valid & delay_over)
         return out
 
     def model_main(self, inp):
@@ -95,10 +104,12 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
 
 @pytest.mark.parametrize("avg_freq_axis", [2, 4, 8, 16, 32])
-@pytest.mark.parametrize("avg_time_axis", [1, 2, 4, 8])
+@pytest.mark.parametrize("avg_time_axis", [1, 2, 4, 8, 16])
 @pytest.mark.parametrize("fft_size", [512, 256, 128])
 @pytest.mark.parametrize("input_power", [0.1, 0.001])
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
+    np.random.seed(0)
+    avg_time_axis = 1
     packets = avg_time_axis * 2
     orig_inp = np.random.uniform(-1, 1, size=(packets, fft_size)) * input_power
 
@@ -106,4 +117,4 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
 
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
     sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-8, atol=1e-8)
+    assert sims_close(sims, rtol=5e-11, atol=5e-11)

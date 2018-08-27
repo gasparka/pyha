@@ -106,18 +106,23 @@ class R2SDF(Hardware):
         self.GAIN_CORRECTION = 2 ** (0 if self.N_STAGES - 3 < 0 else -(self.N_STAGES - 3))
         self.DELAY = (fft_size - 1) + (self.N_STAGES * 3) + 1
 
+        self.delay_counter = self.DELAY - 1
+
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering)
                        for i in range(self.N_STAGES)]
-        self.out = DataIndexValid(Complex(0.0, 0, -17, round_style='round'), 0)
+        self.out = DataIndexValid(Complex(), 0, valid=False)
 
-    def main(self, x):
+    def main(self, inp):
+        if not inp.valid: # propagate invalid package
+            return DataIndexValid(self.out.data, self.out.index, False)
+
         if self.INVERSE:
-            tmp_data = Complex(x.data.imag, x.data.real)
+            tmp_data = Complex(inp.data.imag, inp.data.real)
         else:
-            tmp_data = x.data
+            tmp_data = inp.data
 
         # execute stages
-        tmp_index = x.index
+        tmp_index = inp.index
         for stage in self.stages:
             tmp_data, tmp_index = stage.main(tmp_data, tmp_index)
 
@@ -126,8 +131,13 @@ class R2SDF(Hardware):
         else:
             self.out.data = tmp_data
 
+        # make sure the first DELAY samples have 'invalid' flag
+        delay_over = self.delay_counter == 0
+        if not delay_over:
+            self.delay_counter -= 1
+
         self.out.index = tmp_index
-        self.out.valid = x.valid
+        self.out.valid = delay_over
         return self.out
 
     def model_main(self, x):
@@ -165,7 +175,7 @@ def test_all(fft_size, input_ordering, inverse):
     sims = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
 
     if inverse:
-        assert sims_close(sims, rtol=1e-2, atol=1e-3)
+        assert sims_close(sims, rtol=1e-3, atol=1e-3) # TODO: Why is the performance of inverse transform worse?
     else:
         assert sims_close(sims)
 

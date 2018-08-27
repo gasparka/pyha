@@ -5,7 +5,7 @@ from pyha import Hardware, simulate, sims_close, Complex
 
 
 class DataIndexValid(Hardware):
-    def __init__(self, data, index=0, valid=True):
+    def __init__(self, data, index=0, valid=False):
         self.data = data
         self.index = index
         self.valid = valid
@@ -28,9 +28,9 @@ class DataIndexValidPackager:
         ret = []
         if isinstance(inputs[0], (list, np.ndarray)):
             for row in inputs:
-                ret += [DataIndexValid(self.dtype(elem), i) for i, elem in enumerate(row)]
+                ret += [DataIndexValid(self.dtype(elem), i, valid=True) for i, elem in enumerate(row)]
         else:
-            ret += [DataIndexValid(self.dtype(elem), i) for i, elem in enumerate(inputs)]
+            ret += [DataIndexValid(self.dtype(elem), i, valid=True) for i, elem in enumerate(inputs)]
 
         return ret
 
@@ -58,14 +58,13 @@ class DataIndexValidDePackager:
 
 class Packager(Hardware):
     """ Takes a stream of samples and packages them by adding index to each sample.
-    In simulation this looks like a
     """
     def __init__(self, packet_size, dtype=Complex()):
         self._pyha_simulation_output_callback = DataIndexValidDePackager()
         self.PACKET_SIZE = packet_size
         self.DELAY = 1
 
-        self.out = DataIndexValid(dtype, index=self.PACKET_SIZE - 1)
+        self.out = DataIndexValid(dtype, index=self.PACKET_SIZE - 1, valid=False)
 
     def main(self, data):
         """

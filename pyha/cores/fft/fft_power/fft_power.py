@@ -15,7 +15,7 @@ class FFTPower(Hardware):
             dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
         self._pyha_simulation_output_callback = DataIndexValidDePackager()
 
-        self.out = DataIndexValid(Sfix(0.0, 0, -35, overflow_style='saturate'), 0)
+        self.out = DataIndexValid(Sfix(0.0, 0, -35, overflow_style='saturate'), 0, valid=False)
         self.DELAY = 1
 
     def conjugate(self, x):
@@ -23,8 +23,12 @@ class FFTPower(Hardware):
         return Complex(x.real, imag)
 
     def main(self, inp):
+        if not inp.valid:
+            return DataIndexValid(self.out.data, self.out.index, valid=False)
+
         self.out.data = (self.conjugate(inp.data) * inp.data).real
         self.out.index = inp.index
+        self.out.valid = True
         return self.out
 
     def model_main(self, data):
