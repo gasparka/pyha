@@ -21,15 +21,16 @@ pyha
 
 Features:
 
-* Describe hardware in Python and convert to synthesizable VHDL
+* Describe hardware in Python and convert to VHDL
 * Cycle-accurate and fast simulator
 * Debuggable in Python – very useful as Python and VHDL sources are highly correlated
 * Simple testing framework by pairing pytest and cocotb
+* Builtin fixed-point and complex types
 
-Currently documentation is in progress, meanwhile you can take a look at the collection of
-cores written in Pyha. All the cores have a Notebook that should ease the experimentation.
+Quick start:
 
-For a quick demo, take a look at the moving-average core.
+Take a look at the cores implemented in Pyha, each of them have a Notebook to ease the experimentation.
+For example, start with the moving-average core:
 
 `Python source <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/moving_average/moving_average.py>`_
 
@@ -37,11 +38,10 @@ For a quick demo, take a look at the moving-average core.
 
 `VHDL conversion <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/moving_average/example_conversion/src/MovingAverage_0.vhd>`_
 
-And then stack some moving-averages to build the dc-removal core:
+And then see how 'dc-removal' is built by stacking 4 'moving-averages':
 
 `Python source <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/dc_removal.py>`_
 
 `Notebook <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/dc_removal.ipynb>`_
 
 `VHDL conversion <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/example_conversion/src/DCRemoval_0.vhd>`_
-

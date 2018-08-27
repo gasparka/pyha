@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from pyha import Hardware, simulate, sims_close, Complex, Sfix
+
+from pyha import Hardware, simulate, sims_close, Complex
 
 
 class DataIndexValid(Hardware):
@@ -20,7 +21,7 @@ class DataIndexValidPackager:
         if isinstance(inputs, tuple):
             inputs = inputs[0]
         if self.package_size is None:
-            self.package_size = inputs.shape[-1]
+            self.package_size = np.array(inputs).shape[-1]
 
         # TODO: throw away samples to fit package_size?
 

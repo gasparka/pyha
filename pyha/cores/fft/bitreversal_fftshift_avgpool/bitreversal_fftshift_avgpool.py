@@ -1,8 +1,8 @@
-import pytest
-from pyha import Hardware, simulate, sims_close, Sfix, resize, scalb
 import numpy as np
-from pyha.common.ram import RAM
+import pytest
 
+from pyha import Hardware, simulate, sims_close, Sfix, resize, scalb
+from pyha.common.ram import RAM
 from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
 from pyha.cores.util import toggle_bit_reverse
 
@@ -97,10 +97,13 @@ class BitreversalFFTshiftAVGPool(Hardware):
 @pytest.mark.parametrize("avg_freq_axis", [2, 4, 8, 16, 32])
 @pytest.mark.parametrize("avg_time_axis", [1, 2, 4, 8])
 @pytest.mark.parametrize("fft_size", [512, 256, 128])
-@pytest.mark.parametrize("input_power", [1.0, 0.001])
+@pytest.mark.parametrize("input_power", [0.1, 0.001])
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     packets = avg_time_axis * 2
     orig_inp = np.random.uniform(-1, 1, size=(packets, fft_size)) * input_power
+
+    orig_inp_quant = np.vectorize(lambda x: float(Sfix(x, 0, -35)))(orig_inp)
+
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
-    sims = simulate(dut, orig_inp, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-2, atol=1e-5)
+    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sims, rtol=1e-8, atol=1e-8)

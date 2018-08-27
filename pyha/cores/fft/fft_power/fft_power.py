@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index
 from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
 
@@ -34,5 +35,6 @@ class FFTPower(Hardware):
 def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
-    sims = simulate(dut, inp)
-    assert sims_close(sims)
+    inp = [complex(Complex(x, 0, -17)) for x in inp]
+    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sims, rtol=1e-20, atol=1e-20)
