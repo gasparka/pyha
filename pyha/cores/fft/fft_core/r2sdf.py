@@ -1,9 +1,11 @@
 import logging
-import pytest
-from pyha import Hardware, simulate, sims_close, Complex, resize, scalb, Sfix
+
 import numpy as np
+import pytest
+
+from pyha import Hardware, simulate, sims_close, Complex, resize, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataIndexValid, DataIndexValidDePackager, DataIndexValidPackager
+from pyha.cores import DataIndexValid, DataIndexValidToNumpy, NumpyToDataIndexValid
 from pyha.cores.util import toggle_bit_reverse
 
 logging.basicConfig(level=logging.INFO)
@@ -95,15 +97,13 @@ class StageR2SDF(Hardware):
 
 class R2SDF(Hardware):
     def __init__(self, fft_size, twiddle_bits=9, inverse=False, input_ordering='natural'):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(
+        self._pyha_simulation_input_callback = NumpyToDataIndexValid(
             dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
         self.INPUT_ORDERING = input_ordering
         self.INVERSE = inverse
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
-        # Note: it is NOT correct to use this gain after the magnitude/abs operation, it has to be applied to complex values
-        self.GAIN_CORRECTION = 2 ** (0 if self.N_STAGES - 3 < 0 else -(self.N_STAGES - 3))
         self.DELAY = (fft_size - 1) + (self.N_STAGES * 3) + 1
 
         self.delay_counter = self.DELAY - 1

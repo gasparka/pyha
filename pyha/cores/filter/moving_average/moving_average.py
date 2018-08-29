@@ -4,7 +4,8 @@ from scipy import signal
 
 from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataIndexValid, DataIndexValidPackager, DataIndexValidDePackager
+from pyha.cores import DataValidToNumpy, NumpyToDataValid
+from pyha.cores.fft.packager.packager import DataValid
 
 
 class MovingAverage(Hardware):
@@ -14,9 +15,9 @@ class MovingAverage(Hardware):
     """
 
     def __init__(self, window_len, dtype=Sfix):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(
+        self._pyha_simulation_input_callback = NumpyToDataValid(
             dtype=dtype(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_output_callback = DataValidToNumpy()
         self.WINDOW_LEN = window_len
         self.BIT_GROWTH = int(np.log2(window_len))
         self.DELAY = 2
@@ -25,18 +26,19 @@ class MovingAverage(Hardware):
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         # rounding the output is necessary or there will be negative trend!
-        self.out = DataIndexValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        self.val = False
 
     def main(self, inp):
         if not inp.valid:
-            return DataIndexValid(self.out.data, 0, valid=False)
+            return DataValid(self.out.data, valid=False)
 
-        # add new element to shift register
-        self.shr.push_next(inp.data)
-
+        self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
+        self.val = True
+
         self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        self.out.valid = True
+        self.out.valid = self.val
         return self.out
 
     def model_main(self, inputs):
@@ -59,5 +61,5 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    sim_out = simulate(dut, input_signal)
+    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
     assert sims_close(sim_out)

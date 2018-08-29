@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index
-from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
+from pyha.cores import NumpyToDataIndexValid, DataIndexValidToNumpy, DataIndexValid
 
 
 class FFTPower(Hardware):
@@ -11,9 +11,9 @@ class FFTPower(Hardware):
     """
 
     def __init__(self):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(
+        self._pyha_simulation_input_callback = NumpyToDataIndexValid(
             dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
 
         self.out = DataIndexValid(Sfix(0.0, 0, -35, overflow_style='saturate'), 0, valid=False)
         self.DELAY = 1

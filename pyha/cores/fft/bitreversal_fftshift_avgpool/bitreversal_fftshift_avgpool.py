@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Sfix, resize, scalb
+from pyha import Hardware, simulate, sims_close, Sfix, resize
 from pyha.common.ram import RAM
-from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
+from pyha.cores import NumpyToDataIndexValid, DataIndexValidToNumpy, DataIndexValid
 from pyha.cores.util import toggle_bit_reverse
 
 
@@ -21,8 +21,8 @@ class BitreversalFFTshiftAVGPool(Hardware):
     It performs bitreversal, fftshift and average pooling in one memory.
     """
     def __init__(self, fft_size, avg_freq_axis, avg_time_axis):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_input_callback = NumpyToDataIndexValid(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
+        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
 
         assert not (avg_freq_axis == 1 and avg_time_axis == 1)
         self.AVG_FREQ_AXIS = avg_freq_axis
@@ -30,8 +30,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.ACCUMULATION_BITS = int(np.log2(avg_freq_axis * avg_time_axis))
         self.FFT_SIZE = fft_size
         self.LUT = build_lut(fft_size, avg_freq_axis)
-        self.DELAY = fft_size + 1
-        self.delay_counter = self.DELAY
+        self.delay_counter = fft_size + 1
 
         self.time_axis_counter = self.AVG_TIME_AXIS
         self.state = True

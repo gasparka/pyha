@@ -5,8 +5,8 @@ import pytest
 from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex
-from pyha.cores import DCRemoval, Packager, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, \
-    DataIndexValidDePackager
+from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidPackager, \
+    IndexedPackager, DataIndexValidToNumpy
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spectrogram')
@@ -15,41 +15,39 @@ logger = logging.getLogger('spectrogram')
 class Spectrogram(Hardware):
     def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
                  window_bits=18):
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
         self.AVG_FREQ_AXIS = avg_freq_axis
         self.AVG_TIME_AXIS = avg_time_axis
         self.FFT_SIZE = fft_size
         self.WINDOW_TYPE = window_type
 
         # components
+        self.pack = DataValidPackager()
         self.dc_removal = DCRemoval(256, dtype=Complex)
-        self.pack = Packager(self.FFT_SIZE)
+        self.indexed_pack = IndexedPackager(packet_size=fft_size)
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()
         self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
 
-        # Note: Delay from DC-removal is not included, because it occurs before the 'packaging' making it irrelevant!
-        self.DELAY = self.pack.DELAY + self.fft.DELAY + self.windower.DELAY + self.power.DELAY + self.dec.DELAY
-
-    def main(self, x):
-        dc_out = self.dc_removal.main(x)
-        pack_out = self.pack.main(dc_out)
-        window_out = self.windower.main(pack_out)
+    def main(self, inp):
+        pack_out = self.pack.main(inp, valid=True)
+        dc_out = self.dc_removal.main(pack_out)
+        indexed_stream = self.indexed_pack.main(dc_out)
+        window_out = self.windower.main(indexed_stream)
         fft_out = self.fft.main(window_out)
         power_out = self.power.main(fft_out)
+        # return power_out
         dec_out = self.dec.main(power_out)
         return dec_out
 
     def model_main(self, x):
-        no_dc = x - np.mean(x)
-        no_dc = x
         no_dc = self.dc_removal.model_main(x)
         resh = np.reshape(no_dc, (-1, self.FFT_SIZE))
         windowed = resh * get_window(self.WINDOW_TYPE, self.FFT_SIZE)
         transform = np.fft.fft(windowed) / self.FFT_SIZE
         power = (transform * np.conj(transform)).real
-
+        # return toggle_bit_reverse(power)
         unshift = np.fft.fftshift(power, axes=1)
 
         # average in freq axis
@@ -63,19 +61,20 @@ class Spectrogram(Hardware):
         return avg_x
 
 
-@pytest.mark.parametrize("avg_freq_axis", [2, 4, 8, 16])
-@pytest.mark.parametrize("avg_time_axis", [1, 2, 4, 8])
-@pytest.mark.parametrize("fft_size", [256, 128])
+@pytest.mark.parametrize("avg_freq_axis", [1, 2, 4, 8, 16])
+@pytest.mark.parametrize("avg_time_axis", [2, 4, 8])
+@pytest.mark.parametrize("fft_size", [128, 256])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     np.random.seed(0)
     input_size = (avg_time_axis) * fft_size
-    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1, size=input_size) * 1j) * input_power
+    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,
+                                                                              size=input_size) * 1j) * input_power
     dut = Spectrogram(fft_size, avg_freq_axis, avg_time_axis)
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
     sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-5, atol=1e-5) # without DC removal, 1e-6 passes
+    assert sims_close(sims, rtol=1e-7, atol=1e-7)
 
 
 def test_simple():

@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 import sys
-from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -95,10 +94,10 @@ def have_quartus():
 
 def process_outputs(delay_compensate, ret, output_callback=None):
     # skip the initial pipeline outputs
-    try:
-        ret = ret[delay_compensate:]
-    except TypeError:  # this happened when ret is single element
-        pass
+    # try:
+    #     ret = ret[delay_compensate:]
+    # except TypeError:  # this happened when ret is single element
+    #     pass
 
     if output_callback:
         try:
@@ -285,26 +284,53 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 args = transpose(args)
 
             delay_compensate = 0
-            with suppress(AttributeError):
-                delay_compensate = model.DELAY
-
-            # duplicate input args to flush pipeline
-            target_len = len(args) + delay_compensate
-            args += args * int(np.ceil(delay_compensate / len(args)))
-            args = args[:target_len]
+            # delay_compensate = 0
+            # with suppress(AttributeError):
+            #     delay_compensate = model.DELAY
+            #
+            # # duplicate input args to flush pipeline
+            # target_len = len(args) + delay_compensate
+            # args += args * int(np.ceil(delay_compensate / len(args)))
+            # args = args[:target_len]
 
         if 'PYHA' in simulations:
             logger.info(f'Running "PYHA" simulation...')
             tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
+            valid_output_count = 0
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
                         returns = types_from_pyha_to_python(returns)
+                        if returns.valid:
+                            valid_output_count += 1
                         ret.append(returns)
                         model._pyha_update_registers()
+
+                    ind = 0
+                    while len(out['MODEL'].flatten()) != valid_output_count:
+                        returns = model.main(*tmpargs[ind])
+                        returns = types_from_pyha_to_python(returns)
+                        if returns.valid:
+                            valid_output_count += 1
+                        ret.append(returns)
+                        model._pyha_update_registers()
+                        ind += 1
+
+                    # if invalid_output_count:
+                    #     logger.info(f'First {invalid_output_count} output samples were invalid, replaying as much inputs to compensate...')
+                    #
+                    # for input in tqdm(tmpargs[:invalid_output_count], file=sys.stdout):
+                    #     returns = model.main(*input)
+                    #     returns = types_from_pyha_to_python(returns)
+                    #     ret.append(returns)
+                    #     model._pyha_update_registers()
+
+
+
+
 
             # ret = process_outputs(delay_compensate, ret, output_callback)
             try:

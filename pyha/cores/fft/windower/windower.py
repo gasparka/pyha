@@ -1,22 +1,24 @@
 import numpy as np
 import pytest
-from pyha import Hardware, simulate, sims_close, Complex, Sfix
 from scipy.signal import get_window
-from pyha.cores import DataIndexValid, DataIndexValidPackager, DataIndexValidDePackager
+
+from pyha import Hardware, simulate, sims_close, Complex, Sfix
+from pyha.cores import DataIndexValid, NumpyToDataIndexValid, DataIndexValidToNumpy
 
 
 class Windower(Hardware):
     """ Windowing function determines the frequency response of FFT bins.
     """
     def __init__(self, fft_size, window='hanning', coefficient_bits=18):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(
+        self._pyha_simulation_input_callback = NumpyToDataIndexValid(
             dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
         self.FFT_SIZE = fft_size
         self.window_pure = get_window(window, fft_size)
         self.WINDOW = [Sfix(x, 0, -(coefficient_bits-1), round_style='round', overflow_style='saturate')
                        for x in self.window_pure]
-        self.out = DataIndexValid(Complex(), valid=False)
+        # round is important if you dislike error bias!
+        self.out = DataIndexValid(Complex(0, 0, -17, round_style='round'), valid=False)
         self.DELAY = 1
 
     def main(self, inp):
