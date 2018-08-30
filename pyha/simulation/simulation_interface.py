@@ -127,8 +127,9 @@ def set_ran_gate_simulation(val):
     _ran_gate_simulation = val
 
 
+
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
-             output_callback=None, discard_last_n_outputs=None):
+             output_callback=None, discard_last_n_outputs=None, trace=False):
     """
     Run simulations on model.
 
@@ -210,6 +211,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         except:
             pass
     out = {}
+
+    if trace:
+        model._pyha_insert_tracer()
 
     if 'MODEL' in simulations:
         float_model = deepcopy(model)
