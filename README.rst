@@ -16,10 +16,20 @@ pyha
     :target: https://coveralls.io/github/gasparka/pyha?branch=develop
 
 * Free software: Apache Software License 2.0
-* Install: ``pip install pyha``
-* Additional requirements: Docker for RTL/GATE level simulations
 
-Features:
+Install
+-------
+
+``pip install --user pyha``
+
+RTL/GATE level simulations require `Docker <https://docs.docker.com/install/>`_
+and user needs to be in the 'docker' group:
+
+``sudo usermod -aG docker $USER``
+
+
+Features
+--------
 
 * Describe hardware in Python and convert to VHDL
 * Cycle-accurate and fast simulator
@@ -27,7 +37,9 @@ Features:
 * Simple testing framework by pairing pytest and cocotb
 * Builtin fixed-point and complex types
 
-Quick start:
+
+Quick start
+-----------
 
 Take a look at the cores implemented in Pyha, each of them have a Notebook to ease the experimentation.
 For example, start with the moving-average core:
@@ -45,3 +57,8 @@ And then see how 'dc-removal' is built by stacking 4 'moving-averages':
 `Notebook <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/dc_removal.ipynb>`_
 
 `VHDL conversion <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/example_conversion/src/DCRemoval_0.vhd>`_
+
+Documentation
+-------------
+
+TODO
