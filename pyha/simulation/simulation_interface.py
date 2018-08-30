@@ -298,26 +298,22 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
-            valid_output_count = 0
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
                         returns = types_from_pyha_to_python(returns)
-                        if returns.valid:
-                            valid_output_count += 1
                         ret.append(returns)
                         model._pyha_update_registers()
 
-                    ind = 0
-                    while len(out['MODEL'].flatten()) != valid_output_count:
-                        returns = model.main(*tmpargs[ind])
+
+                    logger.info(f'Flushing the pipeline...')
+
+                    while not ret[-1].final:
+                        returns = model.main(*tmpargs[-1])
                         returns = types_from_pyha_to_python(returns)
-                        if returns.valid:
-                            valid_output_count += 1
                         ret.append(returns)
                         model._pyha_update_registers()
-                        ind += 1
 
                     # if invalid_output_count:
                     #     logger.info(f'First {invalid_output_count} output samples were invalid, replaying as much inputs to compensate...')

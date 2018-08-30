@@ -5,9 +5,10 @@ from pyha import Hardware, simulate, sims_close, Complex
 
 
 class DataValid(Hardware):
-    def __init__(self, data, valid=False):
+    def __init__(self, data, valid=False, final=False):
         self.data = data
         self.valid = valid
+        self.final = final
 
 
 class DataIndexValid(Hardware):
@@ -83,6 +84,7 @@ class NumpyToDataValid:
         else:
             ret += [DataValid(self.dtype(elem), valid=True) for elem in inputs]
 
+        ret[-1].final = True
         return ret
 
 

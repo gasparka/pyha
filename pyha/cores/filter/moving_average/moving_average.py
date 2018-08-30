@@ -26,25 +26,54 @@ class MovingAverage(Hardware):
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         # rounding the output is necessary or there will be negative trend!
-        self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        # self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        self.out = dtype(0, 0, -17, round_style='round')
         self.val = False
+        self.final_delay = False
+        self.final_counter = self.DELAY+1
 
     def main(self, inp):
-        if not inp.valid:
+        if inp.final:
+            self.final_delay = inp.final
+            self.final_counter -= 1
+        elif not inp.valid:
+            self.final_counter = self.DELAY+1
+
             return DataValid(self.out.data, valid=False)
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
         self.val = True
 
-        self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        self.out.valid = self.val
+        self.out = scalb(self.acc, -self.BIT_GROWTH)
+        return DataValid(self.out, valid=self.val, final=self.final_counter==0)
+        # self.out.data = scalb(self.acc, -self.BIT_GROWTH)
+        # self.out.valid = self.val
+        # self.out.final = self.final_delay
         return self.out
 
     def model_main(self, inputs):
         # can be expressed as FIR filter:
         taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
         return signal.lfilter(taps, [1.0], inputs)
+
+
+@pytest.mark.parametrize("window_len", [2])
+@pytest.mark.parametrize("input_power", [0.25])
+@pytest.mark.parametrize("dtype", [Complex])
+def test_lolz(window_len, input_power, dtype):
+    np.random.seed(0)
+    dut = MovingAverage(window_len=window_len, dtype=dtype)
+    N = 4
+    if dtype == Complex:
+        input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
+    else:
+        input_signal = np.random.normal(size=N)
+
+    input_signal *= input_power
+
+    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sim_out)
 
 
 @pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32])
