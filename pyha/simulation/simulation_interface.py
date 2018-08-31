@@ -160,14 +160,27 @@ def get_sorted_traces():
 
     ll = []
     for x in Tracer.traced_objects:
-        ll.append(Tmp(x.model_main.get_input(), x.main.get_input(), f'In: {x.model_main.label}', x.model_main.call_time))
-        ll.append(Tmp(x.model_main.get_output(), x.main.get_output(), f'Out: {x.model_main.label}', x.model_main.return_time))
+        # print(x)
+        try:
+            model = x.model_main
+            main = x.main
+            if not model.call_time or not main.call_time:
+                logger.info(f'TRACE: Skipping {model.label} because model or main was not called...')
+                continue
+            ll.append(Tmp(model.get_input(), main.get_input(), f'In: {model.label}', model.call_time))
+            ll.append(Tmp(model.get_output(), main.get_output(), f'Out: {model.label}', model.return_time))
+        except AttributeError as e:
+            print(e)
+            continue
 
     time_sorted = sorted(ll, key=lambda x: x.time)
 
-    #
+    ll = [time_sorted[0]] # always include first input
+    for x in time_sorted:
+        if not np.array_equal(x.data_model, ll[-1].data_model):
+            ll.append(x)
 
-    ret = {x.label: [x.data_model, x.data_pyha] for x in time_sorted}
+    ret = {x.label: [x.data_model, x.data_pyha] for x in ll}
     return ret
 
 
@@ -296,9 +309,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
 
-    if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-        logger.info(f'Converting model to hardware types ...')
-        model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
+    # if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
+    #     logger.info(f'Converting model to hardware types ...')
+    #     model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
 
     # # Speed up simulation if VHDL conversion is not required!
     if 'RTL' not in simulations and 'GATE' not in simulations:
@@ -377,19 +390,24 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             tmpargs = args  # pyha MAY overwrite the inputs...
 
             ret = []
+            valid_samples = 0
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
                         returns = pyha_to_python(returns)
+                        if returns.valid:
+                            valid_samples += 1
                         ret.append(returns)
                         model._pyha_update_registers()
 
                     logger.info(f'Flushing the pipeline...')
 
-                    while not ret[-1].final:
+                    while not ret[-1].final and valid_samples != len(out['MODEL']):
                         returns = model.main(*tmpargs[-1])
                         returns = pyha_to_python(returns)
+                        if returns.valid:
+                            valid_samples += 1
                         ret.append(returns)
                         model._pyha_update_registers()
 

@@ -16,7 +16,7 @@ class MovingAverage(Hardware):
 
     def __init__(self, window_len, dtype=Sfix):
         self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=dtype(0.0, 0, -17, overflow_style='saturate'))
+            dtype=dtype(0.0, 0, -17, overflow_style='saturate', round_style='round'))
         self._pyha_simulation_output_callback = DataValidToNumpy()
         self.WINDOW_LEN = window_len
         self.BIT_GROWTH = int(np.log2(window_len))
@@ -26,30 +26,28 @@ class MovingAverage(Hardware):
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         # rounding the output is necessary or there will be negative trend!
-        # self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        self.out = dtype(0, 0, -17, round_style='round')
-        self.val = False
-        self.final_delay = False
-        self.final_counter = self.DELAY+1
+        self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        self.final_counter = self.DELAY - 1
+        self.start_counter = self.DELAY - 1
 
     def main(self, inp):
         if inp.final:
-            self.final_delay = inp.final
-            self.final_counter -= 1
+            if self.final_counter != 0:
+                self.final_counter -= 1
         elif not inp.valid:
-            self.final_counter = self.DELAY+1
+            return DataValid(self.out.data, valid=False, final=False)
+        elif inp.valid:
+            self.final_counter = self.DELAY - 1
 
-            return DataValid(self.out.data, valid=False)
+        if self.start_counter != 0:
+            self.start_counter -= 1
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
-        self.val = True
 
-        self.out = scalb(self.acc, -self.BIT_GROWTH)
-        return DataValid(self.out, valid=self.val, final=self.final_counter==0)
-        # self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        # self.out.valid = self.val
-        # self.out.final = self.final_delay
+        self.out.data = scalb(self.acc, -self.BIT_GROWTH)
+        self.out.valid = self.start_counter == 0
+        self.out.final = self.final_counter == 0
         return self.out
 
     def model_main(self, inputs):
@@ -80,6 +78,7 @@ def test_lolz(window_len, input_power, dtype):
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
+    # TODO: Quantize shit...and find rtol, atol
     np.random.seed(0)
     dut = MovingAverage(window_len=window_len, dtype=dtype)
     N = 128
