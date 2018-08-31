@@ -19,31 +19,6 @@ SKIP_FUNCTIONS = ('__init__', 'model_main')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('core')
 
-instances = []
-class Tracer:
-    # instances = []
-
-    def __init__(self, func, tracer_type, owner=None):
-        self.owner = owner
-        self.tracer_type = tracer_type
-        self.func = func
-        self.output = []
-        self.output_time = None
-        instances.append(self)
-
-    def __call__(self, *args, **kwargs):
-
-        res = self.func(*args, **kwargs)
-        if self.tracer_type == 'model_main':
-            self.output = np.array(res)
-            self.output_time = time.time()
-        elif self.tracer_type == 'pyha':
-            self.output.append(res)
-            if self.output_time is None:  # time of first call
-                self.output_time = time.time()
-        return res
-
-
 
 class PyhaFunc:
     """ All functions of a Pyha class will be wrapped in this object, calls to original function are done with 'profiler hack' in
@@ -314,6 +289,11 @@ class PyhaList(UserList):
         else:
             self.data = self._pyha_next[:]
 
+    def _pyha_insert_tracer(self, label=''):
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
+            for i, x in enumerate(self.data):
+                x._pyha_insert_tracer(label=f'{label}[{i}]')
+
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
         from pyha.common.complex import default_complex
@@ -395,15 +375,17 @@ class Hardware(with_metaclass(Meta)):
         for x in self._pyha_updateable:
             x._pyha_update_registers()
 
-
-    def _pyha_insert_tracer(self):
+    def _pyha_insert_tracer(self, label=''):
+        from pyha.simulation.simulation_interface import Tracer
         for k, v in self.__dict__.items():
+            if k == '_pyha_initial_self':
+                continue
             if hasattr(v, '_pyha_update_registers'):
-                v._pyha_insert_tracer()
+                v._pyha_insert_tracer(label=f'{label}.{k}')
 
         for method_str in dir(self):
             if method_str == 'model_main' or method_str == 'main':
-                self.__dict__[method_str] = Tracer(getattr(self, method_str), method_str, owner=self)
+                self.__dict__[method_str] = Tracer(getattr(self, method_str), method_str, owner=self, label=label)
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """

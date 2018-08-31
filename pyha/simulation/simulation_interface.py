@@ -2,7 +2,8 @@ import logging
 import os
 import shutil
 import sys
-from copy import deepcopy
+import time
+from copy import deepcopy, copy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -127,6 +128,99 @@ def set_ran_gate_simulation(val):
     _ran_gate_simulation = val
 
 
+def pyha_to_python(pyha_types):
+    returns = pyha_types  # can be the case for builtins ie. int
+    if isinstance(pyha_types, tuple):  # multiple return
+        pyvals = []
+        for val in pyha_types:
+            try:
+                pval = val._pyha_to_python_value()
+            except AttributeError:
+                pval = val
+
+            pyvals.append(pval)
+
+        returns = tuple(pyvals)
+    else:
+        try:
+            returns = pyha_types._pyha_to_python_value()
+        except AttributeError:
+            pass
+    return returns
+
+def get_sorted_traces():
+    class Tmp:
+        def __init__(self, data_model, data_pyha, label, time):
+            self.type = type
+            self.data_model = data_model
+            self.data_pyha = data_pyha[:len(data_model)]
+            self.dir = dir
+            self.time = time
+            self.label = label
+
+    ll = []
+    for x in Tracer.traced_objects:
+        ll.append(Tmp(x.model_main.get_input(), x.main.get_input(), f'In: {x.model_main.label}', x.model_main.call_time))
+        ll.append(Tmp(x.model_main.get_output(), x.main.get_output(), f'Out: {x.model_main.label}', x.model_main.return_time))
+
+    time_sorted = sorted(ll, key=lambda x: x.time)
+
+    #
+
+    ret = {x.label: [x.data_model, x.data_pyha] for x in time_sorted}
+    return ret
+
+
+
+
+class Tracer:
+    instances = []
+    traced_objects = []
+
+    def __init__(self, func, tracer_type, owner=None, label=None):
+        self.label = label
+        self.owner = owner
+        self.tracer_type = tracer_type
+        self.func = func
+
+        self.input = []
+        self.output = []
+        self.return_time = None
+        self.call_time = None
+        Tracer.instances.append(self)
+        if owner not in Tracer.traced_objects:
+            Tracer.traced_objects.append(owner)
+
+    def get_output(self):
+        if self.tracer_type == 'main':
+            return self.owner._pyha_simulation_output_callback(self.output)
+
+        return self.output
+
+    def get_input(self):
+        if self.tracer_type == 'main':
+            return self.owner._pyha_simulation_output_callback(self.input)
+
+        return self.input
+
+    def __call__(self, *args, **kwargs):
+        if self.call_time is None:
+            self.call_time = time.time()
+
+        res = self.func(*args, **kwargs)
+
+        if self.return_time is None:
+            self.return_time = time.time()
+
+        if self.tracer_type == 'model_main':
+            self.input = np.array(args[0])
+            self.output = np.array(res)
+            self.return_time = time.time()
+        elif self.tracer_type == 'main':
+            self.input.append(pyha_to_python(args[0]))
+            self.output.append(pyha_to_python(res))
+        return res
+
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
              output_callback=None, discard_last_n_outputs=None, trace=False):
@@ -171,26 +265,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     """
     set_ran_gate_simulation(False)
 
-    def types_from_pyha_to_python(pyha_types):
-        returns = pyha_types  # can be the case for builtins ie. int
-        if isinstance(pyha_types, tuple):  # multiple return
-            pyvals = []
-            for val in pyha_types:
-                try:
-                    pval = val._pyha_to_python_value()
-                except AttributeError:
-                    pval = val
-
-                pyvals.append(pval)
-
-            returns = tuple(pyvals)
-        else:
-            try:
-                returns = pyha_types._pyha_to_python_value()
-            except AttributeError:
-                pass
-        return returns
-
     if simulations is None:
         if hasattr(model, 'model_main'):
             simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
@@ -213,10 +287,11 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     out = {}
 
     if trace:
-        model._pyha_insert_tracer()
+        Tracer.instances.clear()
+        model._pyha_insert_tracer(label='self')
 
     if 'MODEL' in simulations:
-        float_model = deepcopy(model)
+        float_model = model
 
     if 'MODEL_PYHA' in simulations:
         model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
@@ -270,7 +345,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     ret = []
                     for input in tmpargs:
                         returns = tmpmodel.main(*input)
-                        returns = types_from_pyha_to_python(returns)
+                        returns = pyha_to_python(returns)
                         ret.append(returns)
                         tmpmodel._pyha_update_registers()
 
@@ -306,16 +381,15 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
-                        returns = types_from_pyha_to_python(returns)
+                        returns = pyha_to_python(returns)
                         ret.append(returns)
                         model._pyha_update_registers()
-
 
                     logger.info(f'Flushing the pipeline...')
 
                     while not ret[-1].final:
                         returns = model.main(*tmpargs[-1])
-                        returns = types_from_pyha_to_python(returns)
+                        returns = pyha_to_python(returns)
                         ret.append(returns)
                         model._pyha_update_registers()
 
@@ -327,10 +401,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     #     returns = types_from_pyha_to_python(returns)
                     #     ret.append(returns)
                     #     model._pyha_update_registers()
-
-
-
-
 
             # ret = process_outputs(delay_compensate, ret, output_callback)
             try:
@@ -358,7 +428,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 ret = vhdl_sim.main(*args)
 
                 try:
-                    out['RTL'] = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
+                    out['RTL'] = process_outputs(delay_compensate, ret,
+                                                 output_callback=model._pyha_simulation_output_callback)
                 except:
                     out['RTL'] = process_outputs(delay_compensate, ret)
             logger.info(f'OK!')
