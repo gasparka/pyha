@@ -27,20 +27,21 @@ class MovingAverage(Hardware):
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        self.final_counter = self.DELAY - 1
-        self.start_counter = self.DELAY - 1
+        self.final_counter = self.WINDOW_LEN + 2
+        self.start_counter = self.WINDOW_LEN / 2
 
     def main(self, inp):
         if inp.final:
             if self.final_counter != 0:
                 self.final_counter -= 1
+            inp.data = 0.0
         elif not inp.valid:
             return DataValid(self.out.data, valid=False, final=False)
         elif inp.valid:
-            self.final_counter = self.DELAY - 1
+            self.final_counter = self.WINDOW_LEN / 2
 
-        if self.start_counter != 0:
-            self.start_counter -= 1
+            if self.start_counter != 0:
+                self.start_counter -= 1
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
@@ -51,9 +52,14 @@ class MovingAverage(Hardware):
         return self.out
 
     def model_main(self, inputs):
-        # can be expressed as FIR filter:
+        # https://stackoverflow.com/questions/13728392/moving-average-or-running-mean/27681394#27681394
+        # can be expressed as FIR filter with special taps:
+
         taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
-        return signal.lfilter(taps, [1.0], inputs)
+        # return signal.lfilter(taps, [1.0], inputs)
+
+        taps = np.ones(self.WINDOW_LEN)/self.WINDOW_LEN
+        return np.convolve(inputs, taps, mode='same')
 
 
 @pytest.mark.parametrize("window_len", [2])

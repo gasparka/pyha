@@ -5,7 +5,8 @@ import pytest
 
 from pyha import Hardware, simulate, sims_close, Complex, resize, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataIndexValid, DataIndexValidToNumpy, NumpyToDataIndexValid
+from pyha.cores import DataIndexValid, DataIndexValidToNumpy, NumpyToDataIndexValid, DataValid, NumpyToDataValid, \
+    DataValidToNumpy
 from pyha.cores.util import toggle_bit_reverse
 
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +20,10 @@ def W(k, N):
 
 class StageR2SDF(Hardware):
     def __init__(self, global_fft_size, stage_nr, twiddle_bits=18, inverse=False, input_ordering='natural'):
+        self._pyha_simulation_input_callback = NumpyToDataValid(
+            dtype=Complex(0.0, 0, -17, overflow_style='saturate', round_style='round'))
+        self._pyha_simulation_output_callback = DataValidToNumpy()
+
         self.INVERSE = inverse
         self.GLOBAL_FFT_SIZE = global_fft_size
         self.STAGE_NR = stage_nr
@@ -51,31 +56,47 @@ class StageR2SDF(Hardware):
         self.twiddle = self.TWIDDLES[0]
         self.stage1_out = Complex(0, 0, -17)
         self.stage2_out = Complex(0, 0, -17 - (twiddle_bits - 1))
-        self.stage3_out = Complex(0, 0, -17, round_style='round')
         self.output_index = 0
         self.mode_delay = False
+        self.control = 0
+
+        self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
+        self.final_counter = self.DELAY - 1
+        self.start_counter = self.DELAY - 1
 
     def butterfly(self, in_up, in_down):
         up = resize(in_up + in_down, 0, -17)
         down = resize(in_up - in_down, 0, -17)
         return up, down
 
-    def main(self, x, control):
+    def main(self, inp):
+        if inp.final:
+            if self.final_counter != 0:
+                self.final_counter -= 1
+        elif not inp.valid:
+            return DataValid(self.out.data, valid=False, final=False)
+        elif inp.valid:
+            self.final_counter = self.DELAY - 1
+
+        if self.start_counter != 0:
+            self.start_counter -= 1
+
         # Stage 1: handle the loopback memory - setup data for the butterfly
-        mode = not (control & self.INPUT_STRIDE)
+        self.control = (self.control + 1) % (self.LOCAL_FFT_SIZE)
+        mode = not (self.control & self.INPUT_STRIDE)
         self.mode_delay = mode
         if mode:
-            self.shr.push_next(x)
+            self.shr.push_next(inp.data)
             self.stage1_out = self.shr.peek()
         else:
-            up, down = self.butterfly(self.shr.peek(), x)
+            up, down = self.butterfly(self.shr.peek(), inp.data)
             self.shr.push_next(down)
             self.stage1_out = up
         # Also fetch the twiddle factor.
         if self.IS_NATURAL_ORDER:
-            self.twiddle = self.TWIDDLES[control & self.CONTROL_MASK]
+            self.twiddle = self.TWIDDLES[self.control >> (self.STAGE_NR + 1)]
         else:
-            self.twiddle = self.TWIDDLES[(control >> (self.STAGE_NR + 1)) & self.CONTROL_MASK]
+            self.twiddle = self.TWIDDLES[self.control >> (self.STAGE_NR + 1)]
 
         # Stage 2: complex multiply
         if self.mode_delay and not self.IS_TRIVIAL_MULTIPLIER:
@@ -86,13 +107,45 @@ class StageR2SDF(Hardware):
         # Stage 3: gain control and rounding
         # if self.FFT_HALF > 4:
         if self.INVERSE:
-            self.stage3_out = self.stage2_out
+            self.out.data = self.stage2_out
         else:
-            self.stage3_out = scalb(self.stage2_out, -1)
+            self.out.data = scalb(self.stage2_out, -1)
 
-        # delay index by same amount as data
-        self.output_index = (control - (self.DELAY - 1)) % self.GLOBAL_FFT_SIZE
-        return self.stage3_out, self.output_index
+        self.out.valid = self.start_counter == 0
+        self.out.final = self.final_counter == 0
+        return self.out
+
+    def model_main(self, inp):
+        packets = np.array(np.reshape(inp, (-1, self.LOCAL_FFT_SIZE)))
+        sample_offset = self.LOCAL_FFT_SIZE // 2
+        for pack in packets:
+            for i in range(sample_offset):
+                pack[i], pack[i + sample_offset] = pack[i] + pack[i + sample_offset], \
+                                                   (pack[i] - pack[i + sample_offset]) * W(i, self.LOCAL_FFT_SIZE)
+
+        packets = packets / 2
+        return packets.flatten()
+
+
+@pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32])
+@pytest.mark.parametrize("input_ordering", ['natural'])
+@pytest.mark.parametrize("inverse", [False])
+def test_lolz(fft_size, input_ordering, inverse):
+    np.random.seed(0)
+    input_signal = np.random.uniform(-1, 1, fft_size * 2) + np.random.uniform(-1, 1, fft_size * 2) * 1j
+
+    if inverse:
+        input_signal /= fft_size
+    else:
+        input_signal *= 0.125
+
+    dut = StageR2SDF(fft_size, int(np.log2(fft_size))-1)
+    sims = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
+
+    if inverse:
+        assert sims_close(sims, rtol=1e-3, atol=1e-3) # TODO: Why is the performance of inverse transform worse?
+    else:
+        assert sims_close(sims)
 
 
 class R2SDF(Hardware):

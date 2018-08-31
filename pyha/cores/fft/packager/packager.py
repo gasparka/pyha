@@ -84,7 +84,8 @@ class NumpyToDataValid:
         else:
             ret += [DataValid(self.dtype(elem), valid=True) for elem in inputs]
 
-        ret[-1].final = True
+        ret.append(DataValid(self.dtype(0.0), valid=False, final=True))
+        # ret[-1].final = True
         return ret
 
 

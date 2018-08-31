@@ -403,13 +403,16 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
                     logger.info(f'Flushing the pipeline...')
 
-                    while not ret[-1].final and valid_samples != len(out['MODEL']):
+                    while not ret[-1].final:
+                    # while not ret[-1].final and valid_samples != len(out['MODEL']):
                         returns = model.main(*tmpargs[-1])
                         returns = pyha_to_python(returns)
                         if returns.valid:
                             valid_samples += 1
                         ret.append(returns)
                         model._pyha_update_registers()
+
+                    ret = ret[:-1]
 
                     # if invalid_output_count:
                     #     logger.info(f'First {invalid_output_count} output samples were invalid, replaying as much inputs to compensate...')
