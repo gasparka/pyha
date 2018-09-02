@@ -77,8 +77,8 @@ class StageR2SDF(Hardware):
         elif inp.valid:
             self.final_counter = self.DELAY - 1
 
-        if self.start_counter != 0:
-            self.start_counter -= 1
+            if self.start_counter != 0:
+                self.start_counter -= 1
 
         # Stage 1: handle the loopback memory - setup data for the butterfly
         self.control = (self.control + 1) % (self.LOCAL_FFT_SIZE)
@@ -203,28 +203,6 @@ class R2SDF(Hardware):
         #     ffts = toggle_bit_reverse(ffts)
         #
         # return ffts
-
-
-
-@pytest.mark.parametrize("fft_size", [4])
-@pytest.mark.parametrize("input_ordering", ['natural'])
-@pytest.mark.parametrize("inverse", [False])
-def test_lolzzz2(fft_size, input_ordering, inverse):
-    np.random.seed(0)
-    input_signal = np.random.uniform(-1, 1, fft_size) + np.random.uniform(-1, 1, fft_size) * 1j
-
-    if inverse:
-        input_signal /= fft_size
-    else:
-        input_signal *= 0.125
-
-    dut = R2SDF(fft_size, twiddle_bits=18, input_ordering=input_ordering, inverse=inverse)
-    sims = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
-
-    if inverse:
-        assert sims_close(sims, rtol=1e-3, atol=1e-3) # TODO: Why is the performance of inverse transform worse?
-    else:
-        assert sims_close(sims)
 
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])

@@ -27,7 +27,7 @@ class Spectrogram(Hardware):
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()
-        # self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
+        self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
 
     def main(self, inp):
         # pack_out = self.pack.main(inp, valid=True)
