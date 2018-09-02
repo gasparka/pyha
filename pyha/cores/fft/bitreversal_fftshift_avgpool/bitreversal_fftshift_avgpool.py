@@ -3,7 +3,6 @@ import pytest
 
 from pyha import Hardware, simulate, sims_close, Sfix, resize
 from pyha.common.ram import RAM
-from pyha.cores import NumpyToDataIndexValid, DataIndexValidToNumpy, DataIndexValid
 from pyha.cores.util import toggle_bit_reverse
 
 

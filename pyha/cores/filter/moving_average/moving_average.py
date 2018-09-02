@@ -27,14 +27,16 @@ class MovingAverage(Hardware):
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        self.final_counter = self.WINDOW_LEN + 2
-        self.start_counter = self.WINDOW_LEN / 2
+        # self.final_counter = self.WINDOW_LEN + 2
+        # self.start_counter = self.WINDOW_LEN
+        self.final_counter = 2
+        self.start_counter = 1
 
     def main(self, inp):
         if inp.final:
             if self.final_counter != 0:
                 self.final_counter -= 1
-            inp.data = 0.0
+            # inp.data = 0.0 + 0.0j
         elif not inp.valid:
             return DataValid(self.out.data, valid=False, final=False)
         elif inp.valid:
@@ -56,7 +58,7 @@ class MovingAverage(Hardware):
         # can be expressed as FIR filter with special taps:
 
         taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
-        # return signal.lfilter(taps, [1.0], inputs)
+        return signal.lfilter(taps, [1.0], inputs)
 
         taps = np.ones(self.WINDOW_LEN)/self.WINDOW_LEN
         return np.convolve(inputs, taps, mode='same')

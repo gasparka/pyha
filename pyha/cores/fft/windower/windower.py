@@ -3,7 +3,7 @@ import pytest
 from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex, Sfix
-from pyha.cores import DataIndexValid, NumpyToDataIndexValid, DataIndexValidToNumpy, NumpyToDataValid, DataValidToNumpy, \
+from pyha.cores import NumpyToDataValid, DataValidToNumpy, \
     DataValid
 
 

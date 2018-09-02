@@ -187,7 +187,6 @@ def get_sorted_traces():
 
 
 class Tracer:
-    instances = []
     traced_objects = []
 
     def __init__(self, func, tracer_type, owner=None, label=None):
@@ -200,7 +199,6 @@ class Tracer:
         self.output = []
         self.return_time = None
         self.call_time = None
-        Tracer.instances.append(self)
         if owner not in Tracer.traced_objects:
             Tracer.traced_objects.append(owner)
 
@@ -300,7 +298,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     out = {}
 
     if trace:
-        Tracer.instances.clear()
+        Tracer.traced_objects.clear()
         model._pyha_insert_tracer(label='self')
 
     if 'MODEL' in simulations:

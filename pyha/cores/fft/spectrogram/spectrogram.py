@@ -2,11 +2,9 @@ import logging
 
 import numpy as np
 import pytest
-from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex
-from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidPackager, \
-    IndexedPackager, DataIndexValidToNumpy, DataValidToNumpy, NumpyToDataValid
+from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidPackager, DataValidToNumpy, NumpyToDataValid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spectrogram')
@@ -29,15 +27,15 @@ class Spectrogram(Hardware):
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()
-        self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
+        # self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
 
     def main(self, inp):
         # pack_out = self.pack.main(inp, valid=True)
         dc_out = self.dc_removal.main(inp)
         window_out = self.windower.main(dc_out)
-        return window_out
         fft_out = self.fft.main(window_out)
         power_out = self.power.main(fft_out)
+        return power_out
         # return power_out
         dec_out = self.dec.main(power_out)
         return dec_out
@@ -45,7 +43,9 @@ class Spectrogram(Hardware):
     def model_main(self, x):
         no_dc = self.dc_removal.model_main(x)
         window = self.windower.model_main(no_dc)
-        return window
+        transform = self.fft.model_main(window)
+        power = self.power.model_main(transform)
+        return power
         transform = np.fft.fft(windowed) / self.FFT_SIZE
         power = (transform * np.conj(transform)).real
         # return toggle_bit_reverse(power)

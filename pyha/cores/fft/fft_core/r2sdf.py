@@ -5,8 +5,7 @@ import pytest
 
 from pyha import Hardware, simulate, sims_close, Complex, resize, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataIndexValid, DataIndexValidToNumpy, NumpyToDataIndexValid, DataValid, NumpyToDataValid, \
-    DataValidToNumpy
+from pyha.cores import DataValid, NumpyToDataValid, DataValidToNumpy
 from pyha.cores.util import toggle_bit_reverse
 
 logging.basicConfig(level=logging.INFO)
@@ -94,7 +93,7 @@ class StageR2SDF(Hardware):
             self.stage1_out = up
         # Also fetch the twiddle factor.
         if self.IS_NATURAL_ORDER:
-            self.twiddle = self.TWIDDLES[self.control >> (self.STAGE_NR + 1)]
+            self.twiddle = self.TWIDDLES[self.control & self.CONTROL_MASK]
         else:
             self.twiddle = self.TWIDDLES[self.control >> (self.STAGE_NR + 1)]
 
@@ -132,14 +131,14 @@ class StageR2SDF(Hardware):
 @pytest.mark.parametrize("inverse", [False])
 def test_lolz(fft_size, input_ordering, inverse):
     np.random.seed(0)
-    input_signal = np.random.uniform(-1, 1, fft_size * 2) + np.random.uniform(-1, 1, fft_size * 2) * 1j
+    input_signal = np.random.uniform(-1, 1, fft_size * 3) + np.random.uniform(-1, 1, fft_size * 3) * 1j
 
     if inverse:
         input_signal /= fft_size
     else:
         input_signal *= 0.125
 
-    dut = StageR2SDF(fft_size, int(np.log2(fft_size))-1)
+    dut = StageR2SDF(fft_size, 0)
     sims = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
 
     if inverse:
@@ -150,66 +149,82 @@ def test_lolz(fft_size, input_ordering, inverse):
 
 class R2SDF(Hardware):
     def __init__(self, fft_size, twiddle_bits=9, inverse=False, input_ordering='natural'):
-        self._pyha_simulation_input_callback = NumpyToDataIndexValid(
-            dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidToNumpy()
+        self._pyha_simulation_input_callback = NumpyToDataValid(
+            dtype=Complex(0.0, 0, -17, overflow_style='saturate', round_style='round'))
+        self._pyha_simulation_output_callback = DataValidToNumpy()
         self.INPUT_ORDERING = input_ordering
         self.INVERSE = inverse
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
         self.DELAY = (fft_size - 1) + (self.N_STAGES * 3) + 1
 
-        self.delay_counter = self.DELAY - 1
-
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering)
                        for i in range(self.N_STAGES)]
-        self.out = DataIndexValid(Complex(), 0, valid=False)
 
     def main(self, inp):
-        if not inp.valid: # propagate invalid package
-            return DataIndexValid(self.out.data, self.out.index, False)
 
-        if self.INVERSE:
-            tmp_data = Complex(inp.data.imag, inp.data.real)
-        else:
-            tmp_data = inp.data
+        # if self.INVERSE:
+        #     tmp_data = Complex(inp.data.imag, inp.data.real)
+        # else:
+        #     tmp_data = inp.data
 
         # execute stages
-        tmp_index = inp.index
+        var = inp
         for stage in self.stages:
-            tmp_data, tmp_index = stage.main(tmp_data, tmp_index)
+            var = stage.main(var)
 
-        if self.INVERSE:
-            self.out.data = Complex(tmp_data.imag, tmp_data.real)
-        else:
-            self.out.data = tmp_data
+        return var
 
-        # make sure the first DELAY samples have 'invalid' flag
-        delay_over = self.delay_counter == 0
-        if not delay_over:
-            self.delay_counter -= 1
-
-        self.out.index = tmp_index
-        self.out.valid = delay_over
-        return self.out
+        # if self.INVERSE:
+        #     self.out.data = Complex(var.data.imag, var.data.real)
+        # else:
+        #     self.out.data = var.data
 
     def model_main(self, x):
-        x = np.array(x).reshape(-1, self.FFT_SIZE)
+        var = x
+        for stage in self.stages:
+            var = stage.model_main(var)
 
-        if self.INPUT_ORDERING == 'bitreversed':
-            x = toggle_bit_reverse(x)
+        return var
 
-        if self.INVERSE:
-            ffts = np.fft.ifft(x, self.FFT_SIZE)
-            ffts *= self.FFT_SIZE
-        else:
-            ffts = np.fft.fft(x, self.FFT_SIZE)
-            ffts /= self.FFT_SIZE
+        # x = np.array(x).reshape(-1, self.FFT_SIZE)
+        #
+        # if self.INPUT_ORDERING == 'bitreversed':
+        #     x = toggle_bit_reverse(x)
+        #
+        # if self.INVERSE:
+        #     ffts = np.fft.ifft(x, self.FFT_SIZE)
+        #     ffts *= self.FFT_SIZE
+        # else:
+        #     ffts = np.fft.fft(x, self.FFT_SIZE)
+        #     ffts /= self.FFT_SIZE
+        #
+        # if self.INPUT_ORDERING == 'natural':
+        #     ffts = toggle_bit_reverse(ffts)
+        #
+        # return ffts
 
-        if self.INPUT_ORDERING == 'natural':
-            ffts = toggle_bit_reverse(ffts)
 
-        return ffts
+
+@pytest.mark.parametrize("fft_size", [4])
+@pytest.mark.parametrize("input_ordering", ['natural'])
+@pytest.mark.parametrize("inverse", [False])
+def test_lolzzz2(fft_size, input_ordering, inverse):
+    np.random.seed(0)
+    input_signal = np.random.uniform(-1, 1, fft_size) + np.random.uniform(-1, 1, fft_size) * 1j
+
+    if inverse:
+        input_signal /= fft_size
+    else:
+        input_signal *= 0.125
+
+    dut = R2SDF(fft_size, twiddle_bits=18, input_ordering=input_ordering, inverse=inverse)
+    sims = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
+
+    if inverse:
+        assert sims_close(sims, rtol=1e-3, atol=1e-3) # TODO: Why is the performance of inverse transform worse?
+    else:
+        assert sims_close(sims)
 
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
