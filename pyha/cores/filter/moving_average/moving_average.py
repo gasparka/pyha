@@ -3,9 +3,28 @@ import pytest
 from scipy import signal
 
 from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
+from pyha.common.fixed_point import sign_bit
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid
 from pyha.cores.fft.packager.packager import DataValid
+
+
+class DownCounter(Hardware):
+    def __init__(self, start_value):
+        bits = int(np.log2(start_value)) + 1
+        self.START_VALUE = Sfix(start_value, bits, 0)
+        self.counter = self.START_VALUE
+
+    def restart(self):
+        self.counter = self.START_VALUE
+
+    def is_over(self):
+        # test if counter is negative -> must be over
+        return sign_bit(self.counter - 1)
+
+    def main(self):
+        if not self.is_over():
+            self.counter -= 1
 
 
 class MovingAverage(Hardware):
@@ -27,30 +46,24 @@ class MovingAverage(Hardware):
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        # self.final_counter = self.WINDOW_LEN + 2
-        # self.start_counter = self.WINDOW_LEN
-        self.final_counter = 2
-        self.start_counter = 1
+        self.final_counter = DownCounter(1)
+        self.start_counter = DownCounter(1)
 
     def main(self, inp):
         if inp.final:
-            if self.final_counter != 0:
-                self.final_counter -= 1
-            # inp.data = 0.0 + 0.0j
+            self.final_counter.main()
         elif not inp.valid:
             return DataValid(self.out.data, valid=False, final=False)
         elif inp.valid:
-            self.final_counter = self.WINDOW_LEN / 2
-
-            if self.start_counter != 0:
-                self.start_counter -= 1
+            self.final_counter.restart()
+            self.start_counter.main()
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
 
         self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        self.out.valid = self.start_counter == 0
-        self.out.final = self.final_counter == 0
+        self.out.valid = self.start_counter.is_over()
+        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, inputs):

@@ -223,13 +223,16 @@ class Tracer:
         if self.return_time is None:
             self.return_time = time.time()
 
-        if self.tracer_type == 'model_main':
-            self.input = np.array(args[0])
-            self.output = np.array(res)
-            self.return_time = time.time()
-        elif self.tracer_type == 'main':
-            self.input.append(pyha_to_python(args[0]))
-            self.output.append(pyha_to_python(res))
+        try:
+            if self.tracer_type == 'model_main':
+                self.input = np.array(args[0])
+                self.output = np.array(res)
+                self.return_time = time.time()
+            elif self.tracer_type == 'main':
+                self.input.append(pyha_to_python(args[0]))
+                self.output.append(pyha_to_python(res))
+        except IndexError:
+            pass
         return res
 
 
@@ -287,10 +290,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         conversion_path = TemporaryDirectory().name
     else:
         conversion_path = str(Path(conversion_path).expanduser())  # turn ~ into path
-        try:
-            shutil.rmtree(conversion_path)  # clear folder
-        except:
-            pass
+        # try:
+            # shutil.rmtree(conversion_path)  # clear folder
+        # except:
+        #     pass
         try:
             os.makedirs(conversion_path)
         except:
@@ -534,7 +537,7 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
     result = True
     for sim_name, sim_data in simulation_results.items():
         sim_data = get_iterable(sim_data)
-        sim_data = sim_data[skip_first_n:][:len(expected.elems)]
+        sim_data = sim_data[skip_first_n:]
         sim_data = init_vhdl_type(sim_name, sim_data, sim_data)
         eq = sim_data._pyha_is_equal(expected, sim_name, rtol, atol)
         if eq:

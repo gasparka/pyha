@@ -116,11 +116,11 @@ class StageR2SDF(Hardware):
 
     def model_main(self, inp):
         packets = np.array(np.reshape(inp, (-1, self.LOCAL_FFT_SIZE)))
-        sample_offset = self.LOCAL_FFT_SIZE // 2
+        offset = self.LOCAL_FFT_SIZE // 2
         for pack in packets:
-            for i in range(sample_offset):
-                pack[i], pack[i + sample_offset] = pack[i] + pack[i + sample_offset], \
-                                                   (pack[i] - pack[i + sample_offset]) * W(i, self.LOCAL_FFT_SIZE)
+            for i in range(offset):
+                pack[i], pack[i + offset] = pack[i] + pack[i + offset], \
+                                                   (pack[i] - pack[i + offset]) * W(i, self.LOCAL_FFT_SIZE)
 
         packets = packets / 2
         return packets.flatten()

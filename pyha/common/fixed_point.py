@@ -307,8 +307,8 @@ class Sfix:
     def sign_bit(self):
         s = np.sign(self.val)
         if s in [0, 1]:
-            return 0
-        return 1
+            return False
+        return True
 
     def __rshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
@@ -440,6 +440,9 @@ def right_index(x: Sfix) -> int:
     """
     return x.right
 
+
+def sign_bit(x: Sfix) -> bool:
+    return x.sign_bit()
 
 def scalb(x, i):
     """
