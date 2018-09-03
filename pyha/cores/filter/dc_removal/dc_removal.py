@@ -4,7 +4,7 @@ import pytest
 from pyha import Hardware, Sfix, simulate, sims_close, Complex
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import MovingAverage, DataValid, \
-    NumpyToDataValid, DataValidToNumpy
+    NumpyToDataValid, DataValidToNumpy, DownCounter
 
 
 class DCRemoval(Hardware):
@@ -26,39 +26,36 @@ class DCRemoval(Hardware):
         self.delayed_input = ShiftRegister([dtype(0.0, 0, -17)] * (self.DELAY - 2))
         self.out = DataValid(dtype(0, 0, -17), valid=False)
 
-        self.final_counter = 1
-        self.start_counter = 0
+        # self.final_counter = DownCounter(0)
+        # self.start_counter = DownCounter(0)
 
     def main(self, inp):
-        # run input signal over all the MA's
         avg_out = self.averages[1].main(self.averages[0].main(inp))
 
-        if avg_out.final:
-            if self.final_counter != 0:
-                self.final_counter -= 1
-        elif not avg_out.valid:
-            return DataValid(self.out.data, valid=False, final=False)
-        elif avg_out.valid:
-            self.final_counter = 0
+        # if avg_out.final:
+        #     self.final_counter.main()
+        # elif not avg_out.valid:
+        #     return DataValid(self.out.data, valid=False, final=False)
+        # elif avg_out.valid:
+        #     self.final_counter.restart()
+        #     self.start_counter.main()
 
-        if self.start_counter != 0:
-            self.start_counter -= 1
+        # if not avg_out.valid:
+        #     return DataValid(self.out.data, valid=False, final=False)
+
 
         # print(avg_out.data)
         # delay input -> use averager[0] delay line to save alot of RAM
         self.delayed_input.push_next(self.averages[0].shr.peek())
         # dc-free signal
         self.out.data = self.delayed_input.peek() - avg_out.data
-        # print(self.delayed_input.peek() - avg_out.data)
-        self.out.valid = self.start_counter == 0 and avg_out.valid
-        self.out.final = self.final_counter == 0 and avg_out.final
+        self.out.valid = avg_out.valid
+        self.out.final = avg_out.final
         return self.out
 
     def model_main(self, input_list):
         input_list = np.array(input_list)
         avg_out = self.averages[1].model_main(self.averages[0].model_main(input_list))
-        # print(avg_out)
-
 
         # delaying the input is important, without this you get 6db ripple...
         group_delay = int(len(self.averages) * ((self.WINDOW_LEN - 1) / 2))
@@ -67,7 +64,7 @@ class DCRemoval(Hardware):
         return y
 
 
-@pytest.mark.parametrize("window_len", [2])
+@pytest.mark.parametrize("window_len", [4])
 @pytest.mark.parametrize("input_power", [0.25])
 @pytest.mark.parametrize("dtype", [Complex])
 def test_lolx(window_len, input_power, dtype):

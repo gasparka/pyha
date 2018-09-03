@@ -5,26 +5,8 @@ from scipy import signal
 from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
 from pyha.common.fixed_point import sign_bit
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValidToNumpy, NumpyToDataValid
+from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
-
-
-class DownCounter(Hardware):
-    def __init__(self, start_value):
-        bits = int(np.log2(start_value)) + 1
-        self.START_VALUE = Sfix(start_value, bits, 0)
-        self.counter = self.START_VALUE
-
-    def restart(self):
-        self.counter = self.START_VALUE
-
-    def is_over(self):
-        # test if counter is negative -> must be over
-        return sign_bit(self.counter - 1)
-
-    def main(self):
-        if not self.is_over():
-            self.counter -= 1
 
 
 class MovingAverage(Hardware):
