@@ -30,15 +30,39 @@ class MovingAverage(Hardware):
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
         self.final_counter = DownCounter(1)
         self.start_counter = DownCounter(1)
+        # self.flushing = False
 
     def main(self, inp):
+        # if self.flushing:
+        #     self.final_counter.main()
+        #
+        # if inp.valid:
+        #     self.start_counter.main()
+        #
+        # if inp.final and not self.flushing:
+        #     self.flushing = True
+        #     self.final_counter.restart()
+        #
+        # if self.flushing and self.final_counter.is_over():
+        #     self.flushing = False
+        #     self.start_counter.restart()
+        #     self.final_counter.restart()
+        #     self.shr = ShiftRegister([Complex()] * self.WINDOW_LEN)
+        #     self.acc = Complex(0.0, self.BIT_GROWTH, -17)
+        #     # return DataValid(self.out.data, valid=False, final=True)
+        #
+        # elif not inp.valid and not self.flushing:
+        #     return DataValid(self.out.data, valid=False, final=False)
+
+
         if inp.final:
             self.final_counter.main()
-        elif not inp.valid:
-            return DataValid(self.out.data, valid=False, final=False)
-        elif inp.valid:
+        else:
+            if not inp.valid:
+                return DataValid(self.out.data, valid=False, final=False)
             self.final_counter.restart()
             self.start_counter.main()
+
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
@@ -72,6 +96,9 @@ def test_lolz(window_len, input_power, dtype):
         input_signal = np.random.normal(size=N)
 
     input_signal *= input_power
+
+    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
+    assert sims_close(sim_out)
 
     sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
     assert sims_close(sim_out)

@@ -29,7 +29,7 @@ class FFTPower(Hardware):
         return self.out
 
     def model_main(self, data):
-        return (np.conjugate(data) * data).real
+        return (np.conjugate(data) * data).real.flatten()
 
 
 @pytest.mark.parametrize("input_power", [0.5, 0.1, 0.001, 0.00001])

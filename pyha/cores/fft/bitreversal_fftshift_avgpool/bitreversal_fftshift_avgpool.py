@@ -37,7 +37,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.control = 0
 
         self.out = DataValid(Sfix(0, 0, -35), valid=False) # first self.ACCUMULATION_BITS actually not used
-        self.final_counter = DownCounter(fft_size + 1)
+        self.final_counter = DownCounter(self.FFT_SIZE / self.AVG_FREQ_AXIS + 1)
         self.start_counter = DownCounter(fft_size + 1)
 
     def work_ram(self, data, write_ram, read_ram):
@@ -89,8 +89,9 @@ class BitreversalFFTshiftAVGPool(Hardware):
         return self.out
 
     def model_main(self, inp):
+        shaped = np.reshape(inp, (-1, self.FFT_SIZE))
         # apply bitreversal
-        unrev = toggle_bit_reverse(inp)
+        unrev = toggle_bit_reverse(shaped)
 
         # fftshift
         unshift = np.fft.fftshift(unrev, axes=1)
@@ -103,23 +104,6 @@ class BitreversalFFTshiftAVGPool(Hardware):
         avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
         avg_x = np.average(avg_x, axis=1)
         return avg_x.flatten()
-
-
-@pytest.mark.parametrize("avg_freq_axis", [2])
-@pytest.mark.parametrize("avg_time_axis", [1])
-@pytest.mark.parametrize("fft_size", [4])
-@pytest.mark.parametrize("input_power", [0.1])
-def test_lolz(fft_size, avg_freq_axis, avg_time_axis, input_power):
-    np.random.seed(0)
-    avg_time_axis = 1
-    packets = (avg_time_axis+1) * 2
-    orig_inp = np.random.uniform(-1, 1, size=(packets, fft_size)) * input_power
-
-    orig_inp_quant = np.vectorize(lambda x: float(Sfix(x, 0, -35)))(orig_inp)
-
-    dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
-    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=5e-11, atol=5e-11)
 
 
 @pytest.mark.parametrize("avg_freq_axis", [2, 4, 8, 16, 32])

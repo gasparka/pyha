@@ -35,8 +35,6 @@ class Spectrogram(Hardware):
         window_out = self.windower.main(dc_out)
         fft_out = self.fft.main(window_out)
         power_out = self.power.main(fft_out)
-        return power_out
-        # return power_out
         dec_out = self.dec.main(power_out)
         return dec_out
 
@@ -45,21 +43,23 @@ class Spectrogram(Hardware):
         window = self.windower.model_main(no_dc)
         transform = self.fft.model_main(window)
         power = self.power.model_main(transform)
-        return power
-        transform = np.fft.fft(windowed) / self.FFT_SIZE
-        power = (transform * np.conj(transform)).real
-        # return toggle_bit_reverse(power)
-        unshift = np.fft.fftshift(power, axes=1)
+        dec_out = self.dec.model_main(power)
+        return dec_out
 
-        # average in freq axis
-        avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
-        avg_y = np.average(avg_y, axis=1)
-
-        # average in time axis
-        avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
-        avg_x = np.average(avg_x, axis=1)
-
-        return avg_x
+        # transform = np.fft.fft(windowed) / self.FFT_SIZE
+        # power = (transform * np.conj(transform)).real
+        # # return toggle_bit_reverse(power)
+        # unshift = np.fft.fftshift(power, axes=1)
+        #
+        # # average in freq axis
+        # avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
+        # avg_y = np.average(avg_y, axis=1)
+        #
+        # # average in time axis
+        # avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
+        # avg_x = np.average(avg_x, axis=1)
+        #
+        # return avg_x
 
 
 @pytest.mark.parametrize("avg_freq_axis", [1, 2, 4, 8, 16])
@@ -75,7 +75,7 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
     sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    # assert sims_close(sims, rtol=1e-7, atol=1e-7)
+    assert sims_close(sims, rtol=1e-7, atol=1e-7)
 
 
 def test_simple():

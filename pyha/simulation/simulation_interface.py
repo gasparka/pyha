@@ -403,8 +403,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         model._pyha_update_registers()
 
                     logger.info(f'Flushing the pipeline...')
-
+                    c = 0
                     while not ret[-1].final:
+                        c += 1
                     # while not ret[-1].final and valid_samples != len(out['MODEL']):
                         returns = model.main(*tmpargs[-1])
                         returns = pyha_to_python(returns)
@@ -413,6 +414,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         ret.append(returns)
                         model._pyha_update_registers()
 
+                    logger.info(f'Flushing took {c} cycles')
                     ret = ret[:-1]
 
                     # if invalid_output_count:
