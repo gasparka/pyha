@@ -5,7 +5,7 @@ import pytest
 
 from pyha import Hardware, simulate, sims_close, Complex, resize, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValid, NumpyToDataValid, DataValidToNumpy
+from pyha.cores import DataValid, NumpyToDataValid, DataValidToNumpy, DownCounter
 from pyha.cores.util import toggle_bit_reverse
 
 logging.basicConfig(level=logging.INFO)
@@ -57,11 +57,11 @@ class StageR2SDF(Hardware):
         self.stage2_out = Complex(0, 0, -17 - (twiddle_bits - 1))
         self.output_index = 0
         self.mode_delay = False
-        self.control = 0
+        self.control = 0 # replacing this with fixed-point counter saves no resources..
 
         self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
-        self.final_counter = self.DELAY - 1
-        self.start_counter = self.DELAY - 1
+        self.final_counter = DownCounter(self.DELAY - 1)
+        self.start_counter = DownCounter(self.DELAY - 1)
 
     def butterfly(self, in_up, in_down):
         up = resize(in_up + in_down, 0, -17)
@@ -70,15 +70,12 @@ class StageR2SDF(Hardware):
 
     def main(self, inp):
         if inp.final:
-            if self.final_counter != 0:
-                self.final_counter -= 1
+            self.final_counter.main()
         elif not inp.valid:
             return DataValid(self.out.data, valid=False, final=False)
         elif inp.valid:
-            self.final_counter = self.DELAY - 1
-
-            if self.start_counter != 0:
-                self.start_counter -= 1
+            self.final_counter.restart()
+            self.start_counter.main()
 
         # Stage 1: handle the loopback memory - setup data for the butterfly
         self.control = (self.control + 1) % (self.LOCAL_FFT_SIZE)
@@ -110,8 +107,8 @@ class StageR2SDF(Hardware):
         else:
             self.out.data = scalb(self.stage2_out, -1)
 
-        self.out.valid = self.start_counter == 0
-        self.out.final = self.final_counter == 0
+        self.out.valid = self.start_counter.is_over()
+        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, inp):
