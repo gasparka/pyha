@@ -3,7 +3,7 @@ import pytest
 
 from pyha import Hardware, simulate, sims_close, Sfix, resize
 from pyha.common.ram import RAM
-from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid
+from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter
 from pyha.cores.util import toggle_bit_reverse
 
 
@@ -37,8 +37,8 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.control = 0
 
         self.out = DataValid(Sfix(0, 0, -35), valid=False) # first self.ACCUMULATION_BITS actually not used
-        self.final_counter = fft_size + 1
-        self.start_counter = fft_size + 1
+        self.final_counter = DownCounter(fft_size + 1)
+        self.start_counter = DownCounter(fft_size + 1)
 
     def work_ram(self, data, write_ram, read_ram):
         # READ-MODIFY-WRITE
@@ -59,15 +59,12 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
     def main(self, inp):
         if inp.final:
-            if self.final_counter != 0:
-                self.final_counter -= 1
+            self.final_counter.main()
         elif not inp.valid:
-            return DataValid(Sfix(0.0, 0, -35), valid=False, final=False)
+            return DataValid(self.out.data, valid=False, final=False)
         elif inp.valid:
-            self.final_counter = self.FFT_SIZE + 1
-
-            if self.start_counter != 0:
-                self.start_counter -= 1
+            self.final_counter.restart()
+            self.start_counter.main()
 
         self.control = (self.control + 1) % self.FFT_SIZE
 
@@ -87,8 +84,8 @@ class BitreversalFFTshiftAVGPool(Hardware):
             self.time_axis_counter = next_counter
 
         self.out.data = read >> self.ACCUMULATION_BITS
-        self.out.valid = self.start_counter == 0 and self.out_valid
-        self.out.final = self.final_counter == 0
+        self.out.valid = self.start_counter.is_over() and self.out_valid
+        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, inp):
