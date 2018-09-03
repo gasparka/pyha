@@ -1,6 +1,7 @@
 import numpy as np
 from pyha import Hardware
 from pyha.common.fixed_point import sign_bit, Sfix
+from pyha.common.util import is_power2
 
 
 class DownCounter(Hardware):
@@ -22,3 +23,17 @@ class DownCounter(Hardware):
     def main(self):
         if not self.is_over():
             self.counter -= 1
+
+
+class WrappingCounter(Hardware):
+    def __init__(self, start_value, max_value):
+        assert is_power2(max_value)
+        bits = int(np.log2(max_value))
+        self.START_VALUE = Sfix(start_value, bits, 0, signed=False, wrap_is_ok=True)
+        self.counter = self.START_VALUE
+
+    def get(self):
+        return self.counter
+
+    def tick(self):
+        self.counter += 1

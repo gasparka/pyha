@@ -4,7 +4,7 @@ from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex, Sfix
 from pyha.cores import NumpyToDataValid, DataValidToNumpy, \
-    DataValid
+    DataValid, WrappingCounter, DownCounter
 
 
 class Windower(Hardware):
@@ -19,19 +19,30 @@ class Windower(Hardware):
                        for x in self.window_pure]
         # round is important if you dislike error bias!
         self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
-        self.index_counter = 1 # starting from 0 is mistake because of register delay
+        self.index_counter = WrappingCounter(start_value=1, max_value=fft_size) # starting from 0 is mistake because of register delay
         self.coef = self.WINDOW[0]
+        self.mult = Complex(0, 0, -35) # TODO: implement lazy complex?
+
+        self.final_counter = DownCounter(1)
+        self.start_counter = DownCounter(1)
 
     def main(self, inp):
-        if not inp.valid:
+        if inp.final:
+            self.final_counter.main()
+        elif not inp.valid:
             return DataValid(self.out.data, valid=False, final=False)
+        elif inp.valid:
+            self.final_counter.restart()
+            self.start_counter.main()
 
-        self.index_counter = (self.index_counter + 1) % self.FFT_SIZE
-        self.coef = self.WINDOW[self.index_counter]
+        self.index_counter.tick()
+        self.coef = self.WINDOW[int(self.index_counter.get())]
 
-        self.out.data = inp.data * self.coef
-        self.out.valid = inp.valid
-        self.out.final = inp.final
+        self.mult = inp.data * self.coef
+
+        self.out.data = self.mult # rounding register
+        self.out.valid = self.start_counter.is_over()
+        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, complex_in_list):

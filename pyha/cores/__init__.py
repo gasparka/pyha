@@ -1,5 +1,5 @@
 # from .fft.packager.packager import DataIndexValid, NumpyToDataIndexValid, DataIndexValidToNumpy, DataValidPackager
-from .etc.down_counter import DownCounter
+from .etc.counters import DownCounter, WrappingCounter
 from .fft.packager.packager import *
 
 from .cordic.core import Cordic, CordicMode
