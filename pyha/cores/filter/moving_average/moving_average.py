@@ -8,7 +8,7 @@ from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
 
-
+NORMAL, FLUSHING = 0, 1
 class MovingAverage(Hardware):
     """
     :param window_len: Size of the moving average window, must be power of 2 and >= 2
@@ -30,10 +30,44 @@ class MovingAverage(Hardware):
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
         self.final_counter = DownCounter(1)
         self.start_counter = DownCounter(1)
-        # self.flushing = False
+        self.flushing = False
+        self.state = 0
+
+
+    def stater(self, final_flag, input_valid):
+        enable = input_valid
+        valid = self.final_counter.is_over()
+        final = False
+
+        if self.state == NORMAL:
+            if final_flag and self.final_counter.is_over():
+                self.final_counter.counter = 1
+                # self.final_counter.restart()
+                self.state = FLUSHING
+                enable = True
+
+            if input_valid:
+                self.final_counter.main()
+
+        elif self.state == FLUSHING:
+            self.final_counter.main()
+            enable = True
+            valid = True
+            if self.final_counter.is_over():
+                self.final_counter.counter = 1
+                self.state = NORMAL
+                final = True
+                valid = False
+                # enable = False
+
+        return enable, valid, final
+
 
     def main(self, inp):
-        # if self.flushing:
+        enable, valid, final = self.stater(inp.final, inp.valid)
+        if not enable:
+            return DataValid(self.out.data, valid, final)
+        # if self.flushing or :
         #     self.final_counter.main()
         #
         # if inp.valid:
@@ -42,34 +76,45 @@ class MovingAverage(Hardware):
         # if inp.final and not self.flushing:
         #     self.flushing = True
         #     self.final_counter.restart()
-        #
+        # #
         # if self.flushing and self.final_counter.is_over():
         #     self.flushing = False
-        #     self.start_counter.restart()
         #     self.final_counter.restart()
         #     self.shr = ShiftRegister([Complex()] * self.WINDOW_LEN)
         #     self.acc = Complex(0.0, self.BIT_GROWTH, -17)
-        #     # return DataValid(self.out.data, valid=False, final=True)
+        #     return DataValid(self.out.data, valid=False, final=True)
+        # #
+        # # elif not inp.valid and not self.flushing:
+        # #     return DataValid(self.out.data, valid=False, final=False)
         #
-        # elif not inp.valid and not self.flushing:
+        # if not inp.valid and not self.flushing and not inp.final:
         #     return DataValid(self.out.data, valid=False, final=False)
+        #
+        # self.final_counter.main()
 
+        # if inp.final:
+        #     self.final_counter.main()
+        # else:
+        #     if not inp.valid:
+        #         return DataValid(self.out.data, valid=False, final=False)
+        #     self.final_counter.restart()
+        #     self.start_counter.main()
 
-        if inp.final:
-            self.final_counter.main()
-        else:
-            if not inp.valid:
-                return DataValid(self.out.data, valid=False, final=False)
-            self.final_counter.restart()
-            self.start_counter.main()
 
 
         self.shr.push_next(inp.data)  # add new element to shift register
         self.acc = self.acc + inp.data - self.shr.peek()
 
+        # if final:
+        #     self.shr = ShiftRegister([Complex()] * self.WINDOW_LEN)
+        #     self.acc = Complex(0.0, self.BIT_GROWTH, -17)
+        #     self.out.valid = False
+        #     self.out.final = False
+        #     # self.state = NORMAL
+
         self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        self.out.valid = self.start_counter.is_over()
-        self.out.final = self.final_counter.is_over()
+        self.out.valid = valid
+        self.out.final = final
         return self.out
 
     def model_main(self, inputs):
