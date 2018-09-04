@@ -19,6 +19,7 @@ package complex_pkg is
     constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t;
 
   function Complex(real, imag:sfixed) return complex_t;
+  function Complex(r :real; left_index, right_index:integer) return complex_t;
   function Complex(real, imag:real; left_index, right_index:integer) return complex_t;
   function to_slv (arg : UNRESOLVED_complex_t) return STD_LOGIC_VECTOR;
   function to_sulv (arg : UNRESOLVED_complex_t)return STD_ULOGIC_VECTOR;
@@ -265,6 +266,13 @@ package body complex_pkg is
     variable result : complex_t (complex_left(left_index) downto complex_right(right_index));
   begin
     result := complex_t(to_slv(to_sfixed(real, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)) & to_slv(to_sfixed(imag, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)));
+    return result;
+  end function;
+
+   function Complex(r:real; left_index, right_index:integer) return complex_t is
+    variable result : complex_t (complex_left(left_index) downto complex_right(right_index));
+  begin
+    result := complex_t(to_slv(to_sfixed(r, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)) & to_slv(to_sfixed(r, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)));
     return result;
   end function;
 

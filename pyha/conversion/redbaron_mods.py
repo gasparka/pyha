@@ -992,6 +992,8 @@ def transform_auto_resize(red_node):
             elif isinstance(node.value, (BinaryOperatorNode)) and isinstance(node.value.second,
                                                                              ComplexNode):  # normal case: 1+1j
                 node.value = f'Complex({node.value.first}, {node.value.value}{node.value.second.value[:-1]}, {var_t.left}, {var_t.right})'
+            elif isinstance(node.value, (FloatNode)):
+                node.value = f'Complex({node.value}, {var_t.left}, {var_t.right})'
             else:
                 node.value = f'resize({node.value}, {var_t.left}, {var_t.right}, fixed_{var_t.overflow_style}, fixed_{var_t.round_style})'
 

@@ -148,8 +148,15 @@ class Complex:
             return all([getattr(self, k) == getattr(other, k) for k in self.__slots__])
         return False
 
-    def __call__(self, x):
-        return Complex(x, self.left, self.right, self.overflow_style, self.round_style)
+    def __call__(self, x, left=None, right=None):
+        if not left:
+            left = self.left
+
+        if not right:
+            right = self.right
+
+        return Complex(complex(x), left, right, self.overflow_style,
+                    self.round_style, False, self.wrap_is_ok, self.signed)
 
     def __str__(self):
         return '{:g} [{}:{}]'.format(complex(self), self.left, self.right)

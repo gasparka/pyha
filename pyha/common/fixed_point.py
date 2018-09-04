@@ -363,9 +363,15 @@ class Sfix:
         else:
             return -self.right + self.left
 
-    def __call__(self, x: float):
-        return Sfix(x, self.left, self.right, self.overflow_style,
-                    self.round_style)
+    def __call__(self, x: float, left=None, right=None):
+        if not left:
+            left = self.left
+
+        if not right:
+            right = self.right
+
+        return Sfix(float(x), left, right, self.overflow_style,
+                    self.round_style, False, self.wrap_is_ok, self.signed)
 
     def _pyha_to_python_value(self):
         return float(self)
