@@ -28,14 +28,16 @@ class MovingAverage(Hardware):
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        self.final_counter = DownCounter(1)
-        self.start_counter = DownCounter(1)
+        self.final_counter = DownCounter(self.WINDOW_LEN-1)
+        self.start_counter = DownCounter(self.WINDOW_LEN)
         # self.flushing = False
 
     def reset(self):
         self.final_counter.restart()
         self.start_counter.restart()
-        self.acc = 0.0
+        self.out.data = 0.0
+        self.out.valid = False
+        self.out.final = False
 
     def main(self, inp):
 
@@ -63,11 +65,11 @@ class MovingAverage(Hardware):
         # https://stackoverflow.com/questions/13728392/moving-average-or-running-mean/27681394#27681394
         # can be expressed as FIR filter with special taps:
 
-        taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
-        return signal.lfilter(taps, [1.0], inputs)
+        # taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
+        # return signal.lfilter(taps, [1.0], inputs)
 
         taps = np.ones(self.WINDOW_LEN)/self.WINDOW_LEN
-        return np.convolve(inputs, taps, mode='same')
+        return np.convolve(inputs, taps, mode='valid')
 
 
 @pytest.mark.parametrize("window_len", [2])
