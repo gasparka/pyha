@@ -3,46 +3,41 @@ import pytest
 from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex, Sfix
+from pyha.common.complex import default_complex
 from pyha.cores import NumpyToDataValid, DataValidToNumpy, \
-    DataValid, WrappingCounter, DownCounter
+    DataValid, DownCounter
 
 
 class Windower(Hardware):
     """ Windowing function determines the frequency response of the FFT bins. """
     def __init__(self, fft_size, window='hanning', coefficient_bits=18):
-        self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=Complex(0.0, 0, -17, overflow_style='saturate', round_style='round'))
+        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
         self._pyha_simulation_output_callback = DataValidToNumpy()
         self.FFT_SIZE = fft_size
         self.window_pure = get_window(window, fft_size)
         self.WINDOW = [Sfix(x, 0, -(coefficient_bits-1), round_style='round', overflow_style='saturate')
                        for x in self.window_pure]
-        # round is important if you dislike error bias!
+
+        # error bias without rounding!
         self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
-        self.index_counter = WrappingCounter(start_value=1, max_value=fft_size) # starting from 0 is mistake because of register delay
+        self.index_counter = 1
         self.coef = self.WINDOW[0]
         self.mult = Complex(0, 0, -35) # TODO: implement lazy complex?
 
-        self.final_counter = DownCounter(1)
         self.start_counter = DownCounter(1)
 
     def main(self, inp):
-        if inp.final:
-            self.final_counter.main()
-        elif not inp.valid:
-            return DataValid(self.out.data, valid=False, final=False)
-        elif inp.valid:
-            self.final_counter.restart()
-            self.start_counter.main()
+        if not inp.valid:
+            return DataValid(self.out.data, valid=False)
 
-        self.index_counter.tick()
-        self.coef = self.WINDOW[int(self.index_counter.get())]
+        self.start_counter.tick()
+        self.index_counter = (self.index_counter + 1) % self.FFT_SIZE
+        self.coef = self.WINDOW[self.index_counter]
 
         self.mult = inp.data * self.coef
 
         self.out.data = self.mult # rounding register
         self.out.valid = self.start_counter.is_over()
-        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, complex_in_list):

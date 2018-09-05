@@ -22,35 +22,20 @@ class DCRemoval(Hardware):
 
         self.DELAY = self.averages[0].DELAY * len(self.averages) + 1
 
-        # input must be delayed by group delay, but we can use the SHR from the first averager to get the majority of the delay.
+        # input must be delayed by group delay, we can use the SHR from the first averager to get the majority of the delay.
         self.delayed_input = ShiftRegister([dtype(0.0, 0, -17)] * (self.DELAY - 2))
         self.out = DataValid(dtype(0, 0, -17), valid=False)
-
-        # self.final_counter = DownCounter(0)
-        # self.start_counter = DownCounter(0)
 
     def main(self, inp):
         avg_out = self.averages[1].main(self.averages[0].main(inp))
 
-        # if avg_out.final:
-        #     self.final_counter.main()
-        # elif not avg_out.valid:
-        #     return DataValid(self.out.data, valid=False, final=False)
-        # elif avg_out.valid:
-        #     self.final_counter.restart()
-        #     self.start_counter.main()
+        if not avg_out.valid:
+            return DataValid(self.out.data, valid=False)
 
-        # if not avg_out.valid:
-        #     return DataValid(self.out.data, valid=False, final=False)
-
-
-        # print(avg_out.data)
-        # delay input -> use averager[0] delay line to save alot of RAM
+        # delay input -> use averager[0] delay to save alot of RAM
         self.delayed_input.push_next(self.averages[0].shr.peek())
-        # dc-free signal
         self.out.data = self.delayed_input.peek() - avg_out.data
-        self.out.valid = avg_out.valid
-        self.out.final = avg_out.final
+        self.out.valid = True
         return self.out
 
     def model_main(self, input_list):
@@ -62,25 +47,6 @@ class DCRemoval(Hardware):
         delayed_input = np.hstack([[0] * group_delay, input_list[:-group_delay]])
         y = delayed_input - avg_out
         return y
-
-
-@pytest.mark.parametrize("window_len", [4])
-@pytest.mark.parametrize("input_power", [0.25])
-@pytest.mark.parametrize("dtype", [Complex])
-def test_lolx(window_len, input_power, dtype):
-    np.random.seed(0)
-    dut = DCRemoval(window_len=window_len, dtype=dtype)
-    N = 8
-    if dtype == Complex:
-        input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
-    else:
-        input_signal = np.random.normal(size=N)
-
-    input_signal *= input_power
-
-    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
-    print(sim_out)
-    assert sims_close(sim_out)
 
 
 @pytest.mark.parametrize("window_len", [4, 8, 16, 32])

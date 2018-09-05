@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex
+from pyha import Hardware, simulate, sims_close, Complex, default_complex
 from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidPackager, DataValidToNumpy, NumpyToDataValid
 
 logging.basicConfig(level=logging.INFO)
@@ -13,8 +13,7 @@ logger = logging.getLogger('spectrogram')
 class Spectrogram(Hardware):
     def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
                  window_bits=18):
-        self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=Complex(0.0, 0, -17, overflow_style='saturate', round_style='round'))
+        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
         self._pyha_simulation_output_callback = DataValidToNumpy()
         self.AVG_FREQ_AXIS = avg_freq_axis
         self.AVG_TIME_AXIS = avg_time_axis
@@ -22,7 +21,6 @@ class Spectrogram(Hardware):
         self.WINDOW_TYPE = window_type
 
         # components
-        self.pack = DataValidPackager()
         self.dc_removal = DCRemoval(256, dtype=Complex)
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
@@ -30,7 +28,6 @@ class Spectrogram(Hardware):
         self.dec = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
 
     def main(self, inp):
-        # pack_out = self.pack.main(inp, valid=True)
         dc_out = self.dc_removal.main(inp)
         window_out = self.windower.main(dc_out)
         fft_out = self.fft.main(window_out)
@@ -45,21 +42,6 @@ class Spectrogram(Hardware):
         power = self.power.model_main(transform)
         dec_out = self.dec.model_main(power)
         return dec_out
-
-        # transform = np.fft.fft(windowed) / self.FFT_SIZE
-        # power = (transform * np.conj(transform)).real
-        # # return toggle_bit_reverse(power)
-        # unshift = np.fft.fftshift(power, axes=1)
-        #
-        # # average in freq axis
-        # avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
-        # avg_y = np.average(avg_y, axis=1)
-        #
-        # # average in time axis
-        # avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
-        # avg_x = np.average(avg_x, axis=1)
-        #
-        # return avg_x
 
 
 @pytest.mark.parametrize("avg_freq_axis", [1, 2, 4, 8, 16])

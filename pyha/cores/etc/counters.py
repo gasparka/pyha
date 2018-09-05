@@ -20,7 +20,7 @@ class DownCounter(Hardware):
         # test if counter is negative -> must be over
         return sign_bit(self.counter - 1)
 
-    def main(self):
+    def tick(self):
         if not self.is_over():
             self.counter -= 1
 

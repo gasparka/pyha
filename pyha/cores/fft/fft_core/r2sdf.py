@@ -69,13 +69,8 @@ class StageR2SDF(Hardware):
         return up, down
 
     def main(self, inp):
-        if inp.final:
-            self.final_counter.main()
-        elif not inp.valid:
-            return DataValid(self.out.data, valid=False, final=False)
-        elif inp.valid:
-            self.final_counter.restart()
-            self.start_counter.main()
+        if not inp.valid:
+            return DataValid(self.out.data, valid=False)
 
         # Stage 1: handle the loopback memory - setup data for the butterfly
         self.control = (self.control + 1) % (self.LOCAL_FFT_SIZE)
@@ -107,8 +102,8 @@ class StageR2SDF(Hardware):
         else:
             self.out.data = scalb(self.stage2_out, -1)
 
+        self.start_counter.tick()
         self.out.valid = self.start_counter.is_over()
-        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, inp):
@@ -153,7 +148,6 @@ class R2SDF(Hardware):
         self.INVERSE = inverse
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
-        self.DELAY = (fft_size - 1) + (self.N_STAGES * 3) + 1
 
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering)
                        for i in range(self.N_STAGES)]

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index
+from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index, default_complex
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DataValid
 
 
@@ -11,8 +11,7 @@ class FFTPower(Hardware):
     """
 
     def __init__(self):
-        self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
+        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
         self._pyha_simulation_output_callback = DataValidToNumpy()
 
         self.out = DataValid(Sfix(0.0, 0, -35, overflow_style='saturate'), valid=False)
@@ -23,9 +22,11 @@ class FFTPower(Hardware):
         return Complex(x.real, imag)
 
     def main(self, inp):
+        if not inp.valid:
+            return DataValid(self.out.data, valid=False)
+
         self.out.data = (self.conjugate(inp.data) * inp.data).real
         self.out.valid = inp.valid
-        self.out.final = inp.final
         return self.out
 
     def model_main(self, data):

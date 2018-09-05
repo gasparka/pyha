@@ -58,16 +58,10 @@ class BitreversalFFTshiftAVGPool(Hardware):
             self.ram[read_ram].delayed_write(self.control, Sfix(0.0, 0, -35))
 
     def main(self, inp):
-        if inp.final:
-            self.final_counter.main()
-        elif not inp.valid:
-            return DataValid(self.out.data, valid=False, final=False)
-        elif inp.valid:
-            self.final_counter.restart()
-            self.start_counter.main()
+        if not inp.valid:
+            return DataValid(self.out.data, valid=False)
 
         self.control = (self.control + 1) % self.FFT_SIZE
-
         if self.state:
             self.work_ram(inp.data, 0, 1)
             read = self.ram[1].get_readregister()
@@ -84,8 +78,8 @@ class BitreversalFFTshiftAVGPool(Hardware):
             self.time_axis_counter = next_counter
 
         self.out.data = read >> self.ACCUMULATION_BITS
+        self.start_counter.tick()
         self.out.valid = self.start_counter.is_over() and self.out_valid
-        self.out.final = self.final_counter.is_over()
         return self.out
 
     def model_main(self, inp):
