@@ -397,7 +397,10 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
                         returns = pyha_to_python(returns)
-                        if returns.valid:
+                        try:
+                            if returns.valid:
+                                valid_samples += 1
+                        except:
                             valid_samples += 1
                         ret.append(returns)
                         model._pyha_update_registers()

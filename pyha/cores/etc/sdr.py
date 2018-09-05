@@ -1,16 +1,17 @@
 from pyha import Hardware, Complex, scalb, Sfix, simulate
+from pyha.cores import DataValid
 from pyha.simulation.simulation_interface import assert_equals, sims_close
 import numpy as np
 
 
-class BladeRFSource(Hardware):
-    """ Convert BladeRF style I/Q (4 downto -11) into Pyha Complex (0 downto -17) type """
+class SDRSource(Hardware):
+    """ Convert BladeRF/LimeSDR style I/Q (4 downto -11) into stream of Complex (0 downto -17) type """
     def __init__(self):
-        self.out = Complex(0, 0, -17, overflow_style='saturate')
-        self.DELAY = 1
+        self.out = DataValid(Complex(0, 0, -17, overflow_style='saturate'))
 
     def main(self, real, imag):
-        self.out = Complex(scalb(real, 4), scalb(imag, 4))
+        self.out.data = scalb(Complex(real, imag), 4)
+        self.out.valid = True
         return self.out
 
     def model_main(self, i, q):
@@ -39,7 +40,7 @@ class BladeRFSink(Hardware):
 def test_source():
     i = [0.015, -0.04]
     q = [0.029, +0.02]
-    dut = BladeRFSource()
+    dut = SDRSource()
     sim_out = simulate(dut, i, q)
     assert sims_close(sim_out, rtol=1e-3)
 
