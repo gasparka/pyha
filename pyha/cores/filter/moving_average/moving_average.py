@@ -3,10 +3,10 @@ import pytest
 from scipy import signal
 
 from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
-from pyha.common.fixed_point import sign_bit
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
+from pyha.cores.util import snr
 
 
 class MovingAverage(Hardware):
@@ -65,4 +65,4 @@ def test_all(window_len, input_power, dtype):
     input_signal *= input_power
 
     sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sim_out)
+    assert sims_close(sim_out, rtol=1e-5, atol=1e-5)

@@ -16,6 +16,7 @@ from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, S
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
+from pyha.cores.util import snr
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 logging.basicConfig(level=logging.INFO)
@@ -148,6 +149,7 @@ def pyha_to_python(pyha_types):
             pass
     return returns
 
+
 def get_sorted_traces():
     class Tmp:
         def __init__(self, data_model, data_pyha, label, time):
@@ -175,15 +177,13 @@ def get_sorted_traces():
 
     time_sorted = sorted(ll, key=lambda x: x.time)
 
-    ll = [time_sorted[0]] # always include first input
+    ll = [time_sorted[0]]  # always include first input
     for x in time_sorted:
         if not np.array_equal(x.data_model, ll[-1].data_model):
             ll.append(x)
 
     ret = {x.label: [x.data_model, x.data_pyha] for x in ll}
     return ret
-
-
 
 
 class Tracer:
@@ -234,6 +234,60 @@ class Tracer:
         except IndexError:
             pass
         return res
+
+
+def plotter(simulations, domain='time', name=''):
+    import matplotlib.pyplot as plt
+
+    if domain == 'time':
+        if isinstance(simulations['MODEL'][0], float):
+            fig, ax = plt.subplots(2, sharex=True, figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
+
+            if name:
+                fig.suptitle(name, fontsize=14, fontweight='bold')
+            ax[0].plot(simulations['MODEL'], label='MODEL')
+            ax[0].plot(simulations['PYHA'], label='PYHA')
+            ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+            ax[0].set_xlabel('Sample')
+            ax[0].set_ylabel('Magnitude')
+            ax[0].grid(True)
+            ax[0].legend()
+
+            ax[1].plot(simulations['MODEL'] - simulations['PYHA'], label='Error')
+            ax[1].grid(True)
+            ax[1].legend()
+
+    elif domain == 'frequency':
+        fig, ax = plt.subplots(2, sharex=True, figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
+
+        if name:
+            fig.suptitle(name, fontsize=14, fontweight='bold')
+
+        spec_model, freq, _ = ax[0].magnitude_spectrum(simulations['MODEL'], window=plt.mlab.window_none, scale='dB', label='MODEL')
+        spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations['PYHA'], window=plt.mlab.window_none, scale='dB', label='PYHA')
+        ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+        ax[0].grid(True)
+        ax[0].legend()
+
+        ax[1].plot(freq, spec_model - spec_pyha, label='Error')
+        ax[1].grid(True)
+        ax[1].legend()
+
+
+    # plt.tight_layout()
+    plt.show()
+
+
+def trace_plotter(input_domain='time', output_domain='time'):
+    l = get_sorted_traces()
+    for i, (k, v) in enumerate(l.items()):
+        d = {'MODEL': v[0], 'PYHA': v[1]}
+        if i == 0:
+            plotter(d, input_domain, name='Main input')
+        elif i == len(l):
+            plotter(d, output_domain, name=k)
+        else:
+            plotter(d, output_domain, name='Main output')
 
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
@@ -291,7 +345,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     else:
         conversion_path = str(Path(conversion_path).expanduser())  # turn ~ into path
         # try:
-            # shutil.rmtree(conversion_path)  # clear folder
+        # shutil.rmtree(conversion_path)  # clear folder
         # except:
         #     pass
         try:
@@ -405,7 +459,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         ret.append(returns)
                         model._pyha_update_registers()
 
-                    logger.info(f'Flushing the pipeline... have {valid_samples} valid samples, need {len(out["MODEL"])}')
+                    logger.info(
+                        f'Flushing the pipeline... have {valid_samples} valid samples, need {len(out["MODEL"])}')
                     c = 0
                     while valid_samples != len(out['MODEL']):
                         c += 1
@@ -417,6 +472,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         model._pyha_update_registers()
 
                     logger.info(f'Flushing took {c} cycles')
+                    args.extend([args[-1]] * c)
 
             try:
                 ret = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
@@ -483,13 +539,29 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     return out
 
 
-def get_resource_usage():
-    assert get_ran_gate_simulation()
-    return VHDLSimulation.last_logic_elements, VHDLSimulation.last_memory_bits, VHDLSimulation.last_multiplier
+def assert_simulations_equal(simulations, rtol=1e-05, atol=1e-30):
+    """
+    Compare the results of ``simulate`` function.
+
+    :param simulations: Output of 'simulate' function
+    :param rtol: 1e-1 = 10% accuracy, 1e-2= 1% accuracy...
+    :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1] and 18 bits.
+    """
+    from numpy.testing import assert_allclose
+    if 'MODEL' in simulations and 'PYHA' in simulations:
+        assert_allclose(simulations['PYHA'], simulations['MODEL'], rtol, atol)
+
+    # hardware simulations must be EXACTLY equal
+    if 'RTL' in simulations:
+        assert_allclose(simulations['RTL'], simulations['PYHA'], rtol=1e-32, atol=1e-32)
+
+    if 'GATE' in simulations:
+        assert_allclose(simulations['GATE'], simulations['PYHA'], rtol=1e-32, atol=1e-32)
 
 
 def hardware_sims_equal(simulation_results):
     """
+    TODO: LEGACY
     Strictly compare that hardware simulations (PYHA, RTL, GATE) are exactly equal.
 
     :param simulation_results: Output of 'simulate' function
@@ -503,12 +575,13 @@ def hardware_sims_equal(simulation_results):
 
 def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """
+    TODO: LEGACY
     Compare the results of ``simulate`` function.
 
     :param simulation_results: Output of 'simulate' function
     :param expected: 'Golden output' to compare against. If None uses the output of ``MODEL`` or ``PYHA``.
     :param rtol: 1e-1 = 10% accuracy, 1e-2= 1% accuracy...
-    :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1].
+    :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1] and 18 bits.
     :param skip_first_n: Skip comparing first N elements
     :returns: True if equal(defined by rtol and atol)
     """

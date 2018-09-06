@@ -13,36 +13,71 @@ from pyha.conversion.python_types_vhdl import init_vhdl_type
 logger = logging.getLogger('sim')
 
 
-def quartus_map(cwd):
-    logger.info('Running quartus map...will take time.')
+class QuartusHelper:
+    def __init__(self, project_path, project_name='quartus_project', silent=False):
+        self.silent = silent
+        self.project_name = project_name
+        self.project_path = os.path.expanduser(project_path)
 
-    cmd = f"docker run -v /sys:/sys:ro -v {str(cwd)[:-8]}:/pyha_simulation -w='/pyha_simulation/quartus' gasparka/pyha_simulation_env quartus_map quartus_project"
+    def _run_quartus_docker(self, quartus_command):
+        cmd = f"docker run " \
+               f"-v /sys:/sys:ro " \
+               f"-v {self.project_path}:/pyha_simulation " \
+               f"gasparka/pyha_simulation_env {quartus_command}"
+        if self.silent:
+            subprocess.run(cmd, shell=True)
+        else:
+            logger.info(f'Running {quartus_command}...')
+            from wurlitzer import sys_pipes
+            with sys_pipes():
+                subprocess.run(cmd, shell=True)
 
-    # print(cmd)
-    # subprocess.run(['quartus_map', 'quartus_project'], cwd=cwd)
-    result = subprocess.run(cmd, shell=True)
+    def map(self):
+        self._run_quartus_docker(f'quartus_map {self.project_name}')
 
+    def fit(self):
+        self._run_quartus_docker(f'quartus_fit {self.project_name}')
 
-def quartus_eda(cwd):
-    logger.info('Running netlist writer.')
-    # subprocess.run(['quartus_eda', 'quartus_project'], cwd=cwd)
+    def eda(self):
+        self._run_quartus_docker(f'quartus_eda {self.project_name}')
 
-    cmd = f"docker run -v /sys:/sys:ro -v {str(cwd)[:-8]}:/pyha_simulation -w='/pyha_simulation/quartus' gasparka/pyha_simulation_env quartus_eda quartus_project"
+    def get_fmax(self):
+        # https://www.intel.com/content/www/us/en/programmable/quartushelp/current/index.htm#tafs/tafs/tcl_pkg_sta_ver_1.0_cmd_report_clock_fmax_summary.htm
+        tcl = f"""
+        project_open {self.project_name}
+        create_timing_netlist -model slow
+        read_sdc
+        update_timing_netlist
+        report_clock_fmax_summary -file fmax_result.txt -multi_corner
+        """
 
-    result = subprocess.run(cmd, shell=True)
+        with open(self.project_path + '/script.tcl', 'w+') as fp:
+            fp.write(tcl)
+
+        self._run_quartus_docker(f'quartus_sta -t script.tcl')
+        result = open(self.project_path + f'/fmax_result.txt').read()
+        return result
+
+    def get_resource_usage(self, after='map'):
+        result = open(self.project_path + f'/output_files/{self.project_name}.{after}.summary').readlines()
+
+        # ignore first lines because they include the date which would break unit-testing
+        return ''.join(result[4:])
+
+    def get_netlist_path(self):
+        return self.project_path + f'/simulation/modelsim/{self.project_name}.vho'
+
 
 class VHDLSimulation:
-    last_logic_elements = 0
-    last_memory_bits = 0
-    last_multiplier = 0
-
     def __init__(self, base_path, model, sim_type, make_files_only=False):
         self.sim_type = sim_type
         self.base_path = base_path
 
         self.src_path = self.base_path / 'src'
-        self.quartus_path = self.base_path / 'quartus'
+        self.quartus_path = self.base_path
         self.src_util_path = self.src_path / 'util'
+
+        self.quartus = QuartusHelper(self.base_path, 'quartus_project', silent=True)
 
         if not self.src_path.exists():
             os.makedirs(self.src_path)
@@ -61,8 +96,10 @@ class VHDLSimulation:
         self.make_quartus_project()
         if not make_files_only:
             if self.sim_type == 'GATE':
-                vho = self.make_quartus_netlist()
-                src = [str(vho)]
+                logger.info('Generating quartus netlist...')
+                self.quartus.map()
+                self.quartus.eda()
+                src = [self.quartus.get_netlist_path()]
 
             self.cocoauto = CocotbAuto(self.base_path, src, self.conv)
 
@@ -87,8 +124,6 @@ class VHDLSimulation:
         src += self.conv.write_vhdl_files(self.src_path)
 
         if self.sim_type == 'GATE':
-            # copy FPHDL dependencies to src - these are only neede by quartus
-            fphdl_path = Path(pyha.__path__[0] + '/simulation/fphdl')
             shutil.copyfile(sim_inc / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
             shutil.copyfile(sim_inc / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
             src += [self.src_util_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl']
@@ -100,8 +135,7 @@ class VHDLSimulation:
 
     def make_quartus_project(self):
         rules = {}
-        rules[
-            'DEVICE'] = 'EP4CE40F23C8'  # tried to change this to MAX10 but GATE simulation breaks (encrypted cores not usable in GHDL)
+        rules['DEVICE'] = 'EP4CE40F23C8'  # tried to change this to MAX10 but GATE simulation breaks (encrypted cores not usable in GHDL)
         rules['TOP_LEVEL_ENTITY'] = 'top'
         rules['PROJECT_OUTPUT_DIRECTORY'] = 'output_files'
 
@@ -119,7 +153,7 @@ class VHDLSimulation:
             buffer += f"set_global_assignment -name {key} {value!s}\n"
 
         def to_relative_path(x):
-            return '../src/' + str(file)[len(str(self.src_path)):]
+            return './src/' + str(x)[len(str(self.src_path)):]
 
         buffer += "\n"
         for file in src:
@@ -133,24 +167,6 @@ class VHDLSimulation:
         outpath = self.quartus_path / 'quartus_project.qpf'
         with outpath.open('w') as f:
             f.write('PROJECT_REVISION = "quartus_project"')
-
-    def make_quartus_netlist(self):
-        quartus_map(self.quartus_path)
-
-        # extract resource usage
-        result = open(str(self.quartus_path) + '/output_files/quartus_project.map.summary').readlines()
-        for l in result:
-            logger.info(l[:-1])
-
-        try:
-            VHDLSimulation.last_logic_elements = int(result[5][result[5].find(':') + 1:-1].replace(',', ''))
-            VHDLSimulation.last_memory_bits = int(result[11][result[11].find(':') + 1:-1].replace(',', ''))
-            VHDLSimulation.last_multiplier = int(result[12][result[12].find(':') + 1:-1].replace(',', ''))
-        except:
-            pass
-
-        quartus_eda(self.quartus_path)
-        return self.quartus_path / 'simulation/modelsim/quartus_project.vho'
 
 
 def is_virtual():
@@ -172,17 +188,6 @@ class CocotbAuto:
         self.setup_environment()
 
     def setup_environment(self):
-
-        # this is some cocotb bullshit that sometimes causes troubles
-        # ill throw my computer out of the window counter: 12
-        self.environment['COCOTB'] = pyha.__path__[0] + '/../cocotb'
-        import sys
-        if not is_virtual() or ('CI' in self.environment and self.environment['CI']):  # inside virtualenv??
-            self.environment["PYTHONHOME"] = str(
-                Path(sys.executable).parent.parent)  # on some computers required.. on some fucks up the build
-            # print(f'\n\nSetting "PYTHONHOME" = {self.environment["PYTHONHOME"]}, because virtualenv is not active ('
-            #       f'this is COCOTB related bullshit) - it may actually break your build\n\n')
-
         self.environment['SIM_BUILD'] = self.sim_folder
         self.environment['TOPLEVEL_LANG'] = 'vhdl'
         self.environment['SIM'] = 'ghdl'
