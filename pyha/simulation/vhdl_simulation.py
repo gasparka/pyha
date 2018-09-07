@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 import pyha
-from pyha.conversion.conversion import Conversion
+from pyha.conversion.conversion import RecursiveConverter
 from pyha.conversion.python_types_vhdl import init_vhdl_type
 
 logger = logging.getLogger('sim')
@@ -89,7 +89,7 @@ class VHDLSimulation:
             os.makedirs(self.src_util_path)
 
         self.model = model
-        self.conv = Conversion(self.model)
+        self.conv = RecursiveConverter(self.model)
 
         src = self.get_conversion_sources()
 

@@ -30,7 +30,7 @@ class NumpyToDataValid:
         else:
             ret += [DataValid(self.dtype(elem), valid=True) for elem in inputs]
 
-        return ret
+        return np.array(ret)
 
 
 class DataValidPackager(Hardware):

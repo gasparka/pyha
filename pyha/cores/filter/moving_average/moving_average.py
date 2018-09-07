@@ -6,7 +6,6 @@ from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
-from pyha.cores.util import snr
 
 
 class MovingAverage(Hardware):
@@ -21,14 +20,13 @@ class MovingAverage(Hardware):
         self._pyha_simulation_output_callback = DataValidToNumpy()
         self.WINDOW_LEN = window_len
         self.BIT_GROWTH = int(np.log2(window_len))
-        self.DELAY = 2
 
         self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
-        self.start_counter = DownCounter(self.DELAY - 1)
+        self.start_counter = DownCounter(1)
 
     def main(self, inp):
         if not inp.valid:
@@ -47,6 +45,26 @@ class MovingAverage(Hardware):
         # can be expressed as FIR filter with special taps:
         taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
         return signal.lfilter(taps, [1.0], inputs)
+
+
+
+@pytest.mark.parametrize("window_len", [4])
+@pytest.mark.parametrize("input_power", [0.25])
+@pytest.mark.parametrize("dtype", [Sfix])
+def test_asdasd(window_len, input_power, dtype):
+    # TODO: Quantize shit...and find rtol, atol
+    np.random.seed(0)
+    dut = MovingAverage(window_len=window_len, dtype=dtype)
+    N = 128
+    if dtype == Complex:
+        input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
+    else:
+        input_signal = np.random.normal(size=N)
+
+    input_signal *= input_power
+
+    from pyha.simulation.simulation import Simulation
+    sims = Simulation(dut).run(input_signal)
 
 
 @pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32])

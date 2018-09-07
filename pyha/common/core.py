@@ -208,17 +208,6 @@ class Meta(type):
 
             ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
 
-            # decorate all methods -> for locals discovery
-            for method_str in dir(ret):
-                # if not inspect.ismethod()
-                if method_str in SKIP_FUNCTIONS:
-                    continue
-                method = getattr(ret, method_str)
-                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                        method) and method.__class__.__name__ == 'method':
-                    new = PyhaFunc(method)
-                    ret.__dict__[method_str] = new
-
         del cls._pyha_is_initialization
         return ret
 
@@ -375,8 +364,24 @@ class Hardware(with_metaclass(Meta)):
         for x in self._pyha_updateable:
             x._pyha_update_registers()
 
+    def _pyha_enable_function_profiling_for_types(self):
+        for k, v in self.__dict__.items():
+            if k == '_pyha_initial_self':
+                continue
+            if hasattr(v, '_pyha_update_registers'):
+                v._pyha_enable_function_profiling_for_types()
+
+        for method_str in dir(self):
+            if method_str in SKIP_FUNCTIONS:
+                continue
+            method = getattr(self, method_str)
+            if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                    method) and method.__class__.__name__ == 'method':
+                new = PyhaFunc(method)
+                self.__dict__[method_str] = new
+
     def _pyha_insert_tracer(self, label=''):
-        from pyha.simulation.simulation_interface import Tracer
+        from pyha.simulation.simulation import Tracer
         for k, v in self.__dict__.items():
             if k == '_pyha_initial_self':
                 continue

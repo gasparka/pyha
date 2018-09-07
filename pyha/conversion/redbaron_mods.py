@@ -510,8 +510,8 @@ class ClassNodeVHDL(NodeVHDL):
 
         # add all converted classes to imports
         # look: https://github.com/tgingold/ghdl/issues/209
-        from pyha.conversion.conversion import Conversion
-        imports = [f'use work.{x}.all;' for x in Conversion.converted_names]
+        from pyha.conversion.conversion import RecursiveConverter
+        imports = [f'use work.{x}.all;' for x in RecursiveConverter.converted_names]
         return template.format(IMPORTS=formatter(imports))
 
     def build_constructor(self, prototype_only=False):

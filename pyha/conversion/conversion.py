@@ -5,9 +5,10 @@ import textwrap
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
-
+import os, shutil
 from redbaron import RedBaron
 
+import pyha
 from pyha.common.context_managers import ContextManagerRefCounted
 from pyha.common.core import PyhaFunc, Hardware
 from pyha.common.util import tabber
@@ -19,9 +20,77 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
 
 
-def convertToVHDL(simulated_object, output_dir):
-    from pyha.simulation.vhdl_simulation import VHDLSimulation
-    return VHDLSimulation(Path(output_dir), simulated_object, 'GATE', make_files_only=True)
+class Conversion:
+    def __init__(self, model, output_dir=None, clear_output_dir=False):
+        # by default write conversion src to tmpdir
+        if output_dir is None or 'TRAVIS' in os.environ:
+            output_dir = tempfile.TemporaryDirectory().name
+        else:
+            output_dir = str(Path(output_dir).expanduser())
+            if clear_output_dir:
+                try:
+                    shutil.rmtree(output_dir)
+                except:
+                    pass
+            try:
+                os.makedirs(output_dir)
+            except:
+                pass
+
+        self.base_path = Path(output_dir)
+        self.src_path = self.base_path / 'src'
+        self.quartus_path = self.base_path
+        self.src_util_path = self.src_path / 'util'
+
+        if not self.quartus_path.exists():
+            os.makedirs(self.quartus_path)
+
+        if not self.src_util_path.exists():
+            os.makedirs(self.src_util_path)
+
+        self.model = model
+
+    def to_vhdl(self):
+        self.conv = RecursiveConverter(self.model)
+        self.vhdl_sources = self.get_conversion_sources()
+        return self
+
+    def get_vhdl_sources_relative(self):
+        return ['.' + str(path)[len(str(self.base_path)):] for path in self.vhdl_sources]
+
+    def get_top_module_outputs(self):
+        return self.conv.outputs
+
+    def get_conversion_sources(self):
+        # NB! order of files added to src matters!
+        sim_inc = Path(pyha.__path__[0] + '/simulation/sim_include')
+        shutil.copyfile(sim_inc / 'complex.vhdl', self.src_util_path / 'complex.vhdl')
+        src = [self.src_util_path / 'complex.vhdl']
+
+        # copy pyha_util to src dir
+        shutil.copyfile(sim_inc / 'pyha_util.vhdl', self.src_util_path / 'pyha_util.vhdl')
+        src += [self.src_util_path / 'pyha_util.vhdl']
+
+        # write typedefs file
+        src += [self.src_util_path / 'typedefs.vhdl']
+        with src[-1].open('w') as f:
+            f.write(self.conv.build_typedefs_package())
+
+        # add all conversion files as src
+        src += self.conv.write_vhdl_files(self.src_path)
+
+        shutil.copyfile(sim_inc / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_pkg_c.vhdl')
+        shutil.copyfile(sim_inc / 'fixed_float_types_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl')
+        # src += [self.src_util_path / 'fixed_pkg_c.vhdl', self.src_util_path / 'fixed_float_types_c.vhdl']
+
+        # copy cocotb simulation top file
+        coco_py = pyha.__path__[0] + '/simulation/sim_include/cocotb_simulation_top.py'
+        shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
+
+        # copy cocotb makefile
+        coco_py = pyha.__path__[0] + '/simulation/sim_include/Makefile'
+        shutil.copyfile(coco_py, str(self.base_path / Path(coco_py).name))
+        return src
 
 
 def get_objects_rednode(obj):
@@ -94,21 +163,21 @@ def get_conversion(obj):
     return conv
 
 
-class Conversion:
+class RecursiveConverter:
     converted_names = []
     typedefs = []
     in_progress = ContextManagerRefCounted()
 
     def __init__(self, obj, datamodel=None):
-        """ Recursively (if object has children 'Hardware' members) converts object to VHDL """
-        with Conversion.in_progress:
+        """ Convert object and all childs to VHDL """
+        with RecursiveConverter.in_progress:
             self.obj = obj
             self.class_name = obj.__class__.__name__
             self.datamodel = datamodel
             self.is_root = datamodel is None
             if self.is_root:
-                Conversion.converted_names = []
-                Conversion.typedefs = []
+                RecursiveConverter.converted_names = []
+                RecursiveConverter.typedefs = []
                 self.datamodel = VHDLModule('-', obj)
 
             # recursively convert all child modules
@@ -120,7 +189,7 @@ class Conversion:
                         if isinstance(node.elems[0], VHDLModule):
                             if node.elems[0]._pyha_module_name() in self.converted_names:
                                 return
-                            self.childs.append(Conversion(node.elems[0].current, node.elems[0]))
+                            self.childs.append(RecursiveConverter(node.elems[0].current, node.elems[0]))
 
                     else:
                         # dynamic list..need to convert all modules
@@ -128,11 +197,11 @@ class Conversion:
                             if isinstance(x, VHDLModule):
                                 if x._pyha_module_name() in self.converted_names:
                                     return
-                                self.childs.append(Conversion(x.current, x))
+                                self.childs.append(RecursiveConverter(x.current, x))
                 elif isinstance(node, VHDLModule):
                     if node._pyha_module_name() in self.converted_names:
                         return
-                    self.childs.append(Conversion(node.current, node))
+                    self.childs.append(RecursiveConverter(node.current, node))
 
             if self.is_root:
                 logger.info(f'Creating top.vhd ...')
@@ -162,8 +231,8 @@ class Conversion:
             self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
             self.vhdl_conversion = str(self.conv)
-            Conversion.converted_names += [self.datamodel._pyha_module_name()]
-            Conversion.typedefs.extend(self.conv.build_typedefs())
+            RecursiveConverter.converted_names += [self.datamodel._pyha_module_name()]
+            RecursiveConverter.typedefs.extend(self.conv.build_typedefs())
 
     @property
     def inputs(self) -> List[object]:
@@ -174,7 +243,7 @@ class Conversion:
         return self.top_vhdl.get_object_return()
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
-        with Conversion.in_progress:
+        with RecursiveConverter.in_progress:
             paths = []
             for x in self.childs:
                 paths.extend(x.write_vhdl_files(base_dir))  # recursion here

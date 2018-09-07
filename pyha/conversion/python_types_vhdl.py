@@ -708,13 +708,13 @@ class VHDLFloat(BaseVHDLType):
 
 
 def init_vhdl_type(name, current_val, initial_val=None, parent=None):
-    from pyha.conversion.conversion import Conversion
+    from pyha.conversion.conversion import RecursiveConverter
     if type(current_val) == int or type(current_val) == np.int64:
         return VHDLInt(name, current_val, initial_val, parent)
     elif type(current_val) == bool or type(current_val) == np.bool_:
         return VHDLBool(name, current_val, initial_val, parent)
     elif type(current_val) == float or type(current_val) == np.float64:
-        if Conversion.in_progress.enabled:
+        if RecursiveConverter.in_progress.enabled:
             # logger.warning(f'Variable "{name}" is type **Float**, cant convert this!')
             return None
 
@@ -725,7 +725,7 @@ def init_vhdl_type(name, current_val, initial_val=None, parent=None):
     elif type(current_val) == Sfix:
         return VHDLSfix(name, current_val, initial_val, parent)
     elif type(current_val) == PyhaList:
-        if Conversion.in_progress.enabled and isinstance(current_val[0], float):
+        if RecursiveConverter.in_progress.enabled and isinstance(current_val[0], float):
             # logger.warning(f'Variable "{name}" is type **List of Floats**, cant convert this!')
             return None
 

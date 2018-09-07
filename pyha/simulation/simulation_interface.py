@@ -16,7 +16,6 @@ from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, S
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable, np_to_py
 from pyha.conversion.python_types_vhdl import init_vhdl_type
-from pyha.cores.util import snr
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 logging.basicConfig(level=logging.INFO)
@@ -150,146 +149,6 @@ def pyha_to_python(pyha_types):
     return returns
 
 
-def get_sorted_traces():
-    class Tmp:
-        def __init__(self, data_model, data_pyha, label, time):
-            self.type = type
-            self.data_model = data_model
-            self.data_pyha = data_pyha[:len(data_model)]
-            self.dir = dir
-            self.time = time
-            self.label = label
-
-    ll = []
-    for x in Tracer.traced_objects:
-        # print(x)
-        try:
-            model = x.model_main
-            main = x.main
-            if not model.call_time or not main.call_time:
-                logger.info(f'TRACE: Skipping {model.label} because model or main was not called...')
-                continue
-            ll.append(Tmp(model.get_input(), main.get_input(), f'In: {model.label}', model.call_time))
-            ll.append(Tmp(model.get_output(), main.get_output(), f'Out: {model.label}', model.return_time))
-        except AttributeError as e:
-            print(e)
-            continue
-
-    time_sorted = sorted(ll, key=lambda x: x.time)
-
-    ll = [time_sorted[0]]  # always include first input
-    for x in time_sorted:
-        if not np.array_equal(x.data_model, ll[-1].data_model):
-            ll.append(x)
-
-    ret = {x.label: [x.data_model, x.data_pyha] for x in ll}
-    return ret
-
-
-class Tracer:
-    traced_objects = []
-
-    def __init__(self, func, tracer_type, owner=None, label=None):
-        self.label = label
-        self.owner = owner
-        self.tracer_type = tracer_type
-        self.func = func
-
-        self.input = []
-        self.output = []
-        self.return_time = None
-        self.call_time = None
-        if owner not in Tracer.traced_objects:
-            Tracer.traced_objects.append(owner)
-
-    def get_output(self):
-        if self.tracer_type == 'main':
-            return self.owner._pyha_simulation_output_callback(self.output)
-
-        return self.output
-
-    def get_input(self):
-        if self.tracer_type == 'main':
-            return self.owner._pyha_simulation_output_callback(self.input)
-
-        return self.input
-
-    def __call__(self, *args, **kwargs):
-        if self.call_time is None:
-            self.call_time = time.time()
-
-        res = self.func(*args, **kwargs)
-
-        if self.return_time is None:
-            self.return_time = time.time()
-
-        try:
-            if self.tracer_type == 'model_main':
-                self.input = np.array(args[0])
-                self.output = np.array(res)
-                self.return_time = time.time()
-            elif self.tracer_type == 'main':
-                self.input.append(pyha_to_python(args[0]))
-                self.output.append(pyha_to_python(res))
-        except IndexError:
-            pass
-        return res
-
-
-def plotter(simulations, domain='time', name=''):
-    import matplotlib.pyplot as plt
-
-    if domain == 'time':
-        if isinstance(simulations['MODEL'][0], float):
-            fig, ax = plt.subplots(2, sharex=True, figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
-
-            if name:
-                fig.suptitle(name, fontsize=14, fontweight='bold')
-            ax[0].plot(simulations['MODEL'], label='MODEL')
-            ax[0].plot(simulations['PYHA'], label='PYHA')
-            ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
-            ax[0].set_xlabel('Sample')
-            ax[0].set_ylabel('Magnitude')
-            ax[0].grid(True)
-            ax[0].legend()
-
-            ax[1].plot(simulations['MODEL'] - simulations['PYHA'], label='Error')
-            ax[1].grid(True)
-            ax[1].legend()
-
-    elif domain == 'frequency':
-        fig, ax = plt.subplots(2, sharex=True, figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
-
-        if name:
-            fig.suptitle(name, fontsize=14, fontweight='bold')
-
-        spec_model, freq, _ = ax[0].magnitude_spectrum(simulations['MODEL'], window=plt.mlab.window_none, scale='dB', label='MODEL')
-        spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations['PYHA'], window=plt.mlab.window_none, scale='dB', label='PYHA')
-        ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
-        ax[0].grid(True)
-        ax[0].legend()
-
-        ax[1].plot(freq, spec_model - spec_pyha, label='Error')
-        ax[1].grid(True)
-        ax[1].legend()
-
-
-    # plt.tight_layout()
-    plt.show()
-
-
-def trace_plotter(input_domain='time', output_domain='time'):
-    l = get_sorted_traces()
-    for i, (k, v) in enumerate(l.items()):
-        d = {'MODEL': v[0], 'PYHA': v[1]}
-        if i == 0:
-            plotter(d, input_domain, name='Main input')
-        elif i == len(l):
-            plotter(d, output_domain, name=k)
-        else:
-            plotter(d, output_domain, name='Main output')
-
-
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
              output_callback=None, discard_last_n_outputs=None, trace=False):
     """
@@ -353,10 +212,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         except:
             pass
     out = {}
-
-    if trace:
-        Tracer.traced_objects.clear()
-        model._pyha_insert_tracer(label='self')
 
     if 'MODEL' in simulations:
         float_model = model

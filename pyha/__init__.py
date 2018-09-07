@@ -7,7 +7,6 @@ from .common.complex import Complex, default_complex
 from .common.core import Hardware
 from .common.fixed_point import Sfix, scalb, resize, left_index, right_index, default_sfix
 from .simulation.simulation_interface import simulate, assert_equals, sims_close, hardware_sims_equal, assert_simulations_equal
-from .conversion.conversion import convertToVHDL
 from .simulation.vhdl_simulation import QuartusHelper
 
 redbaron.ipython_behavior = False

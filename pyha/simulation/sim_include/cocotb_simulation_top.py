@@ -6,6 +6,8 @@ from cocotb.result import ReturnValue           # pragma: no cover
 from cocotb.triggers import RisingEdge, Timer   # pragma: no cover
 from tqdm import tqdm                           # pragma: no cover
 import sys                                      # pragma: no cover
+import warnings                                 # pragma: no cover
+warnings.filterwarnings('ignore')               # pragma: no cover
 
 
 @cocotb.coroutine               # pragma: no cover
@@ -28,7 +30,7 @@ def run_dut(dut, in_data, out_count):   # pragma: no cover
     ret = []
     # print('Input data: {}'.format(in_data))
     count = 0
-    for x in tqdm(in_data, file=sys.stdout):
+    for x in tqdm(in_data, file=sys.stderr):
         # print(count)
         count += 1
         # put input
