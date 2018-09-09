@@ -8,65 +8,9 @@ import numpy as np
 
 import pyha
 from pyha.conversion.conversion import RecursiveConverter
-from pyha.conversion.python_types_vhdl import init_vhdl_type
+from pyha.conversion.type_transforms import init_vhdl_type
 
 logger = logging.getLogger('sim')
-
-
-class QuartusHelper:
-    def __init__(self, project_path, project_name='quartus_project', silent=False):
-        self.silent = silent
-        self.project_name = project_name
-        self.project_path = os.path.expanduser(project_path)
-
-    def _run_quartus_docker(self, quartus_command):
-        cmd = f"docker run " \
-               f"-v /sys:/sys:ro " \
-               f"-v {self.project_path}:/pyha_simulation " \
-               f"gasparka/pyha_simulation_env {quartus_command}"
-        if self.silent:
-            subprocess.run(cmd, shell=True)
-        else:
-            logger.info(f'Running {quartus_command}...')
-            from wurlitzer import sys_pipes
-            with sys_pipes():
-                subprocess.run(cmd, shell=True)
-
-    def map(self):
-        self._run_quartus_docker(f'quartus_map {self.project_name}')
-
-    def fit(self):
-        self._run_quartus_docker(f'quartus_fit {self.project_name}')
-
-    def eda(self):
-        self._run_quartus_docker(f'quartus_eda {self.project_name}')
-
-    def get_fmax(self):
-        # https://www.intel.com/content/www/us/en/programmable/quartushelp/current/index.htm#tafs/tafs/tcl_pkg_sta_ver_1.0_cmd_report_clock_fmax_summary.htm
-        tcl = f"""
-        project_open {self.project_name}
-        create_timing_netlist -model slow
-        read_sdc
-        update_timing_netlist
-        report_clock_fmax_summary -file fmax_result.txt -multi_corner
-        """
-
-        with open(self.project_path + '/script.tcl', 'w+') as fp:
-            fp.write(tcl)
-
-        self._run_quartus_docker(f'quartus_sta -t script.tcl')
-        result = open(self.project_path + f'/fmax_result.txt').read()
-        return result
-
-    def get_resource_usage(self, after='map'):
-        result = open(self.project_path + f'/output_files/{self.project_name}.{after}.summary').readlines()
-
-        # ignore first lines because they include the date which would break unit-testing
-        return ''.join(result[4:])
-
-    def get_netlist_path(self):
-        return self.project_path + f'/simulation/modelsim/{self.project_name}.vho'
-
 
 class VHDLSimulation:
     def __init__(self, base_path, model, sim_type, make_files_only=False):

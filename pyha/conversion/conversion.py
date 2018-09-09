@@ -12,35 +12,40 @@ import pyha
 from pyha.common.context_managers import ContextManagerRefCounted
 from pyha.common.core import PyhaFunc, Hardware
 from pyha.common.util import tabber
-from pyha.conversion.python_types_vhdl import VHDLModule, VHDLList, init_vhdl_type, TypeAppendHack
-from pyha.conversion.redbaron_mods import convert, file_header
+from pyha.conversion.type_transforms import VHDLModule, VHDLList, init_vhdl_type, TypeAppendHack
+from pyha.conversion.redbaron_transforms import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('conversion')
 
 
-class Conversion:
+class Converter:
     def __init__(self, model, output_dir=None, clear_output_dir=False):
-        # by default write conversion src to tmpdir
-        if output_dir is None or 'TRAVIS' in os.environ:
-            output_dir = tempfile.TemporaryDirectory().name
-        else:
-            output_dir = str(Path(output_dir).expanduser())
-            if clear_output_dir:
-                try:
-                    shutil.rmtree(output_dir)
-                except:
-                    pass
-            try:
-                os.makedirs(output_dir)
-            except:
-                pass
+        self.model = model
+        self.output_dir = output_dir
+        self.clear_output_dir = clear_output_dir
 
-        self.base_path = Path(output_dir)
+        self.base_path = Path(self.output_dir)
         self.src_path = self.base_path / 'src'
         self.quartus_path = self.base_path
         self.src_util_path = self.src_path / 'util'
+
+    def to_vhdl(self):
+        # by default write conversion src to tmpdir
+        if self.output_dir is None or 'TRAVIS' in os.environ:
+            self.output_dir = tempfile.TemporaryDirectory().name
+        else:
+            self.output_dir = str(Path(self.output_dir).expanduser())
+            if self.clear_output_dir:
+                try:
+                    shutil.rmtree(self.output_dir)
+                except:
+                    pass
+            try:
+                os.makedirs(self.output_dir)
+            except:
+                pass
 
         if not self.quartus_path.exists():
             os.makedirs(self.quartus_path)
@@ -48,9 +53,6 @@ class Conversion:
         if not self.src_util_path.exists():
             os.makedirs(self.src_util_path)
 
-        self.model = model
-
-    def to_vhdl(self):
         self.conv = RecursiveConverter(self.model)
         self.vhdl_sources = self.get_conversion_sources()
         return self

@@ -2,8 +2,8 @@ import textwrap
 
 from pyha.common.ram import RAM
 from pyha.common.util import tabber, formatter, is_constant, const_filter
-from pyha.conversion.python_types_vhdl import VHDLModule, init_vhdl_type, VHDLList, escape_reserved_vhdl
-from pyha.conversion.redbaron_mods import file_header
+from pyha.conversion.type_transforms import VHDLModule, init_vhdl_type, VHDLList, escape_reserved_vhdl
+from pyha.conversion.redbaron_transforms import file_header
 
 class NotTrainedError(Exception):
     pass

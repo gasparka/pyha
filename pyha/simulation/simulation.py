@@ -8,7 +8,8 @@ from tqdm import tqdm
 from wurlitzer import pipes
 
 from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize
-from pyha.conversion.python_types_vhdl import init_vhdl_type
+from pyha.conversion.conversion import Converter
+from pyha.conversion.type_transforms import init_vhdl_type
 from pyha.cores.util import snr
 
 logging.basicConfig(level=logging.INFO)
@@ -141,25 +142,29 @@ class Plotter:
 
 
 class Simulator:
-    def __init__(self, model, trace=False, train_model_for_conversion=False):
+    def __init__(self, model, trace=False, extra_simulations=None, output_dir=None):
+        self.output_dir = output_dir
+        self.extra_simulations = extra_simulations
         self.model = model
         self.trace = trace
-        self.train_model_for_conversion = train_model_for_conversion
         self.out = np.array([])  # shape is determined by the return size of model simulation
         self.hardware_delay = 0
         self.trace_data = None
 
-        if self.trace:
-            Tracer.traced_objects.clear()
-            model._pyha_insert_tracer(label='self')
-        elif train_model_for_conversion:
-            model._pyha_enable_function_profiling_for_types()
 
     def run(self, *inputs):
+
+        if self.trace:
+            Tracer.traced_objects.clear()
+            self.model._pyha_insert_tracer(label='self')
+        elif 'RTL' in self.extra_simulations or 'NETLIST' in self.extra_simulations:
+            logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
+            self.model._pyha_enable_function_profiling_for_types()
+
         with SimulationRunning.enable():
             logger.info(f'Running "MODEL" simulation...')
             model_result = self.model.model_main(*inputs)
-            self.out = np.ndarray(shape=((2,) + model_result.shape))
+            self.out = np.ndarray(shape=((4,) + model_result.shape))
             self.out[0] = model_result
 
             logger.info(f'Running "PYHA" simulation...')
@@ -191,11 +196,18 @@ class Simulator:
         self.inputs = inputs
         if self.trace:
             self.trace_data = Tracer.get_sorted_traces()
+
+        if 'RTL' in self.extra_simulations:
+            self.converter = Converter(self.model, self.output_dir)
+            logger.info(f'Running "RTL" simulation...')
+            self.out[2] = self._run_ghdl_cocotb()
+
         return self
 
-    def run_rtl(self, conversion=None, verbose=False):
-        logger.info('Running RTL simulation with COCOTB & GHDL...')
-
+    def _run_ghdl_cocotb(self, netlist=None, verbose=False):
+        """ RTL simulator with GHDL and COCOTB. This requires that MODEL and PYHA simulations already ran.
+        Inputs to the simulator are 'pipeline compensated' from PYHA simulation.
+        """
         indata = []
         for arguments in self.inputs:
             # if len(arguments) == 1:
@@ -205,19 +217,26 @@ class Simulator:
                 # l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
             indata.append(l)
 
-        np.save(str(conversion.base_path / 'input.npy'), indata)
+        np.save(str(self.converter.base_path / 'input.npy'), indata)
 
         # make sure output file does not exist
-        out_path = str(conversion.base_path / 'output.npy')
+        out_path = str(self.converter.base_path / 'output.npy')
         if os.path.exists(out_path):
             os.remove(out_path)
 
+        if netlist:
+            src = '.' +  netlist[len(str(self.converter.base_path)):] # need relative path!
+            ghdl_args = '-P/quartus_sim_lib/ --ieee=synopsys --no-vital-checks'
+        else:
+            src = ' '.join(self.converter.get_vhdl_sources_relative())
+            ghdl_args = '--std=08'
+
         cmd = f"docker run " \
               f"-u `id -u` " \
-              f" -v {conversion.base_path}:/pyha_simulation gasparka/pyha_simulation_env make " \
-              f"VHDL_SOURCES=\"{' '.join(conversion.get_vhdl_sources_relative())}\" " \
-              f"OUTPUT_VARIABLES=\"{str(len(conversion.get_top_module_outputs()))}\" " \
-              f"GHDL_ARGS=\"--std=08\" "
+              f" -v {self.converter.base_path}:/pyha_simulation gasparka/pyha_simulation_env make " \
+              f"VHDL_SOURCES=\"{src}\" " \
+              f"OUTPUT_VARIABLES=\"{str(len(self.converter.get_top_module_outputs()))}\" " \
+              f"GHDL_ARGS=\"{ghdl_args}\" "
 
         with pipes(stdout=sys.stdout if verbose else None, stderr=sys.stderr):
             subprocess.run(cmd, shell=True)
@@ -227,21 +246,20 @@ class Simulator:
 
         for i, row in enumerate(outp):
             for j, val in enumerate(row):
-                outp[i][j] = conversion.get_top_module_outputs()[i]._pyha_deserialize(val)
+                outp[i][j] = self.converter.get_top_module_outputs()[i]._pyha_deserialize(val)
 
         outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
         outp = outp.T.tolist()
 
         # convert second level lists to tuples if dealing with 'multiple returns'
-        if len(conversion.get_top_module_outputs()) > 1:
+        if len(self.converter.get_top_module_outputs()) > 1:
             for i, row in enumerate(outp):
                 try:
                     outp[i] = tuple(outp[i])
                 except TypeError:  # happend when outp[i] is single float
                     outp[i] = [outp[i]]
 
-        self.rtl_output = np.array([x.data for x in outp if x.valid])
-        return self
+        return np.array([x.data for x in outp if x.valid])
 
     def plot_trace(self, mode=None):
         if not mode:
@@ -253,3 +271,4 @@ class Simulator:
                 Plotter().plot(v, mode['Output'], name='Output')
             else:
                 Plotter().plot(v, mode, name=k)
+

@@ -35,8 +35,8 @@ def is_constant(name):
 
 
 def const_filter(x):
-    from pyha.conversion.python_types_vhdl import VHDLList
-    from pyha.conversion.python_types_vhdl import VHDLModule
+    from pyha.conversion.type_transforms import VHDLList
+    from pyha.conversion.type_transforms import VHDLModule
     return is_constant(x._name) or isinstance(x, VHDLModule) or (
             isinstance(x, VHDLList) and not x.not_submodules_list)
 

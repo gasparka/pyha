@@ -13,7 +13,7 @@ from pyha import Complex
 from pyha.common.core import SKIP_FUNCTIONS, Hardware, PyhaFunc
 from pyha.common.fixed_point import Sfix
 from pyha.common.util import get_iterable, tabber, formatter, is_constant, const_filter
-from pyha.conversion.python_types_vhdl import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList, \
+from pyha.conversion.type_transforms import escape_reserved_vhdl, VHDLModule, init_vhdl_type, VHDLEnum, VHDLList, \
     TypeAppendHack
 
 logging.basicConfig(level=logging.INFO)

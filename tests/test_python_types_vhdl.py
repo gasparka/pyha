@@ -2,7 +2,7 @@ from enum import Enum
 
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
-from pyha.conversion.python_types_vhdl import get_vars_as_vhdl_types, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
+from pyha.conversion.type_transforms import get_vars_as_vhdl_types, VHDLInt, VHDLList, VHDLBool, VHDLSfix, VHDLModule, \
     VHDLEnum, BaseVHDLType
 
 

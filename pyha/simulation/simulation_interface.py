@@ -15,7 +15,7 @@ from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath, AutoResize
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable, np_to_py
-from pyha.conversion.python_types_vhdl import init_vhdl_type
+from pyha.conversion.type_transforms import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 logging.basicConfig(level=logging.INFO)

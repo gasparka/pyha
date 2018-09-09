@@ -6,7 +6,7 @@ from redbaron import RedBaron
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, resize
 from pyha.conversion.conversion import get_conversion
-from pyha.conversion.redbaron_mods import convert
+from pyha.conversion.redbaron_transforms import convert
 
 
 @pytest.fixture
