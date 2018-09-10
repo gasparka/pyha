@@ -43,7 +43,7 @@ class VHDLSimulation:
                 logger.info('Generating quartus netlist...')
                 self.quartus.map()
                 self.quartus.eda()
-                src = [self.quartus.get_netlist_path()]
+                src = [self.quartus.get_netlist()]
 
             self.cocoauto = CocotbAuto(self.base_path, src, self.conv)
 

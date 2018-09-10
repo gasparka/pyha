@@ -52,33 +52,44 @@ def make_quartus_project(conversion: Converter):
 
 
 class QuartusDockerWrapper:
-    def __init__(self, project_path, project_name='quartus_project', silent=False):
-        self.silent = silent
+    def __init__(self, project_path, project_name='quartus_project', verbose=False):
+        self.verbose = verbose
         self.project_name = project_name
         self.project_path = os.path.expanduser(project_path)
+        self.flag_map = False
+        self.flag_fit = False
+        self.flag_eda = False
 
     def _run_quartus_docker(self, quartus_command):
+        logger.info(f'Running {quartus_command}...')
         cmd = f"docker run " \
               f"-u `id -u` " \
               f"-v /sys:/sys:ro " \
               f"-v {self.project_path}:/pyha_simulation " \
               f"gasparka/pyha_simulation_env {quartus_command}"
-        if self.silent:
+        if not self.verbose:
             subprocess.run(cmd, shell=True)
         else:
-            logger.info(f'Running {quartus_command}...')
             from wurlitzer import sys_pipes
             with sys_pipes():
                 subprocess.run(cmd, shell=True)
 
     def map(self):
-        self._run_quartus_docker(f'quartus_map {self.project_name}')
+        if not self.flag_map:
+            self._run_quartus_docker(f'quartus_map {self.project_name}')
+            self.flag_map = True
 
     def fit(self):
-        self._run_quartus_docker(f'quartus_fit {self.project_name}')
+        self.map()
+        if not self.flag_fit:
+            self._run_quartus_docker(f'quartus_fit {self.project_name}')
+            self.flag_fit = True
 
     def eda(self):
-        self._run_quartus_docker(f'quartus_eda {self.project_name}')
+        self.map()
+        if not self.flag_eda:
+            self._run_quartus_docker(f'quartus_eda {self.project_name}')
+            self.flag_eda = True
 
     def get_fmax(self):
         # https://www.intel.com/content/www/us/en/programmable/quartushelp/current/index.htm#tafs/tafs/tcl_pkg_sta_ver_1.0_cmd_report_clock_fmax_summary.htm
@@ -89,6 +100,8 @@ class QuartusDockerWrapper:
         update_timing_netlist
         report_clock_fmax_summary -file fmax_result.txt -multi_corner
         """
+        self.map()
+        self.fit()
 
         with open(self.project_path + '/script.tcl', 'w+') as fp:
             fp.write(tcl)
@@ -98,10 +111,15 @@ class QuartusDockerWrapper:
         return result
 
     def get_resource_usage(self, after='map'):
+        self.map()
+        if after == 'fit':
+            self.fit()
         result = open(self.project_path + f'/output_files/{self.project_name}.{after}.summary').readlines()
 
         # ignore first lines because they include the date which would break unit-testing
         return ''.join(result[4:])
 
-    def get_netlist_path(self):
+    def get_netlist(self):
+        self.map()
+        self.eda()
         return self.project_path + f'/simulation/modelsim/{self.project_name}.vho'

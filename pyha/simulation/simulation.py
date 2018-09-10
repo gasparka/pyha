@@ -10,7 +10,7 @@ from wurlitzer import pipes
 from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize
 from pyha.conversion.conversion import Converter
 from pyha.conversion.type_transforms import init_vhdl_type
-from pyha.cores.util import snr
+from pyha.synthesis.quartus import make_quartus_project, QuartusDockerWrapper
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
@@ -97,6 +97,7 @@ class Plotter:
         pass
 
     def plot(self, simulations, mode='time', name=''):
+        from pyha.cores.util import snr
         MODEL, PYHA = 0, 1
         if mode == 'time':
             if isinstance(simulations[MODEL][0], float):
@@ -126,9 +127,10 @@ class Plotter:
             if name:
                 fig.suptitle(name, fontsize=14, fontweight='bold')
 
-            spec_model, freq, _ = ax[0].magnitude_spectrum(simulations[MODEL]*gain, window=plt.mlab.window_none,
+            spec_model, freq, _ = ax[0].magnitude_spectrum(simulations[MODEL] * gain, window=plt.mlab.window_none,
                                                            scale='dB', label='MODEL')
-            spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations[PYHA]*gain, window=plt.mlab.window_none, scale='dB',
+            spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations[PYHA] * gain, window=plt.mlab.window_none,
+                                                       scale='dB',
                                                        label='PYHA')
             ax[0].set(title=f'SNR={snr(simulations[MODEL], simulations[PYHA]):.2f} dB')
             ax[0].grid(True)
@@ -142,7 +144,8 @@ class Plotter:
 
 
 class Simulator:
-    def __init__(self, model, trace=False, extra_simulations=None, output_dir=None):
+    MODEL, PYHA, RTL, NETLIST = 0, 1, 2, 3
+    def __init__(self, model, trace=False, extra_simulations=[], output_dir=None):
         self.output_dir = output_dir
         self.extra_simulations = extra_simulations
         self.model = model
@@ -150,7 +153,7 @@ class Simulator:
         self.out = np.array([])  # shape is determined by the return size of model simulation
         self.hardware_delay = 0
         self.trace_data = None
-
+        self.quartus = None
 
     def run(self, *inputs):
 
@@ -164,8 +167,8 @@ class Simulator:
         with SimulationRunning.enable():
             logger.info(f'Running "MODEL" simulation...')
             model_result = self.model.model_main(*inputs)
-            self.out = np.ndarray(shape=((4,) + model_result.shape))
-            self.out[0] = model_result
+            self.out = np.ndarray(shape=((4,) + model_result.shape), dtype=model_result.dtype)
+            self.out[Simulator.MODEL] = model_result
 
             logger.info(f'Running "PYHA" simulation...')
             inputs = self.model._pyha_simulation_input_callback(inputs)
@@ -186,21 +189,30 @@ class Simulator:
                         hardware_delay += 1
                         returns = self.model.main(inputs[-1])
                         if returns.valid:
-                            self.out[1][valid_samples] = returns.data._pyha_to_python_value()
+                            self.out[Simulator.PYHA][valid_samples] = returns.data._pyha_to_python_value()
                             valid_samples += 1
                         self.model._pyha_update_registers()
 
                     self.hardware_delay = hardware_delay
                     logger.info(f'Hardware delay is {self.hardware_delay}')
 
-        self.inputs = inputs
+        self.inputs_and_flush = np.array(inputs.tolist() + [inputs[-1]] * self.hardware_delay)
         if self.trace:
             self.trace_data = Tracer.get_sorted_traces()
 
         if 'RTL' in self.extra_simulations:
-            self.converter = Converter(self.model, self.output_dir)
+            self.converter = Converter(self.model, self.output_dir).to_vhdl()
             logger.info(f'Running "RTL" simulation...')
-            self.out[2] = self._run_ghdl_cocotb()
+            self.out[Simulator.RTL] = self._run_ghdl_cocotb()
+
+        if 'NETLIST' in self.extra_simulations:
+            if not self.converter:
+                self.converter = Converter(self.model, self.output_dir).to_vhdl()
+
+            logger.info(f'Running "NETLIST" simulation...')
+            make_quartus_project(self.converter)
+            self.quartus = QuartusDockerWrapper(self.converter.base_path)
+            self.out[Simulator.NETLIST] = self._run_ghdl_cocotb(netlist=self.quartus.get_netlist())
 
         return self
 
@@ -209,12 +221,12 @@ class Simulator:
         Inputs to the simulator are 'pipeline compensated' from PYHA simulation.
         """
         indata = []
-        for arguments in self.inputs:
+        for arguments in self.inputs_and_flush:
             # if len(arguments) == 1:
-                # l = [init_vhdl_type('-', arguments[0], arguments[0])._pyha_serialize()]
+            # l = [init_vhdl_type('-', arguments[0], arguments[0])._pyha_serialize()]
             l = [init_vhdl_type('-', arguments, arguments)._pyha_serialize()]
             # else:
-                # l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
+            # l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
             indata.append(l)
 
         np.save(str(self.converter.base_path / 'input.npy'), indata)
@@ -225,7 +237,7 @@ class Simulator:
             os.remove(out_path)
 
         if netlist:
-            src = '.' +  netlist[len(str(self.converter.base_path)):] # need relative path!
+            src = '.' + netlist[len(str(self.converter.base_path)):]  # need relative path!
             ghdl_args = '-P/quartus_sim_lib/ --ieee=synopsys --no-vital-checks'
         else:
             src = ' '.join(self.converter.get_vhdl_sources_relative())
@@ -240,6 +252,8 @@ class Simulator:
 
         with pipes(stdout=sys.stdout if verbose else None, stderr=sys.stderr):
             subprocess.run(cmd, shell=True)
+
+        print('\n', file=sys.stderr)
 
         out = np.load(out_path)
         outp = out.astype(object).T
@@ -267,8 +281,28 @@ class Simulator:
         for i, (k, v) in enumerate(self.trace_data.items()):
             if i == 0:
                 Plotter().plot(v, mode['Input'], name='Input')
-            elif i == len(self.trace_data)-1:
+            elif i == len(self.trace_data) - 1:
                 Plotter().plot(v, mode['Output'], name='Output')
             else:
                 Plotter().plot(v, mode, name=k)
 
+    def assert_equal(self, rtol=1e-05, atol=1e-30):
+        """
+        Compare the results of ``simulate`` function.
+
+        :param simulations: Output of 'simulate' function
+        :param rtol: 1e-1 = 10% accuracy, 1e-2= 1% accuracy...
+        :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1] and 18 bits.
+        """
+        from numpy.testing import assert_allclose
+        logger.info(f'Testing that PYHA and MODEL are close(atol={atol}, rtol={rtol})')
+        assert_allclose(self.out[Simulator.PYHA], self.out[Simulator.MODEL], rtol, atol)
+
+        # hardware simulations must be EXACTLY equal
+        if 'RTL' in self.extra_simulations:
+            logger.info(f'Testing that RTL is *exactly* equal to PYHA')
+            assert_allclose(self.out[Simulator.RTL], self.out[Simulator.PYHA], rtol=1e-32, atol=1e-32)
+
+        if 'NETLIST' in self.extra_simulations:
+            logger.info(f'Testing that NETLIST is *exactly* equal to PYHA')
+            assert_allclose(self.out[Simulator.NETLIST], self.out[Simulator.PYHA], rtol=1e-32, atol=1e-32)

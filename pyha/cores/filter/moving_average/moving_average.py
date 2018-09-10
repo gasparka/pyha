@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy import signal
 
-from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb
+from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb, Simulator
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
@@ -47,40 +47,16 @@ class MovingAverage(Hardware):
         return signal.lfilter(taps, [1.0], inputs)
 
 
-
-@pytest.mark.parametrize("window_len", [4])
-@pytest.mark.parametrize("input_power", [0.25])
-@pytest.mark.parametrize("dtype", [Sfix])
-def test_asdasd(window_len, input_power, dtype):
-    # TODO: Quantize shit...and find rtol, atol
-    np.random.seed(0)
-    dut = MovingAverage(window_len=window_len, dtype=dtype)
-    N = 128
-    if dtype == Complex:
-        input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
-    else:
-        input_signal = np.random.normal(size=N)
-
-    input_signal *= input_power
-
-    from pyha.simulation.simulation import Simulation
-    sims = Simulation(dut).run(input_signal)
-
-
-@pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32])
+@pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32, 64, 128])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
-    # TODO: Quantize shit...and find rtol, atol
-    np.random.seed(0)
     dut = MovingAverage(window_len=window_len, dtype=dtype)
-    N = 128
+    N = window_len * 4
     if dtype == Complex:
         input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
     else:
         input_signal = np.random.normal(size=N)
 
     input_signal *= input_power
-
-    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sim_out, rtol=1e-5, atol=1e-5)
+    Simulator(dut).run(input_signal).assert_equal(rtol=1e-5, atol=1e-5)

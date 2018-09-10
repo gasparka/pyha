@@ -12,7 +12,7 @@ import pyha
 from pyha.common.context_managers import ContextManagerRefCounted
 from pyha.common.core import PyhaFunc, Hardware
 from pyha.common.util import tabber
-from pyha.conversion.type_transforms import VHDLModule, VHDLList, init_vhdl_type, TypeAppendHack
+from pyha.conversion.type_transforms import VHDLModule, VHDLList, init_vhdl_type
 from pyha.conversion.redbaron_transforms import convert, file_header
 from pyha.conversion.top_generator import TopGenerator
 
@@ -23,10 +23,10 @@ logger = logging.getLogger('conversion')
 class Converter:
     def __init__(self, model, output_dir=None, clear_output_dir=False):
         self.model = model
-        self.output_dir = output_dir
+        self.output_dir = str(Path(output_dir).expanduser())
         self.clear_output_dir = clear_output_dir
 
-        self.base_path = Path(self.output_dir)
+        self.base_path = Path(self.output_dir).expanduser()
         self.src_path = self.base_path / 'src'
         self.quartus_path = self.base_path
         self.src_util_path = self.src_path / 'util'
