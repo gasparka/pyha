@@ -15,7 +15,6 @@ class DCRemoval(Hardware):
         assert window_len > 2
         self._pyha_simulation_input_callback = NumpyToDataValid(
             dtype=dtype(0.0, 0, -17, overflow_style='saturate', round_style='round'))
-        self._pyha_simulation_output_callback = DataValidToNumpy()
 
         self.WINDOW_LEN = window_len
         self.averages = [MovingAverage(window_len, dtype), MovingAverage(window_len, dtype)]

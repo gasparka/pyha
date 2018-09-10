@@ -191,6 +191,32 @@ class Simulator:
         self.quartus = None
 
     def run(self, *inputs):
+        def handle_output(model_output):
+            if isinstance(model_output, tuple):  # multiple return
+                try:
+                    # DataValid?
+                    return [val.data._pyha_to_python_value() for val in model_output if val.valid]
+                except AttributeError:
+                    try:
+                        # not DataValid, some Pyha type?
+                        return [val._pyha_to_python_value() for val in model_output]
+                    except AttributeError:
+                        # not Pyha type. For example maybe an bultin e.g int
+                        return model_output
+            else:
+                try:
+                    # DataValid?
+                    if model_output.valid:
+                        return [model_output.data._pyha_to_python_value()]
+                    else:
+                        return []
+                except AttributeError:
+                    try:
+                        # not DataValid, some Pyha type?
+                        return [model_output._pyha_to_python_value()]
+                    except AttributeError:
+                        # not Pyha type. For example maybe an bultin e.g int
+                        return [model_output]
 
         if self.trace:
             Tracer.traced_objects.clear()
@@ -201,8 +227,10 @@ class Simulator:
 
         with SimulationRunning.enable():
             logger.info(f'Running "MODEL" simulation...')
-            model_result = self.model.model_main(*inputs)
-            self.out = np.ndarray(shape=((4,) + model_result.shape), dtype=model_result.dtype)
+            model_result = np.array(self.model.model_main(*inputs))
+            if model_result.ndim == 1: # single return channel -> need to expand_dims
+                model_result = np.expand_dims(model_result, axis=0)
+                self.out = np.ndarray(shape=((4,) + model_result.shape), dtype=model_result.dtype)
             self.out[Simulator.MODEL] = model_result
 
             logger.info(f'Running "PYHA" simulation...')
@@ -211,20 +239,23 @@ class Simulator:
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(inputs, file=sys.stderr):
-                        returns = self.model.main(input)
-                        if returns.valid:
-                            self.out[1][valid_samples] = returns.data._pyha_to_python_value()
+                        returns = self.model.main(*input)
+                        returns = handle_output(returns)
+                        if returns:
+                            self.out[Simulator.PYHA, :, valid_samples] = returns
                             valid_samples += 1
+
                         self.model._pyha_update_registers()
 
                     logger.info(
-                        f'Flushing the pipeline to collect {len(self.out[1])} valid samples (currently have {valid_samples})')
+                        f'Flushing the pipeline to collect {len(self.out[Simulator.MODEL, -1])} valid samples (currently have {valid_samples})')
                     hardware_delay = 0
-                    while valid_samples != len(self.out[1]):
+                    while valid_samples != len(self.out[Simulator.MODEL, -1]):
                         hardware_delay += 1
-                        returns = self.model.main(inputs[-1])
-                        if returns.valid:
-                            self.out[Simulator.PYHA][valid_samples] = returns.data._pyha_to_python_value()
+                        returns = self.model.main(*inputs[-1])
+                        returns = handle_output(returns)
+                        if returns:
+                            self.out[Simulator.PYHA, :, valid_samples] = returns
                             valid_samples += 1
                         self.model._pyha_update_registers()
 

@@ -1,3 +1,4 @@
+import glob
 import inspect
 import logging
 import tempfile
@@ -21,10 +22,13 @@ logger = logging.getLogger('conversion')
 
 
 class Converter:
-    def __init__(self, model, output_dir=None, clear_output_dir=False):
+    def __init__(self, model, output_dir=None):
         self.model = model
-        self.output_dir = str(Path(output_dir).expanduser())
-        self.clear_output_dir = clear_output_dir
+
+        if output_dir is None or 'TRAVIS' in os.environ:
+            self.output_dir = tempfile.TemporaryDirectory().name
+        else:
+            self.output_dir = str(Path(output_dir).expanduser())
 
         self.base_path = Path(self.output_dir).expanduser()
         self.src_path = self.base_path / 'src'
@@ -32,18 +36,16 @@ class Converter:
         self.src_util_path = self.src_path / 'util'
 
     def to_vhdl(self):
-        # by default write conversion src to tmpdir
-        if self.output_dir is None or 'TRAVIS' in os.environ:
-            self.output_dir = tempfile.TemporaryDirectory().name
-        else:
-            self.output_dir = str(Path(self.output_dir).expanduser())
-            if self.clear_output_dir:
-                try:
-                    shutil.rmtree(self.output_dir)
-                except:
-                    pass
+        try:
+            os.makedirs(self.output_dir)
+        except:
+            pass
+
+        # clear contents
+        files = glob.glob(self.output_dir + '/**/*')
+        for f in files:
             try:
-                os.makedirs(self.output_dir)
+                os.remove(f)
             except:
                 pass
 

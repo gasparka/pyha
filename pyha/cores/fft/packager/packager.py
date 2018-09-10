@@ -15,13 +15,39 @@ class DataValidToNumpy:
         return np.array([x.data for x in outputs if x.valid])
 
 
+class GenericFixed:
+    def __init__(self, dtype=None):
+        self.dtype = dtype
+
+    def __call__(self, inputs):
+        if isinstance(inputs, tuple):
+            # multiple arguments, run this function for each!
+            ret = []
+            for arg in inputs:
+                ret.append(self(arg))
+            return np.array(np.array(ret).T)
+
+        ret = []
+        if isinstance(inputs[0], (list, np.ndarray)):
+            for row in inputs:
+                ret += [self.dtype(elem) for elem in row]
+        else:
+            ret += [self.dtype(elem) for elem in inputs]
+
+        return np.array(ret)
+
+
 class NumpyToDataValid:
     def __init__(self, dtype=None):
         self.dtype = dtype
 
     def __call__(self, inputs):
         if isinstance(inputs, tuple):
-            inputs = inputs[0]
+            # multiple arguments, run this function for each!
+            ret = []
+            for arg in inputs:
+                ret.append(self(arg))
+            return np.array(ret).T
 
         ret = []
         if isinstance(inputs[0], (list, np.ndarray)):
