@@ -278,6 +278,11 @@ class PyhaList(UserList):
         else:
             self.data = self._pyha_next[:]
 
+    def _pyha_enable_function_profiling_for_types(self):
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
+            for i, x in enumerate(self.data):
+                x._pyha_enable_function_profiling_for_types()
+
     def _pyha_insert_tracer(self, label=''):
         if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
             for i, x in enumerate(self.data):

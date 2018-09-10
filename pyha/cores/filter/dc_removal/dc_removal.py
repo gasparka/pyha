@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Sfix, simulate, sims_close, Complex
+from pyha import Hardware, Sfix, simulate, sims_close, Complex, Simulator
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import MovingAverage, DataValid, \
     NumpyToDataValid, DataValidToNumpy, DownCounter
@@ -11,7 +11,7 @@ class DCRemoval(Hardware):
     """
     Filter out DC component, based on: https://www.dsprelated.com/showarticle/58.php
     """
-    def __init__(self, window_len, dtype=Sfix):
+    def __init__(self, window_len, dtype=Complex):
         assert window_len > 2
         self._pyha_simulation_input_callback = NumpyToDataValid(
             dtype=dtype(0.0, 0, -17, overflow_style='saturate', round_style='round'))
@@ -20,10 +20,8 @@ class DCRemoval(Hardware):
         self.WINDOW_LEN = window_len
         self.averages = [MovingAverage(window_len, dtype), MovingAverage(window_len, dtype)]
 
-        self.DELAY = self.averages[0].DELAY * len(self.averages) + 1
-
         # input must be delayed by group delay, we can use the SHR from the first averager to get the majority of the delay.
-        self.delayed_input = ShiftRegister([dtype(0.0, 0, -17)] * (self.DELAY - 2))
+        self.delayed_input = ShiftRegister([dtype(0.0, 0, -17)] * 3)
         self.out = DataValid(dtype(0, 0, -17), valid=False)
 
     def main(self, inp):
@@ -49,13 +47,13 @@ class DCRemoval(Hardware):
         return y
 
 
-@pytest.mark.parametrize("window_len", [4, 8, 16, 32])
+@pytest.mark.parametrize("window_len", [4, 8, 16, 32, 64, 128, 256])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
     np.random.seed(0)
     dut = DCRemoval(window_len=window_len, dtype=dtype)
-    N = 256
+    N = window_len * 4
     if dtype == Complex:
         input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
     else:
@@ -63,5 +61,4 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    sim_out = simulate(dut, input_signal, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sim_out)
+    Simulator(dut).run(input_signal).assert_equal(rtol=1e-04, atol=1e-4)

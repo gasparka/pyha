@@ -99,9 +99,10 @@ class Plotter:
     def plot(self, simulations, mode='time', name=''):
         from pyha.cores.util import snr
         MODEL, PYHA = 0, 1
+        figsize = (9.75, 5)
         if mode == 'time':
             if isinstance(simulations[MODEL][0], float):
-                fig, ax = plt.subplots(2, sharex="all", figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
+                fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
 
                 if name:
                     fig.suptitle(name, fontsize=14, fontweight='bold')
@@ -116,30 +117,64 @@ class Plotter:
                 ax[1].plot(simulations[MODEL] - simulations[PYHA], label='Error')
                 ax[1].grid(True)
                 ax[1].legend()
+            elif isinstance(simulations[MODEL][0], complex):
+                fig, ax = plt.subplots(2, 2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
+
+                if name:
+                    fig.suptitle(name, fontsize=14, fontweight='bold')
+                ax[0][0].plot(simulations[MODEL].real, label='MODEL')
+                ax[0][0].plot(simulations[PYHA].real, label='PYHA')
+                ax[0][0].set(title=f'REAL SNR={snr(simulations[MODEL].real, simulations[PYHA].real):.2f} dB')
+                ax[0][0].set_xlabel('Sample')
+                ax[0][0].set_ylabel('Magnitude')
+                ax[0][0].grid(True)
+                ax[0][0].legend()
+
+                ax[1][0].plot(simulations[MODEL].real - simulations[PYHA].real, label='Error')
+                ax[1][0].grid(True)
+                ax[1][0].legend()
+
+                ax[0][1].plot(simulations[MODEL].imag, label='MODEL')
+                ax[0][1].plot(simulations[PYHA].imag, label='PYHA')
+                ax[0][1].set(title=f'IMAG SNR={snr(simulations[MODEL].imag, simulations[PYHA].imag):.2f} dB')
+                ax[0][1].set_xlabel('Sample')
+                ax[0][1].set_ylabel('Magnitude')
+                ax[0][1].grid(True)
+                ax[0][1].legend()
+
+                ax[1][1].plot(simulations[MODEL].imag - simulations[PYHA].imag, label='Error')
+                ax[1][1].grid(True)
+                ax[1][1].legend()
 
         elif mode == 'frequency' or mode == 'frequency_response':
             gain = 1.0
             if mode == 'frequency_response':
                 gain = len(simulations[MODEL])
+                if isinstance(simulations[MODEL][0], complex):
+                    gain *= 0.707
 
-            fig, ax = plt.subplots(2, sharex="all", figsize=(17, 7), gridspec_kw={'height_ratios': [4, 2]})
+
+            fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
 
             if name:
                 fig.suptitle(name, fontsize=14, fontweight='bold')
 
-            spec_model, freq, _ = ax[0].magnitude_spectrum(simulations[MODEL] * gain, window=plt.mlab.window_none,
+            spec_model, freq, _ = ax[0].magnitude_spectrum(simulations[MODEL] * gain,
+                                                           window=plt.mlab.window_none,
                                                            scale='dB', label='MODEL')
-            spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations[PYHA] * gain, window=plt.mlab.window_none,
+            spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations[PYHA] * gain,
+                                                       window=plt.mlab.window_none,
                                                        scale='dB',
                                                        label='PYHA')
             ax[0].set(title=f'SNR={snr(simulations[MODEL], simulations[PYHA]):.2f} dB')
             ax[0].grid(True)
             ax[0].legend()
 
-            ax[1].plot(freq, spec_model - spec_pyha, label='Error')
+            ax[1].plot(freq, 20*np.log10(spec_model) - 20*np.log10(spec_pyha), label='Error')
             ax[1].grid(True)
             ax[1].legend()
 
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
         plt.show()
 
 
@@ -275,16 +310,16 @@ class Simulator:
 
         return np.array([x.data for x in outp if x.valid])
 
-    def plot_trace(self, mode=None):
+    def plot_trace(self, mode=None, skip_first_n=0, inout_only=False):
         if not mode:
             mode = {'Input': 'time', 'Output': 'time'}
         for i, (k, v) in enumerate(self.trace_data.items()):
             if i == 0:
-                Plotter().plot(v, mode['Input'], name='Input')
+                Plotter().plot(v[:, skip_first_n:], mode['Input'], name='Input')
             elif i == len(self.trace_data) - 1:
-                Plotter().plot(v, mode['Output'], name='Output')
-            else:
-                Plotter().plot(v, mode, name=k)
+                Plotter().plot(v[:, skip_first_n:], mode['Output'], name='Output')
+            elif not inout_only:
+                Plotter().plot(v[:, skip_first_n:], mode='time', name=k)
 
     def assert_equal(self, rtol=1e-05, atol=1e-30):
         """

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import redbaron
 
+from .common.data.data import *
 from .common.complex import Complex, default_complex
 from .common.core import Hardware
 from .common.fixed_point import Sfix, scalb, resize, left_index, right_index, default_sfix

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy import signal
 
-from pyha import Hardware, Sfix, simulate, sims_close, Complex, scalb, Simulator
+from pyha import Hardware, Sfix, Complex, scalb, Simulator
 from pyha.common.shift_register import ShiftRegister
 from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
 from pyha.cores.fft.packager.packager import DataValid
