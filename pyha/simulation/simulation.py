@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from wurlitzer import pipes
 
-from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize
+from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize, ContextManagerRefCounted
 from pyha.conversion.conversion import Converter
 from pyha.conversion.type_transforms import init_vhdl_type
 from pyha.synthesis.quartus import make_quartus_project, QuartusDockerWrapper
@@ -18,6 +18,11 @@ logger = logging.getLogger('sim')
 
 class Tracer:
     traced_objects = []
+    _enable = ContextManagerRefCounted()
+
+    @staticmethod
+    def is_enabled():
+        return len(Tracer.traced_objects)
 
     def __init__(self, func, tracer_type, owner=None, label=None):
         self.label = label
