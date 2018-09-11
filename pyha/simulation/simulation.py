@@ -67,7 +67,7 @@ class Tracer:
                 self.time = time
                 self.label = label
 
-        ll = []
+        tmp = []
         for x in cls.traced_objects:
             try:
                 model = x.model_main
@@ -75,20 +75,21 @@ class Tracer:
                 if not model.call_time or not main.call_time:
                     logger.info(f'TRACE: Skipping {model.label} because model or main was not called...')
                     continue
-                ll.append(Tmp(model.input, main.input, f'In: {model.label}', model.call_time))
-                ll.append(Tmp(model.output, main.output, f'Out: {model.label}', model.return_time))
+                tmp.append(Tmp(model.input, main.input, f'In: {model.label}', model.call_time))
+                tmp.append(Tmp(model.output, main.output, f'Out: {model.label}', model.return_time))
             except AttributeError as e:
                 print(e)
                 continue
 
-        time_sorted = sorted(ll, key=lambda x: x.time)
+        time_sorted = sorted(tmp, key=lambda x: x.time)
 
-        ll = [time_sorted[0]]  # always include first input
+        # remove duplicate traces e.g. input of a block is same as previous output!
+        tmp = [time_sorted[0]]  # always include first input
         for x in time_sorted:
-            if not np.array_equal(x.data_model, ll[-1].data_model):
-                ll.append(x)
+            if not np.array_equal(x.data_model, tmp[-1].data_model) or not np.array_equal(x.data_pyha, tmp[-1].data_pyha):
+                tmp.append(x)
 
-        ret = {x.label: np.array([x.data_model, x.data_pyha]) for x in ll}
+        ret = {x.label: np.array([x.data_model, x.data_pyha]) for x in tmp}
         return ret
 
 
@@ -148,8 +149,10 @@ class Plotter:
 
         elif mode == 'frequency' or mode == 'frequency_response':
             gain = 1.0
+            window = plt.mlab.window_hanning
             if mode == 'frequency_response':
                 gain = len(simulations[MODEL])
+                window = plt.mlab.window_none
                 if isinstance(simulations[MODEL][0], complex):
                     gain *= 0.707
 
@@ -160,10 +163,10 @@ class Plotter:
                 fig.suptitle(name, fontsize=14, fontweight='bold')
 
             spec_model, freq, _ = ax[0].magnitude_spectrum(simulations[MODEL] * gain,
-                                                           window=plt.mlab.window_none,
+                                                           window=window,
                                                            scale='dB', label='MODEL')
             spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations[PYHA] * gain,
-                                                       window=plt.mlab.window_none,
+                                                       window=window,
                                                        scale='dB',
                                                        label='PYHA')
             ax[0].set(title=f'SNR={snr(simulations[MODEL], simulations[PYHA]):.2f} dB')
