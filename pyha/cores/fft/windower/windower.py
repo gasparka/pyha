@@ -2,10 +2,9 @@ import numpy as np
 import pytest
 from scipy.signal import get_window
 
-from pyha import Hardware, simulate, sims_close, Complex, Sfix
+from pyha import Hardware, Complex, Sfix, Simulator
 from pyha.common.complex import default_complex
-from pyha.cores import NumpyToDataValid, DataValidToNumpy, \
-    DataValid, DownCounter
+from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid
 
 
 class Windower(Hardware):
@@ -22,22 +21,16 @@ class Windower(Hardware):
         self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
         self.index_counter = 1
         self.coef = self.WINDOW[0]
-        self.mult = Complex(0, 0, -35) # TODO: implement lazy complex?
-
-        self.start_counter = DownCounter(1)
 
     def main(self, inp):
         if not inp.valid:
             return DataValid(self.out.data, valid=False)
 
-        self.start_counter.tick()
         self.index_counter = (self.index_counter + 1) % self.FFT_SIZE
         self.coef = self.WINDOW[self.index_counter]
 
-        self.mult = inp.data * self.coef
-
-        self.out.data = self.mult # rounding register
-        self.out.valid = self.start_counter.is_over()
+        self.out.data = inp.data * self.coef
+        self.out.valid = inp.valid
         return self.out
 
     def model_main(self, complex_in_list):
@@ -45,12 +38,12 @@ class Windower(Hardware):
         return (shaped * self.window_pure).flatten()
 
 
-@pytest.mark.parametrize("M", [4, 8, 16, 32, 64, 128, 256])
+@pytest.mark.parametrize("fft_size", [4, 8, 16, 32, 64, 128, 256])
 @pytest.mark.parametrize("input_power", [0.1, 0.001])
-def test_windower(M, input_power):
+def test_windower(fft_size, input_power):
     np.random.seed(0)
-    dut = Windower(M)
-    inp = np.random.uniform(-1, 1, size=2 * M) + np.random.uniform(-1, 1, size=2 * M) * 1j
+    dut = Windower(fft_size)
+    inp = np.random.uniform(-1, 1, size=2 * fft_size) + np.random.uniform(-1, 1, size=2 * fft_size) * 1j
     inp *= input_power
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-5, atol=1e-5)
+
+    Simulator(dut).run(inp).assert_equal(rtol=1e-5, atol=1e-5)
