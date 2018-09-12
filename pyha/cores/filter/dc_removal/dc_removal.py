@@ -46,13 +46,13 @@ class DCRemoval(Hardware):
         return y
 
 
-@pytest.mark.parametrize("window_len", [4, 8, 16, 32, 64, 128, 256])
+@pytest.mark.parametrize("window_len", [4, 8, 16, 32, 64, 128, 256, 512])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
     np.random.seed(0)
     dut = DCRemoval(window_len=window_len, dtype=dtype)
-    N = window_len * 4
+    N = window_len * 3
     if dtype == Complex:
         input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
     else:

@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, default_complex
+from pyha import Hardware, simulate, sims_close, Complex, default_complex, Simulator
 from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidPackager, DataValidToNumpy, NumpyToDataValid
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +21,7 @@ class Spectrogram(Hardware):
         self.WINDOW_TYPE = window_type
 
         # components
-        self.dc_removal = DCRemoval(256, dtype=Complex)
+        self.dc_removal = DCRemoval(512, dtype=Complex)
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()
@@ -44,6 +44,29 @@ class Spectrogram(Hardware):
         return dec_out
 
 
+class SpectrogramLimeSDRMini(Hardware):
+    def __init__(self):
+        # components
+        fft_size = 1024
+        avg_freq_axis = 16
+        avg_time_axis = 2
+        window_type = 'hamming'
+        fft_twiddle_bits = 9
+        window_bits = 8
+        self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
+
+
+def test_shit():
+    fft_size = 1024
+    avg_freq_axis = 16
+    avg_time_axis = 2
+    window_type = 'hamming'
+    fft_twiddle_bits = 9
+    window_bits = 8
+    spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
+    pass
+
+
 @pytest.mark.parametrize("avg_freq_axis", [1, 2, 4, 8, 16])
 @pytest.mark.parametrize("avg_time_axis", [2, 4, 8])
 @pytest.mark.parametrize("fft_size", [128, 256])
@@ -51,13 +74,14 @@ class Spectrogram(Hardware):
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     np.random.seed(0)
     input_size = (avg_time_axis) * fft_size
+    if input_size < 512:
+        input_size = 512
     orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,
                                                                               size=input_size) * 1j) * input_power
     dut = Spectrogram(fft_size, avg_freq_axis, avg_time_axis)
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
-    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-7, atol=1e-7)
+    Simulator(dut).run(orig_inp_quant).assert_equal(rtol=1e-7, atol=1e-7)
 
 
 def test_simple():

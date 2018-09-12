@@ -232,7 +232,8 @@ class PyhaList(UserList):
         super().__init__(data)
         self.var_name = var_name
         self.class_name = class_name
-        self._pyha_next = deepcopy(data)
+        if not hasattr(self.data[0], '_pyha_update_registers'):
+            self._pyha_next = deepcopy(data)
 
     def __setitem__(self, i, y):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
@@ -351,7 +352,7 @@ class Hardware(with_metaclass(Meta)):
                             setattr(result, k, deepcopy(v, memo))
                 else:
                     for k, v in self.__dict__.items():
-                        if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v, PyhaList) or isinstance(v, Hardware):  # dont waste time on endless deepcopy
                             setattr(result, k, copy(v))
                             # print(k, v)
                         else:

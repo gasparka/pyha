@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 
 import numpy as np
 import pytest
@@ -220,6 +221,12 @@ class R2SDF(Hardware):
                 var = np.array(var.imag + var.real * 1j)
             return var
 
+
+def test_speed():
+    fft_size = 1024 * 8
+    dut = R2SDF(fft_size, twiddle_bits=18)
+    dutter = deepcopy(dut)
+    pass
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
 @pytest.mark.parametrize("input_ordering", ['bitreversed', 'natural'])

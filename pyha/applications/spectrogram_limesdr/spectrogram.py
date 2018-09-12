@@ -1,55 +1,50 @@
 import logging
+import time
 
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, default_complex, Sfix
-from pyha.cores import DataValidToNumpy, NumpyToDataValid, SDRSource, DataValid, Spectrogram
+from pyha import Hardware, simulate, sims_close, Complex, Sfix
+from pyha.cores import NumpyToDataValid, DataValid, Spectrogram
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spectrogram')
 
 
 class SpectrogramLimeSDRMini(Hardware):
-    def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
-                 window_bits=18):
-        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-        self._pyha_simulation_output_callback = DataValidToNumpy()
+    def __init__(self):
+        self._pyha_simulation_input_callback = NumpyToDataValid(
+            dtype=Complex(0.0, 0, -11, overflow_style='saturate', round_style='round'))
 
         # components
-        self.source = SDRSource()
+        fft_size = 1024*8
+        avg_freq_axis = 16
+        avg_time_axis = 2
+        window_type = 'hamming'
+        fft_twiddle_bits = 9
+        window_bits = 8
         self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
-        self.out = DataValid(Sfix(0, -4, -35))  # format to 32 bits
+        self.out = DataValid(Sfix(0, -4, -35, overflow_style='saturate', round_style='round'))  # format to 32 bits
 
-    def main(self, real, imag):
-        complex_stream = self.source.main(real, imag)
-        spect = self.spect.main(complex_stream)
+    def main(self, inp):
 
-        self.out.data = spect.data
-        self.out.valid = spect.valid
-
-        return self.out
-
-    def model_main(self, real, imag):
-        complex_stream = self.source.main(real, imag)
-        spect = self.spect.main(complex_stream)
+        spect = self.spect.main(inp)
 
         self.out.data = spect.data
         self.out.valid = spect.valid
 
         return self.out
 
+    def model_main(self, inp):
+        return self.spect.model_main(inp)
 
-@pytest.mark.parametrize("avg_freq_axis", [1, 2, 4, 8, 16])
-@pytest.mark.parametrize("avg_time_axis", [2, 4, 8])
-@pytest.mark.parametrize("fft_size", [128, 256])
-@pytest.mark.parametrize("input_power", [0.25, 0.001])
-def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
+
+def test_all():
     np.random.seed(0)
-    input_size = (avg_time_axis) * fft_size
-    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,
-                                                                              size=input_size) * 1j) * input_power
-    dut = Spectrogram(fft_size, avg_freq_axis, avg_time_axis)
+    input_size = 1024*8*2
+    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,size=input_size) * 1j) * 0.1
+
+    dut = SpectrogramLimeSDRMini()
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
     sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
