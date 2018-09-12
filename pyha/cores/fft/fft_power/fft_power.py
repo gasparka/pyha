@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index, default_complex
-from pyha.cores import DataValidToNumpy, NumpyToDataValid, DataValid
+from pyha import Hardware, Complex, resize, Sfix, right_index, left_index, default_complex, \
+    Simulator
+from pyha.cores import NumpyToDataValid, DataValid
 
 
 class FFTPower(Hardware):
@@ -12,20 +13,15 @@ class FFTPower(Hardware):
 
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-        self._pyha_simulation_output_callback = DataValidToNumpy()
 
         self.out = DataValid(Sfix(0.0, 0, -35, overflow_style='saturate'), valid=False)
-        self.DELAY = 1
-
-    def conjugate(self, x):
-        imag = resize(-x.imag, left_index(x.imag), right_index(x.imag))
-        return Complex(x.real, imag)
 
     def main(self, inp):
         if not inp.valid:
             return DataValid(self.out.data, valid=False)
 
-        self.out.data = (self.conjugate(inp.data) * inp.data).real
+        conjugate = resize(Complex(inp.data.real, -inp.data.imag), 0, -17)
+        self.out.data = (conjugate * inp.data).real
         self.out.valid = inp.valid
         return self.out
 
@@ -38,5 +34,4 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-20, atol=1e-20)
+    Simulator(dut, extra_simulations=['RTL', 'NETLIST']).run(inp).assert_equal(rtol=1e-20, atol=1e-20)
