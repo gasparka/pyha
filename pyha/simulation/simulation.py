@@ -118,11 +118,11 @@ class Plotter:
                 ax[0].set_xlabel('Sample')
                 ax[0].set_ylabel('Magnitude')
                 ax[0].grid(True)
-                ax[0].legend()
+                ax[0].legend(loc='upper right')
 
                 ax[1].plot(simulations[MODEL] - simulations[PYHA], label='Error')
                 ax[1].grid(True)
-                ax[1].legend()
+                ax[1].legend(loc='upper right')
             elif isinstance(simulations[MODEL][0], complex):
                 fig, ax = plt.subplots(2, 2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
 
@@ -134,11 +134,11 @@ class Plotter:
                 ax[0][0].set_xlabel('Sample')
                 ax[0][0].set_ylabel('Magnitude')
                 ax[0][0].grid(True)
-                ax[0][0].legend()
+                ax[0][0].legend(loc='upper right')
 
                 ax[1][0].plot(simulations[MODEL].real - simulations[PYHA].real, label='Error')
                 ax[1][0].grid(True)
-                ax[1][0].legend()
+                ax[1][0].legend(loc='upper right')
 
                 ax[0][1].plot(simulations[MODEL].imag, label='MODEL')
                 ax[0][1].plot(simulations[PYHA].imag, label='PYHA')
@@ -146,11 +146,11 @@ class Plotter:
                 ax[0][1].set_xlabel('Sample')
                 ax[0][1].set_ylabel('Magnitude')
                 ax[0][1].grid(True)
-                ax[0][1].legend()
+                ax[0][1].legend(loc='upper right')
 
                 ax[1][1].plot(simulations[MODEL].imag - simulations[PYHA].imag, label='Error')
                 ax[1][1].grid(True)
-                ax[1][1].legend()
+                ax[1][1].legend(loc='upper right')
 
         elif mode == 'frequency' or mode == 'frequency_response':
             gain = 1.0
@@ -176,11 +176,11 @@ class Plotter:
                                                        label='PYHA')
             ax[0].set(title=f'SNR={snr(simulations[MODEL], simulations[PYHA]):.2f} dB')
             ax[0].grid(True)
-            ax[0].legend()
+            ax[0].legend(loc='upper right')
 
             ax[1].plot(freq, 20*np.log10(spec_model) - 20*np.log10(spec_pyha), label='Error')
             ax[1].grid(True)
-            ax[1].legend()
+            ax[1].legend(loc='upper right')
 
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         plt.show()
@@ -226,8 +226,8 @@ class Simulator:
                         # not Pyha type. For example maybe an bultin e.g int
                         return [model_output]
 
+        Tracer.traced_objects.clear()
         if self.trace:
-            Tracer.traced_objects.clear()
             self.model._pyha_insert_tracer(label='self')
         elif 'RTL' in self.extra_simulations or 'NETLIST' in self.extra_simulations:
             logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')

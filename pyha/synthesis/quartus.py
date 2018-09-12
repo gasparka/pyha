@@ -2,7 +2,10 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+
+from wurlitzer import pipes
 
 import pyha
 from pyha.conversion.conversion import Converter
@@ -67,12 +70,9 @@ class QuartusDockerWrapper:
               f"-v /sys:/sys:ro " \
               f"-v {self.project_path}:/pyha_simulation " \
               f"gasparka/pyha_simulation_env {quartus_command}"
-        if not self.verbose:
+
+        with pipes(stdout=sys.stdout if self.verbose else None, stderr=sys.stderr):
             subprocess.run(cmd, shell=True)
-        else:
-            from wurlitzer import sys_pipes
-            with sys_pipes():
-                subprocess.run(cmd, shell=True)
 
     def map(self):
         if not self.flag_map:

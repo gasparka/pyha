@@ -124,30 +124,38 @@ class StageR2SDF(Hardware):
         return self.out
 
     def model_main(self, inp):
-        if self.INPUT_ORDERING == 'natural':
-            offset = self.LOCAL_FFT_SIZE // 2
-            twiddles = [W(i, self.LOCAL_FFT_SIZE) for i in range(offset)]
-            packets = np.array(np.reshape(inp, (-1, self.LOCAL_FFT_SIZE)))
-            for pack in packets:
-                for i in range(offset):
-                    pack[i], pack[i + offset] = pack[i] + pack[i + offset], \
-                                                (pack[i] - pack[i + offset]) * twiddles[i]
+        def fft_model(inp):
+            if self.INPUT_ORDERING == 'natural':
+                offset = self.LOCAL_FFT_SIZE // 2
+                twiddles = [W(i, self.LOCAL_FFT_SIZE) for i in range(offset)]
+                packets = np.array(np.reshape(inp, (-1, self.LOCAL_FFT_SIZE)))
+                for pack in packets:
+                    for i in range(offset):
+                        pack[i], pack[i + offset] = pack[i] + pack[i + offset], \
+                                                    (pack[i] - pack[i + offset]) * twiddles[i]
 
-        elif self.INPUT_ORDERING == 'bitreversed':
-            input_stride = 2 ** self.STAGE_NR
-            local_fft_size = self.GLOBAL_FFT_SIZE // input_stride
-            twiddles = toggle_bit_reverse([W(i, local_fft_size) for i in range(local_fft_size // 2)])
-            packets = np.array(np.reshape(inp, (
-            len(twiddles), -1)))  # note: this shape is upside down compared to NORMAL order function
+                return packets.flatten()
 
-            offset = input_stride
-            for packet_i, pack in enumerate(packets):
-                for i in range(offset):
-                    pack[i], pack[i + offset] = pack[i] + pack[i + offset], \
-                                                (pack[i] - pack[i + offset]) * twiddles[packet_i]
+            elif self.INPUT_ORDERING == 'bitreversed':
+                input_stride = 2 ** self.STAGE_NR
+                local_fft_size = self.GLOBAL_FFT_SIZE // input_stride
+                twiddles = toggle_bit_reverse([W(i, local_fft_size) for i in range(local_fft_size // 2)])
+                packets = np.array(np.reshape(inp, (
+                len(twiddles), -1)))  # note: this shape is upside down compared to NORMAL order function
+
+                offset = input_stride
+                for packet_i, pack in enumerate(packets):
+                    for i in range(offset):
+                        pack[i], pack[i + offset] = pack[i] + pack[i + offset], \
+                                                    (pack[i] - pack[i + offset]) * twiddles[packet_i]
+                return packets.flatten()
+
+        glob_packs = np.array(np.reshape(inp, (-1, self.GLOBAL_FFT_SIZE)))
+        ret = np.array([fft_model(pack) for pack in glob_packs])
+
         if not self.INVERSE:
-            packets = packets / 2
-        return packets.flatten()
+            ret = ret / 2
+        return ret.flatten()
 
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
@@ -202,14 +210,14 @@ class R2SDF(Hardware):
             return numpy_model(inp, self.FFT_SIZE, self.INPUT_ORDERING, self.INVERSE)
         else:
             if self.INVERSE:
-                inp = inp.imag + inp.real * 1j
+                inp = np.array(inp.imag + inp.real * 1j)
 
             var = inp
             for stage in self.stages:
                 var = stage.model_main(var)
 
             if self.INVERSE:
-                var = var.imag + var.real * 1j
+                var = np.array(var.imag + var.real * 1j)
             return var
 
 
@@ -218,7 +226,7 @@ class R2SDF(Hardware):
 @pytest.mark.parametrize("inverse", [True, False])
 def test_all(fft_size, input_ordering, inverse):
     np.random.seed(0)
-    input_signal = np.random.uniform(-1, 1, fft_size) + np.random.uniform(-1, 1, fft_size) * 1j
+    input_signal = np.random.uniform(-1, 1, fft_size*3) + np.random.uniform(-1, 1, fft_size*3) * 1j
 
     if inverse:
         input_signal /= fft_size
