@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Sfix, resize
+from pyha import Hardware, Sfix, resize, Simulator
 from pyha.common.ram import RAM
 from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter
-from pyha.cores.util import toggle_bit_reverse
+from pyha.cores.util import toggle_bit_reverse, snr
 
 
 def build_lut(fft_size, freq_axis_decimation):
@@ -107,11 +107,10 @@ class BitreversalFFTshiftAVGPool(Hardware):
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     np.random.seed(0)
     avg_time_axis = 1
-    packets = avg_time_axis * 2
-    orig_inp = np.random.uniform(-1, 1, size=(packets, fft_size)) * input_power
+    packets = avg_time_axis + 1
+    orig_inp = np.random.uniform(-1, 1, packets * fft_size) * input_power
 
     orig_inp_quant = np.vectorize(lambda x: float(Sfix(x, 0, -35)))(orig_inp)
 
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
-    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=5e-11, atol=5e-11)
+    Simulator(dut).run(orig_inp_quant).assert_equal(rtol=5e-11, atol=5e-11)

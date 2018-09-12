@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Complex, resize, Sfix, right_index, left_index, default_complex, \
-    Simulator
+from pyha import Hardware, Complex, resize, Sfix, default_complex, Simulator
 from pyha.cores import NumpyToDataValid, DataValid
 
 
@@ -34,4 +33,4 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    Simulator(dut, extra_simulations=['RTL', 'NETLIST']).run(inp).assert_equal(rtol=1e-20, atol=1e-20)
+    Simulator(dut).run(inp).assert_equal(rtol=1e-20, atol=1e-20)

@@ -99,16 +99,16 @@ class Tracer:
 
 
 class Plotter:
+    figsize = (9.75, 5)
     def __init__(self):
         pass
 
-    def plot(self, simulations, mode='time', name=''):
+    def plot(self, simulations, mode='time', name='', **kwargs):
         from pyha.cores.util import snr
         MODEL, PYHA = 0, 1
-        figsize = (9.75, 5)
         if mode == 'time':
             if isinstance(simulations[MODEL][0], float):
-                fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
+                fig, ax = plt.subplots(2, sharex="all", figsize=Plotter.figsize, gridspec_kw={'height_ratios': [4, 2]})
 
                 if name:
                     fig.suptitle(name, fontsize=14, fontweight='bold')
@@ -124,7 +124,7 @@ class Plotter:
                 ax[1].grid(True)
                 ax[1].legend(loc='upper right')
             elif isinstance(simulations[MODEL][0], complex):
-                fig, ax = plt.subplots(2, 2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
+                fig, ax = plt.subplots(2, 2, sharex="all", figsize=Plotter.figsize, gridspec_kw={'height_ratios': [4, 2]})
 
                 if name:
                     fig.suptitle(name, fontsize=14, fontweight='bold')
@@ -162,7 +162,7 @@ class Plotter:
                     gain *= 0.707
 
 
-            fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
+            fig, ax = plt.subplots(2, sharex="all", figsize=Plotter.figsize, gridspec_kw={'height_ratios': [4, 2]})
 
             if name:
                 fig.suptitle(name, fontsize=14, fontweight='bold')
@@ -181,6 +181,43 @@ class Plotter:
             ax[1].plot(freq, 20*np.log10(spec_model) - 20*np.log10(spec_pyha), label='Error')
             ax[1].grid(True)
             ax[1].legend(loc='upper right')
+
+        elif mode == 'imshow':
+            fig, ax = plt.subplots(1, 2, figsize=Plotter.figsize)
+
+            if name:
+                fig.suptitle(name, fontsize=14, fontweight='bold')
+
+            from skimage.exposure import exposure
+
+            inp = np.reshape(simulations[MODEL], (kwargs['rows'], -1))
+            if 'transpose' in kwargs:
+                inp = inp.T
+
+            p2, p98 = np.percentile(inp, (2, 98))
+            inp = exposure.rescale_intensity(inp, in_range=(p2, p98))
+
+            ax[0].imshow(inp, interpolation='nearest', aspect='auto', origin='lower')
+            ax[0].set(title=f'MODEL')
+            ax[0].set_xlabel('Time')
+            ax[0].set_ylabel('Magnitude')
+            ax[0].grid(True)
+
+            inp = np.reshape(simulations[MODEL], (kwargs['rows'], -1))
+            if 'transpose' in kwargs:
+                inp = inp.T
+
+            p2, p98 = np.percentile(inp, (2, 98))
+            inp = exposure.rescale_intensity(inp, in_range=(p2, p98))
+
+            ax[1].imshow(inp, interpolation='nearest', aspect='auto', origin='lower')
+            ax[1].set(title=f'PYHA, SNR={snr(simulations[MODEL], simulations[PYHA]):.2f} dB')
+            ax[1].set_xlabel('Time')
+            ax[1].set_ylabel('Magnitude')
+            ax[1].grid(True)
+
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
+            plt.show()
 
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         plt.show()
@@ -349,16 +386,20 @@ class Simulator:
 
         return np.array([x.data for x in outp if x.valid])
 
-    def plot_trace(self, mode=None, skip_first_n=0, inout_only=False):
+    def plot_trace(self, mode=None, skip_first_n=0, inout_only=False, **kwargs):
         if not mode:
             mode = {'Input': 'time', 'Output': 'time'}
         for i, (k, v) in enumerate(self.trace_data.items()):
             if i == 0:
-                Plotter().plot(v[:, skip_first_n:], mode['Input'], name='Input')
+                if not mode['Input']:
+                    pass
+                Plotter().plot(v[:, skip_first_n:], mode['Input'], name='Input', **kwargs)
             elif i == len(self.trace_data) - 1:
-                Plotter().plot(v[:, skip_first_n:], mode['Output'], name='Output')
+                if not mode['Output']:
+                    pass
+                Plotter().plot(v[:, skip_first_n:], mode['Output'], name='Output', **kwargs)
             elif not inout_only:
-                Plotter().plot(v[:, skip_first_n:], mode='time', name=k)
+                Plotter().plot(v[:, skip_first_n:], mode='time', name=k, **kwargs)
 
     def assert_equal(self, rtol=1e-05, atol=1e-30):
         """
