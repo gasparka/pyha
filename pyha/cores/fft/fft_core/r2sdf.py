@@ -39,9 +39,11 @@ def W(k, N):
 
 
 class StageR2SDF(Hardware):
-    def __init__(self, global_fft_size, stage_nr, twiddle_bits=18, inverse=False, input_ordering='natural'):
+    def __init__(self, global_fft_size, stage_nr, twiddle_bits=18, inverse=False, input_ordering='natural',
+                 allow_gain_control=True):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
 
+        self.ALLOW_GAIN_CONTROL=allow_gain_control
         self.INVERSE = inverse
         self.GLOBAL_FFT_SIZE = global_fft_size
         self.STAGE_NR = stage_nr
@@ -114,11 +116,10 @@ class StageR2SDF(Hardware):
             self.stage2_out = self.stage1_out
 
         # Stage 3: gain control and rounding
-        # if self.FFT_HALF > 4:
-        if self.INVERSE:
-            self.out.data = self.stage2_out
-        else:
+        if self.ALLOW_GAIN_CONTROL and not self.INVERSE:
             self.out.data = scalb(self.stage2_out, -1)
+        else:
+            self.out.data = self.stage2_out
 
         self.start_counter.tick()
         self.out.valid = self.start_counter.is_over()
@@ -154,7 +155,7 @@ class StageR2SDF(Hardware):
         glob_packs = np.array(np.reshape(inp, (-1, self.GLOBAL_FFT_SIZE)))
         ret = np.array([fft_model(pack) for pack in glob_packs])
 
-        if not self.INVERSE:
+        if not self.INVERSE and self.ALLOW_GAIN_CONTROL:
             ret = ret / 2
         return ret.flatten()
 
@@ -189,8 +190,13 @@ class R2SDF(Hardware):
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
 
-        self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering)
+        max_gain_control_stages = 8
+        self.POST_GAIN_CONTROL = max(self.N_STAGES - max_gain_control_stages, 0)
+
+        self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering, allow_gain_control=i < max_gain_control_stages)
                        for i in range(self.N_STAGES)]
+
+        self.out = DataValid(Complex(0, -self.POST_GAIN_CONTROL, -17 - self.POST_GAIN_CONTROL))
 
     def main(self, inp):
         var = inp
@@ -202,8 +208,15 @@ class R2SDF(Hardware):
             var = stage.main(var)
 
         if self.INVERSE:
-            return DataValid(Complex(var.data.imag, var.data.real), var.valid)
-        return var
+            var.data = Complex(var.data.imag, var.data.real)
+
+        if self.POST_GAIN_CONTROL:
+            self.out.data = scalb(var.data, -self.POST_GAIN_CONTROL)
+        else:
+            self.out.data = var.data
+
+        self.out.valid = var.valid
+        return self.out
 
     def model_main(self, inp):
         from pyha.simulation.simulation import Tracer
@@ -219,14 +232,31 @@ class R2SDF(Hardware):
 
             if self.INVERSE:
                 var = np.array(var.imag + var.real * 1j)
+
+            if self.POST_GAIN_CONTROL:
+                var *= 2**-self.POST_GAIN_CONTROL
             return var
 
 
-def test_speed():
-    fft_size = 1024 * 8
-    dut = R2SDF(fft_size, twiddle_bits=18)
-    dutter = deepcopy(dut)
-    pass
+@pytest.mark.parametrize("fft_size", [256])
+@pytest.mark.parametrize("input_ordering", ['natural'])
+@pytest.mark.parametrize("inverse", [False])
+def test_LOLXZ(fft_size, input_ordering, inverse):
+    np.random.seed(0)
+    input_signal = np.random.uniform(-1, 1, fft_size*3) + np.random.uniform(-1, 1, fft_size*3) * 1j
+
+    if inverse:
+        input_signal /= fft_size
+    else:
+        input_signal *= 0.125
+
+    dut = R2SDF(fft_size, twiddle_bits=18, input_ordering=input_ordering, inverse=inverse)
+    sim = Simulator(dut, trace=True).run(input_signal)
+    if inverse:
+        sim.assert_equal(rtol=1e-3, atol=1e-3)
+    else:
+        sim.assert_equal(rtol=1e-4, atol=1e-4)
+
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
 @pytest.mark.parametrize("input_ordering", ['bitreversed', 'natural'])

@@ -22,7 +22,7 @@ class MovingAverage(Hardware):
         self.BIT_GROWTH = int(np.log2(window_len))
 
         self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
-        self.acc = dtype(0.0, self.BIT_GROWTH, -17)
+        self.acc = dtype(0.0, left=self.BIT_GROWTH)
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)

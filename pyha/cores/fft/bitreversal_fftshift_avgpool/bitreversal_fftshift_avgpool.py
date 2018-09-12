@@ -77,7 +77,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
             self.time_axis_counter = next_counter
 
-        self.out.data = read >> self.ACCUMULATION_BITS
+        self.out.data = read
         self.start_counter.tick()
         self.out.valid = self.start_counter.is_over() and self.out_valid
         return self.out
@@ -92,11 +92,11 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
         # average in freq axis
         avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
-        avg_y = np.average(avg_y, axis=1)
+        avg_y = np.sum(avg_y, axis=1)
 
         # average in time axis
         avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
-        avg_x = np.average(avg_x, axis=1)
+        avg_x = np.sum(avg_x, axis=1)
         return avg_x.flatten()
 
 
@@ -113,4 +113,4 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     orig_inp_quant = np.vectorize(lambda x: float(Sfix(x, 0, -35)))(orig_inp)
 
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
-    Simulator(dut).run(orig_inp_quant).assert_equal(rtol=5e-11, atol=5e-11)
+    Simulator(dut).run(orig_inp_quant).assert_equal(rtol=1e-30, atol=1e-30)

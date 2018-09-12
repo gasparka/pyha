@@ -13,13 +13,13 @@ class FFTPower(Hardware):
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
 
-        self.out = DataValid(Sfix(0.0, 0, -35, overflow_style='saturate'), valid=False)
+        self.out = DataValid(Sfix(0.0, 0, -35, overflow_style='saturate', round_style='round'), valid=False)
 
     def main(self, inp):
         if not inp.valid:
             return DataValid(self.out.data, valid=False)
 
-        conjugate = resize(Complex(inp.data.real, -inp.data.imag), 0, -17)
+        conjugate = resize(Complex(inp.data.real, -inp.data.imag), size_res=inp.data)
         self.out.data = (conjugate * inp.data).real
         self.out.valid = inp.valid
         return self.out

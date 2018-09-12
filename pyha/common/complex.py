@@ -211,7 +211,7 @@ class Complex:
         if isinstance(other, (Sfix, float)):
             extra_bit = 0 # for real mult
 
-        left = (self.left + other.left + 1) + extra_bit
+        left = min(self.left, other.left) + abs(min(self.left, other.left)) + extra_bit
         right = self.right + other.right
         return Complex(self.val * other.val,
                        left,

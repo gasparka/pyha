@@ -4,14 +4,14 @@ import time
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, Sfix
+from pyha import Hardware, simulate, sims_close, Complex, Sfix, Simulator
 from pyha.cores import NumpyToDataValid, DataValid, Spectrogram
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('spectrogram')
 
 
-class SpectrogramLimeSDRMini(Hardware):
+class SpectrogramLimeSDR(Hardware):
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(
             dtype=Complex(0.0, 0, -11, overflow_style='saturate', round_style='round'))
@@ -44,11 +44,10 @@ def test_all():
     input_size = 1024*8*2
     orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,size=input_size) * 1j) * 0.1
 
-    dut = SpectrogramLimeSDRMini()
+    dut = SpectrogramLimeSDR()
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
-    sims = simulate(dut, orig_inp_quant, simulations=['MODEL', 'PYHA'])
-    assert sims_close(sims, rtol=1e-7, atol=1e-7)
+    sim = Simulator(dut).run(orig_inp_quant)
 
 
 def test_simple():
