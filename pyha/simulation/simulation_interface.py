@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
 
 
-def convert_input_types(args, to_types=None, silence=False, input_callback=None):
+def convert_input_types(args, to_types=None, silence=False):
     if not silence:
         logger.info(f'Converting simulation inputs to hardware types...')
 
@@ -64,10 +64,6 @@ def convert_input_types(args, to_types=None, silence=False, input_callback=None)
                 # input is 2D array -> turn into packets (1D list of Stream objects)
                 args[i] = convert_input_types(arg, silence=True, to_types=to_types)  # dont apply input callback here..
 
-    if input_callback:
-        for i in range(len(args)):
-            args[i] = input_callback(args[i])
-
     return args
 
 
@@ -94,18 +90,12 @@ def have_quartus():
         return False
 
 
-def process_outputs(delay_compensate, ret, output_callback=None):
+def process_outputs(delay_compensate, ret):
     # skip the initial pipeline outputs
     try:
         ret = ret[delay_compensate:]
     except TypeError:  # this happened when ret is single element
         pass
-
-    if output_callback:
-        try:
-            ret = output_callback(ret)
-        except TypeError:  # this happened when ret is single element
-            pass
 
     # transpose
     try:
@@ -129,29 +119,36 @@ def set_ran_gate_simulation(val):
     _ran_gate_simulation = val
 
 
-def pyha_to_python(pyha_types):
-    returns = pyha_types  # can be the case for builtins ie. int
-    if isinstance(pyha_types, tuple):  # multiple return
-        pyvals = []
-        for val in pyha_types:
-            try:
-                pval = val._pyha_to_python_value()
-            except AttributeError:
-                pval = val
+def pyha_to_python(simulation_output):
+    """ Convert simulation output (e.g fixed-point value) to Python value (e.g. float).
+     It can be possible that model returns multiple values!
+     """
 
-            pyvals.append(pval)
-
-        returns = tuple(pyvals)
-    else:
+    def handle_one(output):
         try:
-            returns = pyha_types._pyha_to_python_value()
+            # DataValid?
+            if output.valid:
+                return output.data._pyha_to_python_value()
+            else:
+                return None
         except AttributeError:
-            pass
-    return returns
+            try:
+                # not DataValid, some Pyha type?
+                return output._pyha_to_python_value()
+            except AttributeError:
+                # not Pyha type. For example maybe an bultin e.g int
+                return output
+
+    if isinstance(simulation_output, tuple):
+        ret = tuple(handle_one(x) for x in simulation_output)
+    else:
+        ret = handle_one(simulation_output)
+
+    return ret
 
 
-def simulate(model, *args, simulations=None, conversion_path=None, input_types=None, input_callback=None,
-             output_callback=None, discard_last_n_outputs=None):
+def simulate(model, *args, simulations=None, conversion_path=None, input_types=None,
+             discard_last_n_outputs=None, pipeline_flush='self.DELAY'):
     """
     Run simulations on model.
 
@@ -252,7 +249,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 tmpmodel._pyha_floats_to_fixed(silence=True)
 
                 tmpargs = deepcopy(args)
-                tmpargs = convert_input_types(tmpargs, input_types, silence=True, input_callback=input_callback)
+                tmpargs = convert_input_types(tmpargs, input_types, silence=True)
                 tmpargs = transpose(tmpargs)
 
                 ret = []
@@ -262,24 +259,23 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                     ret.append(returns)
                     tmpmodel._pyha_update_registers()
 
-                ret = process_outputs(0, ret, output_callback)
+                ret = process_outputs(0, ret)
         out['MODEL_PYHA'] = ret
         logger.info(f'OK!')
 
-    with SimulationRunning.enable():
-        # prepare inputs and model for hardware simulations
-        if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-            logger.info(f'Converting model to hardware types ...')
-            model._pyha_floats_to_fixed()
+    if 'PYHA' in simulations:
 
-            if hasattr(model, '_pyha_simulation_input_callback'):
-                args = model._pyha_simulation_input_callback(args)
-                args = transpose([args])
-            else:
-                args = convert_input_types(args, input_types, input_callback=input_callback)
-                args = transpose(args)
+        logger.info(f'Converting model to hardware types ...')
+        model._pyha_floats_to_fixed()
 
-            delay_compensate = 0
+        if hasattr(model, '_pyha_simulation_input_callback'):
+            args = model._pyha_simulation_input_callback(args)
+        else:
+            args = convert_input_types(args, input_types)
+            args = transpose(args)
+
+        delay_compensate = 0
+        if pipeline_flush == 'self.DELAY':
             with suppress(AttributeError):
                 delay_compensate = model.DELAY
 
@@ -288,96 +284,90 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             args += args * int(np.ceil(delay_compensate / len(args)))
             args = args[:target_len]
 
-        if 'PYHA' in simulations:
-            logger.info(f'Running "PYHA" simulation...')
-            tmpargs = args  # pyha MAY overwrite the inputs...
+        logger.info(f'Running "PYHA" simulation...')
+        tmpargs = args  # pyha MAY overwrite the inputs... TODO
 
-            ret = []
-            valid_samples = 0
+        ret = []
+        valid_samples = 0
+        with SimulationRunning.enable():
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
                     for input in tqdm(tmpargs, file=sys.stdout):
                         returns = model.main(*input)
                         returns = pyha_to_python(returns)
-                        try:
-                            if returns.valid:
-                                valid_samples += 1
-                        except:
+                        if returns is not None:
                             valid_samples += 1
-                        ret.append(returns)
+                            ret.append(returns)
                         model._pyha_update_registers()
 
-                    # logger.info(
-                    #     f'Flushing the pipeline... have {valid_samples} valid samples, need {len(out["MODEL"])}')
-                    # c = 0
-                    # while valid_samples != len(out['MODEL']):
-                    #     c += 1
-                    #     returns = model.main(*tmpargs[-1])
-                    #     returns = pyha_to_python(returns)
-                    #     if returns.valid:
-                    #         valid_samples += 1
-                    #     ret.append(returns)
-                    #     model._pyha_update_registers()
-                    #
-                    # logger.info(f'Flushing took {c} cycles')
-                    # args.extend([args[-1]] * c)
+                    if pipeline_flush == 'auto' and valid_samples != len(out['MODEL']):
+                        logger.info(
+                            f'Flushing the pipeline to collect {len(out["MODEL"])} valid samples (currently have {valid_samples})')
+                        hardware_delay = 0
+                        while valid_samples != len(out["MODEL"]):
+                            hardware_delay += 1
+                            returns = model.main(*tmpargs[-1])
+                            returns = pyha_to_python(returns)
+                            if returns is not None:
+                                valid_samples += 1
+                                ret.append(returns)
+                            model._pyha_update_registers()
 
-            try:
-                ret = process_outputs(delay_compensate, ret, output_callback=model._pyha_simulation_output_callback)
-            except AttributeError:
-                ret = process_outputs(delay_compensate, ret)
+                        logger.info(f'Flush took {hardware_delay} cycles.')
 
-            out['PYHA'] = ret
-            logger.info(f'OK!')
+        ret = process_outputs(delay_compensate, ret)
 
-        # # From this point on we assume ARGS and MODEL have been transformed to fixed point
-        # if 'RTL' in simulations:
-        #     logger.info(f'Running "RTL" simulation...')
-        #     if 'PYHA' not in simulations:
-        #         raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
-        #     elif 'PYHA_SKIP_RTL' in os.environ:
-        #         logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-        #     elif Sfix._float_mode.enabled:
-        #         logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
-        #     # TODO: test for docker instead...
-        #     # elif not have_ghdl():
-        #     #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-        #     else:
-        #         vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
-        #         ret = vhdl_sim.main(*args)
-        #
-        #         try:
-        #             out['RTL'] = process_outputs(delay_compensate, ret,
-        #                                          output_callback=model._pyha_simulation_output_callback)
-        #         except:
-        #             out['RTL'] = process_outputs(delay_compensate, ret)
-        #     logger.info(f'OK!')
-        #
-        # if 'GATE' in simulations:
-        #     logger.info(f'Running "GATE" simulation...')
-        #     # logger.warning('SKIPPING **GATE** simulations -> this is temporary, until GATE simulation dependencies make it to the Docker image!')
-        #     # if 'PYHA' not in simulations:
-        #     #     raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
-        #     # elif 'PYHA_SKIP_GATE' in os.environ:
-        #     #     logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-        #     # elif Sfix._float_mode.enabled:
-        #     #     logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
-        #     # elif not have_quartus():
-        #     #     logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
-        #     # elif not have_ghdl():
-        #     #     logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
-        #     # else:
-        #     set_ran_gate_simulation(True)
-        #     vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
-        #     ret = vhdl_sim.main(*args)
-        #
-        #     try:
-        #         out['GATE'] = process_outputs(delay_compensate, ret,
-        #                                       output_callback=model._pyha_simulation_output_callback)
-        #     except:
-        #         out['GATE'] = process_outputs(delay_compensate, ret)
-        #
-        #     logger.info(f'OK!')
+        out['PYHA'] = ret
+        logger.info(f'OK!')
+
+    # # From this point on we assume ARGS and MODEL have been transformed to fixed point
+    # if 'RTL' in simulations:
+    #     logger.info(f'Running "RTL" simulation...')
+    #     if 'PYHA' not in simulations:
+    #         raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
+    #     elif 'PYHA_SKIP_RTL' in os.environ:
+    #         logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+    #     elif Sfix._float_mode.enabled:
+    #         logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
+    #     # TODO: test for docker instead...
+    #     # elif not have_ghdl():
+    #     #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+    #     else:
+    #         vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
+    #         ret = vhdl_sim.main(*args)
+    #
+    #         try:
+    #             out['RTL'] = process_outputs(delay_compensate, ret,
+    #                                          output_callback=model._pyha_simulation_output_callback)
+    #         except:
+    #             out['RTL'] = process_outputs(delay_compensate, ret)
+    #     logger.info(f'OK!')
+    #
+    # if 'GATE' in simulations:
+    #     logger.info(f'Running "GATE" simulation...')
+    #     # logger.warning('SKIPPING **GATE** simulations -> this is temporary, until GATE simulation dependencies make it to the Docker image!')
+    #     # if 'PYHA' not in simulations:
+    #     #     raise Exception('You need to run "PYHA" simulation before "GATE" simulation')
+    #     # elif 'PYHA_SKIP_GATE' in os.environ:
+    #     #     logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
+    #     # elif Sfix._float_mode.enabled:
+    #     #     logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
+    #     # elif not have_quartus():
+    #     #     logger.warning('SKIPPING **GATE** simulations -> no Quartus found')
+    #     # elif not have_ghdl():
+    #     #     logger.warning('SKIPPING **GATE** simulations -> no GHDL found')
+    #     # else:
+    #     set_ran_gate_simulation(True)
+    #     vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'GATE')
+    #     ret = vhdl_sim.main(*args)
+    #
+    #     try:
+    #         out['GATE'] = process_outputs(delay_compensate, ret,
+    #                                       output_callback=model._pyha_simulation_output_callback)
+    #     except:
+    #         out['GATE'] = process_outputs(delay_compensate, ret)
+    #
+    #     logger.info(f'OK!')
 
     if discard_last_n_outputs:
         for key, value in out.items():

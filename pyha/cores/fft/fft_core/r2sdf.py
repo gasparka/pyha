@@ -173,9 +173,9 @@ def test_stage_all(fft_size, input_ordering):
     while 2 ** stage != fft_size:
         dut = StageR2SDF(fft_size, stage, input_ordering=input_ordering, inverse=False)
 
-        sim = Simulator(dut).run(inp)
-        sim.assert_equal(rtol=1e-5, atol=1e-5)
-        inp = sim.out[0][0]
+        sims = simulate(dut, inp, pipeline_flush='auto')
+        assert sims_close(sims, rtol=1e-5, atol=1e-5)
+        inp = sims['MODEL']
         stage += 1
 
     # test that final model answer is equal to the numpy one
@@ -210,7 +210,7 @@ class R2SDF(Hardware):
             var = stage.main(var)
 
         if self.INVERSE:
-            var.data = Complex(var.data.imag, var.data.real)
+            var = DataValid(Complex(var.data.imag, var.data.real), var.valid)
 
         if self.POST_GAIN_CONTROL:
             self.out.data = scalb(var.data, -self.POST_GAIN_CONTROL)
@@ -253,8 +253,9 @@ def test_all(fft_size, input_ordering, inverse):
         input_signal *= 0.125
 
     dut = R2SDF(fft_size, twiddle_bits=18, input_ordering=input_ordering, inverse=inverse)
-    sim = Simulator(dut, trace=True).run(input_signal)
+
+    sims = simulate(dut, input_signal, pipeline_flush='auto')
     if inverse:
-        sim.assert_equal(rtol=1e-3, atol=1e-3)
+        assert sims_close(sims, rtol=1e-3, atol=1e-3)
     else:
-        sim.assert_equal(rtol=1e-4, atol=1e-4)
+        assert sims_close(sims, rtol=1e-4, atol=1e-4)

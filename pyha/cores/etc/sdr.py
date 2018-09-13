@@ -18,22 +18,6 @@ class SDRSource(Hardware):
         return np.array(i) * (2 ** 4) + np.array(q) * (2 ** 4) * 1j
 
 
-
-
-class SDRSource(Hardware):
-    """ Convert BladeRF/LimeSDR style I/Q (4 downto -11) into stream of Complex (0 downto -17) type """
-    def __init__(self):
-        self.out = DataValid(Complex(0, 0, -17, overflow_style='saturate'))
-
-    def main(self, real, imag):
-        self.out.data = scalb(Complex(real, imag), 4)
-        self.out.valid = True
-        return self.out
-
-    def model_main(self, i, q):
-        return np.array(i) * (2 ** 4) + np.array(q) * (2 ** 4) * 1j
-
-
 class BladeRFSink(Hardware):
     """ Convert Pyha Complex style (0 downto -17) into BladeRF style I/Q (4 downto -11) """
     def __init__(self):
@@ -57,7 +41,7 @@ def test_source():
     i = [0.015, -0.04]
     q = [0.029, +0.02]
     dut = SDRSource()
-    sim_out = simulate(dut, i, q)
+    sim_out = simulate(dut, i, q, pipeline_flush='auto')
     assert sims_close(sim_out, rtol=1e-3)
 
 

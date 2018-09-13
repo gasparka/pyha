@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pyha import Hardware, Complex, resize, Sfix, default_complex, Simulator
-from pyha.cores import NumpyToDataValid, DataValid
+from pyha.cores import NumpyToDataValid, DataValid, simulate, sims_close
 
 
 class FFTPower(Hardware):
@@ -32,13 +32,14 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    Simulator(dut).run(inp).assert_equal(rtol=1e-20, atol=1e-20)
+    sims = simulate(dut, inp, pipeline_flush='auto')
+    assert sims_close(sims, rtol=1e-20, atol=1e-20)
 
 
 
-def test_nonstandard_input_size():
-    input_power = 0.0001
-    dut = FFTPower()
-    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype=Complex(0, -1, -21, round_style='round'))
-    inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
-    Simulator(dut, extra_simulations=['RTL'], output_dir='/tmp/pyha_output').run(inp).assert_equal(rtol=1e-10, atol=1e-10)
+# def test_nonstandard_input_size():
+#     input_power = 0.0001
+#     dut = FFTPower()
+#     dut._pyha_simulation_input_callback = NumpyToDataValid(dtype=Complex(0, -1, -21, round_style='round'))
+#     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
+#     Simulator(dut, extra_simulations=['RTL'], output_dir='/tmp/pyha_output').run(inp).assert_equal(rtol=1e-10, atol=1e-10)

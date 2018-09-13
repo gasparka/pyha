@@ -60,4 +60,5 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    Simulator(dut).run(input_signal).assert_equal(rtol=1e-04, atol=1e-4)
+    sims = simulate(dut, input_signal, pipeline_flush='auto')
+    assert sims_close(sims, rtol=1e-4, atol=1e-4)

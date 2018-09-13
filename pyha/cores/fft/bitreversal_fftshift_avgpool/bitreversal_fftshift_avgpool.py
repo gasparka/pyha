@@ -3,7 +3,7 @@ import pytest
 
 from pyha import Hardware, Sfix, resize, Simulator, scalb
 from pyha.common.ram import RAM
-from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter
+from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter, simulate, sims_close
 from pyha.cores.util import toggle_bit_reverse, snr
 
 
@@ -20,7 +20,6 @@ class BitreversalFFTshiftAVGPool(Hardware):
     """ Performs bitreversal, fftshift and average pooling by using 2 BRAM blocks. """
     def __init__(self, fft_size, avg_freq_axis, avg_time_axis):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataValidToNumpy()
 
         assert not (avg_freq_axis == 1 and avg_time_axis == 1)
         self.AVG_FREQ_AXIS = avg_freq_axis
@@ -36,7 +35,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.out_valid = False
         self.control = 0
 
-        self.out = DataValid(Sfix(0.0, 0, -35, round_style='round'), valid=False) # first self.ACCUMULATION_BITS actually not used
+        self.out = DataValid(Sfix(), valid=False) # first self.ACCUMULATION_BITS actually not used
         self.final_counter = DownCounter(self.FFT_SIZE / self.AVG_FREQ_AXIS + 1)
         self.start_counter = DownCounter(fft_size + 1)
 
@@ -113,4 +112,5 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     orig_inp_quant = np.vectorize(lambda x: float(Sfix(x, 0, -35)))(orig_inp)
 
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
-    Simulator(dut).run(orig_inp_quant).assert_equal(rtol=1e-30, atol=1e-30)
+    sim_out = simulate(dut, orig_inp_quant, pipeline_flush='auto')
+    assert sims_close(sim_out, rtol=1e-30, atol=1e-30)

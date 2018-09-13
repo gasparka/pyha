@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from scipy.signal import get_window
 
-from pyha import Hardware, Complex, Sfix, Simulator
+from pyha import Hardware, Complex, Sfix
 from pyha.common.complex import default_complex
-from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid
+from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, simulate, sims_close
 
 
 class Windower(Hardware):
@@ -46,4 +46,5 @@ def test_windower(fft_size, input_power):
     inp = np.random.uniform(-1, 1, size=2 * fft_size) + np.random.uniform(-1, 1, size=2 * fft_size) * 1j
     inp *= input_power
 
-    Simulator(dut).run(inp).assert_equal(rtol=1e-5, atol=1e-5)
+    sim_out = simulate(dut, inp, pipeline_flush='auto')
+    assert sims_close(sim_out, rtol=1e-5, atol=1e-5)

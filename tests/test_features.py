@@ -1024,6 +1024,23 @@ class TestRegisters:
 
         ret = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
         assert_equals(ret, expect)
+        """ This failed because inputs were converted with 'is_local=True', which disabled register updates. """
+
+        class ShiftReg(Hardware):
+            def __init__(self):
+                self.shr_sub = [Complex()] * 1
+
+            def main(self, new_sub):
+                self.shr_sub = [new_sub] + self.shr_sub[:-1]
+                return self.shr_sub[-1]
+
+        dut = ShiftReg()
+
+        inputs = [0.1 + 0.2j, 0.2 + 0.3j, 0.3 + 0.4j]
+        expect = [0 + 0j, 0.1 + 0.2j, 0.2 + 0.3j]
+
+        ret = simulate(dut, inputs, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_equals(ret, expect)
 
     def test_submodule_shiftreg(self):
         """ May fail when list of submoduls fail to take correct initial values """
@@ -1044,7 +1061,7 @@ class TestRegisters:
         dut = ShiftReg()
 
         inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
-        expect = [Sub(3), Sub(999), Sub(9999)]
+        expect = [Sub(3), Sub(999), Sub(9999), Sub(99999)]
 
         ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'PYHA', 'RTL', 'GATE'])
         assert sims_close(ret, expect)

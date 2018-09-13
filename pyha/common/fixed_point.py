@@ -176,12 +176,12 @@ class Sfix:
     def fixed_value(self):
         return int(round(self.val / 2 ** self.right))
 
-    # def __getitem__(self, item):
+    def __getitem__(self, item):
     # see https://github.com/gasparka/pyha/issues/323 for why this is commented out!
-    #     if self.right < 0:
-    #         item += abs(self.right)
-    #
-    #     return bool(self.fixed_value() & (2 ** item))
+        if self.right < 0:
+            item += abs(self.right)
+
+        return bool(self.fixed_value() & (2 ** item))
 
     def __setitem__(self, key, value):
         if self.right < 0:

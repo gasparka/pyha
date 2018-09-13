@@ -4,7 +4,7 @@ from scipy import signal
 
 from pyha import Hardware, Sfix, Complex, scalb, Simulator
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter
+from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter, simulate, sims_close
 from pyha.cores.fft.packager.packager import DataValid
 
 
@@ -22,7 +22,7 @@ class MovingAverage(Hardware):
         self.BIT_GROWTH = int(np.log2(window_len))
 
         self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
-        self.acc = dtype(0.0, left=self.BIT_GROWTH)
+        self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         # rounding the output is necessary or there will be negative trend!
         self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
@@ -59,4 +59,6 @@ def test_all(window_len, input_power, dtype):
         input_signal = np.random.normal(size=N)
 
     input_signal *= input_power
-    Simulator(dut).run(input_signal).assert_equal(rtol=1e-5, atol=1e-5)
+
+    sims = simulate(dut, input_signal, pipeline_flush='auto')
+    assert sims_close(sims, rtol=1e-5, atol=1e-5)
