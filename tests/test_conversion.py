@@ -23,6 +23,7 @@ def dut():
             return a
 
     o = Dummy()
+    o._pyha_enable_function_profiling_for_types()
     # train object
     o.main(1)
     o.main(2)
@@ -143,6 +144,8 @@ def test_convert_submodule_name_conflict():
             return a
 
     dut = B2()
+    dut._pyha_enable_function_profiling_for_types()
+
     dut.main(1)
     conv = RecursiveConverter(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))

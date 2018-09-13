@@ -815,6 +815,8 @@ class TestSubmodulesList:
                 return r0, r1
 
         dut = B2()
+        dut._pyha_enable_function_profiling_for_types()
+
         dut.main(1, 1)
         x = [range(16), range(16)]
         expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
@@ -1702,6 +1704,7 @@ class TestFloatToSfix:
         assert dut._pyha_initial_self.saturation.val == 0.9999923706054688
 
     def test_basic_sim(self):
+        """ This can fail if automatic conversion of INITS to fixed is not enabled! """
         dut = self.D()
         inp = [0]
         r = simulate(dut, inp, simulations=['MODEL_PYHA', 'PYHA', 'RTL'])

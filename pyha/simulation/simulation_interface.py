@@ -214,16 +214,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             pass
     out = {}
 
-    if 'MODEL' in simulations:
-        float_model = model
-
-    if 'MODEL_PYHA' in simulations:
-        model_pyha = deepcopy(model)  # used for MODEL_PYHA (need to copy before SimulationRunning starts)
-
-    # if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
-    #     logger.info(f'Converting model to hardware types ...')
-    #     model._pyha_floats_to_fixed()  # this must run before 'with SimulationRunning.enable():'
-
     # # Speed up simulation if VHDL conversion is not required!
     if 'RTL' not in simulations and 'GATE' not in simulations:
         from pyha.common.core import PyhaFunc
@@ -233,52 +223,55 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         from pyha.common.core import PyhaFunc
         PyhaFunc.bypass = False
 
-    with SimulationRunning.enable():
-        if 'MODEL' in simulations:
-            logger.info(f'Running "MODEL" simulation...')
+    if 'MODEL' in simulations:
+        logger.info(f'Running "MODEL" simulation...')
 
-            if not hasattr(float_model, 'model_main'):
-                logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
-            else:
-                r = float_model.model_main(*args)
+        if not hasattr(model, 'model_main'):
+            logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
+        else:
+            r = model.model_main(*args)
 
-                try:
-                    if r.size != 1:
-                        r = r.squeeze()
-                except:
-                    pass
+            try:
+                if r.size != 1:
+                    r = r.squeeze()
+            except:
+                pass
 
-                # r = np_to_py(r)
-                if isinstance(r, tuple):
-                    r = list(r)
+            # r = np_to_py(r)
+            if isinstance(r, tuple):
+                r = list(r)
 
-                out['MODEL'] = r
-                logger.info(f'OK!')
-
-        if 'MODEL_PYHA' in simulations:
-            logger.info(f'Running "MODEL_PYHA" simulation...')
-            with RegisterBehaviour.force_disable():
-                with Sfix._float_mode:
-                    tmpmodel = model_pyha
-                    tmpmodel._pyha_floats_to_fixed(silence=True)
-
-                    tmpargs = deepcopy(args)
-                    tmpargs = convert_input_types(tmpargs, input_types, silence=True, input_callback=input_callback)
-                    tmpargs = transpose(tmpargs)
-
-                    ret = []
-                    for input in tmpargs:
-                        returns = tmpmodel.main(*input)
-                        returns = pyha_to_python(returns)
-                        ret.append(returns)
-                        tmpmodel._pyha_update_registers()
-
-                    ret = process_outputs(0, ret, output_callback)
-            out['MODEL_PYHA'] = ret
+            out['MODEL'] = r
             logger.info(f'OK!')
 
+    if 'MODEL_PYHA' in simulations:
+        logger.info(f'Running "MODEL_PYHA" simulation...')
+        with RegisterBehaviour.force_disable():
+            with Sfix._float_mode:
+                tmpmodel = deepcopy(model)
+                tmpmodel._pyha_floats_to_fixed(silence=True)
+
+                tmpargs = deepcopy(args)
+                tmpargs = convert_input_types(tmpargs, input_types, silence=True, input_callback=input_callback)
+                tmpargs = transpose(tmpargs)
+
+                ret = []
+                for input in tmpargs:
+                    returns = tmpmodel.main(*input)
+                    returns = pyha_to_python(returns)
+                    ret.append(returns)
+                    tmpmodel._pyha_update_registers()
+
+                ret = process_outputs(0, ret, output_callback)
+        out['MODEL_PYHA'] = ret
+        logger.info(f'OK!')
+
+    with SimulationRunning.enable():
         # prepare inputs and model for hardware simulations
         if 'PYHA' in simulations or 'RTL' in simulations or 'GATE' in simulations:
+            logger.info(f'Converting model to hardware types ...')
+            model._pyha_floats_to_fixed()
+
             if hasattr(model, '_pyha_simulation_input_callback'):
                 args = model._pyha_simulation_input_callback(args)
                 args = transpose([args])
@@ -286,7 +279,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                 args = convert_input_types(args, input_types, input_callback=input_callback)
                 args = transpose(args)
 
-            delay_compensate = 0
             delay_compensate = 0
             with suppress(AttributeError):
                 delay_compensate = model.DELAY

@@ -1044,6 +1044,7 @@ class TestDefNodeConv:
                 return 1, 1 < 2, resize(f, 0, -17), Sfix(0.1, 0, -5), l[0], self.reg
 
         dut = T()
+        dut._pyha_enable_function_profiling_for_types()
         dut.a(1, False, Sfix(0.5, 1, -2), [1, 2])
 
         expect = 'self:in self_t; ' \
@@ -1093,6 +1094,7 @@ class TestDefNodeConv:
                 return 2
 
         dut = T()
+        dut._pyha_enable_function_profiling_for_types()
         dut.out(1)
 
         expect = textwrap.dedent("""\
@@ -1131,6 +1133,7 @@ class TestClassNodeConv:
                 loc = [Sfix(0.1, 2, -1), Sfix(1.5, 2, -1)]
 
         dut = T()
+        dut._pyha_enable_function_profiling_for_types()
         dut.a()
 
         expect = [
@@ -1155,6 +1158,7 @@ class TestForModification:
                     a = x
 
         dut = T()
+        dut._pyha_enable_function_profiling_for_types()
         dut.a()
         expect = textwrap.dedent("""\
                 for \\_i_\\ in self.arr'range loop

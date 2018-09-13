@@ -281,6 +281,7 @@ def test_get_conversion_vars_int():
             self.i = i
 
     dut = T()
+    dut._pyha_enable_function_profiling_for_types()
     dut.main(1)
     dut._pyha_update_registers()
     ret = get_vars_as_vhdl_types(dut)
