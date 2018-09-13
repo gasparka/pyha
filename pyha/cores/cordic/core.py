@@ -92,7 +92,7 @@ def test_vectoring():
 
     dut = Cordic(16, CordicMode.VECTORING)
     sim_out = simulate(dut, *inputs)
-    assert sims_close(sim_out, atol=1e-4)
+    assert sims_close(sim_out, rtol=1e-4, atol=1e-4)
 
 
 def test_rotation():

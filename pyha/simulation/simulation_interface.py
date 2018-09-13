@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -10,12 +11,14 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 from tqdm import tqdm
+from wurlitzer import pipes
 
 from pyha import Hardware
 from pyha.common.complex import default_complex
 from pyha.common.context_managers import RegisterBehaviour, SimulationRunning, SimPath, AutoResize
 from pyha.common.fixed_point import Sfix, default_sfix
 from pyha.common.util import get_iterable, np_to_py
+from pyha.conversion.conversion import Converter
 from pyha.conversion.type_transforms import init_vhdl_type
 from pyha.simulation.vhdl_simulation import VHDLSimulation
 
@@ -126,18 +129,11 @@ def pyha_to_python(simulation_output):
 
     def handle_one(output):
         try:
-            # DataValid?
-            if output.valid:
-                return output.data._pyha_to_python_value()
-            else:
-                return None
+            # some Pyha type?
+            return output._pyha_to_python_value()
         except AttributeError:
-            try:
-                # not DataValid, some Pyha type?
-                return output._pyha_to_python_value()
-            except AttributeError:
-                # not Pyha type. For example maybe an bultin e.g int
-                return output
+            # not Pyha type. For example maybe an builtin e.g int
+            return output
 
     if isinstance(simulation_output, tuple):
         ret = tuple(handle_one(x) for x in simulation_output)
@@ -196,30 +192,12 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         else:
             simulations = ['MODEL_PYHA', 'PYHA', 'RTL', 'GATE']
 
-    # by default write conversion src to tmpdir
-    if conversion_path is None or 'TRAVIS' in os.environ:
-        conversion_path = TemporaryDirectory().name
-    else:
-        conversion_path = str(Path(conversion_path).expanduser())  # turn ~ into path
-        # try:
-        # shutil.rmtree(conversion_path)  # clear folder
-        # except:
-        #     pass
-        try:
-            os.makedirs(conversion_path)
-        except:
-            pass
-    out = {}
-
     # # Speed up simulation if VHDL conversion is not required!
-    if 'RTL' not in simulations and 'GATE' not in simulations:
-        from pyha.common.core import PyhaFunc
-        PyhaFunc.bypass = True
-        logger.info(f'Enabled fast simulation (model cannot be converted to VHDL)')
-    else:
-        from pyha.common.core import PyhaFunc
-        PyhaFunc.bypass = False
+    if 'RTL' in simulations or 'GATE' in simulations:
+        logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
+        model._pyha_enable_function_profiling_for_types()
 
+    out = {}
     if 'MODEL' in simulations:
         logger.info(f'Running "MODEL" simulation...')
 
@@ -285,14 +263,13 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             args = args[:target_len]
 
         logger.info(f'Running "PYHA" simulation...')
-        tmpargs = args  # pyha MAY overwrite the inputs... TODO
 
         ret = []
         valid_samples = 0
         with SimulationRunning.enable():
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
-                    for input in tqdm(tmpargs, file=sys.stdout):
+                    for input in tqdm(args, file=sys.stdout):
                         returns = model.main(*input)
                         returns = pyha_to_python(returns)
                         if returns is not None:
@@ -301,47 +278,42 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                         model._pyha_update_registers()
 
                     if pipeline_flush == 'auto' and valid_samples != len(out['MODEL']):
+                        args = list(args)
                         logger.info(
                             f'Flushing the pipeline to collect {len(out["MODEL"])} valid samples (currently have {valid_samples})')
                         hardware_delay = 0
                         while valid_samples != len(out["MODEL"]):
                             hardware_delay += 1
-                            returns = model.main(*tmpargs[-1])
+                            returns = model.main(*args[-1])
                             returns = pyha_to_python(returns)
                             if returns is not None:
                                 valid_samples += 1
                                 ret.append(returns)
                             model._pyha_update_registers()
-
+                            args.append(args[-1]) # collect samples needed to flush the system, so RTL and GATE sims work also!
                         logger.info(f'Flush took {hardware_delay} cycles.')
 
-        ret = process_outputs(delay_compensate, ret)
-
-        out['PYHA'] = ret
+        out['PYHA'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
-    # # From this point on we assume ARGS and MODEL have been transformed to fixed point
-    # if 'RTL' in simulations:
-    #     logger.info(f'Running "RTL" simulation...')
-    #     if 'PYHA' not in simulations:
-    #         raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
-    #     elif 'PYHA_SKIP_RTL' in os.environ:
-    #         logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-    #     elif Sfix._float_mode.enabled:
-    #         logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
-    #     # TODO: test for docker instead...
-    #     # elif not have_ghdl():
-    #     #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-    #     else:
-    #         vhdl_sim = VHDLSimulation(Path(conversion_path), model, 'RTL')
-    #         ret = vhdl_sim.main(*args)
-    #
-    #         try:
-    #             out['RTL'] = process_outputs(delay_compensate, ret,
-    #                                          output_callback=model._pyha_simulation_output_callback)
-    #         except:
-    #             out['RTL'] = process_outputs(delay_compensate, ret)
-    #     logger.info(f'OK!')
+    converter = None
+    if 'RTL' in simulations:
+        logger.info(f'Running "RTL" simulation...')
+        if 'PYHA' not in simulations:
+            raise Exception('You need to run "PYHA" simulation before "RTL" simulation')
+        elif 'PYHA_SKIP_RTL' in os.environ:
+            logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+        elif Sfix._float_mode.enabled:
+            logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
+        # TODO: test for docker instead...
+        # elif not have_ghdl():
+        #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+        else:
+            converter = Converter(model, output_dir=conversion_path).to_vhdl()
+            logger.info(f'Running "RTL" simulation...')
+            ret = run_ghdl_cocotb(*args, converter=converter)
+            out['RTL'] = process_outputs(delay_compensate, ret)
+        logger.info(f'OK!')
     #
     # if 'GATE' in simulations:
     #     logger.info(f'Running "GATE" simulation...')
@@ -375,6 +347,68 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     logger.info('Simulations completed!')
     return out
+
+
+def run_ghdl_cocotb(*inputs, converter=None, netlist=None, verbose=False):
+    """ RTL simulator with GHDL and COCOTB. This requires that MODEL and PYHA simulations already ran.
+    Inputs to the simulator are 'pipeline compensated' from PYHA simulation.
+    """
+    indata = []
+    for arguments in inputs:
+        if len(arguments) == 1:
+            l = [init_vhdl_type('-', arguments[0], arguments[0])._pyha_serialize()]
+        else:
+            l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
+        indata.append(l)
+
+    np.save(str(converter.base_path / 'input.npy'), indata)
+
+    # make sure output file does not exist
+    out_path = str(converter.base_path / 'output.npy')
+    if os.path.exists(out_path):
+        os.remove(out_path)
+
+    if netlist:
+        src = '.' + netlist[len(str(converter.base_path)):]  # need relative path!
+        ghdl_args = '-P/quartus_sim_lib/ --ieee=synopsys --no-vital-checks'
+    else:
+        src = ' '.join(converter.get_vhdl_sources_relative())
+        ghdl_args = '--std=08'
+
+    cmd = f"docker run " \
+          f"-u `id -u` " \
+          f" -v {converter.base_path}:/pyha_simulation gasparka/pyha_simulation_env make " \
+          f"VHDL_SOURCES=\"{src}\" " \
+          f"OUTPUT_VARIABLES=\"{str(len(converter.get_top_module_outputs()))}\" " \
+          f"GHDL_ARGS=\"{ghdl_args}\" "
+
+    with pipes(stdout=sys.stdout if verbose else None, stderr=sys.stderr):
+        # Weirdness: running in Pycharm 'pytest -s' gets somehow stuck in wurlizer...
+        subprocess.run(cmd, shell=True)
+
+    print('\n', file=sys.stderr)
+
+    out = np.load(out_path)
+    outp = out.astype(object).T
+
+    for i, row in enumerate(outp):
+        for j, val in enumerate(row):
+            outp[i][j] = converter.get_top_module_outputs()[i]._pyha_deserialize(val)
+
+    outp = np.squeeze(outp)  # example [[1], [2], [3]] -> [1, 2, 3]
+    outp = outp.T.tolist()
+
+    # convert second level lists to tuples if dealing with 'multiple returns'
+    if len(converter.get_top_module_outputs()) > 1:
+        for i, row in enumerate(outp):
+            try:
+                outp[i] = tuple(outp[i])
+            except TypeError:  # happened when outp[i] is single float
+                outp[i] = [outp[i]]
+
+    # skip Nones (invalid packets)
+    outp = [x for x in outp if x is not None]
+    return outp
 
 
 def assert_simulations_equal(simulations, rtol=1e-05, atol=1e-30):

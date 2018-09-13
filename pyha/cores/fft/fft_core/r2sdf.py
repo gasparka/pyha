@@ -212,7 +212,7 @@ class R2SDF(Hardware):
         if self.INVERSE:
             var = DataValid(Complex(var.data.imag, var.data.real), var.valid)
 
-        if self.POST_GAIN_CONTROL:
+        if self.POST_GAIN_CONTROL != 0:
             self.out.data = scalb(var.data, -self.POST_GAIN_CONTROL)
         else:
             self.out.data = var.data

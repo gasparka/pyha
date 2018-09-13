@@ -90,9 +90,18 @@ package body complex_pkg is
   end function;
 
   function "*" (l, r : complex_t) return complex_t is
-    variable new_real, new_imag : sfixed (l'left/2 + r'left/2+1+1 downto l'low/2 + r'low/2);
+    constant l_left_index : integer := integer(floor(real(l'left) / 2.0));
+    constant r_left_index : integer := integer(floor(real(r'left) / 2.0));
+    variable new_real, new_imag : sfixed (l_left_index + r_left_index+1+1 downto l'low/2 + r'low/2);
     variable result : complex_t (complex_left(new_real'left) downto complex_right(new_real'right));
   begin
+    report to_string(l'left/2);
+    report to_string(r'low/2);
+
+    report to_string(new_real'left);
+    report to_string(new_real'right);
+    report to_string(result'left);
+    report to_string(result'right);
     new_real := (get_real(l) * get_real(r)) - (get_imag(l) * get_imag(r));
     new_imag := (get_real(l) * get_imag(r)) + (get_imag(l) * get_real(r));
     result := Complex(new_real, new_imag);
@@ -236,7 +245,7 @@ package body complex_pkg is
       variable real, imag: sfixed(left_index downto right_index);
       variable middle: integer;
   begin
-    middle := a'length / 2;
+    middle := (a'length / 2);
     real := to_sfixed(a(a'left downto middle), left_index, right_index);
     imag := to_sfixed(a(middle-1 downto 0), left_index, right_index);
 

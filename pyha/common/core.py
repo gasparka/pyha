@@ -352,7 +352,7 @@ class Hardware(with_metaclass(Meta)):
                             setattr(result, k, deepcopy(v, memo))
                 else:
                     for k, v in self.__dict__.items():
-                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v, PyhaList) or isinstance(v, Hardware):  # dont waste time on endless deepcopy
+                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v, Hardware):  # dont waste time on endless deepcopy
                             setattr(result, k, copy(v))
                             # print(k, v)
                         else:

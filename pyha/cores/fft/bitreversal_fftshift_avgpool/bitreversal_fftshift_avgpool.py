@@ -99,9 +99,9 @@ class BitreversalFFTshiftAVGPool(Hardware):
         return avg_x.flatten()
 
 
-@pytest.mark.parametrize("avg_freq_axis", [2, 4, 8, 16, 32])
-@pytest.mark.parametrize("avg_time_axis", [1, 2, 4, 8, 16])
-@pytest.mark.parametrize("fft_size", [512, 256, 128])
+@pytest.mark.parametrize("avg_freq_axis", [2, 8, 16])
+@pytest.mark.parametrize("avg_time_axis", [1, 4, 8])
+@pytest.mark.parametrize("fft_size", [256, 128])
 @pytest.mark.parametrize("input_power", [0.1, 0.001])
 def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
     np.random.seed(0)

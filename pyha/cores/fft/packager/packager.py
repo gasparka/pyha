@@ -9,6 +9,15 @@ class DataValid(Hardware):
         self.data = data
         self.valid = valid
 
+    def _pyha_to_python_value(self):
+        if self.valid:
+            try:
+                return self.data._pyha_to_python_value() # carries some Pyha type?
+            except AttributeError:
+                return self.data
+        else:
+            return None
+
 
 class DataValidToNumpy:
     def __call__(self, outputs):

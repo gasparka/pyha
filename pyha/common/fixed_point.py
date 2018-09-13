@@ -153,12 +153,12 @@ class Sfix:
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
         if not self.wrap_is_ok and self.signed:
-            if str(SimPath) != 'inputs':
-                try:
-                    import pydevd
-                    pydevd.settrace()
-                except ModuleNotFoundError:  # this happens when ran in 'Run' mode instead of 'Debug'
-                    pass
+            # if str(SimPath) != 'inputs':
+                # try:
+                #     import pydevd
+                #     pydevd.settrace()
+                # except ModuleNotFoundError:  # this happens when ran in 'Run' mode instead of 'Debug'
+                #     pass
             logger.error(f'WRAP {self.val:g} -> {new_val:g}\t[{SimPath}]')
         self.val = new_val
 

@@ -321,7 +321,7 @@ class VHDLComplex(BaseVHDLType):
         return f'complex_t({self.current.left*2+1 if self.current.left else 1} downto {self.current.right*2 if self.current.right else -1})'
 
     def _pyha_bitwidth(self) -> int:
-        lefts = abs((self.current.left + 1) * 2) if self.current.left else 2
+        lefts = (self.current.left + 1) * 2 if self.current.left else 2
         rights = abs(self.current.right * 2) if self.current.right else 2
         return lefts + rights
 
