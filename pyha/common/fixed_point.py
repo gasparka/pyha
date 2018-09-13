@@ -365,10 +365,10 @@ class Sfix:
             return -self.right + self.left
 
     def __call__(self, x: float, left=None, right=None):
-        if not left:
+        if left is None:
             left = self.left
 
-        if not right:
+        if right is None:
             right = self.right
 
         return Sfix(float(x), left, right, self.overflow_style,
@@ -445,6 +445,8 @@ def right_index(x: Sfix) -> int:
     >>> right_index(a)
     -7
     """
+    if not x.right:
+        return 0
     return x.right
 
 

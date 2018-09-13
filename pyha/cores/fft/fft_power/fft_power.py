@@ -12,8 +12,7 @@ class FFTPower(Hardware):
 
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-
-        self.out = DataValid(Sfix(0.0, 0, -35, overflow_style='saturate', round_style='round'), valid=False)
+        self.out = DataValid(Sfix(), valid=False)
 
     def main(self, inp):
         if not inp.valid:
@@ -34,3 +33,12 @@ def test_all(input_power):
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
     Simulator(dut).run(inp).assert_equal(rtol=1e-20, atol=1e-20)
+
+
+
+def test_nonstandard_input_size():
+    input_power = 0.0001
+    dut = FFTPower()
+    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype=Complex(0, -1, -21, round_style='round'))
+    inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
+    Simulator(dut, extra_simulations=['RTL'], output_dir='/tmp/pyha_output').run(inp).assert_equal(rtol=1e-10, atol=1e-10)

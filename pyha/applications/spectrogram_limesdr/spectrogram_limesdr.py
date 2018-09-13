@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, Sfix, Simulator
+from pyha import Hardware, simulate, sims_close, Complex, Sfix, Simulator, right_index, resize, load_complex64_file
 from pyha.cores import NumpyToDataValid, DataValid, Spectrogram
 
 logging.basicConfig(level=logging.INFO)
@@ -24,13 +24,14 @@ class SpectrogramLimeSDR(Hardware):
         fft_twiddle_bits = 9
         window_bits = 8
         self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
-        self.out = DataValid(Sfix(0, -4, -35, overflow_style='saturate', round_style='round'))  # format to 32 bits
+        self.out = DataValid(Sfix())
 
     def main(self, inp):
 
         spect = self.spect.main(inp)
 
-        self.out.data = spect.data
+        # take last 32 bits, this is what is sent to the computer
+        self.out.data = resize(spect.data, left=right_index(spect.data) + 32, right=right_index(spect.data))
         self.out.valid = spect.valid
 
         return self.out
@@ -42,11 +43,14 @@ class SpectrogramLimeSDR(Hardware):
 def test_all():
     np.random.seed(0)
     input_size = 1024*8*2
-    orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,size=input_size) * 1j) * 0.1
+    # orig_inp = (np.random.uniform(-1, 1, size=input_size) + np.random.uniform(-1, 1,size=input_size) * 1j) * 0.1
+
+    input_signal = load_complex64_file('/home/gaspar/Documents/slice')
+    input_signal = input_signal[:len(input_signal) // (1024 * 8 * 8) * (1024 * 8 * 8)]
 
     dut = SpectrogramLimeSDR()
 
-    orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
+    orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(input_signal)
     sim = Simulator(dut).run(orig_inp_quant)
 
 

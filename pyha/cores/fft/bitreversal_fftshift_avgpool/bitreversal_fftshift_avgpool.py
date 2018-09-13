@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Sfix, resize, Simulator
+from pyha import Hardware, Sfix, resize, Simulator, scalb
 from pyha.common.ram import RAM
 from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter
 from pyha.cores.util import toggle_bit_reverse, snr
@@ -36,7 +36,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.out_valid = False
         self.control = 0
 
-        self.out = DataValid(Sfix(0, 0, -35), valid=False) # first self.ACCUMULATION_BITS actually not used
+        self.out = DataValid(Sfix(0.0, 0, -35, round_style='round'), valid=False) # first self.ACCUMULATION_BITS actually not used
         self.final_counter = DownCounter(self.FFT_SIZE / self.AVG_FREQ_AXIS + 1)
         self.start_counter = DownCounter(fft_size + 1)
 
@@ -45,7 +45,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         write_index = self.LUT[self.control]
         write_index_future = self.LUT[(self.control + 1) % self.FFT_SIZE]
         read = self.ram[write_ram].delayed_read(write_index_future)
-        res = resize(read + data, 0, -35)
+        res = resize(read + data, size_res=data)
         self.ram[write_ram].delayed_write(write_index, res)
 
         # output stage
@@ -77,7 +77,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
             self.time_axis_counter = next_counter
 
-        self.out.data = read
+        self.out.data = scalb(read, -self.ACCUMULATION_BITS)
         self.start_counter.tick()
         self.out.valid = self.start_counter.is_over() and self.out_valid
         return self.out
@@ -92,11 +92,11 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
         # average in freq axis
         avg_y = np.split(unshift.T, len(unshift.T) // self.AVG_FREQ_AXIS)
-        avg_y = np.sum(avg_y, axis=1)
+        avg_y = np.mean(avg_y, axis=1)
 
         # average in time axis
         avg_x = np.split(avg_y.T, len(avg_y.T) // self.AVG_TIME_AXIS)
-        avg_x = np.sum(avg_x, axis=1)
+        avg_x = np.mean(avg_x, axis=1)
         return avg_x.flatten()
 
 

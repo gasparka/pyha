@@ -149,10 +149,10 @@ class Complex:
         return False
 
     def __call__(self, x, left=None, right=None):
-        if not left:
+        if left is None:
             left = self.left
 
-        if not right:
+        if right is None:
             right = self.right
 
         return Complex(complex(x), left, right, self.overflow_style,
@@ -207,11 +207,11 @@ class Complex:
         Also support mult by float.
         """
         other = self._convert_other_operand(other)
-        extra_bit = 1 # for complex mult
+        extra_bit = 1 # for complex mult, from addition
         if isinstance(other, (Sfix, float)):
             extra_bit = 0 # for real mult
 
-        left = min(self.left, other.left) + abs(min(self.left, other.left)) + extra_bit
+        left = (self.left + other.left + 1) + extra_bit
         right = self.right + other.right
         return Complex(self.val * other.val,
                        left,

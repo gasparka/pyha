@@ -18,6 +18,10 @@ package complex_pkg is
     constant overflow_style : fixed_overflow_style_type := fixed_wrap;
     constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t;
 
+  function resize(a:complex_t; size_res: complex_t;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t;
+
   function Complex(real, imag:sfixed) return complex_t;
   function Complex(r :real; left_index, right_index:integer) return complex_t;
   function Complex(real, imag:real; left_index, right_index:integer) return complex_t;
@@ -250,6 +254,13 @@ package body complex_pkg is
     imag := resize(get_imag(a), left_index, right_index, overflow_style, round_style);
     result := Complex(real, imag);
     return result;
+  end function;
+
+  function resize(a:complex_t; size_res: complex_t;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+      constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t is
+  begin
+    return resize(a, complex_left(size_res'left), complex_right(size_res'right), overflow_style, round_style);
   end function;
 
   function Complex(real, imag:sfixed) return complex_t is

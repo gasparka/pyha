@@ -190,13 +190,15 @@ class R2SDF(Hardware):
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
 
-        max_gain_control_stages = 8
+        max_gain_control_stages = 10
         self.POST_GAIN_CONTROL = max(self.N_STAGES - max_gain_control_stages, 0)
 
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering, allow_gain_control=i < max_gain_control_stages)
                        for i in range(self.N_STAGES)]
 
         self.out = DataValid(Complex(0, -self.POST_GAIN_CONTROL, -17 - self.POST_GAIN_CONTROL))
+        # self.out = DataValid(Complex(0, 0, -17, round_style='round'))
+        # self.out = DataValid(Complex())
 
     def main(self, inp):
         var = inp
@@ -236,26 +238,6 @@ class R2SDF(Hardware):
             if self.POST_GAIN_CONTROL:
                 var *= 2**-self.POST_GAIN_CONTROL
             return var
-
-
-@pytest.mark.parametrize("fft_size", [256])
-@pytest.mark.parametrize("input_ordering", ['natural'])
-@pytest.mark.parametrize("inverse", [False])
-def test_LOLXZ(fft_size, input_ordering, inverse):
-    np.random.seed(0)
-    input_signal = np.random.uniform(-1, 1, fft_size*3) + np.random.uniform(-1, 1, fft_size*3) * 1j
-
-    if inverse:
-        input_signal /= fft_size
-    else:
-        input_signal *= 0.125
-
-    dut = R2SDF(fft_size, twiddle_bits=18, input_ordering=input_ordering, inverse=inverse)
-    sim = Simulator(dut, trace=True).run(input_signal)
-    if inverse:
-        sim.assert_equal(rtol=1e-3, atol=1e-3)
-    else:
-        sim.assert_equal(rtol=1e-4, atol=1e-4)
 
 
 @pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])

@@ -2,18 +2,71 @@ import logging
 import subprocess
 import sys, os
 import time
+from contextlib import suppress
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 from wurlitzer import pipes
 
-from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize, ContextManagerRefCounted
+from pyha import default_sfix, default_complex, Hardware
+from pyha.common.context_managers import SimulationRunning, RegisterBehaviour, AutoResize, ContextManagerRefCounted, \
+    SimPath
+from pyha.common.util import get_iterable
 from pyha.conversion.conversion import Converter
 from pyha.conversion.type_transforms import init_vhdl_type
 from pyha.synthesis.quartus import make_quartus_project, QuartusDockerWrapper
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
+
+
+def convert_input_types(args, to_types=None, silence=False, input_callback=None):
+    if not silence:
+        logger.info(f'Converting simulation inputs to hardware types...')
+
+    def convert_arg(default_type, arg, i):
+        # args_orig = deepcopy(args[i])
+        t = default_type
+        if to_types is not None:
+            t = to_types[i]
+
+        ret = [t(x) for x in arg]
+        # if not silence:
+        #     l = pd.DataFrame({'original': args_orig, 'converted': ret})
+        #     logger.debug(f'Converted {i}. input:\n {l}')
+        return ret
+
+    args = list(args)
+
+    def is_list(x):
+        return isinstance(x, (list, np.ndarray))
+
+    with SimPath('inputs'):
+        for i, arg in enumerate(args):
+            arg = get_iterable(arg)
+
+            if to_types is not None and not is_list(arg[0]):
+                args[i] = convert_arg(None, arg, i)
+            elif any(isinstance(x, (float, np.floating)) for x in arg):
+                args[i] = convert_arg(default_sfix, arg, i)
+
+            elif any(isinstance(x, (complex, np.complexfloating)) for x in arg):
+                args[i] = convert_arg(default_complex, arg, i)
+
+            elif isinstance(arg[0], Hardware):
+                for x in arg:
+                    x._pyha_floats_to_fixed()
+
+            elif is_list(arg[0]):
+                # input is 2D array -> turn into packets (1D list of Stream objects)
+                args[i] = convert_input_types(arg, silence=True, to_types=to_types)  # dont apply input callback here..
+
+    if input_callback:
+        for i in range(len(args)):
+            args[i] = input_callback(args[i])
+
+    return args
 
 
 class Tracer:
@@ -91,7 +144,8 @@ class Tracer:
         # remove duplicate traces e.g. input of a block is same as previous output!
         tmp = [time_sorted[0]]  # always include first input
         for x in time_sorted:
-            if not np.array_equal(x.data_model, tmp[-1].data_model) or not np.array_equal(x.data_pyha, tmp[-1].data_pyha):
+            if not np.array_equal(x.data_model, tmp[-1].data_model) or not np.array_equal(x.data_pyha,
+                                                                                          tmp[-1].data_pyha):
                 tmp.append(x)
 
         ret = {x.label: np.array([x.data_model, x.data_pyha]) for x in tmp}
@@ -100,6 +154,7 @@ class Tracer:
 
 class Plotter:
     figsize = (9.75, 5)
+
     def __init__(self):
         pass
 
@@ -124,7 +179,8 @@ class Plotter:
                 ax[1].grid(True)
                 ax[1].legend(loc='upper right')
             elif isinstance(simulations[MODEL][0], complex):
-                fig, ax = plt.subplots(2, 2, sharex="all", figsize=Plotter.figsize, gridspec_kw={'height_ratios': [4, 2]})
+                fig, ax = plt.subplots(2, 2, sharex="all", figsize=Plotter.figsize,
+                                       gridspec_kw={'height_ratios': [4, 2]})
 
                 if name:
                     fig.suptitle(name, fontsize=14, fontweight='bold')
@@ -161,7 +217,6 @@ class Plotter:
                 if isinstance(simulations[MODEL][0], complex):
                     gain *= 0.707
 
-
             fig, ax = plt.subplots(2, sharex="all", figsize=Plotter.figsize, gridspec_kw={'height_ratios': [4, 2]})
 
             if name:
@@ -178,7 +233,7 @@ class Plotter:
             ax[0].grid(True)
             ax[0].legend(loc='upper right')
 
-            ax[1].plot(freq, 20*np.log10(spec_model) - 20*np.log10(spec_pyha), label='Error')
+            ax[1].plot(freq, 20 * np.log10(spec_model) - 20 * np.log10(spec_pyha), label='Error')
             ax[1].grid(True)
             ax[1].legend(loc='upper right')
 
@@ -225,7 +280,9 @@ class Plotter:
 
 class Simulator:
     MODEL, PYHA, RTL, NETLIST = 0, 1, 2, 3
-    def __init__(self, model, trace=False, extra_simulations=[], output_dir=None):
+
+    def __init__(self, model, trace=False, extra_simulations=[], output_dir=None, pipeline_flush=0):
+        self.pipeline_flush = pipeline_flush
         self.output_dir = output_dir
         self.extra_simulations = extra_simulations
         self.model = model
@@ -235,34 +292,34 @@ class Simulator:
         self.trace_data = None
         self.quartus = None
 
-    def run(self, *inputs):
-        def handle_output(model_output):
-            if isinstance(model_output, tuple):  # multiple return
+    def _handle_output(self, model_output):
+        if isinstance(model_output, tuple):  # multiple return
+            try:
+                # DataValid?
+                return [val.data._pyha_to_python_value() for val in model_output if val.valid]
+            except AttributeError:
                 try:
-                    # DataValid?
-                    return [val.data._pyha_to_python_value() for val in model_output if val.valid]
+                    # not DataValid, some Pyha type?
+                    return [val._pyha_to_python_value() for val in model_output]
                 except AttributeError:
-                    try:
-                        # not DataValid, some Pyha type?
-                        return [val._pyha_to_python_value() for val in model_output]
-                    except AttributeError:
-                        # not Pyha type. For example maybe an bultin e.g int
-                        return model_output
-            else:
+                    # not Pyha type. For example maybe an bultin e.g int
+                    return model_output
+        else:
+            try:
+                # DataValid?
+                if model_output.valid:
+                    return model_output.data._pyha_to_python_value()
+                else:
+                    return []
+            except AttributeError:
                 try:
-                    # DataValid?
-                    if model_output.valid:
-                        return [model_output.data._pyha_to_python_value()]
-                    else:
-                        return []
+                    # not DataValid, some Pyha type?
+                    return model_output._pyha_to_python_value()
                 except AttributeError:
-                    try:
-                        # not DataValid, some Pyha type?
-                        return [model_output._pyha_to_python_value()]
-                    except AttributeError:
-                        # not Pyha type. For example maybe an bultin e.g int
-                        return [model_output]
+                    # not Pyha type. For example maybe an bultin e.g int
+                    return model_output
 
+    def run(self, *inputs):
         Tracer.traced_objects.clear()
         if self.trace:
             self.model._pyha_insert_tracer(label='self')
@@ -272,42 +329,70 @@ class Simulator:
 
         with SimulationRunning.enable():
             logger.info(f'Running "MODEL" simulation...')
-            model_result = np.array(self.model.model_main(*inputs))
-            if model_result.ndim == 1: # single return channel -> need to expand_dims
-                model_result = np.expand_dims(model_result, axis=0)
+            if not hasattr(self.model, 'model_main'):
+                logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
+                self.out = np.ndarray(shape=(4, len(inputs[0])), dtype=np.object)
+            else:
+                model_result = np.array(self.model.model_main(*inputs))
                 self.out = np.ndarray(shape=((4,) + model_result.shape), dtype=model_result.dtype)
-            self.out[Simulator.MODEL] = model_result
+                self.out[Simulator.MODEL] = model_result
 
             logger.info(f'Running "PYHA" simulation...')
-            inputs = self.model._pyha_simulation_input_callback(inputs)
+            if hasattr(self.model, '_pyha_simulation_input_callback'):
+                inputs = self.model._pyha_simulation_input_callback(inputs)
+            else:
+                args = convert_input_types(inputs, None)
+
+                def transpose(args):
+                    try:
+                        return [x for x in zip(*args)]
+                    except TypeError:
+                        return [args]
+
+                inputs = transpose(args)
+
+            self.inputs_and_flush = inputs
+            if self.pipeline_flush:
+                # duplicate input args to flush pipeline
+                target_len = len(inputs) + self.pipeline_flush
+                inputs += inputs * int(np.ceil(self.pipeline_flush / len(inputs)))
+                self.inputs_and_flush = inputs[:target_len]
+
             valid_samples = 0
+            tick_counter = 0
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
-                    for input in tqdm(inputs, file=sys.stderr):
+                    for input in tqdm(self.inputs_and_flush, file=sys.stderr):
                         returns = self.model.main(*input)
-                        returns = handle_output(returns)
-                        if returns:
-                            self.out[Simulator.PYHA, :, valid_samples] = returns
+                        returns = self._handle_output(returns)
+                        if returns != [] and tick_counter >= self.pipeline_flush:
+                            self.out[Simulator.PYHA][valid_samples] = returns
                             valid_samples += 1
+                        else:
+                            lol = 1
+                            pass
 
                         self.model._pyha_update_registers()
+                        tick_counter += 1
 
-                    logger.info(
-                        f'Flushing the pipeline to collect {len(self.out[Simulator.MODEL, -1])} valid samples (currently have {valid_samples})')
-                    hardware_delay = 0
-                    while valid_samples != len(self.out[Simulator.MODEL, -1]):
-                        hardware_delay += 1
-                        returns = self.model.main(*inputs[-1])
-                        returns = handle_output(returns)
-                        if returns:
-                            self.out[Simulator.PYHA, :, valid_samples] = returns
-                            valid_samples += 1
-                        self.model._pyha_update_registers()
+                    if valid_samples != len(self.out[Simulator.MODEL]):
+                        logger.info(
+                            f'Flushing the pipeline to collect {len(self.out[Simulator.MODEL])} valid samples (currently have {valid_samples})')
+                        hardware_delay = 0
+                        while valid_samples != len(self.out[Simulator.MODEL]):
+                            hardware_delay += 1
+                            returns = self.model.main(*inputs[-1])
+                            returns = self._handle_output(returns)
+                            if returns != []:
+                                self.out[Simulator.PYHA][valid_samples] = returns
+                                valid_samples += 1
+                            self.model._pyha_update_registers()
+                            tick_counter += 1
 
-                    self.hardware_delay = hardware_delay
-                    logger.info(f'Hardware delay is {self.hardware_delay}')
+                        self.hardware_delay = hardware_delay
+                        logger.info(f'Hardware delay is {self.hardware_delay}')
 
-        self.inputs_and_flush = np.array(inputs.tolist() + [inputs[-1]] * self.hardware_delay)
+                        self.inputs_and_flush = np.array(inputs.tolist() + [inputs[-1]] * self.hardware_delay)
         if self.trace:
             self.trace_data = Tracer.get_sorted_traces()
 
@@ -333,11 +418,11 @@ class Simulator:
         """
         indata = []
         for arguments in self.inputs_and_flush:
-            # if len(arguments) == 1:
-            # l = [init_vhdl_type('-', arguments[0], arguments[0])._pyha_serialize()]
-            l = [init_vhdl_type('-', arguments, arguments)._pyha_serialize()]
-            # else:
-            # l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
+            if len(arguments) == 1:
+                l = [init_vhdl_type('-', arguments[0], arguments[0])._pyha_serialize()]
+            # l = [init_vhdl_type('-', arguments, arguments)._pyha_serialize()]
+            else:
+                l = [init_vhdl_type('-', arg, arg)._pyha_serialize() for arg in arguments]
             indata.append(l)
 
         np.save(str(self.converter.base_path / 'input.npy'), indata)
@@ -384,7 +469,8 @@ class Simulator:
                 except TypeError:  # happend when outp[i] is single float
                     outp[i] = [outp[i]]
 
-        return np.array([x.data for x in outp if x.valid])
+        res = [self._handle_output(x) for x in outp][self.pipeline_flush:]
+        return np.array(res).flatten()
 
     def plot_trace(self, mode=None, skip_first_n=0, inout_only=False, **kwargs):
         if not mode:
