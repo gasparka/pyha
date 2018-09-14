@@ -1,16 +1,9 @@
-import logging
-from copy import deepcopy
-
 import numpy as np
 import pytest
-
-from pyha import Hardware, simulate, sims_close, Complex, resize, scalb, Simulator, default_complex
+from pyha import Hardware, simulate, sims_close, Complex, resize, scalb, default_complex
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValid, NumpyToDataValid, DataValidToNumpy, DownCounter
+from pyha.cores import DataValid, NumpyToDataValid, DownCounter
 from pyha.cores.util import toggle_bit_reverse
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('fft')
 
 
 def numpy_model(inp, fft_size, input_ordering='natural', inverse=False):
@@ -190,15 +183,13 @@ class R2SDF(Hardware):
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
 
-        max_gain_control_stages = 10
+        max_gain_control_stages = 9
         self.POST_GAIN_CONTROL = max(self.N_STAGES - max_gain_control_stages, 0)
 
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering, allow_gain_control=i < max_gain_control_stages)
                        for i in range(self.N_STAGES)]
 
         self.out = DataValid(Complex(0, -self.POST_GAIN_CONTROL, -17 - self.POST_GAIN_CONTROL))
-        # self.out = DataValid(Complex(0, 0, -17, round_style='round'))
-        # self.out = DataValid(Complex())
 
     def main(self, inp):
         var = inp
@@ -221,7 +212,7 @@ class R2SDF(Hardware):
         return self.out
 
     def model_main(self, inp):
-        from pyha.simulation.simulation import Tracer
+        from pyha.simulation.tracer import Tracer
         if not Tracer.is_enabled():
             return numpy_model(inp, self.FFT_SIZE, self.INPUT_ORDERING, self.INVERSE)
         else:

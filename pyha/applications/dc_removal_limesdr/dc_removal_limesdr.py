@@ -1,5 +1,5 @@
 import numpy as np
-from pyha import Hardware, Complex, Simulator, get_data_file, load_complex64_file
+from pyha import Hardware, Complex, get_data_file, load_complex64_file
 from pyha.cores import DataValid, DCRemoval, NumpyToDataValid
 
 
@@ -16,7 +16,7 @@ class DCRemovalLimeSDR(Hardware):
         self.out = DataValid(Complex(0, 0, -15, round_style='round'))
 
     def main(self, inp):
-        # potentail bug: convert inp to 18bit signal??
+        # potential bug: convert inp to 18bit signal??
         nodc = self.dc_removal.main(inp)
         self.out.data = nodc.data
         self.out.valid = nodc.valid

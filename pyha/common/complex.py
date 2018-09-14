@@ -33,11 +33,12 @@ class Complex:
     -0.50+0.50j [0:-17]
 
     """
-    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed')
+    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed', 'bits')
 
     def __init__(self, val=0.0 + 0.0j, left=0, right=-17, overflow_style='wrap', round_style='truncate',
-                 init_only=False, wrap_is_ok=False, signed=True):
+                 init_only=False, wrap_is_ok=False, signed=True, bits=None):
 
+        self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
@@ -157,6 +158,12 @@ class Complex:
 
         return Complex(complex(x), left, right, self.overflow_style,
                     self.round_style, False, self.wrap_is_ok, self.signed)
+
+    def __len__(self):
+        if self.signed:
+            return -self.right + self.left + 1
+        else:
+            return -self.right + self.left
 
     def __str__(self):
         return '{:g} [{}:{}]'.format(complex(self), self.left, self.right)

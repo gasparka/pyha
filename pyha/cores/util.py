@@ -43,7 +43,7 @@ def show_plot():
     plt.show()
 
 
-def imshow(im, rescale=True):
+def imshow_rescale(im, rescale=True):
     import matplotlib.pyplot as plt
     im = np.array(im)
     if rescale:

@@ -95,13 +95,6 @@ package body complex_pkg is
     variable new_real, new_imag : sfixed (l_left_index + r_left_index+1+1 downto l'low/2 + r'low/2);
     variable result : complex_t (complex_left(new_real'left) downto complex_right(new_real'right));
   begin
-    report to_string(l'left/2);
-    report to_string(r'low/2);
-
-    report to_string(new_real'left);
-    report to_string(new_real'right);
-    report to_string(result'left);
-    report to_string(result'right);
     new_real := (get_real(l) * get_real(r)) - (get_imag(l) * get_imag(r));
     new_imag := (get_real(l) * get_imag(r)) + (get_imag(l) * get_real(r));
     result := Complex(new_real, new_imag);

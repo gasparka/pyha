@@ -1,14 +1,29 @@
-import logging
-
 import numpy as np
 import pytest
+from scipy.signal import get_window
 
-from pyha import Hardware, simulate, sims_close, Complex, default_complex, Simulator
+from pyha import Hardware, simulate, sims_close, Complex, default_complex
 from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool, DataValidToNumpy, NumpyToDataValid
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('spectrogram')
 
+def numpy_model(x, fft_size, avg_freq_axis, avg_time_axis, window_type='hanning'):
+    """ DC removal here is inferior to the one used in hardware! """
+    no_dc = x - np.mean(x)
+    resh = np.reshape(no_dc, (-1, fft_size))
+    windowed = resh * get_window(window_type, fft_size)
+    transform = np.fft.fft(windowed) / fft_size
+    power = (transform * np.conj(transform)).real
+
+    unshift = np.fft.fftshift(power, axes=1)
+
+    # average in freq axis
+    avg_y = np.split(unshift.T, len(unshift.T) // avg_freq_axis)
+    avg_y = np.average(avg_y, axis=1)
+
+    # average in time axis
+    avg_x = np.split(avg_y.T, len(avg_y.T) // avg_time_axis)
+    avg_x = np.average(avg_x, axis=1)
+    return avg_x
 
 class Spectrogram(Hardware):
     def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,

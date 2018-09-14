@@ -3,11 +3,11 @@ import inspect
 import logging
 import tempfile
 import textwrap
+import time
 from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 import os, shutil
-from redbaron import RedBaron
 
 import pyha
 from pyha.common.context_managers import ContextManagerRefCounted
@@ -55,8 +55,11 @@ class Converter:
         if not self.src_util_path.exists():
             os.makedirs(self.src_util_path)
 
+        start = time.time()
         self.conv = RecursiveConverter(self.model)
         self.vhdl_sources = self.get_conversion_sources()
+        end = time.time()
+        logger.info(f'Took {end-start:.2f} seconds')
         return self
 
     def get_vhdl_sources_relative(self):
@@ -103,7 +106,7 @@ def get_objects_rednode(obj):
     This mocks the inspect module to improve the code search resolution (in general inspect finds all the classes from file that match the name and just returns the first)
 
     """
-
+    from redbaron import RedBaron
     # walk til the first 'locals'
     # Example __qualname__: 'TestClassNodeConv.test_get_datamodel.<locals>.T'
     parent = inspect.getmodule(obj)

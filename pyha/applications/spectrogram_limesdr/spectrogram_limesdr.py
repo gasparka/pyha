@@ -1,10 +1,7 @@
 import logging
-import time
-
 import numpy as np
 import pytest
-
-from pyha import Hardware, simulate, sims_close, Complex, Sfix, Simulator, right_index, resize, load_complex64_file
+from pyha import Hardware, simulate, sims_close, Complex, Sfix, load_complex64_file, get_data_file
 from pyha.cores import NumpyToDataValid, DataValid, Spectrogram
 
 logging.basicConfig(level=logging.INFO)
@@ -24,20 +21,29 @@ class SpectrogramLimeSDR(Hardware):
         fft_twiddle_bits = 9
         window_bits = 8
         self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
-        self.out = DataValid(Sfix())
+        # TODO: add 'upper_bits=32'? could be unsigned!
+        self.out = DataValid(Sfix(0.0, left=-12, right=-43, round_style='round', overflow_style='saturate'))
 
     def main(self, inp):
 
         spect = self.spect.main(inp)
 
-        # take last 32 bits, this is what is sent to the computer
-        self.out.data = resize(spect.data, left=right_index(spect.data) + 32, right=right_index(spect.data))
+        self.out.data = spect.data
         self.out.valid = spect.valid
 
         return self.out
 
     def model_main(self, inp):
         return self.spect.model_main(inp)
+
+
+def test_lol():
+    file = get_data_file('phantom3_low_power_bladerf.complex64')
+    l = 1024 * 16
+    input_signal = load_complex64_file(file)[:l]
+    input_signal = input_signal[:len(input_signal) // (l) * (l)]
+    dut = SpectrogramLimeSDR()
+    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
 
 
 def test_all():

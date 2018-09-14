@@ -4,6 +4,14 @@ import collections
 import numpy as np
 
 
+def is_complex(x):
+    return isinstance(x, (complex, np.complexfloating))
+
+
+def is_float(x):
+    return isinstance(x, (float, np.floating))
+
+
 def to_twoscomplement(bits, value):
     # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
     if value < 0:

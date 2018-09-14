@@ -4,7 +4,7 @@ from contextlib import suppress
 
 from parse import parse
 from redbaron import Node, EndlNode, DefNode, AssignmentNode, TupleNode, CommentNode, FloatNode, \
-    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, RedBaron, \
+    IntNode, UnitaryOperatorNode, GetitemNode, inspect, CallNode, AtomtrailersNode, CallArgumentNode, \
     BinaryOperatorNode, ComplexNode, AssociativeParenthesisNode
 from redbaron.base_nodes import LineProxyList
 
@@ -517,7 +517,7 @@ class ClassNodeVHDL(NodeVHDL):
     def build_constructor(self, prototype_only=False):
         template = textwrap.dedent("""\
             function {NAME}{ARGS} return self_t is
-                -- limited constructor
+                -- constructor
                 variable self: self_t;
             begin
             {DATA}

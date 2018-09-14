@@ -215,9 +215,14 @@ class Meta(type):
 def auto_resize(target, value):
     if not AutoResize.is_enabled() or not isinstance(target, (Sfix, Complex)) or Sfix._float_mode.enabled:
         return value
-
-    left = target.left if target.left is not None else value.left
-    right = target.right if target.right is not None else value.right
+    if target.bits is not None:
+        right = value.right
+        left = right + target.bits
+        if target.signed:
+            left -= 1  # -1 is to count for the sign bit!
+    else:
+        left = target.left if target.left is not None else value.left
+        right = target.right if target.right is not None else value.right
     return target(value, left, right)
     # return resize(value, left, right, round_style=target.round_style,
     #               overflow_style=target.overflow_style, wrap_is_ok=target.wrap_is_ok, signed=target.signed)
@@ -253,7 +258,7 @@ class PyhaList(UserList):
                 with SimPath(f'{self.var_name}[{i}]='):
                     y = auto_resize(self.data[i], y)
 
-                # lazy bounds feature, if bounds is None, take the bound from assgned value
+                # lazy bounds feature, if bounds is None, take the bound from assigned value
                 if self.data[i].left is None:
                     for x, xn in zip(self.data, self._pyha_next):
                         x.left = y.left
@@ -387,7 +392,7 @@ class Hardware(with_metaclass(Meta)):
                 self.__dict__[method_str] = new
 
     def _pyha_insert_tracer(self, label=''):
-        from pyha.simulation.simulation import Tracer
+        from pyha.simulation.tracer import Tracer
         for k, v in self.__dict__.items():
             if k == '_pyha_initial_self':
                 continue

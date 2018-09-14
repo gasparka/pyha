@@ -1722,6 +1722,7 @@ class TestFloatToSfix:
 
     def test_basic_sim(self):
         """ This can fail if automatic conversion of INITS to fixed is not enabled! """
+        pytest.skip('Relies on useless feature, model to fixed')
         dut = self.D()
         inp = [0]
         r = simulate(dut, inp, simulations=['MODEL_PYHA', 'PYHA', 'RTL'])

@@ -1,18 +1,19 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Complex, resize, Sfix, default_complex, Simulator
+from pyha import Hardware, Complex, resize, Sfix, default_complex
 from pyha.cores import NumpyToDataValid, DataValid, simulate, sims_close
 
 
 class FFTPower(Hardware):
     """ Turns FFT result into power ~equalish to : abs(fft_result)
     Note that this core consumes Complex samples but outputs Sfix samples.
+    TODO: Should output unsigned
     """
 
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-        self.out = DataValid(Sfix())
+        self.out = DataValid(Sfix(bits=36))
 
     def main(self, inp):
         if not inp.valid:
@@ -36,11 +37,14 @@ def test_all(input_power):
     assert sims_close(sims, rtol=1e-20, atol=1e-20)
 
 
-
 def test_nonstandard_input_size():
     input_power = 0.0001
     dut = FFTPower()
-    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype=Complex(0, -3, -21, round_style='round'))
+
+    dtype = Complex(0, -4, -21, round_style='round')
+
+    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype)
     inp = (np.random.uniform(-1, 1, size=64) + np.random.uniform(-1, 1, size=64) * 1j) * input_power
-    sims = simulate(dut, inp, pipeline_flush='auto')
-    assert sims_close(sims, rtol=1e-10, atol=1e-10)
+    inp = [complex(dtype(x)) for x in inp]
+    sims = simulate(dut, inp, pipeline_flush='auto', conversion_path='/tmp/pyha_output')
+    assert sims_close(sims, rtol=1e-20, atol=1e-20)

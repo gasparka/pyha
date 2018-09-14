@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Sfix, resize, Simulator, scalb
+from pyha import Hardware, Sfix, resize, scalb
 from pyha.common.ram import RAM
-from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, DownCounter, simulate, sims_close
-from pyha.cores.util import toggle_bit_reverse, snr
+from pyha.cores import NumpyToDataValid, DataValid, DownCounter, simulate, sims_close
+from pyha.cores.util import toggle_bit_reverse
 
 
 def build_lut(fft_size, freq_axis_decimation):
@@ -17,7 +17,9 @@ def build_lut(fft_size, freq_axis_decimation):
 
 
 class BitreversalFFTshiftAVGPool(Hardware):
-    """ Performs bitreversal, fftshift and average pooling by using 2 BRAM blocks. """
+    """ Performs bitreversal, fftshift and average pooling by using 2 BRAM blocks.
+    TODO: this core should be unsigned...
+    """
     def __init__(self, fft_size, avg_freq_axis, avg_time_axis):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
 
@@ -30,12 +32,12 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
         self.time_axis_counter = self.AVG_TIME_AXIS
         self.state = True
-        self.ram = [RAM([Sfix(0.0, 0, -35)] * (fft_size // avg_freq_axis)),
-                    RAM([Sfix(0.0, 0, -35)] * (fft_size // avg_freq_axis))]
+        self.ram = [RAM([Sfix(0.0)] * (fft_size // avg_freq_axis)),
+                    RAM([Sfix(0.0)] * (fft_size // avg_freq_axis))]
         self.out_valid = False
         self.control = 0
 
-        self.out = DataValid(Sfix(), valid=False) # first self.ACCUMULATION_BITS actually not used
+        self.out = DataValid(Sfix())
         self.final_counter = DownCounter(self.FFT_SIZE / self.AVG_FREQ_AXIS + 1)
         self.start_counter = DownCounter(fft_size + 1)
 
@@ -44,8 +46,8 @@ class BitreversalFFTshiftAVGPool(Hardware):
         write_index = self.LUT[self.control]
         write_index_future = self.LUT[(self.control + 1) % self.FFT_SIZE]
         read = self.ram[write_ram].delayed_read(write_index_future)
-        res = resize(read + data, size_res=data)
-        self.ram[write_ram].delayed_write(write_index, res)
+        new_value = resize(read + data, size_res=data)
+        self.ram[write_ram].delayed_write(write_index, new_value)
 
         # output stage
         self.out_valid = False
@@ -54,7 +56,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
             self.out_valid = True
 
             # clear memory
-            self.ram[read_ram].delayed_write(self.control, Sfix(0.0, 0, -35))
+            self.ram[read_ram].delayed_write(self.control, Sfix(0.0, size_res=data))
 
     def main(self, inp):
         if not inp.valid:
@@ -113,4 +115,24 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
 
     dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
     sim_out = simulate(dut, orig_inp_quant, pipeline_flush='auto')
+    assert sims_close(sim_out, rtol=1e-30, atol=1e-30)
+
+
+@pytest.mark.parametrize("avg_freq_axis", [2])
+@pytest.mark.parametrize("avg_time_axis", [1])
+@pytest.mark.parametrize("fft_size", [128])
+@pytest.mark.parametrize("input_power", [0.001])
+def test_nonstandard_input_size(fft_size, avg_freq_axis, avg_time_axis, input_power):
+    np.random.seed(0)
+    avg_time_axis = 1
+    packets = avg_time_axis + 1
+
+    dtype = Sfix(0, -4, -40, round_style='round')
+
+    dut = BitreversalFFTshiftAVGPool(fft_size, avg_freq_axis, avg_time_axis)
+    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype)
+
+    inp = np.random.uniform(-1, 1, packets * fft_size) * input_power
+    inp = [float(dtype(x)) for x in inp]
+    sim_out = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
     assert sims_close(sim_out, rtol=1e-30, atol=1e-30)

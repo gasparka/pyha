@@ -78,11 +78,12 @@ class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
 
-    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val')
+    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val', 'bits')
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True):
+                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True, bits=None, size_res=None):
 
+        self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
@@ -96,6 +97,9 @@ class Sfix:
         if isinstance(left, Sfix):
             self.right = left.right
             self.left = left.left
+        elif size_res is not None:
+            self.right = size_res.right
+            self.left = size_res.left
         else:
             self.right = int(right) if right else right
             self.left = int(left) if left else left
@@ -153,12 +157,12 @@ class Sfix:
         fmax = 2 ** self.left  # no need to substract minimal step, 0.9998... -> 1.0 will still be wrapped as max bit pattern
         new_val = (self.val - fmin) % (fmax - fmin) + fmin
         if not self.wrap_is_ok and self.signed:
-            # if str(SimPath) != 'inputs':
-                # try:
-                #     import pydevd
-                #     pydevd.settrace()
-                # except ModuleNotFoundError:  # this happens when ran in 'Run' mode instead of 'Debug'
-                #     pass
+            if str(SimPath) != 'inputs':
+                try:
+                    import pydevd
+                    pydevd.settrace()
+                except ModuleNotFoundError:  # this happens when ran in 'Run' mode instead of 'Debug'
+                    pass
             logger.error(f'WRAP {self.val:g} -> {new_val:g}\t[{SimPath}]')
         self.val = new_val
 
@@ -331,7 +335,10 @@ class Sfix:
 
     def scalb(self, i):
         n = 2 ** i
-        return Sfix(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+        try:
+            return Sfix(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+        except TypeError: # some bound is None
+            return Sfix(self.val * n, overflow_style='saturate', round_style='round')
 
     def __abs__(self):
         return Sfix(abs(self.val),
@@ -379,7 +386,7 @@ class Sfix:
 
 
 def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
-           signed=True) -> Sfix:
+           signed=None) -> Sfix:
     """
     Resize fixed point number.
 
@@ -405,7 +412,8 @@ def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', r
 
 
     """
-
+    if signed is None:
+        signed = fix.signed
     try:
         return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style,
                           wrap_is_ok=wrap_is_ok, signed=signed)
