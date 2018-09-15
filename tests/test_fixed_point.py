@@ -598,7 +598,8 @@ class TestIndexing:
         index = np.random.uniform(-8, 8, N).astype(int)
         bit_val = np.random.uniform(0, 1, N).astype(bool)
 
-        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool],
+                        simulations=['PYHA', 'RTL', 'GATE'])
         assert sims_close(sims)
 
 
@@ -617,6 +618,7 @@ def test_float_bounds():
     sims = simulate(dut, inp)
     assert sims_close(sims)
 
+
 class TestUnsigned:
     def test_wrapping_add(self):
         class Dut(Hardware):
@@ -632,4 +634,23 @@ class TestUnsigned:
         inp = list(range(128))
 
         sims = simulate(dut, inp)
+        assert sims_close(sims)
+
+
+class TestUpperBits:
+    def test_signed(self):
+        class Dut(Hardware):
+            def __init__(self):
+                self.reg = Sfix(upper_bits=15)
+
+            def main(self, inp):
+                self.reg = inp
+                return self.reg
+
+        dut = Dut()
+        inp = np.random.uniform(-1, 1, 32)
+
+        sims = simulate(dut, inp, input_types=[Sfix(left=-3, right=-43)], simulations=['PYHA', 'RTL'])
+        assert dut.reg.left == -3
+        assert dut.reg.right == -17
         assert sims_close(sims)

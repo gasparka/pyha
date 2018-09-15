@@ -9,6 +9,7 @@ class FFTPower(Hardware):
     """ Turns FFT result into power ~equalish to : abs(fft_result)
     Note that this core consumes Complex samples but outputs Sfix samples.
     TODO: Should output unsigned
+    TODO: rename to MultConjugate?
     """
 
     def __init__(self):
@@ -19,8 +20,8 @@ class FFTPower(Hardware):
         if not inp.valid:
             return DataValid(self.out.data, valid=False)
 
-        conjugate = resize(Complex(inp.data.real, -inp.data.imag), size_res=inp.data)
-        self.out.data = (conjugate * inp.data).real
+        # (a + bi)(a - bi) = a**2 + b**2
+        self.out.data = (inp.data.real * inp.data.real) + (inp.data.imag * inp.data.imag)
         self.out.valid = inp.valid
         return self.out
 
@@ -33,7 +34,7 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    sims = simulate(dut, inp, pipeline_flush='auto')
+    sims = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'PYHA'])
     assert sims_close(sims, rtol=1e-20, atol=1e-20)
 
 

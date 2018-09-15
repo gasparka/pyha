@@ -183,7 +183,7 @@ class R2SDF(Hardware):
         self.FFT_SIZE = fft_size
         self.N_STAGES = int(np.log2(fft_size))
 
-        max_gain_control_stages = 9
+        max_gain_control_stages = 10
         self.POST_GAIN_CONTROL = max(self.N_STAGES - max_gain_control_stages, 0)
 
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering, allow_gain_control=i < max_gain_control_stages)

@@ -46,7 +46,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         write_index = self.LUT[self.control]
         write_index_future = self.LUT[(self.control + 1) % self.FFT_SIZE]
         read = self.ram[write_ram].delayed_read(write_index_future)
-        new_value = resize(read + data, size_res=data)
+        new_value = resize(read + data, size_res=data, overflow_style='saturate')
         self.ram[write_ram].delayed_write(write_index, new_value)
 
         # output stage

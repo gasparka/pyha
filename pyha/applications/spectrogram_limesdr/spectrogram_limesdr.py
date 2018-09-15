@@ -16,13 +16,14 @@ class SpectrogramLimeSDR(Hardware):
         # components
         fft_size = 1024*8
         avg_freq_axis = 16
-        avg_time_axis = 2
+        avg_time_axis = 8
         window_type = 'hamming'
-        fft_twiddle_bits = 9
+        fft_twiddle_bits = 8
         window_bits = 8
-        self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits)
-        # TODO: add 'upper_bits=32'? could be unsigned!
-        self.out = DataValid(Sfix(0.0, left=-12, right=-43, round_style='round', overflow_style='saturate'))
+        dc_removal_len = 1024
+        self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits, dc_removal_len)
+        # TODO: could be unsigned!
+        self.out = DataValid(Sfix(0.0, upper_bits=32, round_style='round'))
 
     def main(self, inp):
 
@@ -38,10 +39,11 @@ class SpectrogramLimeSDR(Hardware):
 
 
 def test_lol():
-    file = get_data_file('phantom3_low_power_bladerf.complex64')
-    l = 1024 * 16
-    input_signal = load_complex64_file(file)[:l]
+    l = 1024 * 8 * 2
+    input_signal = load_complex64_file('/home/gaspar/Documents/limem_ph3weak_40m')
+    print(len(input_signal))
     input_signal = input_signal[:len(input_signal) // (l) * (l)]
+    print(len(input_signal))
     dut = SpectrogramLimeSDR()
     sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
 

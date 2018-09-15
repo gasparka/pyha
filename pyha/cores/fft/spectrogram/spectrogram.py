@@ -27,7 +27,7 @@ def numpy_model(x, fft_size, avg_freq_axis, avg_time_axis, window_type='hanning'
 
 class Spectrogram(Hardware):
     def __init__(self, fft_size, avg_freq_axis=2, avg_time_axis=1, window_type='hanning', fft_twiddle_bits=18,
-                 window_bits=18):
+                 window_bits=18, dc_removal_len=1024):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
         self._pyha_simulation_output_callback = DataValidToNumpy()
         self.AVG_FREQ_AXIS = avg_freq_axis
@@ -36,7 +36,7 @@ class Spectrogram(Hardware):
         self.WINDOW_TYPE = window_type
 
         # components
-        self.dc_removal = DCRemoval(512, dtype=Complex)
+        self.dc_removal = DCRemoval(dc_removal_len)
         self.windower = Windower(fft_size, self.WINDOW_TYPE, coefficient_bits=window_bits)
         self.fft = R2SDF(fft_size, twiddle_bits=fft_twiddle_bits)
         self.power = FFTPower()

@@ -33,11 +33,12 @@ class Complex:
     -0.50+0.50j [0:-17]
 
     """
-    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed', 'bits')
+    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed', 'bits', 'upper_bits')
 
     def __init__(self, val=0.0 + 0.0j, left=0, right=-17, overflow_style='wrap', round_style='truncate',
-                 init_only=False, wrap_is_ok=False, signed=True, bits=None):
+                 init_only=False, wrap_is_ok=False, signed=True, bits=None, upper_bits=None):
 
+        self.upper_bits = upper_bits
         self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok

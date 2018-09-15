@@ -78,11 +78,12 @@ class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
 
-    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val', 'bits')
+    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val', 'bits', 'upper_bits')
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True, bits=None, size_res=None):
+                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True, bits=None, size_res=None, upper_bits=None):
 
+        self.upper_bits = upper_bits
         self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok

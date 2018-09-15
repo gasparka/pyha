@@ -217,9 +217,20 @@ def auto_resize(target, value):
         return value
     if target.bits is not None:
         right = value.right
-        left = right + target.bits
-        if target.signed:
-            left -= 1  # -1 is to count for the sign bit!
+        try:
+            left = right + target.bits
+            if target.signed:
+                left -= 1  # -1 is to count for the sign bit!
+        except TypeError:  # right was None?
+            left = None
+    elif target.upper_bits is not None:
+        left = value.left
+        try:
+            right = left - target.upper_bits
+            if target.signed:
+                right += 1  # +1 is to count for the sign bit!
+        except TypeError: # left was None?
+            right = None
     else:
         left = target.left if target.left is not None else value.left
         right = target.right if target.right is not None else value.right
