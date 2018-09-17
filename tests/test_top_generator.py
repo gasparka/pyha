@@ -97,7 +97,7 @@ def test_input_type_conversion(basic_obj):
 
 def test_dut_name(basic_obj):
     dut = basic_obj
-    expect = 'Register_0'
+    expect = 'Register_1'
 
     res = TopGenerator(dut)
 

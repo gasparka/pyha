@@ -38,7 +38,7 @@ class Windower(Hardware):
         return (shaped * self.window_pure).flatten()
 
 
-@pytest.mark.parametrize("fft_size", [4, 8, 16, 32, 64, 128, 256])
+@pytest.mark.parametrize("fft_size", [4, 8, 16, 32, 256])
 @pytest.mark.parametrize("input_power", [0.1, 0.001])
 def test_windower(fft_size, input_power):
     np.random.seed(0)

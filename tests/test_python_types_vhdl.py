@@ -116,41 +116,6 @@ class TestVHDLModule:
 
         self.dut = VHDLModule('name', T(), T())
 
-    def test_pyha_module_name(self):
-        class T(Hardware):
-            def __init__(self):
-                self.a = 0
-                self.b = Sfix(0, 0, -17)
-
-        class Root(Hardware):
-            def __init__(self):
-                self.a = T()
-                self.b = T()
-
-        dut = VHDLModule('name', Root(), Root())
-        expect = 'T_0'
-        assert dut.elems[0]._pyha_module_name() == expect
-        assert dut.elems[1]._pyha_module_name() == expect
-
-    def test_pyha_module_name_not_compatible(self):
-        class T(Hardware):
-            def __init__(self, n):
-                self.a = [1] * n
-                self.b = Sfix(0, 0, -17)
-
-        class Root(Hardware):
-            def __init__(self):
-                self.a = T(2)
-                self.b = T(3)
-
-        dut = VHDLModule('name', Root(), Root())
-        assert dut.elems[0]._pyha_module_name() == 'T_0'
-        assert dut.elems[1]._pyha_module_name() == 'T_1'
-
-    def test_pyha_type(self):
-        expect = 'T_0.self_t'
-        assert self.dut._pyha_type() == expect
-
     def test_pyha_type_is_compatible(self):
         class A(Hardware):
             def __init__(self, init):

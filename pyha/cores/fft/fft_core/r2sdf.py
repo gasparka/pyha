@@ -153,7 +153,7 @@ class StageR2SDF(Hardware):
         return ret.flatten()
 
 
-@pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
+@pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 128])
 @pytest.mark.parametrize("input_ordering", ['natural', 'bitreversed'])
 def test_stage_all(fft_size, input_ordering):
     np.random.seed(0)
@@ -231,7 +231,7 @@ class R2SDF(Hardware):
             return var
 
 
-@pytest.mark.parametrize("fft_size", [2, 4, 8, 16, 32, 64, 128, 256])
+@pytest.mark.parametrize("fft_size", [2, 4, 8, 128])
 @pytest.mark.parametrize("input_ordering", ['bitreversed', 'natural'])
 @pytest.mark.parametrize("inverse", [True, False])
 def test_all(fft_size, input_ordering, inverse):

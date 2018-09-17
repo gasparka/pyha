@@ -47,25 +47,7 @@ class MovingAverage(Hardware):
         return signal.lfilter(taps, [1.0], inputs)
 
 
-
-@pytest.mark.parametrize("window_len", [4])
-@pytest.mark.parametrize("input_power", [0.25])
-@pytest.mark.parametrize("dtype", [Sfix])
-def test_conv(window_len, input_power, dtype):
-    dut = MovingAverage(window_len=window_len, dtype=dtype)
-    N = window_len * 4
-    if dtype == Complex:
-        input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)
-    else:
-        input_signal = np.random.normal(size=N)
-
-    input_signal *= input_power
-
-    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
-    assert sims_close(sims, rtol=1e-5, atol=1e-5)
-
-
-@pytest.mark.parametrize("window_len", [2, 4, 8, 16, 32, 64, 128])
+@pytest.mark.parametrize("window_len", [2, 16, 64, 128])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):

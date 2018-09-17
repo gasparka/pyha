@@ -44,7 +44,7 @@ class DCRemoval(Hardware):
         y = delayed_input - avg_out
         return y
 
-@pytest.mark.parametrize("window_len", [4, 8, 16, 32, 64, 128, 256, 512])
+@pytest.mark.parametrize("window_len", [4, 32, 128])
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
