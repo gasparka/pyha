@@ -10,9 +10,9 @@ class DCRemovalLimeSDR(Hardware):
 
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=Complex(0.0, 0, -11, overflow_style='saturate'))
+            dtype=Complex(0.0, 0, -11, overflow_style='saturate', round_style='round'))
 
-        self.dc_removal = DCRemoval(window_len=256)
+        self.dc_removal = DCRemoval(window_len=512)
         self.out = DataValid(Complex(0, 0, -15, round_style='round'))
 
     def main(self, inp):

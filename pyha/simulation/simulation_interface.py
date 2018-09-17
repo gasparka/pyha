@@ -229,10 +229,6 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'Tracing is enabled, running "MODEL" and "PYHA" simulations')
         model._pyha_insert_tracer(label='self')
 
-    if 'RTL' in simulations or 'GATE' in simulations:
-        logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
-        model._pyha_enable_function_profiling_for_types()
-
     out = {}
     if 'MODEL' in simulations:
         logger.info(f'Running "MODEL" simulation...')
@@ -275,8 +271,12 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'OK!')
 
     if 'PYHA' in simulations:
-        # logger.info(f'Converting model to hardware types ...')
-        # model._pyha_floats_to_fixed()
+        if 'RTL' in simulations or 'GATE' in simulations:
+            logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
+            model._pyha_enable_function_profiling_for_types()
+
+        logger.info(f'Converting model to hardware types ...')
+        model._pyha_floats_to_fixed()
 
         if hasattr(model, '_pyha_simulation_input_callback'):
             args = model._pyha_simulation_input_callback(args)
@@ -410,7 +410,11 @@ def run_ghdl_cocotb(*inputs, converter=None, netlist=None, verbose=False):
                 outp[i] = [outp[i]]
 
     # skip Nones (invalid packets)
-    outp = [x for x in outp if x is not None]
+    try:
+        outp = [x for x in outp if x is not None]
+    except TypeError: # outp not a list?
+        pass
+
     return outp
 
 

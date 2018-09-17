@@ -1827,7 +1827,7 @@ class TestCallModifications:
 
         dut = T()
 
-        sims = simulate(dut, [1, 2, 3, 4, 5, 6], simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, [1, 2, 3, 4, 5, 6])
         assert sims_close(sims)
 
     def test_simple_submod(self):
