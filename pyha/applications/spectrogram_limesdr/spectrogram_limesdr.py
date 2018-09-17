@@ -23,7 +23,7 @@ class SpectrogramLimeSDR(Hardware):
         dc_removal_len = 1024
         self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits, dc_removal_len)
         # TODO: could be unsigned!
-        self.out = DataValid(Sfix(0.0, upper_bits=32, round_style='round'))
+        self.out = DataValid(Sfix(0.0, upper_bits=32)) # no need to round because result is positive i.e. truncation = rounding
 
     def main(self, inp):
 

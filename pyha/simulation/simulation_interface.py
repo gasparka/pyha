@@ -21,6 +21,18 @@ from pyha.synthesis.quartus import make_quartus_project, QuartusDockerWrapper
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('sim')
 
+_simulator_quartus = None
+
+
+def get_simulator_quartus():
+    global _simulator_quartus
+    return _simulator_quartus
+
+
+def set_simulator_quartus(val):
+    global _simulator_quartus
+    _simulator_quartus = val
+
 
 def convert_input_types(args, to_types=None, silence=False):
     if not silence:
@@ -73,22 +85,6 @@ def transpose(args):
         return [args]
 
 
-def have_ghdl():
-    try:
-        Path(shutil.which('ghdl'))
-        return True
-    except:
-        return False
-
-
-def have_quartus():
-    try:
-        Path(shutil.which('quartus_map'))
-        return True
-    except:
-        return False
-
-
 def process_outputs(delay_compensate, ret):
     # skip the initial pipeline outputs
     try:
@@ -103,20 +99,6 @@ def process_outputs(delay_compensate, ret):
     except:
         pass
     return ret
-
-
-_ran_gate_simulation = False
-
-
-def get_ran_gate_simulation():
-    global _ran_gate_simulation
-    return _ran_gate_simulation
-
-
-def set_ran_gate_simulation(val):
-    global _ran_gate_simulation
-    _ran_gate_simulation = val
-
 
 def pyha_to_python(simulation_output):
     """ Convert simulation output (e.g fixed-point value) to Python value (e.g. float).
@@ -137,45 +119,6 @@ def pyha_to_python(simulation_output):
         ret = handle_one(simulation_output)
 
     return ret
-
-def sanitize_simulations(model, simulations):
-    if simulations is None:
-        if hasattr(model, 'model_main'):
-            simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
-        else:
-            simulations = ['MODEL_PYHA', 'PYHA', 'RTL', 'GATE']
-
-    if 'MODEL' in simulations:
-        if not hasattr(model, 'model_main'):
-            logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
-            simulations.remove('MODEL')
-
-    if 'RTL' in simulations:
-        if 'PYHA' not in simulations:
-            logger.warning('SKIPPING **RTL** simulations -> You need to run "PYHA" simulation before "RTL" simulation')
-            simulations.remove('RTL')
-        elif 'PYHA_SKIP_RTL' in os.environ:
-            logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
-            simulations.remove('RTL')
-        elif Sfix._float_mode.enabled:
-            logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
-            simulations.remove('RTL')
-        # TODO: test for docker instead...
-        # elif not have_ghdl():
-        #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
-
-    if 'GATE' in simulations:
-        if 'PYHA' not in simulations:
-            logger.warning(
-                'SKIPPING **GATE** simulations -> You need to run "PYHA" simulation before "GATE" simulation')
-            simulations.remove('GATE')
-        elif 'PYHA_SKIP_GATE' in os.environ:
-            logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-            simulations.remove('GATE')
-        elif Sfix._float_mode.enabled:
-            logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
-            simulations.remove('GATE')
-    return simulations
 
 
 def simulate(model, *args, simulations=None, conversion_path=None, input_types=None,
@@ -221,8 +164,44 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     """
     from pyha.simulation.tracer import Tracer
     Tracer.traced_objects.clear()
+    set_simulator_quartus(None)
 
-    simulations = sanitize_simulations(model, simulations)
+    if simulations is None:
+        if hasattr(model, 'model_main'):
+            simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
+        else:
+            simulations = ['MODEL_PYHA', 'PYHA', 'RTL', 'GATE']
+
+    if 'MODEL' in simulations:
+        if not hasattr(model, 'model_main'):
+            logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
+            simulations.remove('MODEL')
+
+    if 'RTL' in simulations:
+        if 'PYHA' not in simulations:
+            logger.warning('SKIPPING **RTL** simulations -> You need to run "PYHA" simulation before "RTL" simulation')
+            simulations.remove('RTL')
+        elif 'PYHA_SKIP_RTL' in os.environ:
+            logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
+            simulations.remove('RTL')
+        elif Sfix._float_mode.enabled:
+            logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
+            simulations.remove('RTL')
+        # TODO: test for docker instead...
+        # elif not have_ghdl():
+        #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
+
+    if 'GATE' in simulations:
+        if 'PYHA' not in simulations:
+            logger.warning(
+                'SKIPPING **GATE** simulations -> You need to run "PYHA" simulation before "GATE" simulation')
+            simulations.remove('GATE')
+        elif 'PYHA_SKIP_GATE' in os.environ:
+            logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
+            simulations.remove('GATE')
+        elif Sfix._float_mode.enabled:
+            logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
+            simulations.remove('GATE')
 
     if trace:
         simulations = ['MODEL', 'PYHA']
@@ -275,9 +254,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
             model._pyha_enable_function_profiling_for_types()
 
-        logger.info(f'Converting model to hardware types ...')
         model._pyha_floats_to_fixed()
-
         if hasattr(model, '_pyha_simulation_input_callback'):
             args = model._pyha_simulation_input_callback(args)
         else:
@@ -344,6 +321,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
         logger.info(f'Running "NETLIST" simulation...')
         quartus = QuartusDockerWrapper(converter.base_path)
+        set_simulator_quartus(quartus)
 
         ret = run_ghdl_cocotb(*args, converter=converter, netlist=quartus.get_netlist())
         out['GATE'] = process_outputs(delay_compensate, ret)

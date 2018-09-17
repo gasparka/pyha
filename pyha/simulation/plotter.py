@@ -8,7 +8,7 @@ from pyha.simulation.tracer import Tracer
 figsize = (9.75, 5)
 
 
-def time(simulations, name):
+def plot_time_domain(simulations, name='Time domain'):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     if is_float(simulations["MODEL"][0]):
@@ -61,7 +61,7 @@ def time(simulations, name):
     plt.show()
 
 
-def frequency(simulations, name, window='hanning'):
+def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.window_hanning):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     gain = 1.0
@@ -89,20 +89,20 @@ def frequency(simulations, name, window='hanning'):
     plt.show()
 
 
-def frequency_response(simulations, name):
+def plot_frequency_response(simulations, name='Frequency response'):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     gain = len(simulations["MODEL"])
-    window = 'None'
+    window = plt.mlab.window_none
     if is_complex(simulations["MODEL"][0]):
         gain *= 0.707
 
     simulations["MODEL"] *= gain
     simulations["PYHA"] *= gain
-    frequency(simulations, name, window)
+    plot_frequency_domain(simulations, name, window)
 
 
-def imshow(simulations, name, rows, transpose=False):
+def plot_imshow(simulations, rows, transpose=False, name=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     fig, ax = plt.subplots(1, 2, figsize=figsize, sharex='all', sharey='all')
@@ -144,4 +144,10 @@ def imshow(simulations, name, rows, transpose=False):
 def plot_trace():
     traces = Tracer.get_sorted_traces()
     for i, (k, v) in enumerate(traces.items()):
-        time(v, name=k)
+        plot_time_domain(v, name=k)
+
+def plot_trace_input_output(plotter=plot_time_domain):
+    its = list(Tracer.get_sorted_traces().items())
+    plotter(its[0][1], name=its[0][0])
+    plotter(its[-1][1], name=its[-1][0])
+    # return traces[0], traces[-1]

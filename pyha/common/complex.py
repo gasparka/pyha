@@ -237,5 +237,9 @@ class Complex:
         n = 2 ** i
         return Complex(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
 
+    @staticmethod
+    def default():
+        return default_complex
+
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')

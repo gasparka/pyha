@@ -385,6 +385,10 @@ class Sfix:
     def _pyha_to_python_value(self):
         return float(self)
 
+    @staticmethod
+    def default():
+        return default_sfix
+
 
 def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
            signed=None) -> Sfix:

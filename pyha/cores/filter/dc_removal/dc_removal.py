@@ -8,31 +8,48 @@ from pyha.cores import MovingAverage, DataValid, NumpyToDataValid
 
 class DCRemoval(Hardware):
     """
-    Filter out DC component, based on: https://www.dsprelated.com/showarticle/58.php
+    Filters out DC component i.e. a very sharp notch filter.
+    Implementation is based on https://www.dsprelated.com/showarticle/58.php.
+    This core implements the Dual-MA system, Quad-MA is discussed but IMHO not worth the BRAM.
+
+    Args:
+        window_len: Averaging window size, must be power of two. This controls the filter sharpness and the BRAM usage.
+                    Optimal value is 2048. 1024 may be good enough.
+        dtype: Sfix or Complex (applies to real and imag channels separately)
+
     """
     def __init__(self, window_len, dtype=Complex):
         assert window_len > 2
-        self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=dtype(0.0, 0, -17, overflow_style='saturate', round_style='round'))
+        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=dtype.default())
 
         self.WINDOW_LEN = window_len
         self.averages = [MovingAverage(window_len, dtype), MovingAverage(window_len, dtype)]
 
         # input must be delayed by group delay, we can use the SHR from the first averager to get the majority of the delay.
         self.delayed_input = ShiftRegister([dtype(0.0, 0, -17)] * 3)
-        self.out = DataValid(dtype(0, 0, -17), valid=False)
+        self.output = DataValid(dtype(0, 0, -17))
 
-    def main(self, inp):
-        avg_out = self.averages[1].main(self.averages[0].main(inp))
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): -1.0 ... 1.0 range, up to 18 bits
+
+        Returns:
+            DataValid:  DC-free output, 18 bits(-1.0 ... 1.0 range). Saturates on overflow,
+                        Rounding this down to 12-bits (standard SDR IQ width) wont work,
+                        you need ~16 bits to reliably remove the DC-offset.
+
+        """
+        avg_out = self.averages[1].main(self.averages[0].main(input))
 
         if not avg_out.valid:
-            return DataValid(self.out.data, valid=False)
+            return DataValid(self.output.data, valid=False)
 
         # delay input -> use averager[0] delay to save alot of RAM
         self.delayed_input.push_next(self.averages[0].shr.peek())
-        self.out.data = self.delayed_input.peek() - avg_out.data
-        self.out.valid = True
-        return self.out
+        self.output.data = self.delayed_input.peek() - avg_out.data
+        self.output.valid = True
+        return self.output
 
     def model_main(self, input_list):
         input_list = np.array(input_list)

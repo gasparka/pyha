@@ -4,41 +4,54 @@ from scipy import signal
 
 from pyha import Hardware, Sfix, Complex, scalb
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValidToNumpy, NumpyToDataValid, DownCounter, simulate, sims_close
+from pyha.cores import NumpyToDataValid, DownCounter, simulate, sims_close
 from pyha.cores.fft.packager.packager import DataValid
 
 
 class MovingAverage(Hardware):
     """
-    :param window_len: Size of the moving average window, must be power of 2 and >= 2
-    :param dtype: internal storage type, Sfix/Complex
+    Moving average filter.
+    Useful for cleaning noisy data (low-pass filter) and as a matched-filter for rectangular signals.
+
+    Args:
+        window_len: Averaging window size, must be power of two. Determines the BRAM usage.
+        dtype: Sfix or Complex, later just applies to both channels (real and imag)
     """
 
     def __init__(self, window_len, dtype=Sfix):
         self._pyha_simulation_input_callback = NumpyToDataValid(
-            dtype=dtype(0.0, 0, -17, overflow_style='saturate', round_style='round'))
-        self._pyha_simulation_output_callback = DataValidToNumpy()
+            dtype=dtype.default())
+
         self.WINDOW_LEN = window_len
+
         self.BIT_GROWTH = int(np.log2(window_len))
 
         self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
-        # rounding the output is necessary or there will be negative trend!
-        self.out = DataValid(dtype(0, 0, -17, round_style='round'), valid=False)
+        self.output = DataValid(dtype(0, 0, -17, round_style='round')) # negative trend without rounding!
         self.start_counter = DownCounter(1)
 
-    def main(self, inp):
-        if not inp.valid:
-            return DataValid(self.out.data, valid=False)
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): -1.0 ... 1.0 range, up to 18 bits
 
+        Returns:
+            DataValid: Accumulator scaled and rounded to 18 bits(-1.0 ... 1.0 range). Overflow impossible.
+
+        """
+        if not input.valid:
+            return DataValid(self.output.data, valid=False)
+
+        self.shr.push_next(input.data)  # add new element to shift register
+        self.acc = self.acc + input.data - self.shr.peek()
+        self.output.data = scalb(self.acc, -self.BIT_GROWTH)  # round to standard 18bit format
+
+        # make sure we don't propagate invalid samples
         self.start_counter.tick()
-        self.shr.push_next(inp.data)  # add new element to shift register
-        self.acc = self.acc + inp.data - self.shr.peek()
-
-        self.out.data = scalb(self.acc, -self.BIT_GROWTH)
-        self.out.valid = self.start_counter.is_over()
-        return self.out
+        self.output.valid = self.start_counter.is_over()
+        return self.output
 
     def model_main(self, inputs):
         # https://stackoverflow.com/questions/13728392/moving-average-or-running-mean/27681394#27681394
@@ -51,6 +64,7 @@ class MovingAverage(Hardware):
 @pytest.mark.parametrize("input_power", [0.25, 0.001])
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
+    np.random.seed(0)
     dut = MovingAverage(window_len=window_len, dtype=dtype)
     N = window_len * 4
     if dtype == Complex:
