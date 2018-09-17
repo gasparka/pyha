@@ -150,7 +150,7 @@ def test_convert_submodule_name_conflict():
     conv = RecursiveConverter(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
-    assert names == ['A2_0.vhd', 'B2_0.vhd', 'top.vhd']
+    assert names == ['A2_0.vhd', 'B2_1.vhd', 'top.vhd']
 
 
 def test_element_with_none_bound():

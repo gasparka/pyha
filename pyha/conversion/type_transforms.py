@@ -1,6 +1,7 @@
 import copy
 import inspect
 import logging
+import time
 from collections import deque
 from enum import Enum
 from math import isclose
@@ -559,18 +560,9 @@ class VHDLModule(BaseVHDLType):
         self.elems = get_vars_as_vhdl_types(self.current, parent=self)
         self.elems = [x for x in self.elems if x is not None]
 
-    def _pyha_instance_id(self):
-        for i, instance in enumerate(self.current._pyha_instances):
-            mod = VHDLModule('-', instance)
-            if self._pyha_type_is_compatible(mod):
-                return i
-
-        # types that get full bounds during simulation can end up here
-        self.current._pyha_instances.append(self.current)
-        return len(self.current._pyha_instances) - 1
-
     def _pyha_module_name(self):
-        return '{}_{}'.format(type(self.current).__name__, self._pyha_instance_id())
+        from pyha.conversion.conversion import RecursiveConverter
+        return RecursiveConverter.get_module_converted_name(self)
 
     def _pyha_type(self):
         return '{}.self_t{}'.format(self._pyha_module_name(), TypeAppendHack)
@@ -777,6 +769,6 @@ def get_vars_as_vhdl_types(obj: Hardware, parent=None) -> List[BaseVHDLType]:
            zip(current_vars.keys(), current_vars.values(), initial_vars.values())]
 
     if ret == []:
-        ret = [VHDLInt('much_dummy_very_wow', 0, 0)]
+        ret = [VHDLInt('DUMMY', 0, 0)]
 
     return ret

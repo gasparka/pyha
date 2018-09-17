@@ -171,9 +171,23 @@ def get_conversion(obj):
 
 
 class RecursiveConverter:
-    converted_names = []
-    typedefs = []
+    converted_modules = {}
+    typedefs = [] # will be used to build typedefs package (all new types in the design)
     in_progress = ContextManagerRefCounted()
+
+    @classmethod
+    def is_compatible_with_converted_module(cls, module):
+        for name, converted_module in cls.converted_modules.items():
+            if module._pyha_type_is_compatible(converted_module[0]):
+                return name
+        return False
+
+    @classmethod
+    def get_module_converted_name(cls, module):
+        name = cls.is_compatible_with_converted_module(module)
+        if not name:
+            return '{}_{}'.format(type(module.current).__name__, len(cls.converted_modules))
+        return name
 
     def __init__(self, obj, datamodel=None):
         """ Convert object and all childs to VHDL """
@@ -183,7 +197,7 @@ class RecursiveConverter:
             self.datamodel = datamodel
             self.is_root = datamodel is None
             if self.is_root:
-                RecursiveConverter.converted_names = []
+                RecursiveConverter.converted_modules = {}
                 RecursiveConverter.typedefs = []
                 self.datamodel = VHDLModule('-', obj)
 
@@ -194,7 +208,7 @@ class RecursiveConverter:
                 if isinstance(node, VHDLList):
                     if node.elements_compatible_typed:
                         if isinstance(node.elems[0], VHDLModule):
-                            if node.elems[0]._pyha_module_name() in self.converted_names:
+                            if self.is_compatible_with_converted_module(node.elems[0]):
                                 return
                             self.childs.append(RecursiveConverter(node.elems[0].current, node.elems[0]))
 
@@ -202,11 +216,11 @@ class RecursiveConverter:
                         # dynamic list..need to convert all modules
                         for x in node.elems:
                             if isinstance(x, VHDLModule):
-                                if x._pyha_module_name() in self.converted_names:
+                                if self.is_compatible_with_converted_module(x):
                                     return
                                 self.childs.append(RecursiveConverter(x.current, x))
                 elif isinstance(node, VHDLModule):
-                    if node._pyha_module_name() in self.converted_names:
+                    if self.is_compatible_with_converted_module(node):
                         return
                     self.childs.append(RecursiveConverter(node.current, node))
 
@@ -238,7 +252,7 @@ class RecursiveConverter:
             self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
             self.vhdl_conversion = str(self.conv)
-            RecursiveConverter.converted_names += [self.datamodel._pyha_module_name()]
+            RecursiveConverter.converted_modules[self.get_module_converted_name(self.datamodel)] = (self.datamodel, self.vhdl_conversion)
             RecursiveConverter.typedefs.extend(self.conv.build_typedefs())
 
     @property
@@ -250,22 +264,18 @@ class RecursiveConverter:
         return self.top_vhdl.get_object_return()
 
     def write_vhdl_files(self, base_dir: Path) -> List[Path]:
-        with RecursiveConverter.in_progress:
-            paths = []
-            for x in self.childs:
-                paths.extend(x.write_vhdl_files(base_dir))  # recursion here
-
-            paths.append(base_dir / '{}.vhd'.format(self.datamodel._pyha_module_name()))
+        paths = []
+        for name, value in self.converted_modules.items():
+            paths.append(base_dir / '{}.vhd'.format(name))
             with paths[-1].open('w') as f:
-                f.write(str(self.vhdl_conversion))
+                f.write(value[1]) # [1] is vhdl_conversion
 
-            # add top_generator file
-            if self.is_root:
-                paths.append(base_dir / 'top.vhd')
-                with paths[-1].open('w') as f:
-                    f.write(self.top_vhdl.make())
+        # add top_generator file
+        paths.append(base_dir / 'top.vhd')
+        with paths[-1].open('w') as f:
+            f.write(self.top_vhdl.make())
 
-            return paths
+        return paths
 
     def build_typedefs_package(self):
         template = textwrap.dedent("""\

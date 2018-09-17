@@ -58,5 +58,5 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    sims = simulate(dut, input_signal, pipeline_flush='auto')
+    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'])
     assert sims_close(sims, rtol=1e-4, atol=1e-4)

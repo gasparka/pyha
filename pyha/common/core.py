@@ -164,21 +164,12 @@ class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
-    _pyha_instance_count = 0
-    _pyha_instances = []
-
     # ran when instance is made
-    # @profile
     def __call__(cls, *args, **kwargs):
         cls._pyha_is_initialization = True  # flag to avoid problems in __setattr__
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
-        if not cls._pyha_instances:
-            cls._pyha_instances = []  # code depends on having this var
-
         if not SimulationRunning.is_enabled():  # local objects are simplified, they need no reset or register behaviour
-            ret._pyha_instance_id = cls._pyha_instance_count
-
             ret._pyha_next = {}
             ret._pyha_updateable = []
             for k, v in ret.__dict__.items():
@@ -201,12 +192,7 @@ class Meta(type):
                     continue
 
                 ret._pyha_next[k] = deepcopy(v)
-
-            cls._pyha_instance_count += 1
-            cls._pyha_instances.append(ret)
-            # cls._pyha_instances = copy(cls._pyha_instances + [ret])
-
-            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
+            ret.__dict__['_pyha_initial_self'] = deepcopy(ret) # TODO: this exists only for initial values, deepcopy very slow on large objects!
 
         del cls._pyha_is_initialization
         return ret
@@ -229,7 +215,7 @@ def auto_resize(target, value):
             right = left - target.upper_bits
             if target.signed:
                 right += 1  # +1 is to count for the sign bit!
-        except TypeError: # left was None?
+        except TypeError:  # left was None?
             right = None
     else:
         left = target.left if target.left is not None else value.left
@@ -368,7 +354,8 @@ class Hardware(with_metaclass(Meta)):
                             setattr(result, k, deepcopy(v, memo))
                 else:
                     for k, v in self.__dict__.items():
-                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v, Hardware):  # dont waste time on endless deepcopy
+                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v,
+                                                                                        Hardware):  # dont waste time on endless deepcopy
                             setattr(result, k, copy(v))
                             # print(k, v)
                         else:

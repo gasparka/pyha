@@ -284,6 +284,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             args = convert_input_types(args, input_types)
             args = transpose(args)
 
+
         delay_compensate = 0
         if pipeline_flush == 'self.DELAY':
             with suppress(AttributeError):
