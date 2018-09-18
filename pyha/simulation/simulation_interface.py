@@ -137,29 +137,25 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     * ``'GATE'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
 
     :returns: Dict of output lists for each simulation. Select the output like ``out['MODEL']``.
-    Example:
 
-    .. code-block:: python
+    Args:
+        model: Object derived from *Hardware*. Must have a *main* function.
+        *args: Simulation inputs, a list for each argument of the *main* function.
+        simulations: List of simulations to execute:
+            * 'MODEL'    : executes the *model* function.
+            * 'HARDWARE' : executes the *main* function for each input sample i.e. each sample is tied to a clock cycle.
+                           Uses a cycle-accurate simulator implemented in Python.
+                           TIP: use a debugger to step trough the simulation.
+            * 'RTL'      : converts to VHDL and executes with GHDL simulator. Slow!
+            * 'NETLIST'  : converts VHDL sources to a 'Quartus netlist' and simulates with GHDL. Painfully slow!
 
-        # simple pass-through module
-        class T(Hardware):
-            def main(self, a, b):
-                return a, b
+        conversion_path:
+        input_types:
+        pipeline_flush:
+        trace:
 
-        outs = simulate(T(),         # object to simulate
-                [1,     2,      3],  # inputs to 'a'
-                [0.1,   0.2,    0.3],# input to 'b'. Note: Pyha converts floats to Sfix
-                simulations=['MODEL', 'PYHA', 'RTL', 'GATE'] # list of simulations to run
-        )
-
-        # contents of 'out':
-        # Note: returned Sfix values are converted back to float
-        {
-        'MODEL':[[1, 2, 3], [0.1,                 0.2,                0.3]],
-        'PYHA': [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]],
-        'RTL':  [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]],
-        'GATE': [[1, 2, 3], [0.09999847412109375, 0.1999969482421875, 0.3000030517578125]]
-        }
+    Returns:
+        dict:
 
     """
     from pyha.simulation.tracer import Tracer
