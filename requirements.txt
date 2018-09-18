@@ -6,4 +6,4 @@ six==1.11.0
 tqdm==4.25.0
 scikit-image==0.14.0
 wurlitzer
-matplotlib
+matplotlib==2.2.3
