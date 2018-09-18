@@ -1,13 +1,10 @@
-import textwrap
 from pathlib import Path
 import os
-from unittest import mock
 import pytest
 from pyha import simulate
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
 from pyha.conversion.conversion import RecursiveConverter, get_objects_rednode
-from pyha.simulation import vhdl_simulation
 from pyha.simulation.simulation_interface import assert_sim_match
 from unittest.mock import MagicMock, patch
 

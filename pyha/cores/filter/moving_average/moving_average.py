@@ -10,12 +10,15 @@ from pyha.cores.fft.packager.packager import DataValid
 
 class MovingAverage(Hardware):
     """
-    Moving average filter.
-    Useful for cleaning noisy data (low-pass filter) and as a matched-filter for rectangular signals.
+    Moving average filter
+    ---------------------
+
+    Useful for cleaning noisy data (low-pass filter) and as an matched-filter for rectangular signals.
 
     Args:
         window_len: Averaging window size, must be power of two. Determines the BRAM usage.
-        dtype: Sfix or Complex, later just applies to both channels (real and imag)
+                    For matched-filter, this must equal the samples-per-symbol.
+        dtype: Sfix or Complex (applies to real and imag channels separately)
     """
 
     def __init__(self, window_len, dtype=Sfix):

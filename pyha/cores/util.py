@@ -6,7 +6,7 @@ def load_iq(file):
     return f
 
 
-def snr(pure, noisy):
+def SQNR(pure, noisy):
     sig_pow = np.mean(np.abs(pure))
     error = np.array(pure) - np.array(noisy)
     err_pow = np.mean(np.abs(error))

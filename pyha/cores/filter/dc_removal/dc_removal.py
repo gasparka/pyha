@@ -8,12 +8,15 @@ from pyha.cores import MovingAverage, DataValid, NumpyToDataValid
 
 class DCRemoval(Hardware):
     """
-    Filters out DC component i.e. a very sharp notch filter.
-    Implementation is based on https://www.dsprelated.com/showarticle/58.php.
-    This core implements the Dual-MA system, Quad-MA is discussed but IMHO not worth the BRAM.
+    Linear-phase DC Removal Filter
+    ------------------------------
+
+    Sharp notch filter, peak-to-peak ripple of 0.42 dB.
+    Based on the Dual-MA system described in https://www.dsprelated.com/showarticle/58.php ,
+    Quad-MA is discussed but IMHO not worth the BRAM.
 
     Args:
-        window_len: Averaging window size, must be power of two. This controls the filter sharpness and the BRAM usage.
+        window_len: Averaging window size, must be power of two. Controls the filter sharpness and the BRAM usage.
                     Optimal value is 2048. 1024 may be good enough.
         dtype: Sfix or Complex (applies to real and imag channels separately)
 
@@ -35,8 +38,8 @@ class DCRemoval(Hardware):
             input (DataValid): -1.0 ... 1.0 range, up to 18 bits
 
         Returns:
-            DataValid:  DC-free output, 18 bits(-1.0 ... 1.0 range). Saturates on overflow,
-                        Rounding this down to 12-bits (standard SDR IQ width) wont work,
+            DataValid:  DC-free output, 18 bits(-1.0 ... 1.0 range). Saturates on overflow.
+                        Rounding it down to 12-bits (standard SDR IQ width) wont work,
                         you need ~16 bits to reliably remove the DC-offset.
 
         """

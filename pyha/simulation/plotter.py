@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pyha.common.util import is_float, is_complex
-from pyha.cores.util import snr
+from pyha.cores.util import SQNR
 from pyha.simulation.tracer import Tracer
 
 figsize = (9.75, 5)
@@ -18,7 +18,7 @@ def plot_time_domain(simulations, name='Time domain'):
             fig.suptitle(name, fontsize=14, fontweight='bold')
         ax[0].plot(simulations["MODEL"], label='MODEL')
         ax[0].plot(simulations["PYHA"], label='PYHA')
-        ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+        ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
         ax[0].set_xlabel('Sample')
         ax[0].set_ylabel('Magnitude')
         ax[0].grid(True)
@@ -35,7 +35,7 @@ def plot_time_domain(simulations, name='Time domain'):
             fig.suptitle(name, fontsize=14, fontweight='bold')
         ax[0][0].plot(simulations["MODEL"].real, label='MODEL')
         ax[0][0].plot(simulations["PYHA"].real, label='PYHA')
-        ax[0][0].set(title=f'REAL SNR={snr(simulations["MODEL"].real, simulations["PYHA"].real):.2f} dB')
+        ax[0][0].set(title=f'REAL SQNR={SQNR(simulations["MODEL"].real, simulations["PYHA"].real):.2f} dB')
         ax[0][0].set_xlabel('Sample')
         ax[0][0].set_ylabel('Magnitude')
         ax[0][0].grid(True)
@@ -47,7 +47,7 @@ def plot_time_domain(simulations, name='Time domain'):
 
         ax[0][1].plot(simulations["MODEL"].imag, label='MODEL')
         ax[0][1].plot(simulations["PYHA"].imag, label='PYHA')
-        ax[0][1].set(title=f'IMAG SNR={snr(simulations["MODEL"].imag, simulations["PYHA"].imag):.2f} dB')
+        ax[0][1].set(title=f'IMAG SQNR={SQNR(simulations["MODEL"].imag, simulations["PYHA"].imag):.2f} dB')
         ax[0][1].set_xlabel('Sample')
         ax[0][1].set_ylabel('Magnitude')
         ax[0][1].grid(True)
@@ -61,7 +61,7 @@ def plot_time_domain(simulations, name='Time domain'):
     plt.show()
 
 
-def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.window_hanning):
+def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.window_hanning, xlim=None, ylim=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     gain = 1.0
@@ -77,7 +77,8 @@ def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.
                                                window=window,
                                                scale='dB',
                                                label='PYHA')
-    ax[0].set(title=f'SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+
+    ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
     ax[0].grid(True)
     ax[0].legend(loc='upper right')
 
@@ -86,10 +87,17 @@ def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.
     ax[1].legend(loc='upper right')
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    if xlim:
+        plt.xlim(xlim)
+
+    if ylim:
+        ax[0].set_ylim(ylim)
+        ax[1].set_ylim(ylim)
+
     plt.show()
 
 
-def plot_frequency_response(simulations, name='Frequency response'):
+def plot_frequency_response(simulations, name='Frequency response', xlim=None, ylim=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
     simulations["PYHA"] = np.array(simulations["PYHA"])
     gain = len(simulations["MODEL"])
@@ -99,7 +107,7 @@ def plot_frequency_response(simulations, name='Frequency response'):
 
     simulations["MODEL"] *= gain
     simulations["PYHA"] *= gain
-    plot_frequency_domain(simulations, name, window)
+    plot_frequency_domain(simulations, name, window, xlim, ylim)
 
 
 def plot_imshow(simulations, rows, transpose=False, name=None):
@@ -133,7 +141,7 @@ def plot_imshow(simulations, rows, transpose=False, name=None):
     inp = exposure.rescale_intensity(inp, in_range=(p2, p98))
 
     ax[1].imshow(inp, interpolation='nearest', aspect='auto', origin='lower')
-    ax[1].set(title=f'PYHA, SNR={snr(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+    ax[1].set(title=f'PYHA, SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
     ax[1].set_xlabel('Time')
     ax[1].set_ylabel('Magnitude')
 
@@ -145,6 +153,7 @@ def plot_trace():
     traces = Tracer.get_sorted_traces()
     for i, (k, v) in enumerate(traces.items()):
         plot_time_domain(v, name=k)
+
 
 def plot_trace_input_output(plotter=plot_time_domain):
     its = list(Tracer.get_sorted_traces().items())

@@ -359,7 +359,7 @@ def run_ghdl_cocotb(*inputs, converter=None, netlist=None, verbose=False):
 
     cmd = f"docker run " \
           f"-u `id -u` " \
-          f" -v {converter.base_path}:/pyha_simulation gasparka/pyha_simulation_env make " \
+          f" -v {converter.base_path}:/simulation gasparka/ghdl_cocotb_quartuslibs make " \
           f"VHDL_SOURCES=\"{src}\" " \
           f"OUTPUT_VARIABLES=\"{str(len(converter.get_top_module_outputs()))}\" " \
           f"GHDL_ARGS=\"{ghdl_args}\" "

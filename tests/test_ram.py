@@ -1,10 +1,7 @@
 import pytest
-from pyha import Hardware, simulate, sims_close, Complex
+from pyha import Hardware, simulate, sims_close
 from pyha.common.ram import RAM
 import numpy as np
-
-from pyha.simulation.simulation_interface import get_ran_gate_simulation
-from pyha.simulation.vhdl_simulation import VHDLSimulation
 
 
 def test_basic_init_zero():
@@ -25,9 +22,9 @@ def test_basic_init_zero():
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
 
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 0
-        assert VHDLSimulation.last_memory_bits == 1024
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 0
+    #     assert VHDLSimulation.last_memory_bits == 1024
     assert sims_close(sims)
 
 
@@ -49,9 +46,9 @@ def test_basic_reserved_name():
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
 
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 0
-        assert VHDLSimulation.last_memory_bits == 4096
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 0
+    #     assert VHDLSimulation.last_memory_bits == 4096
     assert sims_close(sims)
 
 
@@ -74,10 +71,10 @@ def test_basic_init_random():
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
 
-    if get_ran_gate_simulation():
-        # handling non-zero reset is done using LUTS :(
-        assert VHDLSimulation.last_logic_elements == 1643
-        assert VHDLSimulation.last_memory_bits == 3200
+    # if get_ran_gate_simulation():
+    #     # handling non-zero reset is done using LUTS :(
+    #     assert VHDLSimulation.last_logic_elements == 1643
+    #     assert VHDLSimulation.last_memory_bits == 3200
     assert sims_close(sims)
 
 
@@ -102,9 +99,9 @@ def test_conditional_write():
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
 
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 47
-        assert VHDLSimulation.last_memory_bits == 1024
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 47
+    #     assert VHDLSimulation.last_memory_bits == 1024
     assert sims_close(sims)
 
 
@@ -129,9 +126,9 @@ def test_conditional_read():
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 47
-        assert VHDLSimulation.last_memory_bits == 1024
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 47
+    #     assert VHDLSimulation.last_memory_bits == 1024
     assert sims_close(sims)
 
 
@@ -158,9 +155,9 @@ def test_two():
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 2722
-        assert VHDLSimulation.last_memory_bits == 6400
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 2722
+    #     assert VHDLSimulation.last_memory_bits == 6400
     assert sims_close(sims)
 
 
@@ -185,10 +182,10 @@ def test_two_list():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 2722
-        assert VHDLSimulation.last_memory_bits == 6400
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 2722
+    #     assert VHDLSimulation.last_memory_bits == 6400
     assert sims_close(sims)
 
 
@@ -218,10 +215,10 @@ def test_submodule():
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
-    if get_ran_gate_simulation():
-        # handling non-zero reset is done using LUTS :(
-        assert VHDLSimulation.last_logic_elements == 1643
-        assert VHDLSimulation.last_memory_bits == 3200
+    # if get_ran_gate_simulation():
+    #     # handling non-zero reset is done using LUTS :(
+    #     assert VHDLSimulation.last_logic_elements == 1643
+    #     assert VHDLSimulation.last_memory_bits == 3200
     assert sims_close(sims)
 
 
@@ -256,9 +253,9 @@ def test_submodule_lists():
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
     sims = simulate(dut, addr, val, simulations=['PYHA', 'RTL', 'GATE'])
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 2735
-        assert VHDLSimulation.last_memory_bits == 12800
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 2735
+    #     assert VHDLSimulation.last_memory_bits == 12800
     assert sims_close(sims)
 
 
@@ -291,9 +288,9 @@ def test_two_reads():
                                                    'GATE'
                                                    ],
                     conversion_path='/home/gaspar/git/pyha/playground')
-    if get_ran_gate_simulation():
-        assert VHDLSimulation.last_logic_elements == 71
-        assert VHDLSimulation.last_memory_bits == 4096
+    # if get_ran_gate_simulation():
+    #     assert VHDLSimulation.last_logic_elements == 71
+    #     assert VHDLSimulation.last_memory_bits == 4096
     assert sims_close(sims)
 
 
