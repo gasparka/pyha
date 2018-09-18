@@ -11,4 +11,4 @@ snakeviz==1.0.0
 asv==0.2.2
 nbdime==1.0.2
 nbval==0.9.1
-pytest==3.7.3
+pytest==3.7.4
