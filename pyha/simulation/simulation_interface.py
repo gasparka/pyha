@@ -187,6 +187,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         elif Sfix._float_mode.enabled:
             logger.warning('SKIPPING **RTL** simulations -> Sfix._float_mode is active')
             simulations.remove('RTL')
+
         # TODO: test for docker instead...
         # elif not have_ghdl():
         #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')

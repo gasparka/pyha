@@ -68,8 +68,8 @@ class QuartusDockerWrapper:
         cmd = f"docker run " \
               f"-u `id -u` " \
               f"-v /sys:/sys:ro " \
-              f"-v {self.project_path}:/pyha_simulation " \
-              f"gasparka/pyha_simulation_env {quartus_command}"
+              f"-v {self.project_path}:/simulation " \
+              f"gasparka/quartus {quartus_command}"
 
         with pipes(stdout=sys.stdout if self.verbose else None, stderr=sys.stderr):
             subprocess.run(cmd, shell=True)
