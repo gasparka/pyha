@@ -2,6 +2,8 @@
 pyha
 ====
 
+Under construction!
+
 .. image:: https://img.shields.io/pypi/v/pyha.svg
     :target: https://pypi.python.org/pypi/pyha
 
@@ -50,7 +52,7 @@ For example, start with the moving-average core:
 
 `VHDL conversion <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/moving_average/example_conversion/src/MovingAverage_0.vhd>`_
 
-And then see how 'dc-removal' is built by stacking 4 'moving-averages':
+And then see how the 'dc-removal' is built by reusing the 'moving-average' component:
 
 `Python source <https://github.com/gasparka/pyha/blob/develop/pyha/cores/filter/dc_removal/dc_removal.py>`_
 

@@ -19,8 +19,10 @@ class TestSfix:
 
     def test_basic(self):
         dut = self.A('saturate', 'round')
+        dut._pyha_enable_function_profiling_for_types()
 
         dut.main(Sfix(0.1, 2, -27))
+
 
         assert dut._pyha_next['a'].left == 0
         assert dut._pyha_next['a'].right == -4
@@ -169,6 +171,7 @@ class TestComplex:
 
     def test_basic(self):
         dut = self.A2('saturate', 'round')
+        dut._pyha_enable_function_profiling_for_types()
 
         dut.main(Sfix(0.1, 2, -27))
 
@@ -246,6 +249,7 @@ class TestLazySfix:
 
     def test_basic(self):
         dut = self.A3()
+        dut._pyha_enable_function_profiling_for_types()
 
         with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
@@ -287,6 +291,8 @@ class TestLazySfixList:
 
     def test_basic(self):
         dut = self.A4()
+        dut._pyha_enable_function_profiling_for_types()
+
         with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
 
@@ -372,6 +378,7 @@ class TestAssignConstant:
 
     def test_basic(self):
         dut = self.A6()
+        dut._pyha_enable_function_profiling_for_types()
 
         with AutoResize.enable():
             dut.main(0)

@@ -15,6 +15,9 @@ install:
   - pip install coveralls
   - pip install codeclimate-test-reporter
 
+env:
+  - PYHA_SKIP_GATE=""
+
 script:
   - coverage run --source pyha -m pytest
 

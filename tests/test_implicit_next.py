@@ -17,6 +17,7 @@ class TestBuiltins:
 
     def test_basic(self):
         dut = self.T0()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 1
@@ -86,6 +87,7 @@ class TestBuiltinsList:
 
     def test_basic(self):
         dut = self.T1()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == [1, 2, 3]
@@ -146,6 +148,7 @@ class TestSfix:
 
     def test_basic(self):
         dut = self.T2()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == Sfix(0.1, 0, -17)
@@ -181,6 +184,7 @@ class TestSfixList:
 
     def test_basic(self):
         dut = self.T3()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         init = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
@@ -228,6 +232,7 @@ class TestSubmodule:
 
     def test_basic(self):
         dut = self.T4()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 0
@@ -285,6 +290,7 @@ class TestSubmoduleList:
 
     def test_basic(self):
         dut = self.T5()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 0

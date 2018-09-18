@@ -6,7 +6,7 @@ def load_iq(file):
     return f
 
 
-def snr(pure, noisy):
+def SQNR(pure, noisy):
     sig_pow = np.mean(np.abs(pure))
     error = np.array(pure) - np.array(noisy)
     err_pow = np.mean(np.abs(error))
@@ -43,7 +43,7 @@ def show_plot():
     plt.show()
 
 
-def imshow(im, rescale=True):
+def imshow_rescale(im, rescale=True):
     import matplotlib.pyplot as plt
     im = np.array(im)
     if rescale:

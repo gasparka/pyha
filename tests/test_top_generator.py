@@ -14,6 +14,7 @@ def basic_obj():
             return a * 5, True, Sfix(0.0, 5, -8)
 
     dut = Register()
+    dut._pyha_enable_function_profiling_for_types()
     dut.main(2, Sfix(1.0, 2, -17))
     dut.main(-57, Sfix(1.0, 2, -17))
     dut.main(-57, Sfix(1.0, 2, -17), c=True)
@@ -96,7 +97,7 @@ def test_input_type_conversion(basic_obj):
 
 def test_dut_name(basic_obj):
     dut = basic_obj
-    expect = 'Register_0'
+    expect = 'Register_1'
 
     res = TopGenerator(dut)
 
@@ -123,6 +124,7 @@ def simple_obj():
             return a
 
     dut = Simple()
+    dut._pyha_enable_function_profiling_for_types()
     dut.main(2)
     dut.main(2)
     return dut
@@ -147,6 +149,7 @@ def test_no_inputs():
             return 1
 
     dut = Simple()
+    dut._pyha_enable_function_profiling_for_types()
     dut.main()
     dut.main()
 
@@ -160,6 +163,7 @@ def test_no_outputs():
             pass
 
     dut = Simple()
+    dut._pyha_enable_function_profiling_for_types()
     dut.main(1)
     dut.main(2)
 
@@ -173,6 +177,7 @@ def test_no_sim():
             return a
 
     dut = Simple()
+    dut._pyha_enable_function_profiling_for_types()
 
     with pytest.raises(NotTrainedError):
         TopGenerator(dut)

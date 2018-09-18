@@ -18,7 +18,12 @@ package complex_pkg is
     constant overflow_style : fixed_overflow_style_type := fixed_wrap;
     constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t;
 
+  function resize(a:complex_t; size_res: complex_t;
+    constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+    constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t;
+
   function Complex(real, imag:sfixed) return complex_t;
+  function Complex(r :real; left_index, right_index:integer) return complex_t;
   function Complex(real, imag:real; left_index, right_index:integer) return complex_t;
   function to_slv (arg : UNRESOLVED_complex_t) return STD_LOGIC_VECTOR;
   function to_sulv (arg : UNRESOLVED_complex_t)return STD_ULOGIC_VECTOR;
@@ -85,7 +90,9 @@ package body complex_pkg is
   end function;
 
   function "*" (l, r : complex_t) return complex_t is
-    variable new_real, new_imag : sfixed (l'left/2 + r'left/2+1+1 downto l'low/2 + r'low/2);
+    constant l_left_index : integer := integer(floor(real(l'left) / 2.0));
+    constant r_left_index : integer := integer(floor(real(r'left) / 2.0));
+    variable new_real, new_imag : sfixed (l_left_index + r_left_index+1+1 downto l'low/2 + r'low/2);
     variable result : complex_t (complex_left(new_real'left) downto complex_right(new_real'right));
   begin
     new_real := (get_real(l) * get_real(r)) - (get_imag(l) * get_imag(r));
@@ -231,7 +238,7 @@ package body complex_pkg is
       variable real, imag: sfixed(left_index downto right_index);
       variable middle: integer;
   begin
-    middle := a'length / 2;
+    middle := (a'length / 2);
     real := to_sfixed(a(a'left downto middle), left_index, right_index);
     imag := to_sfixed(a(middle-1 downto 0), left_index, right_index);
 
@@ -251,6 +258,13 @@ package body complex_pkg is
     return result;
   end function;
 
+  function resize(a:complex_t; size_res: complex_t;
+      constant overflow_style : fixed_overflow_style_type := fixed_wrap;
+      constant round_style    : fixed_round_style_type    := fixed_truncate) return complex_t is
+  begin
+    return resize(a, complex_left(size_res'left), complex_right(size_res'right), overflow_style, round_style);
+  end function;
+
   function Complex(real, imag:sfixed) return complex_t is
     variable left : integer := maximum(real'left, imag'left);
     variable right : integer := real'right;
@@ -265,6 +279,13 @@ package body complex_pkg is
     variable result : complex_t (complex_left(left_index) downto complex_right(right_index));
   begin
     result := complex_t(to_slv(to_sfixed(real, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)) & to_slv(to_sfixed(imag, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)));
+    return result;
+  end function;
+
+   function Complex(r:real; left_index, right_index:integer) return complex_t is
+    variable result : complex_t (complex_left(left_index) downto complex_right(right_index));
+  begin
+    result := complex_t(to_slv(to_sfixed(r, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)) & to_slv(to_sfixed(r, left_index, right_index, guard_bits=>0, round_style=>fixed_truncate, overflow_style=>fixed_wrap)));
     return result;
   end function;
 

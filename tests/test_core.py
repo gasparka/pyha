@@ -32,18 +32,6 @@ def test_metaclass_assigned():
     assert type(A) == Meta
 
 
-def test_locals_decorated():
-    class A(Hardware):
-        def main(self, *args, **kwargs):
-            pass
-
-        def func2(self):
-            pass
-
-    assert isinstance(A().main, PyhaFunc)
-    assert isinstance(A().func2, PyhaFunc)
-
-
 def test_objects_not_decorated():
     # had problem where LocalExtractor was applied to all CALLABLE objects
     class A(Hardware):
@@ -103,6 +91,8 @@ def test_float_register():
             self.a = next
 
     dut = A()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.a == 1.0
     dut.main(2.0)
     assert dut.a == 1.0
@@ -129,6 +119,8 @@ def test_submodule_float_register():
             self.b.main(next)
 
     dut = A()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.b.a == 1.0
     dut.main(2.0)
     dut._pyha_update_registers()
@@ -149,6 +141,8 @@ def test_only_main_is_clocked():
             self.a = next
 
     dut = A()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.a == 1.0
     dut.some_non_main_function(2.0)
     assert dut.a == 1.0
@@ -167,6 +161,8 @@ def test_list_register():
             self.a = [next] + self.a[:-1]
 
     dut = A()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.a == [1.0, 2.0, 3.0]
     dut.main(4.0)
     assert dut.a == [1.0, 2.0, 3.0]
@@ -195,6 +191,8 @@ def test_list_cascade_register():
             self.l = [last] + self.l[:-1]
 
     dut = B()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.l == [0.0, 0.0]
     dut.main(4.0)
 
@@ -318,6 +316,8 @@ def test_submodule_setattr():
             return self.b.val
 
     dut = A()
+    dut._pyha_enable_function_profiling_for_types()
+
     assert dut.b.val.val == 0.0
 
     r = dut.main(B(0.5))
