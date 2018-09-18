@@ -193,8 +193,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             logger.warning(
                 'SKIPPING **GATE** simulations -> You need to run "PYHA" simulation before "GATE" simulation')
             simulations.remove('GATE')
-        elif '' \
-             '' in os.environ:
+        elif 'PYHA_SKIP_GATE' in os.environ:
             logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
             simulations.remove('GATE')
         elif Sfix._float_mode.enabled:
