@@ -118,7 +118,7 @@ class StageR2SDF(Hardware):
         self.out.valid = self.start_counter.is_over()
         return self.out
 
-    def model_main(self, inp):
+    def model(self, inp):
         def fft_model(inp):
             if self.INPUT_ORDERING == 'natural':
                 offset = self.LOCAL_FFT_SIZE // 2
@@ -211,7 +211,7 @@ class R2SDF(Hardware):
         self.out.valid = var.valid
         return self.out
 
-    def model_main(self, inp):
+    def model(self, inp):
         from pyha.simulation.tracer import Tracer
         if not Tracer.is_enabled():
             return numpy_model(inp, self.FFT_SIZE, self.INPUT_ORDERING, self.INVERSE)
@@ -221,7 +221,7 @@ class R2SDF(Hardware):
 
             var = inp
             for stage in self.stages:
-                var = stage.model_main(var)
+                var = stage.model(var)
 
             if self.INVERSE:
                 var = np.array(var.imag + var.real * 1j)

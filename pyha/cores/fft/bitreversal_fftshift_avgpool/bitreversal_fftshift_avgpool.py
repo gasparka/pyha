@@ -83,7 +83,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.out.valid = self.start_counter.is_over() and self.out_valid
         return self.out
 
-    def model_main(self, inp):
+    def model(self, inp):
         shaped = np.reshape(inp, (-1, self.FFT_SIZE))
         # apply bitreversal
         unrev = toggle_bit_reverse(shaped)

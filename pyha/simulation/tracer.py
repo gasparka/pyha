@@ -34,7 +34,7 @@ class Tracer:
             self.return_time = time.time()
 
         try:
-            if self.tracer_type == 'model_main':
+            if self.tracer_type == 'model':
                 self.input = np.array(args[0])
                 self.output = np.array(res)
                 self.return_time = time.time()
@@ -64,7 +64,7 @@ class Tracer:
         tmp = []
         for x in cls.traced_objects:
             try:
-                model = x.model_main
+                model = x.model
                 main = x.main
                 if not model.call_time or not main.call_time:
                     continue

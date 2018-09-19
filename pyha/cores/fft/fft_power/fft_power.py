@@ -25,7 +25,7 @@ class FFTPower(Hardware):
         self.out.valid = inp.valid
         return self.out
 
-    def model_main(self, data):
+    def model(self, data):
         return (np.conjugate(data) * data).real.flatten()
 
 

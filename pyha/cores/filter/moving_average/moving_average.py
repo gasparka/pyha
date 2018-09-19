@@ -56,7 +56,7 @@ class MovingAverage(Hardware):
         self.output.valid = self.start_counter.is_over()
         return self.output
 
-    def model_main(self, inputs):
+    def model(self, inputs):
         # https://stackoverflow.com/questions/13728392/moving-average-or-running-mean/27681394#27681394
         # can be expressed as FIR filter with special taps:
         taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN

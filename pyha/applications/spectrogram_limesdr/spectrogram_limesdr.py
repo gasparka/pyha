@@ -34,8 +34,8 @@ class SpectrogramLimeSDR(Hardware):
 
         return self.out
 
-    def model_main(self, inp):
-        return self.spect.model_main(inp)
+    def model(self, inp):
+        return self.spect.model(inp)
 
 
 def test_lol():

@@ -21,8 +21,8 @@ class DCRemovalLimeSDR(Hardware):
         self.out.valid = nodc.valid
         return self.out
 
-    def model_main(self, inp):
-        return self.dc_removal.model_main(inp)
+    def model(self, inp):
+        return self.dc_removal.model(inp)
 
 
 def test_all():

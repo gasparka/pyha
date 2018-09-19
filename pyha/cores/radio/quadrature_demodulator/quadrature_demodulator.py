@@ -40,7 +40,7 @@ class QuadratureDemodulator(Hardware):
         self.y = self.GAIN_SFIX * angle
         return self.y
 
-    def model_main(self, c):
+    def model(self, c):
         # this eats one input i.e output has one less element than input
         mult = c[1:] * np.conjugate(c[:-1])
         demod = np.angle(mult)

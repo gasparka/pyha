@@ -50,12 +50,12 @@ class Spectrogram(Hardware):
         dec_out = self.dec.main(power_out)
         return dec_out
 
-    def model_main(self, x):
-        no_dc = self.dc_removal.model_main(x)
-        window = self.windower.model_main(no_dc)
-        transform = self.fft.model_main(window)
-        power = self.power.model_main(transform)
-        dec_out = self.dec.model_main(power)
+    def model(self, x):
+        no_dc = self.dc_removal.model(x)
+        window = self.windower.model(no_dc)
+        transform = self.fft.model(window)
+        power = self.power.model(transform)
+        dec_out = self.dec.model(power)
         return dec_out
 
 

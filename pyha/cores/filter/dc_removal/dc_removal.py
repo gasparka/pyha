@@ -54,9 +54,9 @@ class DCRemoval(Hardware):
         self.output.valid = True
         return self.output
 
-    def model_main(self, input_list):
+    def model(self, input_list):
         input_list = np.array(input_list)
-        avg_out = self.averages[1].model_main(self.averages[0].model_main(input_list))
+        avg_out = self.averages[1].model(self.averages[0].model(input_list))
 
         # delaying the input is important, without this you get 6db ripple...
         group_delay = int(len(self.averages) * ((self.WINDOW_LEN - 1) / 2))

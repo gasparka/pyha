@@ -131,7 +131,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     :param conversion_path: Where the VHDL sources are written, default is temporary directory.
     :param input_types: Force inputs types, default for floats is Sfix[0:-17].
     :param simulations: List of simulations to execute:
-    * ``'MODEL'`` passes inputs directly to ``model_main`` function. If ``model_main`` does not exist, uses the ``main`` function by turning off register- and fixed point effects.
+    * ``'MODEL'`` passes inputs directly to ``model`` function. If ``model`` does not exist, uses the ``main`` function by turning off register- and fixed point effects.
     * ``'PYHA'`` cycle accurate simulator in Python domain, debuggable.
     * ``'RTL'`` converts sources to VHDL and runs RTL simulation by using GHDL simulator.
     * ``'GATE'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
@@ -163,14 +163,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     set_simulator_quartus(None)
 
     if simulations is None:
-        if hasattr(model, 'model_main'):
+        if hasattr(model, 'model'):
             simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
         else:
             simulations = ['MODEL_PYHA', 'PYHA', 'RTL', 'GATE']
 
     if 'MODEL' in simulations:
-        if not hasattr(model, 'model_main'):
-            logger.info('SKIPPING **MODEL** simulations -> no "model_main()" found')
+        if not hasattr(model, 'model'):
+            logger.info('SKIPPING **MODEL** simulations -> no "model()" found')
             simulations.remove('MODEL')
 
     if 'RTL' in simulations:
@@ -209,7 +209,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     if 'MODEL' in simulations:
         logger.info(f'Running "MODEL" simulation...')
 
-        r = model.model_main(*args)
+        r = model.model(*args)
 
         try:
             if r.size != 1:

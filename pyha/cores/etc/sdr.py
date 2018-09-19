@@ -14,7 +14,7 @@ class SDRSource(Hardware):
         self.out.valid = True
         return self.out
 
-    def model_main(self, i, q):
+    def model(self, i, q):
         return np.array(i) * (2 ** 4) + np.array(q) * (2 ** 4) * 1j
 
 
@@ -31,7 +31,7 @@ class BladeRFSink(Hardware):
         self.out_imag = scalb(c.imag, -4)
         return self.out_real, self.out_imag
 
-    def model_main(self, c):
+    def model(self, c):
         real = [x.real * (2 ** -4) for x in c]
         imag = [x.imag * (2 ** -4) for x in c]
         return real, imag

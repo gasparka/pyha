@@ -15,7 +15,7 @@ from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable, is_constant
 
-SKIP_FUNCTIONS = ('__init__', 'model_main')
+SKIP_FUNCTIONS = ('__init__', 'model')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('core')
 
@@ -398,7 +398,7 @@ class Hardware(with_metaclass(Meta)):
                 v._pyha_insert_tracer(label=f'{label}.{k}')
 
         for method_str in dir(self):
-            if method_str == 'model_main' or method_str == 'main':
+            if method_str == 'model' or method_str == 'main':
                 self.__dict__[method_str] = Tracer(getattr(self, method_str), method_str, owner=self, label=label)
 
     def _pyha_floats_to_fixed(self, silence=False):

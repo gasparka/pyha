@@ -8,33 +8,43 @@ from pyha.cores import NumpyToDataValid, DataValidToNumpy, DataValid, simulate, 
 
 
 class Windower(Hardware):
-    """ Windowing function determines the frequency response of the FFT bins. """
-    def __init__(self, fft_size, window='hanning', coefficient_bits=18):
+    """
+    Window function
+    ---------------
+
+    Window function determines the frequency response of the FFT bins.
+    Coefficients are stored as constants in LUTS, you will probably want to use the 'hamming' window
+    with 8 bit coefficients as the storage cost is very low for even large windows.
+
+    Args:
+        window_length: Same as the FFT transform size.
+        window (str): Name of the windowing function (imported from Scipy).
+        coefficient_bits: Storage bit-width of the coefficients.
+    """
+    def __init__(self, window_length, window='hanning', coefficient_bits=18):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-        self._pyha_simulation_output_callback = DataValidToNumpy()
-        self.FFT_SIZE = fft_size
-        self.window_pure = get_window(window, fft_size)
+        self.FFT_SIZE = window_length
+        self.window_pure = get_window(window, window_length)
         self.WINDOW = [Sfix(x, 0, -(coefficient_bits-1), round_style='round', overflow_style='saturate')
                        for x in self.window_pure]
 
-        # error bias without rounding!
-        self.out = DataValid(Complex(0, 0, -17, round_style='round'), valid=False)
+        self.output = DataValid(Complex(0, 0, -17, round_style='round'))
         self.index_counter = 1
         self.coef = self.WINDOW[0]
 
-    def main(self, inp):
-        if not inp.valid:
-            return DataValid(self.out.data, valid=False)
+    def main(self, input):
+        if not input.valid:
+            return DataValid(self.output.data, valid=False)
 
         self.index_counter = (self.index_counter + 1) % self.FFT_SIZE
         self.coef = self.WINDOW[self.index_counter]
 
-        self.out.data = inp.data * self.coef
-        self.out.valid = inp.valid
-        return self.out
+        self.output.data = input.data * self.coef
+        self.output.valid = input.valid
+        return self.output
 
-    def model_main(self, complex_in_list):
-        shaped = np.reshape(complex_in_list, (-1, self.FFT_SIZE))
+    def model(self, input_list):
+        shaped = np.reshape(input_list, (-1, self.FFT_SIZE))
         return (shaped * self.window_pure).flatten()
 
 

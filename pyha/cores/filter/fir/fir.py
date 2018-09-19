@@ -21,7 +21,7 @@ class FIR(Hardware):
         self.out = self.acc[-1]
         return self.out
 
-    def model_main(self, x):
+    def model(self, x):
         return signal.lfilter(self.TAPS, [1.0], x)
 
 

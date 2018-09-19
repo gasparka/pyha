@@ -21,7 +21,7 @@ def test_model_pyha_sim():
         def main(self, inp):
             return inp * self.coef
 
-        def model_main(self, inp):
+        def model(self, inp):
             return np.array(inp) * self.coef
 
 
@@ -1366,7 +1366,7 @@ class TestInterface:
         """ Was bug when model returned numpy array it was incorrectly transposed """
 
         class Tst(Hardware):
-            def model_main(self, dummy):
+            def model(self, dummy):
                 a = np.random.rand(3)
                 b = np.random.rand(3)
                 return a, b
@@ -1384,7 +1384,7 @@ class TestInterface:
         expect = [np.abs(inputs), np.angle(inputs) / np.pi]
 
         class Tst(Hardware):
-            def model_main(self, cin):
+            def model(self, cin):
                 return np.abs(cin), np.angle(cin) / np.pi  # NOTICE, angle is divided by np.pi
 
         dut = Tst()
@@ -1460,7 +1460,7 @@ class TestInterface:
             def main(self, x):
                 return x
 
-            def model_main(self, xl):
+            def model(self, xl):
                 return xl
 
         dut = T13()
@@ -1473,7 +1473,7 @@ class TestInterface:
             def main(self, x, y):
                 return x, y
 
-            def model_main(self, xl, yl):
+            def model(self, xl, yl):
                 return xl, yl
 
         dut = T13()
@@ -2367,7 +2367,7 @@ class TestPitfalls:
 #         self.out = self.acc[-1]
 #         return self.out
 #
-#     def model_main(self, x):
+#     def model(self, x):
 #         return signal.lfilter(self.taps, [1.0], x)
 #
 #

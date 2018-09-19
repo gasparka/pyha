@@ -36,7 +36,7 @@ class NCO(Hardware):
         self.out = Complex(x, y)
         return self.out
 
-    def model_main(self, phase_list):
+    def model(self, phase_list):
         p = np.cumsum(np.array(phase_list) * np.pi)
         return np.exp(p * 1j)
 
