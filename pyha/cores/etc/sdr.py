@@ -1,5 +1,5 @@
 from pyha import Hardware, Complex, scalb, Sfix, simulate
-from pyha.cores import DataValid
+from pyha.common.datavalid import DataValid
 from pyha.simulation.simulation_interface import assert_equals, sims_close
 import numpy as np
 

@@ -1,6 +1,7 @@
 import numpy as np
 from pyha import Hardware, Complex, get_data_file, load_complex64_file
-from pyha.cores import DataValid, DCRemoval, NumpyToDataValid
+from pyha.cores import DCRemoval
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 
 
 class DCRemovalLimeSDR(Hardware):

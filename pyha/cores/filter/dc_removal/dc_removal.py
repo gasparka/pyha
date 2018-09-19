@@ -3,7 +3,8 @@ import pytest
 
 from pyha import Hardware, Sfix, simulate, sims_close, Complex
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import MovingAverage, DataValid, NumpyToDataValid
+from pyha.cores import MovingAverage
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 
 
 class DCRemoval(Hardware):

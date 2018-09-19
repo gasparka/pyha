@@ -470,6 +470,35 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
     return result
 
 
+    # if expected is None:
+    #     if 'MODEL' in simulation_results.keys():
+    #         expected = simulation_results['MODEL']
+    #     elif 'MODEL_PYHA' in simulation_results.keys():
+    #         expected = simulation_results['MODEL_PYHA']
+    #         logger.info(f'Using "MODEL_PYHA" as golden output')
+    #     else:
+    #         expected = simulation_results['HARDWARE'] # make sure expected always exists
+    # expected = np_to_py(get_iterable(expected))
+    # expected = init_vhdl_type('root', expected, expected)
+    #
+    # if 'HARDWARE' in simulation_results.keys():
+    #     logger.info(f'Testing that HARDWARE and MODEL are close(atol={atol}, rtol={rtol})')
+    #     hardware = init_vhdl_type('HARDWARE', get_iterable(simulation_results['HARDWARE']))
+    #     assert hardware._pyha_is_equal(expected, 'HARDWARE', rtol, atol)
+    #
+    # if 'RTL' in simulation_results.keys():
+    #     logger.info(f'Testing that RTL is *exactly* equal to HARDWARE')
+    #     rtl = init_vhdl_type('RTL', get_iterable(simulation_results['RTL']))
+    #     assert rtl._pyha_is_equal(hardware, 'RTL', rtol=1e-30, atol=1e-30)
+    #
+    # if 'NETLIST' in simulation_results.keys():
+    #     logger.info(f'Testing that NETLIST is *exactly* equal to HARDWARE')
+    #     netlist = init_vhdl_type('NETLIST', get_iterable(simulation_results['NETLIST']))
+    #     assert netlist._pyha_is_equal(hardware, 'NETLIST', rtol=1e-30, atol=1e-30)
+    #
+    # return True
+
+
 def assert_equals(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 4, skip_first_n=0):
     """ Legacy """
     assert sims_close(simulation_results, expected, rtol, atol, skip_first_n)

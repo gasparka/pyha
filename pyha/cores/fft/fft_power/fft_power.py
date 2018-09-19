@@ -1,32 +1,44 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Complex, resize, Sfix, default_complex
-from pyha.cores import NumpyToDataValid, DataValid, simulate, sims_close
+from pyha import Hardware, Complex, Sfix, default_complex, simulate, sims_close
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 
 
 class FFTPower(Hardware):
-    """ Turns FFT result into power ~equalish to : abs(fft_result)
-    Note that this core consumes Complex samples but outputs Sfix samples.
-    TODO: Should output unsigned
-    TODO: rename to MultConjugate?
+    """
+    FFTPower
+    --------
+
+    Multiplies complex input by its conjugate: (a + bi)(a - bi) = a**2 + b**2
+    Results in a real number.
+
     """
 
     def __init__(self):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
-        self.out = DataValid(Sfix(bits=36))
+        self.output = DataValid(Sfix(bits=36))
 
-    def main(self, inp):
-        if not inp.valid:
-            return DataValid(self.out.data, valid=False)
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): type not restricted
+
+        Returns:
+            DataValid: Lowest 36 bits from the result.
+                Example: Input is 18 bits with format 0:-17, then output is 36 bits 1:-34
+
+        """
+        if not input.valid:
+            return DataValid(self.output.data, valid=False)
 
         # (a + bi)(a - bi) = a**2 + b**2
-        self.out.data = (inp.data.real * inp.data.real) + (inp.data.imag * inp.data.imag)
-        self.out.valid = inp.valid
-        return self.out
+        self.output.data = (input.data.real * input.data.real) + (input.data.imag * input.data.imag)
+        self.output.valid = input.valid
+        return self.output
 
-    def model(self, data):
-        return (np.conjugate(data) * data).real.flatten()
+    def model(self, input_list):
+        return (np.conjugate(input_list) * input_list).real.flatten()
 
 
 @pytest.mark.parametrize("input_power", [0.5, 0.1, 0.001, 0.00001])

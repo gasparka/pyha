@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, Sfix, resize, scalb
+from pyha import Hardware, Sfix, resize, scalb, simulate, sims_close
 from pyha.common.ram import RAM
-from pyha.cores import NumpyToDataValid, DataValid, DownCounter, simulate, sims_close
+from pyha.cores import DownCounter
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 from pyha.cores.util import toggle_bit_reverse
 
 
@@ -17,10 +18,30 @@ def build_lut(fft_size, freq_axis_decimation):
 
 
 class BitreversalFFTshiftAVGPool(Hardware):
-    """ Performs bitreversal, fftshift and average pooling by using 2 BRAM blocks.
+    """
+    Bitreversal, FFTShift and AveragePooling
+    ----------------------------------------
+
+    Fixes bitreversal, performs fftshift and applies average pooling, implemented with 2 BRAM blocks.
+    Internal accumulator may overflow, in which case it is saturated.
+
+    Args:
+        fft_size:
+        avg_freq_axis: Pooling in frequnecy domain, decimates the data rate and has major impact on resource usage.
+            Large decimations use LESS memory.
+            Example, if input is 1024 point fft and avg_freq_axis is 2, then output is 512 points.
+        avg_time_axis: Pooling in time domain, decimates the data rate.
+
     TODO: this core should be unsigned...
     """
     def __init__(self, fft_size, avg_freq_axis, avg_time_axis):
+        """
+
+        Args:
+            fft_size:
+            avg_freq_axis:
+            avg_time_axis:
+        """
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=Sfix(0.0, 0, -35, overflow_style='saturate'))
 
         assert not (avg_freq_axis == 1 and avg_time_axis == 1)
@@ -37,7 +58,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
         self.out_valid = False
         self.control = 0
 
-        self.out = DataValid(Sfix())
+        self.output = DataValid(Sfix())
         self.final_counter = DownCounter(self.FFT_SIZE / self.AVG_FREQ_AXIS + 1)
         self.start_counter = DownCounter(fft_size + 1)
 
@@ -58,16 +79,24 @@ class BitreversalFFTshiftAVGPool(Hardware):
             # clear memory
             self.ram[read_ram].delayed_write(self.control, Sfix(0.0, size_res=data))
 
-    def main(self, inp):
-        if not inp.valid:
-            return DataValid(self.out.data, valid=False)
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): 36 bits, type not restricted
+
+        Returns:
+            DataValid: Output type shifted right by the bit-growth.
+
+        """
+        if not input.valid:
+            return DataValid(self.output.data, valid=False)
 
         self.control = (self.control + 1) % self.FFT_SIZE
         if self.state:
-            self.work_ram(inp.data, 0, 1)
+            self.work_ram(input.data, 0, 1)
             read = self.ram[1].get_readregister()
         else:
-            self.work_ram(inp.data, 1, 0)
+            self.work_ram(input.data, 1, 0)
             read = self.ram[0].get_readregister()
 
         if self.control >= self.FFT_SIZE - 1:
@@ -78,10 +107,10 @@ class BitreversalFFTshiftAVGPool(Hardware):
 
             self.time_axis_counter = next_counter
 
-        self.out.data = scalb(read, -self.ACCUMULATION_BITS)
+        self.output.data = scalb(read, -self.ACCUMULATION_BITS)
         self.start_counter.tick()
-        self.out.valid = self.start_counter.is_over() and self.out_valid
-        return self.out
+        self.output.valid = self.start_counter.is_over() and self.out_valid
+        return self.output
 
     def model(self, inp):
         shaped = np.reshape(inp, (-1, self.FFT_SIZE))
@@ -134,5 +163,5 @@ def test_nonstandard_input_size(fft_size, avg_freq_axis, avg_time_axis, input_po
 
     inp = np.random.uniform(-1, 1, packets * fft_size) * input_power
     inp = [float(dtype(x)) for x in inp]
-    sim_out = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL'], conversion_path='/tmp/pyha_output')
+    sim_out = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL'])
     assert sims_close(sim_out, rtol=1e-30, atol=1e-30)

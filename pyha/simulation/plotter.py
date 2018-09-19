@@ -28,7 +28,7 @@ def plot_time_domain(simulations, name='Time domain'):
         ax[1].grid(True)
         ax[1].legend(loc='upper right')
     elif is_complex(simulations["MODEL"][0]):
-        fig, ax = plt.subplots(2, 2, sharex="all", figsize=figsize,
+        fig, ax = plt.subplots(2, 2, sharex="all", sharey='row', figsize=figsize,
                                gridspec_kw={'height_ratios': [4, 2]})
 
         if name:

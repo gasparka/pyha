@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from pyha import Hardware, simulate, sims_close, Complex, resize, scalb, default_complex
 from pyha.common.shift_register import ShiftRegister
-from pyha.cores import DataValid, NumpyToDataValid, DownCounter
+from pyha.cores import DownCounter
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 from pyha.cores.util import toggle_bit_reverse
 
 
@@ -176,6 +177,22 @@ def test_stage_all(fft_size, input_ordering):
 
 
 class R2SDF(Hardware):
+    """
+    FFT core
+    --------
+
+    Uses the R2SDR structure with 18bit data-width and rounded logic - no DC-bias introduced.
+    Scaling is opposite to Numpy i.e. "fft *= FFT_SIZE" and "ifft /= FFT_SIZE", this way values always stay
+    in -1 ... 1 range.
+
+    Args:
+        fft_size: Transform size, must be power of 2.
+        twiddle_bits: Stored as constants in LUTS. For big transforms you should try ~9 bits.
+        inverse (bool): True to perform inverse transform.
+        input_ordering (str): 'natural' or 'bitreversed'.
+            Output order is inverse of this - Natural(in) -> Bitreversed(out) or Bitreversed(in) -> Natural(out).
+    """
+
     def __init__(self, fft_size, twiddle_bits=9, inverse=False, input_ordering='natural'):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
         self.INPUT_ORDERING = input_ordering
@@ -189,12 +206,22 @@ class R2SDF(Hardware):
         self.stages = [StageR2SDF(self.FFT_SIZE, i, twiddle_bits, inverse, input_ordering, allow_gain_control=i < max_gain_control_stages)
                        for i in range(self.N_STAGES)]
 
-        self.out = DataValid(Complex(0, -self.POST_GAIN_CONTROL, -17 - self.POST_GAIN_CONTROL))
+        self.output = DataValid(Complex(0, -self.POST_GAIN_CONTROL, -17 - self.POST_GAIN_CONTROL))
 
-    def main(self, inp):
-        var = inp
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): -1.0 ... 1.0 range, up to 18 bits
+
+        Returns:
+            DataValid: 18 bits(-1.0 ... 1.0 range) if transform size is up to 1024 points.
+                Transforms over 1024 points start emphasizing smaller numbers e.g. 2048 would return a result with 18 bits
+                but in -0.5 ... 0.5 range (one extra bit for smaller numbers) etc...
+
+        """
+        var = input
         if self.INVERSE:
-            var = DataValid(Complex(inp.data.imag, inp.data.real), inp.valid)
+            var = DataValid(Complex(input.data.imag, input.data.real), input.valid)
 
         # execute stages
         for stage in self.stages:
@@ -203,23 +230,24 @@ class R2SDF(Hardware):
         if self.INVERSE:
             var = DataValid(Complex(var.data.imag, var.data.real), var.valid)
 
+        # this part is active if transform is larger than 10 stages
         if self.POST_GAIN_CONTROL != 0:
-            self.out.data = scalb(var.data, -self.POST_GAIN_CONTROL)
+            self.output.data = scalb(var.data, -self.POST_GAIN_CONTROL)
         else:
-            self.out.data = var.data
+            self.output.data = var.data
 
-        self.out.valid = var.valid
-        return self.out
+        self.output.valid = var.valid
+        return self.output
 
-    def model(self, inp):
+    def model(self, input_list):
         from pyha.simulation.tracer import Tracer
         if not Tracer.is_enabled():
-            return numpy_model(inp, self.FFT_SIZE, self.INPUT_ORDERING, self.INVERSE)
+            return numpy_model(input_list, self.FFT_SIZE, self.INPUT_ORDERING, self.INVERSE)
         else:
             if self.INVERSE:
-                inp = np.array(inp.imag + inp.real * 1j)
+                input_list = np.array(input_list.imag + input_list.real * 1j)
 
-            var = inp
+            var = input_list
             for stage in self.stages:
                 var = stage.model(var)
 

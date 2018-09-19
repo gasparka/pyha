@@ -287,19 +287,6 @@ def test_non_unit_resize():
 #     assert b.right == -14
 
 
-def test_BROKEN_SHIT():
-    pytest.skip()
-    # this could pass if number negative, but since it is so close to MAX
-    # it cannot pass as positive value, need extra bit here
-    # is this same for VHDL implementation??
-    assert 0
-    a = 0.00390623013197
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == -7
-    assert b.right == -24
-
-
 def test_auto_size_negative_int_bits():
     pytest.skip()
     a = 0.00390623013197
