@@ -11,7 +11,7 @@ def test_loopback():
     dut = T()
     inp = np.random.uniform(-1, 1, 2) + np.random.uniform(-1, 1, 2) * 1j
 
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -60,7 +60,7 @@ def test_old_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'GATE'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -78,7 +78,7 @@ def test_new_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'GATE'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -286,7 +286,7 @@ def test_sub_uneven_types():
     a = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
     b = np.random.uniform(-1, 1, 256)
 
-    sims = simulate(dut, a, b, input_types=[Complex(0, 0, -17), Complex(0, 0, -18)], simulations=['PYHA', 'RTL'],
+    sims = simulate(dut, a, b, input_types=[Complex(0, 0, -17), Complex(0, 0, -18)], simulations=['HARDWARE', 'RTL'],
                     conversion_path='/home/gaspar/git/pyhacores/playground')
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
@@ -339,6 +339,6 @@ def test_complex_constants():
     dut = T()
     inputs = [0 + 0j, 0.1 + 0.2j, -0.1 + 0.3j]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL'],
                     conversion_path='/home/gaspar/git/pyhacores/playground')
     assert sims_close(sims)

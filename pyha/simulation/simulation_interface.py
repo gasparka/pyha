@@ -132,7 +132,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     :param input_types: Force inputs types, default for floats is Sfix[0:-17].
     :param simulations: List of simulations to execute:
     * ``'MODEL'`` passes inputs directly to ``model`` function. If ``model`` does not exist, uses the ``main`` function by turning off register- and fixed point effects.
-    * ``'PYHA'`` cycle accurate simulator in Python domain, debuggable.
+    * ``'HARDWARE'`` cycle accurate simulator in Python domain, debuggable.
     * ``'RTL'`` converts sources to VHDL and runs RTL simulation by using GHDL simulator.
     * ``'GATE'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
 
@@ -164,9 +164,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     if simulations is None:
         if hasattr(model, 'model'):
-            simulations = ['MODEL', 'PYHA', 'RTL', 'GATE']
+            simulations = ['MODEL', 'HARDWARE', 'RTL', 'GATE']
         else:
-            simulations = ['MODEL_PYHA', 'PYHA', 'RTL', 'GATE']
+            simulations = ['MODEL_PYHA', 'HARDWARE', 'RTL', 'GATE']
 
     if 'MODEL' in simulations:
         if not hasattr(model, 'model'):
@@ -174,8 +174,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             simulations.remove('MODEL')
 
     if 'RTL' in simulations:
-        if 'PYHA' not in simulations:
-            logger.warning('SKIPPING **RTL** simulations -> You need to run "PYHA" simulation before "RTL" simulation')
+        if 'HARDWARE' not in simulations:
+            logger.warning('SKIPPING **RTL** simulations -> You need to run "HARDWARE" simulation before "RTL" simulation')
             simulations.remove('RTL')
         elif 'PYHA_SKIP_RTL' in os.environ:
             logger.warning('SKIPPING **RTL** simulations -> "PYHA_SKIP_RTL" environment variable is set')
@@ -189,9 +189,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
 
     if 'GATE' in simulations:
-        if 'PYHA' not in simulations:
+        if 'HARDWARE' not in simulations:
             logger.warning(
-                'SKIPPING **GATE** simulations -> You need to run "PYHA" simulation before "GATE" simulation')
+                'SKIPPING **GATE** simulations -> You need to run "HARDWARE" simulation before "GATE" simulation')
             simulations.remove('GATE')
         elif 'PYHA_SKIP_GATE' in os.environ:
             logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
@@ -201,8 +201,8 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             simulations.remove('GATE')
 
     if trace:
-        simulations = ['MODEL', 'PYHA']
-        logger.info(f'Tracing is enabled, running "MODEL" and "PYHA" simulations')
+        simulations = ['MODEL', 'HARDWARE']
+        logger.info(f'Tracing is enabled, running "MODEL" and "HARDWARE" simulations')
         model._pyha_insert_tracer(label='self')
 
     out = {}
@@ -246,7 +246,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         out['MODEL_PYHA'] = ret
         logger.info(f'OK!')
 
-    if 'PYHA' in simulations:
+    if 'HARDWARE' in simulations:
         if 'RTL' in simulations or 'GATE' in simulations:
             logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
             model._pyha_enable_function_profiling_for_types()
@@ -269,7 +269,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
             args += args * int(np.ceil(delay_compensate / len(args)))
             args = args[:target_len]
 
-        logger.info(f'Running "PYHA" simulation...')
+        logger.info(f'Running "HARDWARE" simulation...')
         ret = []
         valid_samples = 0
         with SimulationRunning.enable():
@@ -300,7 +300,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
                                 args[-1])  # collect samples needed to flush the system, so RTL and GATE sims work also!
                         logger.info(f'Flush took {hardware_delay} cycles.')
 
-        out['PYHA'] = process_outputs(delay_compensate, ret)
+        out['HARDWARE'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
     if 'RTL' in simulations or 'GATE' in simulations:
@@ -403,15 +403,15 @@ def assert_simulations_equal(simulations, rtol=1e-05, atol=1e-30):
     :param atol: Tune this when numbers close to 0 are failing assertions. Default assumes that inputs are in range of [-1,1] and 18 bits.
     """
     from numpy.testing import assert_allclose
-    if 'MODEL' in simulations and 'PYHA' in simulations:
-        assert_allclose(simulations['PYHA'], simulations['MODEL'], rtol, atol)
+    if 'MODEL' in simulations and 'HARDWARE' in simulations:
+        assert_allclose(simulations['HARDWARE'], simulations['MODEL'], rtol, atol)
 
     # hardware simulations must be EXACTLY equal
     if 'RTL' in simulations:
-        assert_allclose(simulations['RTL'], simulations['PYHA'], rtol=1e-32, atol=1e-32)
+        assert_allclose(simulations['RTL'], simulations['HARDWARE'], rtol=1e-32, atol=1e-32)
 
     if 'GATE' in simulations:
-        assert_allclose(simulations['GATE'], simulations['PYHA'], rtol=1e-32, atol=1e-32)
+        assert_allclose(simulations['GATE'], simulations['HARDWARE'], rtol=1e-32, atol=1e-32)
 
 
 def hardware_sims_equal(simulation_results):
@@ -449,8 +449,8 @@ def sims_close(simulation_results, expected=None, rtol=1e-04, atol=(2 ** -17) * 
             expected = simulation_results['MODEL_PYHA']
             logger.info(f'Using "MODEL_PYHA" as golden output')
         else:
-            expected = simulation_results['PYHA']
-            logger.info(f'Using "PYHA" as golden output')
+            expected = simulation_results['HARDWARE']
+            logger.info(f'Using "HARDWARE" as golden output')
 
     expected = np_to_py(get_iterable(expected))[skip_first_n:]
 

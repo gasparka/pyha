@@ -88,5 +88,5 @@ class Tracer:
                                                                                           tmp[-1].data_pyha):
                 tmp.append(x)
 
-        ret = {x.label: {'MODEL': x.data_model, 'PYHA': x.data_pyha} for x in tmp}
+        ret = {x.label: {'MODEL': x.data_model, 'HARDWARE': x.data_pyha} for x in tmp}
         return ret

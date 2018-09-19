@@ -6,7 +6,7 @@ from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 
 # in general GATE could be added here...but it takes ALOT of time
-SIMULATIONS = ['PYHA', 'RTL']
+SIMULATIONS = ['HARDWARE', 'RTL']
 
 
 def test_resize_truncate_saturate():

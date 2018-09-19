@@ -60,7 +60,7 @@ def test_nco(period):
     input_signal = np.diff(phase_cumsum) / np.pi
 
     dut = NCO()
-    sims = ['MODEL', 'PYHA', 'RTL']
+    sims = ['MODEL', 'HARDWARE', 'RTL']
     if period == 1:
         sims.append('GATE')
 

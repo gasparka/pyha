@@ -157,7 +157,7 @@ def test_angle_unit():
     expect = np.angle(inputs) / np.pi
 
     dut = Angle()
-    sim_out = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
+    sim_out = simulate(dut, inputs, simulations=['MODEL', 'HARDWARE'])
     sims_close(sim_out, expected=expect, rtol=1e-2)
 
 

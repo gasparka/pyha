@@ -34,7 +34,7 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    sims = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'PYHA'])
+    sims = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE'])
     assert sims_close(sims, rtol=1e-20, atol=1e-20)
 
 

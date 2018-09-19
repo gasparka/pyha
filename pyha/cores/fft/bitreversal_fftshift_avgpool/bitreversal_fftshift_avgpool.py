@@ -134,5 +134,5 @@ def test_nonstandard_input_size(fft_size, avg_freq_axis, avg_time_axis, input_po
 
     inp = np.random.uniform(-1, 1, packets * fft_size) * input_power
     inp = [float(dtype(x)) for x in inp]
-    sim_out = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
+    sim_out = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL'], conversion_path='/tmp/pyha_output')
     assert sims_close(sim_out, rtol=1e-30, atol=1e-30)

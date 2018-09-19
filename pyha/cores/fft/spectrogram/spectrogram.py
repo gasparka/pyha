@@ -74,7 +74,7 @@ def test_all(fft_size, avg_freq_axis, avg_time_axis, input_power):
 
     orig_inp_quant = np.vectorize(lambda x: complex(Complex(x, 0, -17)))(orig_inp)
 
-    sims = simulate(dut, orig_inp_quant, pipeline_flush='auto', simulations=['MODEL', 'PYHA'])
+    sims = simulate(dut, orig_inp_quant, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE'])
     assert sims_close(sims, rtol=1e-7, atol=1e-7)
 
 
@@ -132,7 +132,7 @@ def test_simple():
     inp *= 0.5 * 0.001
 
     sims = simulate(dut, inp,
-                    simulations=['MODEL', 'PYHA',
+                    simulations=['MODEL', 'HARDWARE',
                                  'GATE',
                                  # 'RTL'
                                  ],
@@ -140,12 +140,12 @@ def test_simple():
 
     # import matplotlib.pyplot as plt
     # plt.plot(np.hstack(sims['MODEL']))
-    # plt.plot(np.hstack(sims['PYHA']))
+    # plt.plot(np.hstack(sims['HARDWARE']))
     # plt.plot(np.hstack(sims['RTL']))
     # plt.show()
 
     sims['MODEL'] = np.array(sims['MODEL']) / np.array(sims['MODEL']).max()
-    sims['PYHA'] = np.array(sims['PYHA']) / np.array(sims['PYHA']).max()
+    sims['HARDWARE'] = np.array(sims['HARDWARE']) / np.array(sims['HARDWARE']).max()
     # sims['RTL'] = np.array(sims['RTL']) / np.array(sims['RTL']).max()
     # sims['GATE'] = np.array(sims['GATE']) / np.array(sims['GATE']).max()
     assert sims_close(sims, rtol=1e-1, atol=1e-4)

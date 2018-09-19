@@ -175,4 +175,4 @@ def test_element_with_none_bound():
 
     with patch('os._exit', MagicMock(return_value=0)):
         with pytest.raises(Exception):
-            sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+            sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL'])

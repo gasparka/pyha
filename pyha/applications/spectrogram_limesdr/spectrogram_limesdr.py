@@ -45,7 +45,7 @@ def test_lol():
     input_signal = input_signal[:len(input_signal) // (l) * (l)]
     print(len(input_signal))
     dut = SpectrogramLimeSDR()
-    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'PYHA', 'RTL'], conversion_path='/tmp/pyha_output')
+    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL'], conversion_path='/tmp/pyha_output')
 
 
 def test_all():
@@ -116,7 +116,7 @@ def test_simple():
     inp *= 0.5 * 0.001
 
     sims = simulate(dut, inp,
-                    simulations=['MODEL', 'PYHA',
+                    simulations=['MODEL', 'HARDWARE',
                                  'GATE',
                                  # 'RTL'
                                  ],
@@ -124,12 +124,12 @@ def test_simple():
 
     # import matplotlib.pyplot as plt
     # plt.plot(np.hstack(sims['MODEL']))
-    # plt.plot(np.hstack(sims['PYHA']))
+    # plt.plot(np.hstack(sims['HARDWARE']))
     # plt.plot(np.hstack(sims['RTL']))
     # plt.show()
 
     sims['MODEL'] = np.array(sims['MODEL']) / np.array(sims['MODEL']).max()
-    sims['PYHA'] = np.array(sims['PYHA']) / np.array(sims['PYHA']).max()
+    sims['HARDWARE'] = np.array(sims['HARDWARE']) / np.array(sims['HARDWARE']).max()
     # sims['RTL'] = np.array(sims['RTL']) / np.array(sims['RTL']).max()
     # sims['GATE'] = np.array(sims['GATE']) / np.array(sims['GATE']).max()
     assert sims_close(sims, rtol=1e-1, atol=1e-4)

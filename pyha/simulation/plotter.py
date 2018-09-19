@@ -10,21 +10,21 @@ figsize = (9.75, 5)
 
 def plot_time_domain(simulations, name='Time domain'):
     simulations["MODEL"] = np.array(simulations["MODEL"])
-    simulations["PYHA"] = np.array(simulations["PYHA"])
+    simulations["HARDWARE"] = np.array(simulations["HARDWARE"])
     if is_float(simulations["MODEL"][0]):
         fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
 
         if name:
             fig.suptitle(name, fontsize=14, fontweight='bold')
         ax[0].plot(simulations["MODEL"], label='MODEL')
-        ax[0].plot(simulations["PYHA"], label='PYHA')
-        ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+        ax[0].plot(simulations["HARDWARE"], label='HARDWARE')
+        ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["HARDWARE"]):.2f} dB')
         ax[0].set_xlabel('Sample')
         ax[0].set_ylabel('Magnitude')
         ax[0].grid(True)
         ax[0].legend(loc='upper right')
 
-        ax[1].plot(simulations["MODEL"] - simulations["PYHA"], label='Error')
+        ax[1].plot(simulations["MODEL"] - simulations["HARDWARE"], label='Error')
         ax[1].grid(True)
         ax[1].legend(loc='upper right')
     elif is_complex(simulations["MODEL"][0]):
@@ -34,26 +34,26 @@ def plot_time_domain(simulations, name='Time domain'):
         if name:
             fig.suptitle(name, fontsize=14, fontweight='bold')
         ax[0][0].plot(simulations["MODEL"].real, label='MODEL')
-        ax[0][0].plot(simulations["PYHA"].real, label='PYHA')
-        ax[0][0].set(title=f'REAL SQNR={SQNR(simulations["MODEL"].real, simulations["PYHA"].real):.2f} dB')
+        ax[0][0].plot(simulations["HARDWARE"].real, label='HARDWARE')
+        ax[0][0].set(title=f'REAL SQNR={SQNR(simulations["MODEL"].real, simulations["HARDWARE"].real):.2f} dB')
         ax[0][0].set_xlabel('Sample')
         ax[0][0].set_ylabel('Magnitude')
         ax[0][0].grid(True)
         ax[0][0].legend(loc='upper right')
 
-        ax[1][0].plot(simulations["MODEL"].real - simulations["PYHA"].real, label='Error')
+        ax[1][0].plot(simulations["MODEL"].real - simulations["HARDWARE"].real, label='Error')
         ax[1][0].grid(True)
         ax[1][0].legend(loc='upper right')
 
         ax[0][1].plot(simulations["MODEL"].imag, label='MODEL')
-        ax[0][1].plot(simulations["PYHA"].imag, label='PYHA')
-        ax[0][1].set(title=f'IMAG SQNR={SQNR(simulations["MODEL"].imag, simulations["PYHA"].imag):.2f} dB')
+        ax[0][1].plot(simulations["HARDWARE"].imag, label='HARDWARE')
+        ax[0][1].set(title=f'IMAG SQNR={SQNR(simulations["MODEL"].imag, simulations["HARDWARE"].imag):.2f} dB')
         ax[0][1].set_xlabel('Sample')
         ax[0][1].set_ylabel('Magnitude')
         ax[0][1].grid(True)
         ax[0][1].legend(loc='upper right')
 
-        ax[1][1].plot(simulations["MODEL"].imag - simulations["PYHA"].imag, label='Error')
+        ax[1][1].plot(simulations["MODEL"].imag - simulations["HARDWARE"].imag, label='Error')
         ax[1][1].grid(True)
         ax[1][1].legend(loc='upper right')
 
@@ -63,7 +63,7 @@ def plot_time_domain(simulations, name='Time domain'):
 
 def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.window_hanning, xlim=None, ylim=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
-    simulations["PYHA"] = np.array(simulations["PYHA"])
+    simulations["HARDWARE"] = np.array(simulations["HARDWARE"])
     gain = 1.0
     fig, ax = plt.subplots(2, sharex="all", figsize=figsize, gridspec_kw={'height_ratios': [4, 2]})
 
@@ -73,12 +73,12 @@ def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.
     spec_model, freq, _ = ax[0].magnitude_spectrum(simulations["MODEL"] * gain,
                                                    window=window,
                                                    scale='dB', label='MODEL')
-    spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations["PYHA"] * gain,
+    spec_pyha, _, _ = ax[0].magnitude_spectrum(simulations["HARDWARE"] * gain,
                                                window=window,
                                                scale='dB',
-                                               label='PYHA')
+                                               label='HARDWARE')
 
-    ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+    ax[0].set(title=f'SQNR={SQNR(simulations["MODEL"], simulations["HARDWARE"]):.2f} dB')
     ax[0].grid(True)
     ax[0].legend(loc='upper right')
 
@@ -99,20 +99,20 @@ def plot_frequency_domain(simulations, name='Frequency domain', window=plt.mlab.
 
 def plot_frequency_response(simulations, name='Frequency response', xlim=None, ylim=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
-    simulations["PYHA"] = np.array(simulations["PYHA"])
+    simulations["HARDWARE"] = np.array(simulations["HARDWARE"])
     gain = len(simulations["MODEL"])
     window = plt.mlab.window_none
     if is_complex(simulations["MODEL"][0]):
         gain *= 0.707
 
     simulations["MODEL"] *= gain
-    simulations["PYHA"] *= gain
+    simulations["HARDWARE"] *= gain
     plot_frequency_domain(simulations, name, window, xlim, ylim)
 
 
 def plot_imshow(simulations, rows, transpose=False, name=None):
     simulations["MODEL"] = np.array(simulations["MODEL"])
-    simulations["PYHA"] = np.array(simulations["PYHA"])
+    simulations["HARDWARE"] = np.array(simulations["HARDWARE"])
     fig, ax = plt.subplots(1, 2, figsize=figsize, sharex='all', sharey='all')
 
 
@@ -141,7 +141,7 @@ def plot_imshow(simulations, rows, transpose=False, name=None):
     inp = exposure.rescale_intensity(inp, in_range=(p2, p98))
 
     ax[1].imshow(inp, interpolation='nearest', aspect='auto', origin='lower')
-    ax[1].set(title=f'PYHA, SQNR={SQNR(simulations["MODEL"], simulations["PYHA"]):.2f} dB')
+    ax[1].set(title=f'PYHA, SQNR={SQNR(simulations["MODEL"], simulations["HARDWARE"]):.2f} dB')
     ax[1].set_xlabel('Time')
     ax[1].set_ylabel('Magnitude')
 
