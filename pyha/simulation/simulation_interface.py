@@ -134,7 +134,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
     * ``'MODEL'`` passes inputs directly to ``model`` function. If ``model`` does not exist, uses the ``main`` function by turning off register- and fixed point effects.
     * ``'HARDWARE'`` cycle accurate simulator in Python domain, debuggable.
     * ``'RTL'`` converts sources to VHDL and runs RTL simulation by using GHDL simulator.
-    * ``'GATE'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
+    * ``'NETLIST'`` runs VHDL sources trough Quartus and uses the generated generated netlist for simulation. Use to gain ~full confidence in your design. It is slow!
 
     :returns: Dict of output lists for each simulation. Select the output like ``out['MODEL']``.
 
@@ -164,9 +164,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
 
     if simulations is None:
         if hasattr(model, 'model'):
-            simulations = ['MODEL', 'HARDWARE', 'RTL', 'GATE']
+            simulations = ['MODEL', 'HARDWARE', 'RTL', 'NETLIST']
         else:
-            simulations = ['MODEL_PYHA', 'HARDWARE', 'RTL', 'GATE']
+            simulations = ['MODEL_PYHA', 'HARDWARE', 'RTL', 'NETLIST']
 
     if 'MODEL' in simulations:
         if not hasattr(model, 'model'):
@@ -188,17 +188,17 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         # elif not have_ghdl():
         #     logger.warning('SKIPPING **RTL** simulations -> no GHDL found')
 
-    if 'GATE' in simulations:
+    if 'NETLIST' in simulations:
         if 'HARDWARE' not in simulations:
             logger.warning(
-                'SKIPPING **GATE** simulations -> You need to run "HARDWARE" simulation before "GATE" simulation')
-            simulations.remove('GATE')
+                'SKIPPING **GATE** simulations -> You need to run "HARDWARE" simulation before "NETLIST" simulation')
+            simulations.remove('NETLIST')
         elif 'PYHA_SKIP_GATE' in os.environ:
             logger.warning('SKIPPING **GATE** simulations -> "PYHA_SKIP_GATE" environment variable is set')
-            simulations.remove('GATE')
+            simulations.remove('NETLIST')
         elif Sfix._float_mode.enabled:
             logger.warning('SKIPPING **GATE** simulations -> Sfix._float_mode is active')
-            simulations.remove('GATE')
+            simulations.remove('NETLIST')
 
     if trace:
         simulations = ['MODEL', 'HARDWARE']
@@ -247,7 +247,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'OK!')
 
     if 'HARDWARE' in simulations:
-        if 'RTL' in simulations or 'GATE' in simulations:
+        if 'RTL' in simulations or 'NETLIST' in simulations:
             logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
             model._pyha_enable_function_profiling_for_types()
 
@@ -303,9 +303,9 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         out['HARDWARE'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
-    if 'RTL' in simulations or 'GATE' in simulations:
+    if 'RTL' in simulations or 'NETLIST' in simulations:
         converter = Converter(model, output_dir=conversion_path).to_vhdl()
-        if 'GATE' in simulations:
+        if 'NETLIST' in simulations:
             make_quartus_project(converter)
 
     if 'RTL' in simulations:
@@ -314,14 +314,14 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         out['RTL'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
-    if 'GATE' in simulations:
+    if 'NETLIST' in simulations:
 
         logger.info(f'Running "NETLIST" simulation...')
         quartus = QuartusDockerWrapper(converter.base_path)
         set_simulator_quartus(quartus)
 
         ret = run_ghdl_cocotb(*args, converter=converter, netlist=quartus.get_netlist())
-        out['GATE'] = process_outputs(delay_compensate, ret)
+        out['NETLIST'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
     logger.info('Simulations completed!')
@@ -410,8 +410,8 @@ def assert_simulations_equal(simulations, rtol=1e-05, atol=1e-30):
     if 'RTL' in simulations:
         assert_allclose(simulations['RTL'], simulations['HARDWARE'], rtol=1e-32, atol=1e-32)
 
-    if 'GATE' in simulations:
-        assert_allclose(simulations['GATE'], simulations['HARDWARE'], rtol=1e-32, atol=1e-32)
+    if 'NETLIST' in simulations:
+        assert_allclose(simulations['NETLIST'], simulations['HARDWARE'], rtol=1e-32, atol=1e-32)
 
 
 def hardware_sims_equal(simulation_results):

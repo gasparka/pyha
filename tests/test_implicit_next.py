@@ -68,7 +68,7 @@ class TestBuiltins:
         expected = [[1, 5, 2], [True, False, True]]
 
         dut = self.T0()
-        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestBuiltinsList:
@@ -134,7 +134,7 @@ class TestBuiltinsList:
         expected = [[3, 3, 3, 3, 3, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
-        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfix:
@@ -169,7 +169,7 @@ class TestSfix:
         expected = [0.1, 0.1, 0.2]
 
         dut = self.T2()
-        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfixList:
@@ -207,7 +207,7 @@ class TestSfixList:
         expected = [0.2, 0.1, 0.1]
 
         dut = self.T3()
-        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSubmodule:
@@ -264,7 +264,7 @@ class TestSubmodule:
         x = [1, 2, 3]
 
         dut = self.T4()
-        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSubmoduleList:
@@ -334,4 +334,4 @@ class TestSubmoduleList:
         x = [1, 2, 3]
 
         dut = self.T5()
-        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])

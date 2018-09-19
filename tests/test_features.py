@@ -46,7 +46,7 @@ def test_list_of_rams():
     dut = T()
     inputs = [[0, 1, 0, 1, 0, 1, 1, 0], [0, 1, 2, 3, 4, 5, 6, 7], [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]]
 
-    sims = simulate(dut, *inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, *inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert sims_close(sims)
 
 
@@ -130,7 +130,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_basic_list(self):
@@ -147,7 +147,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_deep(self):
@@ -169,7 +169,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_constructor(self):
@@ -184,7 +184,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_deep_construct(self):
@@ -204,7 +204,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_submodule_array(self):
@@ -219,7 +219,7 @@ class TestSubmoduleAssign:
         dut = T()
         inputs = [0.0j, 0.1j, 0.2j, 0.3j, 0.4j, 0.5j]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
 
@@ -238,7 +238,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_sfix_resize(self):
@@ -254,7 +254,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_submodule(self):
@@ -278,7 +278,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0, 1, 2, 3, 4]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_index_not_constant(self):
@@ -294,7 +294,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_index_not_constant_call(self):
@@ -319,7 +319,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_for_range(self):
@@ -337,7 +337,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_for_submodule(self):
@@ -363,7 +363,7 @@ class TestDynamicLists:
         dut = T()
         inputs = [0.0, 0.1, 0.2]
 
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
 
@@ -379,7 +379,7 @@ def test_singleelem_list():
     dut = T(1)
     inputs = [0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert sims_close(sims)
 
 
@@ -395,7 +395,7 @@ def test_singleelem_list_complex():
     dut = T(1)
     inputs = [0.1 + 0.2j, 0.2 + 0.3j]
 
-    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert sims_close(sims)
 
 
@@ -419,7 +419,7 @@ def test_submod_nocall():
     dut = T()
     inputs = [0.0, 0.1, 0.2]
 
-    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert sims_close(sims)
 
 
@@ -707,7 +707,7 @@ class TestEnum:
 
         dut = T()
         inputs = [1] * 4
-        ret = simulate(dut, inputs, simulations=['MODEL', 'HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, inputs, simulations=['MODEL', 'HARDWARE', 'RTL', 'NETLIST'])
         assert_equals(ret)
 
     def test_statemachine(self):
@@ -755,7 +755,7 @@ class TestStreaming:
 
         dut = A()
         inputs = [1, 2, 3]
-        assert_sim_match(dut, None, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSubmodulesList:
@@ -822,7 +822,7 @@ class TestSubmodulesList:
         expected = [[2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
                     [128, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 
-        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_for(self):
         class A4(Hardware):
@@ -867,7 +867,7 @@ class TestRegisters:
         inputs = [1, 2, 3, 4]
         expect = [123, 1, 2, 3]
 
-        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expect, inputs, rtol=1e-4, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_multi(self):
         class Register(Hardware):
@@ -886,7 +886,7 @@ class TestRegisters:
         inputs = [[0.1, 0.2, 0.3, 0.4], [1, 2, 3, 4], [True, False, False, False]]
         expect = [[0.123, 0.1, 0.2, 0.3], [123, 1, 2, 3], [False, True, False, False]]
 
-        assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expect, *inputs, rtol=1e-4, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_complexsfix(self):
         class Register(Hardware):
@@ -970,7 +970,7 @@ class TestRegisters:
                   [True, False, False, True, False, False],
                   [0.5, -0.5, 0.6, 0.5, 0.1, 0.2]]
 
-        assert_sim_match(dut, expect, *inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, expect, *inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_shiftreg_sfix_lazy(self):
         class ShiftReg(Hardware):
@@ -985,7 +985,7 @@ class TestRegisters:
 
         inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         expect = [0.5, 0.5, 0.5, 0.5, 0.1, 0.2]
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert_equals(sims, expected=expect)
         print(sims)
 
@@ -1002,7 +1002,7 @@ class TestRegisters:
 
         inputs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         expect = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
-        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         print(sims)
         assert_equals(sims, expected=expect)
 
@@ -1022,7 +1022,7 @@ class TestRegisters:
         inputs = [0.1 + 0.2j, 0.2 + 0.3j, 0.3 + 0.4j]
         expect = [0 + 0j, 0.1 + 0.2j, 0.2 + 0.3j]
 
-        ret = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert_equals(ret, expect)
         """ This failed because inputs were converted with 'is_local=True', which disabled register updates. """
 
@@ -1039,7 +1039,7 @@ class TestRegisters:
         inputs = [0.1 + 0.2j, 0.2 + 0.3j, 0.3 + 0.4j]
         expect = [0 + 0j, 0.1 + 0.2j, 0.2 + 0.3j]
 
-        ret = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert_equals(ret, expect)
 
     def test_submodule_shiftreg(self):
@@ -1063,7 +1063,7 @@ class TestRegisters:
         inputs = [Sub(999), Sub(9999), Sub(99999), Sub(999999)]
         expect = [Sub(3), Sub(999), Sub(9999), Sub(99999)]
 
-        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(ret, expect)
 
     def test_submodule_with_complex_shiftreg(self):
@@ -1084,7 +1084,7 @@ class TestRegisters:
 
         inputs = [Sub(0.3 + 0.3j), Sub(0.4 + 0.4j), Sub(0.5 + 0.5j), Sub(0.6 + 0.6j)]
 
-        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, inputs, simulations=['MODEL_PYHA', 'HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(ret)
 
 
@@ -1104,7 +1104,7 @@ class TestMemory:
 
         to_write = [4, 3, 2, 1, 0, 0, 1, 2, 3, 4]
         addr = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
-        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(ret)
 
     def test_simple_write(self):
@@ -1121,7 +1121,7 @@ class TestMemory:
         dut = Mem()
         to_write = [0.91 + 0.99j, 0.92 + 0.99j, 0.93 + 0.99j, 0.94 + 0.99j]
         addr = [0, 0, 0, 0]
-        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(ret)
 
     def test_regfile_submodule(self):
@@ -1142,7 +1142,7 @@ class TestMemory:
                     0.95 + 0.96j, 0.99 + 0.99j, 0.99 + 0.99j, 0.99 + 0.99j,
                     0.99 + 0.99j]
         addr = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4]
-        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'GATE'])
+        ret = simulate(dut, addr, to_write, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(ret)
 
 
@@ -1521,7 +1521,7 @@ class TestInterface:
         dut = T13()
         x = [In(0.1), In(0.2)]
 
-        sims = simulate(dut, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims, expected=x)
 
     def test_input_custom_sfix_list(self):
@@ -1536,7 +1536,7 @@ class TestInterface:
         dut = T13()
         x = [[0.0000001, 0.000002], [0.00000003, 0.000000004]]
 
-        sims = simulate(dut, x, input_types=[Sfix(0, 0, -35)], simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, x, input_types=[Sfix(0, 0, -35)], simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims, expected=x)
 
 
@@ -1801,7 +1801,7 @@ class TestFloatToSfix:
                 return self.twiddle_buffer
 
         dut = T(4)
-        sims = simulate(dut, [0.1 + 0.2j], simulations=['HARDWARE', 'RTL', 'GATE'])
+        sims = simulate(dut, [0.1 + 0.2j], simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims, expected=[1.0 + 0j])
 
 
@@ -2324,7 +2324,7 @@ class TestPitfalls:
 #
 #     dut = Dut()
 #     inputs = [[0.1] * 256, [0.1] * 256]
-#     ret = simulate(dut, *inputs, simulations=['HARDWARE', 'GATE'], conversion_path='/home/gaspar/git/pyha/playground')
+#     ret = simulate(dut, *inputs, simulations=['HARDWARE', 'NETLIST'], conversion_path='/home/gaspar/git/pyha/playground')
 #
 #
 # def rescale_taps(taps):
@@ -2413,4 +2413,4 @@ class TestPitfalls:
 #
 #     dut = Dut()
 #     inputs = [[0.1] * 256]
-#     ret = simulate(dut, *inputs, simulations=['HARDWARE', 'RTL', 'GATE'], conversion_path='/home/gaspar/git/pyha/playground')
+#     ret = simulate(dut, *inputs, simulations=['HARDWARE', 'RTL', 'NETLIST'], conversion_path='/home/gaspar/git/pyha/playground')

@@ -34,7 +34,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -42,7 +42,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -50,7 +50,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -58,7 +58,7 @@ class TestSfix:
 
         dut = self.A('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfixList:
@@ -120,7 +120,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -132,7 +132,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -143,7 +143,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -154,7 +154,7 @@ class TestSfixList:
 
         dut = self.A1('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestComplex:
@@ -186,7 +186,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -195,7 +195,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -203,7 +203,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -211,7 +211,7 @@ class TestComplex:
 
         dut = self.A2('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_full_assign(self):
         """ There shuld be no auto-resize when assigning fully """
@@ -271,7 +271,7 @@ class TestLazySfix:
 
         dut = self.A3()
         assert_sim_match(dut, None, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestLazySfixList:
@@ -312,7 +312,7 @@ class TestLazySfixList:
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
         assert_sim_match(self.A4(), None, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 # class TestLazyComplexSfix:
@@ -355,7 +355,7 @@ class TestLazySfixList:
 #
 #         dut = self.A5()
 #         assert_sim_match(dut, None, x,
-#                          simulations=['HARDWARE', 'RTL', 'GATE'])
+#                          simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestAssignConstant:
@@ -403,7 +403,7 @@ class TestAssignConstant:
         x = [1, 2]
 
         dut = self.A6()
-        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestLocalsSfix:
@@ -438,4 +438,4 @@ class TestLocalsSfix:
 
         dut = A7()
         assert_sim_match(dut, None, x,
-                         simulations=['HARDWARE', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])

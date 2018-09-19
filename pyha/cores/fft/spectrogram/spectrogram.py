@@ -133,7 +133,7 @@ def test_simple():
 
     sims = simulate(dut, inp,
                     simulations=['MODEL', 'HARDWARE',
-                                 'GATE',
+                                 'NETLIST',
                                  # 'RTL'
                                  ],
                     conversion_path='/home/gaspar/git/pyhacores/playground')
@@ -147,5 +147,5 @@ def test_simple():
     sims['MODEL'] = np.array(sims['MODEL']) / np.array(sims['MODEL']).max()
     sims['HARDWARE'] = np.array(sims['HARDWARE']) / np.array(sims['HARDWARE']).max()
     # sims['RTL'] = np.array(sims['RTL']) / np.array(sims['RTL']).max()
-    # sims['GATE'] = np.array(sims['GATE']) / np.array(sims['GATE']).max()
+    # sims['NETLIST'] = np.array(sims['NETLIST']) / np.array(sims['NETLIST']).max()
     assert sims_close(sims, rtol=1e-1, atol=1e-4)

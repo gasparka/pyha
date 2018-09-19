@@ -20,7 +20,7 @@ def test_basic_init_zero():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 0
@@ -44,7 +44,7 @@ def test_basic_reserved_name():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 0
@@ -69,7 +69,7 @@ def test_basic_init_random():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     # if get_ran_gate_simulation():
     #     # handling non-zero reset is done using LUTS :(
@@ -97,7 +97,7 @@ def test_conditional_write():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 47
@@ -125,7 +125,7 @@ def test_conditional_read():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 47
     #     assert VHDLSimulation.last_memory_bits == 1024
@@ -154,7 +154,7 @@ def test_two():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 2722
     #     assert VHDLSimulation.last_memory_bits == 6400
@@ -182,7 +182,7 @@ def test_two_list():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 2722
     #     assert VHDLSimulation.last_memory_bits == 6400
@@ -214,7 +214,7 @@ def test_submodule():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     # if get_ran_gate_simulation():
     #     # handling non-zero reset is done using LUTS :(
     #     assert VHDLSimulation.last_logic_elements == 1643
@@ -252,7 +252,7 @@ def test_submodule_lists():
 
     addr = list(range(N)) * 2
     val = list(range(N)) * 2
-    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, addr, val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     # if get_ran_gate_simulation():
     #     assert VHDLSimulation.last_logic_elements == 2735
     #     assert VHDLSimulation.last_memory_bits == 12800
@@ -285,7 +285,7 @@ def test_two_reads():
     addr2 = np.random.randint(0, N, N)
     sims = simulate(dut, addr, addr2, simulations=['HARDWARE',
                                                    # 'RTL',
-                                                   'GATE'
+                                                   'NETLIST'
                                                    ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     # if get_ran_gate_simulation():
@@ -312,7 +312,7 @@ def test_read_modify_write():
     addr = list(range(N)) * 4
     sims = simulate(dut, addr, simulations=['HARDWARE',
                                             'RTL',
-                                            'GATE'
+                                            'NETLIST'
                                             ],
                     conversion_path='/home/gaspar/git/pyha/playground')
     assert sims_close(sims)

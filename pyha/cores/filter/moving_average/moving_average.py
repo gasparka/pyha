@@ -77,5 +77,5 @@ def test_all(window_len, input_power, dtype):
 
     input_signal *= input_power
 
-    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, input_signal, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE', 'RTL', 'NETLIST'])
     assert sims_close(sims, rtol=1e-5, atol=1e-5)

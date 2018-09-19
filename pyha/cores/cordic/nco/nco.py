@@ -62,7 +62,7 @@ def test_nco(period):
     dut = NCO()
     sims = ['MODEL', 'HARDWARE', 'RTL']
     if period == 1:
-        sims.append('GATE')
+        sims.append('NETLIST')
 
     sim_out = simulate(dut, input_signal, simulations=sims)
     assert sims_close(sim_out, rtol=1e-2, atol=1e-4)

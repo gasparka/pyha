@@ -60,7 +60,7 @@ def test_old_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -78,7 +78,7 @@ def test_new_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
