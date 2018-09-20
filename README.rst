@@ -26,7 +26,7 @@ From pip:
 
 RTL/NETLIST level simulations require `Docker <https://docs.docker.com/install/>`_ :
 
-``curl -fsSL get.docker.com -o get-docker.sh | sh``
+``curl -fsSL https://get.docker.com | sh``
 
 Follow the instructions to add yourself to the 'docker' group.
 
