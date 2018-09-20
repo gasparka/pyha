@@ -275,7 +275,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         with SimulationRunning.enable():
             with RegisterBehaviour.enable():
                 with AutoResize.enable():
-                    for input in tqdm(args, file=sys.stdout):
+                    for input in tqdm(args, file=sys.stderr):
                         returns = model.main(*input)
                         returns = pyha_to_python(returns)
                         if returns is not None:
