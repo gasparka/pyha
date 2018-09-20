@@ -41,7 +41,7 @@ def package_files(directory):
 extra_files = package_files('pyha/simulation/sim_include/')
 
 setup(
-    name='HARDWARE',
+    name='pyha',
     version='0.0.11',
     description="Pyha",
     long_description=readme,
@@ -50,7 +50,7 @@ setup(
     url='https://github.com/gasparka/pyha',
 
     packages=find_packages(),
-    package_data={'HARDWARE': extra_files},
+    package_data={'pyha': extra_files},
 
     extras_require={'dev': [extra_reqs]},
 
@@ -58,5 +58,5 @@ setup(
     install_requires=requirements,
     license="Apache Software License 2.0",
     zip_safe=False,
-    keywords='HARDWARE'
+    keywords='pyha'
 )
