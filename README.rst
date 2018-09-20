@@ -2,8 +2,6 @@
 pyha
 ====
 
-Under construction!
-
 .. image:: https://img.shields.io/pypi/v/pyha.svg
     :target: https://pypi.python.org/pypi/pyha
 
@@ -22,12 +20,15 @@ Under construction!
 Install
 -------
 
+From pip:
+
 ``pip install --user pyha``
 
-RTL/GATE level simulations require `Docker <https://docs.docker.com/install/>`_
-and user needs to be in the 'docker' group:
+RTL/NETLIST level simulations require `Docker <https://docs.docker.com/install/>`_ :
 
-``sudo usermod -aG docker $USER``
+``curl -fsSL get.docker.com -o get-docker.sh | sh``
+
+Follow the instructions to add yourself to the 'docker' group.
 
 
 Features
@@ -63,4 +64,4 @@ And then see how the 'dc-removal' is built by reusing the 'moving-average' compo
 Documentation
 -------------
 
-TODO
+Under construction!
