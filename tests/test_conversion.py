@@ -1,13 +1,10 @@
-import textwrap
 from pathlib import Path
 import os
-from unittest import mock
 import pytest
 from pyha import simulate
 from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix
-from pyha.conversion.conversion import Conversion, get_objects_rednode
-from pyha.simulation import vhdl_simulation
+from pyha.conversion.conversion import RecursiveConverter, get_objects_rednode
 from pyha.simulation.simulation_interface import assert_sim_match
 from unittest.mock import MagicMock, patch
 
@@ -23,10 +20,11 @@ def dut():
             return a
 
     o = Dummy()
+    o._pyha_enable_function_profiling_for_types()
     # train object
     o.main(1)
     o.main(2)
-    return Conversion(o)
+    return RecursiveConverter(o)
 
 
 def test_get_objects_rednode(dut):
@@ -143,11 +141,13 @@ def test_convert_submodule_name_conflict():
             return a
 
     dut = B2()
+    dut._pyha_enable_function_profiling_for_types()
+
     dut.main(1)
-    conv = Conversion(dut)
+    conv = RecursiveConverter(dut)
     paths = conv.write_vhdl_files(Path('/tmp'))
     names = [x.name for x in paths]
-    assert names == ['A2_0.vhd', 'B2_0.vhd', 'top.vhd']
+    assert names == ['A2_0.vhd', 'B2_1.vhd', 'top.vhd']
 
 
 def test_element_with_none_bound():
@@ -175,4 +175,4 @@ def test_element_with_none_bound():
 
     with patch('os._exit', MagicMock(return_value=0)):
         with pytest.raises(Exception):
-            sims = simulate(dut, inp, simulations=['PYHA', 'RTL'])
+            sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL'])

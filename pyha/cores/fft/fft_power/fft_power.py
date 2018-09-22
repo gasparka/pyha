@@ -1,34 +1,44 @@
 import numpy as np
 import pytest
 
-from pyha import Hardware, simulate, sims_close, Complex, resize, Sfix, right_index, left_index
-from pyha.cores import DataIndexValidPackager, DataIndexValidDePackager, DataIndexValid
+from pyha import Hardware, Complex, Sfix, default_complex, simulate, sims_close
+from pyha.common.datavalid import DataValid, NumpyToDataValid
 
 
 class FFTPower(Hardware):
-    """ Turns FFT result into power ~equalish to : abs(fft_result)
-    Note that this core consumes Complex samples but outputs Sfix samples.
+    """
+    FFTPower
+    --------
+
+    Multiplies complex input by its conjugate: (a + bi)(a - bi) = a**2 + b**2
+    Results in a real number.
+
     """
 
     def __init__(self):
-        self._pyha_simulation_input_callback = DataIndexValidPackager(
-            dtype=Complex(0.0, 0, -17, overflow_style='saturate'))
-        self._pyha_simulation_output_callback = DataIndexValidDePackager()
+        self._pyha_simulation_input_callback = NumpyToDataValid(dtype=default_complex)
+        self.output = DataValid(Sfix(bits=36))
 
-        self.out = DataIndexValid(Sfix(0.0, 0, -35, overflow_style='saturate'), 0)
-        self.DELAY = 1
+    def main(self, input):
+        """
+        Args:
+            input (DataValid): type not restricted
 
-    def conjugate(self, x):
-        imag = resize(-x.imag, left_index(x.imag), right_index(x.imag))
-        return Complex(x.real, imag)
+        Returns:
+            DataValid: Lowest 36 bits from the result.
+                Example: Input is 18 bits with format 0:-17, then output is 36 bits 1:-34
 
-    def main(self, inp):
-        self.out.data = (self.conjugate(inp.data) * inp.data).real
-        self.out.index = inp.index
-        return self.out
+        """
+        if not input.valid:
+            return DataValid(self.output.data, valid=False)
 
-    def model_main(self, data):
-        return (np.conjugate(data) * data).real
+        # (a + bi)(a - bi) = a**2 + b**2
+        self.output.data = (input.data.real * input.data.real) + (input.data.imag * input.data.imag)
+        self.output.valid = input.valid
+        return self.output
+
+    def model(self, input_list):
+        return (np.conjugate(input_list) * input_list).real.flatten()
 
 
 @pytest.mark.parametrize("input_power", [0.5, 0.1, 0.001, 0.00001])
@@ -36,5 +46,18 @@ def test_all(input_power):
     dut = FFTPower()
     inp = (np.random.uniform(-1, 1, size=1280) + np.random.uniform(-1, 1, size=1280) * 1j) * input_power
     inp = [complex(Complex(x, 0, -17)) for x in inp]
-    sims = simulate(dut, inp, simulations=['MODEL', 'PYHA'])
+    sims = simulate(dut, inp, pipeline_flush='auto', simulations=['MODEL', 'HARDWARE'])
+    assert sims_close(sims, rtol=1e-20, atol=1e-20)
+
+
+def test_nonstandard_input_size():
+    input_power = 0.0001
+    dut = FFTPower()
+
+    dtype = Complex(0, -4, -21, round_style='round')
+
+    dut._pyha_simulation_input_callback = NumpyToDataValid(dtype)
+    inp = (np.random.uniform(-1, 1, size=64) + np.random.uniform(-1, 1, size=64) * 1j) * input_power
+    inp = [complex(dtype(x)) for x in inp]
+    sims = simulate(dut, inp, pipeline_flush='auto', conversion_path='/tmp/pyha_output')
     assert sims_close(sims, rtol=1e-20, atol=1e-20)

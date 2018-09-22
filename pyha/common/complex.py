@@ -33,11 +33,13 @@ class Complex:
     -0.50+0.50j [0:-17]
 
     """
-    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed')
+    __slots__ = ('round_style', 'overflow_style', 'right', 'left', 'val', 'wrap_is_ok', 'signed', 'bits', 'upper_bits')
 
     def __init__(self, val=0.0 + 0.0j, left=0, right=-17, overflow_style='wrap', round_style='truncate',
-                 init_only=False, wrap_is_ok=False, signed=True):
+                 init_only=False, wrap_is_ok=False, signed=True, bits=None, upper_bits=None):
 
+        self.upper_bits = upper_bits
+        self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
@@ -148,8 +150,21 @@ class Complex:
             return all([getattr(self, k) == getattr(other, k) for k in self.__slots__])
         return False
 
-    def __call__(self, x):
-        return Complex(x, self.left, self.right, self.overflow_style, self.round_style)
+    def __call__(self, x, left=None, right=None):
+        if left is None:
+            left = self.left
+
+        if right is None:
+            right = self.right
+
+        return Complex(complex(x), left, right, self.overflow_style,
+                    self.round_style, False, self.wrap_is_ok, self.signed)
+
+    def __len__(self):
+        if self.signed:
+            return -self.right + self.left + 1
+        else:
+            return -self.right + self.left
 
     def __str__(self):
         return '{:g} [{}:{}]'.format(complex(self), self.left, self.right)
@@ -200,7 +215,7 @@ class Complex:
         Also support mult by float.
         """
         other = self._convert_other_operand(other)
-        extra_bit = 1 # for complex mult
+        extra_bit = 1 # for complex mult, from addition
         if isinstance(other, (Sfix, float)):
             extra_bit = 0 # for real mult
 
@@ -221,6 +236,10 @@ class Complex:
     def scalb(self, i):
         n = 2 ** i
         return Complex(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+
+    @staticmethod
+    def default():
+        return default_complex
 
 
 default_complex = Complex(0, 0, -17, overflow_style='saturate', round_style='round')

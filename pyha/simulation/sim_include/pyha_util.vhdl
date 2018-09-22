@@ -13,6 +13,7 @@ package PyhaUtil is
 
   function left_index(x: sfixed) return integer;
   function right_index(x: sfixed) return integer;
+  function sign_bit(x: sfixed) return boolean;
   function \>>\(x: sfixed; n: integer) return sfixed;
   function Sfix(a:real; left_index, right_index:integer;
     constant overflow_style : fixed_overflow_style_type := fixed_wrap;
@@ -89,6 +90,11 @@ package body PyhaUtil is
   function right_index(x: sfixed) return integer is
   begin
     return x'right;
+  end function;
+
+  function sign_bit(x: sfixed) return boolean is
+  begin
+    return bool(x(x'left));
   end function;
 
   -- shift that wont lose precision

@@ -1,5 +1,7 @@
 import logging
 import sys
+import time
+import weakref
 from collections import UserList
 from copy import deepcopy, copy
 
@@ -13,7 +15,7 @@ from pyha.common.fixed_point import Sfix, resize, default_sfix
 # functions that will not be decorated/converted/parsed
 from pyha.common.util import np_to_py, get_iterable, is_constant
 
-SKIP_FUNCTIONS = ('__init__', 'model_main')
+SKIP_FUNCTIONS = ('__init__', 'model')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('core')
 
@@ -162,21 +164,12 @@ class Meta(type):
     """
     https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/#python-2-metaclass
     """
-    _pyha_instance_count = 0
-    _pyha_instances = []
-
     # ran when instance is made
-    # @profile
     def __call__(cls, *args, **kwargs):
         cls._pyha_is_initialization = True  # flag to avoid problems in __setattr__
         ret = super(Meta, cls).__call__(*args, **kwargs)
 
-        if not cls._pyha_instances:
-            cls._pyha_instances = []  # code depends on having this var
-
         if not SimulationRunning.is_enabled():  # local objects are simplified, they need no reset or register behaviour
-            ret._pyha_instance_id = cls._pyha_instance_count
-
             ret._pyha_next = {}
             ret._pyha_updateable = []
             for k, v in ret.__dict__.items():
@@ -199,23 +192,7 @@ class Meta(type):
                     continue
 
                 ret._pyha_next[k] = deepcopy(v)
-
-            cls._pyha_instance_count += 1
-            cls._pyha_instances.append(ret)
-            # cls._pyha_instances = copy(cls._pyha_instances + [ret])
-
-            ret.__dict__['_pyha_initial_self'] = deepcopy(ret)
-
-            # decorate all methods -> for locals discovery
-            for method_str in dir(ret):
-                # if not inspect.ismethod()
-                if method_str in SKIP_FUNCTIONS:
-                    continue
-                method = getattr(ret, method_str)
-                if method_str[:2] != '__' and method_str[:1] != '_' and callable(
-                        method) and method.__class__.__name__ == 'method':
-                    new = PyhaFunc(method)
-                    ret.__dict__[method_str] = new
+            ret.__dict__['_pyha_initial_self'] = deepcopy(ret) # TODO: this exists only for initial values, deepcopy very slow on large objects!
 
         del cls._pyha_is_initialization
         return ret
@@ -224,12 +201,28 @@ class Meta(type):
 def auto_resize(target, value):
     if not AutoResize.is_enabled() or not isinstance(target, (Sfix, Complex)) or Sfix._float_mode.enabled:
         return value
-
-    left = target.left if target.left is not None else value.left
-    right = target.right if target.right is not None else value.right
-
-    return resize(value, left, right, round_style=target.round_style,
-                  overflow_style=target.overflow_style, wrap_is_ok=target.wrap_is_ok, signed=target.signed)
+    if target.bits is not None:
+        right = value.right
+        try:
+            left = right + target.bits
+            if target.signed:
+                left -= 1  # -1 is to count for the sign bit!
+        except TypeError:  # right was None?
+            left = None
+    elif target.upper_bits is not None:
+        left = value.left
+        try:
+            right = left - target.upper_bits
+            if target.signed:
+                right += 1  # +1 is to count for the sign bit!
+        except TypeError:  # left was None?
+            right = None
+    else:
+        left = target.left if target.left is not None else value.left
+        right = target.right if target.right is not None else value.right
+    return target(value, left, right)
+    # return resize(value, left, right, round_style=target.round_style,
+    #               overflow_style=target.overflow_style, wrap_is_ok=target.wrap_is_ok, signed=target.signed)
 
 
 class PyhaList(UserList):
@@ -241,7 +234,8 @@ class PyhaList(UserList):
         super().__init__(data)
         self.var_name = var_name
         self.class_name = class_name
-        self._pyha_next = deepcopy(data)
+        if not hasattr(self.data[0], '_pyha_update_registers'):
+            self._pyha_next = deepcopy(data)
 
     def __setitem__(self, i, y):
         """ Implements auto-resize feature, ie resizes all assigns to Sfix registers.
@@ -261,7 +255,7 @@ class PyhaList(UserList):
                 with SimPath(f'{self.var_name}[{i}]='):
                     y = auto_resize(self.data[i], y)
 
-                # lazy bounds feature, if bounds is None, take the bound from assgned value
+                # lazy bounds feature, if bounds is None, take the bound from assigned value
                 if self.data[i].left is None:
                     for x, xn in zip(self.data, self._pyha_next):
                         x.left = y.left
@@ -286,6 +280,16 @@ class PyhaList(UserList):
                 x._pyha_update_registers()
         else:
             self.data = self._pyha_next[:]
+
+    def _pyha_enable_function_profiling_for_types(self):
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
+            for i, x in enumerate(self.data):
+                x._pyha_enable_function_profiling_for_types()
+
+    def _pyha_insert_tracer(self, label=''):
+        if hasattr(self.data[0], '_pyha_update_registers'):  # is submodule
+            for i, x in enumerate(self.data):
+                x._pyha_insert_tracer(label=f'{label}[{i}]')
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
@@ -350,7 +354,8 @@ class Hardware(with_metaclass(Meta)):
                             setattr(result, k, deepcopy(v, memo))
                 else:
                     for k, v in self.__dict__.items():
-                        if k == '_pyha_initial_self' or k == '_pyha_next':  # dont waste time on endless deepcopy
+                        if k == '_pyha_initial_self' or k == '_pyha_next' or isinstance(v,
+                                                                                        Hardware):  # dont waste time on endless deepcopy
                             setattr(result, k, copy(v))
                             # print(k, v)
                         else:
@@ -367,6 +372,34 @@ class Hardware(with_metaclass(Meta)):
         # update all childs
         for x in self._pyha_updateable:
             x._pyha_update_registers()
+
+    def _pyha_enable_function_profiling_for_types(self):
+        for k, v in self.__dict__.items():
+            if k == '_pyha_initial_self':
+                continue
+            if hasattr(v, '_pyha_update_registers'):
+                v._pyha_enable_function_profiling_for_types()
+
+        for method_str in dir(self):
+            if method_str in SKIP_FUNCTIONS:
+                continue
+            method = getattr(self, method_str)
+            if method_str[:2] != '__' and method_str[:1] != '_' and callable(
+                    method) and method.__class__.__name__ == 'method':
+                new = PyhaFunc(method)
+                self.__dict__[method_str] = new
+
+    def _pyha_insert_tracer(self, label=''):
+        from pyha.simulation.tracer import Tracer
+        for k, v in self.__dict__.items():
+            if k == '_pyha_initial_self':
+                continue
+            if hasattr(v, '_pyha_update_registers'):
+                v._pyha_insert_tracer(label=f'{label}.{k}')
+
+        for method_str in dir(self):
+            if method_str == 'model' or method_str == 'main':
+                self.__dict__[method_str] = Tracer(getattr(self, method_str), method_str, owner=self, label=label)
 
     def _pyha_floats_to_fixed(self, silence=False):
         """ Go over the datamodel and convert floats to sfix, this is done before RTL/GATE simulation """
@@ -395,9 +428,8 @@ class Hardware(with_metaclass(Meta)):
             self.__dict__[k] = new
             try:
                 self._pyha_next[k] = deepcopy(new)
-            except AttributeError: # problem in code? -> fuck it
+            except AttributeError:  # problem in code? -> fuck it
                 pass
-
 
         # update all childs
         # for x in self._pyha_updateable:

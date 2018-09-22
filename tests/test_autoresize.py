@@ -19,8 +19,10 @@ class TestSfix:
 
     def test_basic(self):
         dut = self.A('saturate', 'round')
+        dut._pyha_enable_function_profiling_for_types()
 
         dut.main(Sfix(0.1, 2, -27))
+
 
         assert dut._pyha_next['a'].left == 0
         assert dut._pyha_next['a'].right == -4
@@ -32,7 +34,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -40,7 +42,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -48,7 +50,7 @@ class TestSfix:
 
         dut = self.A('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -56,7 +58,7 @@ class TestSfix:
 
         dut = self.A('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfixList:
@@ -90,7 +92,7 @@ class TestSfixList:
         assert type(dut._pyha_initial_self.a) == PyhaList
 
         # make sure types stay after sim
-        assert_sim_match(dut, None, [0.1, 0.2], simulations=['PYHA'])
+        assert_sim_match(dut, None, [0.1, 0.2], simulations=['HARDWARE'])
 
         assert type(dut.a) == PyhaList
         assert type(dut._pyha_initial_self.a) == PyhaList
@@ -118,7 +120,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -130,7 +132,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -141,7 +143,7 @@ class TestSfixList:
 
         dut = self.A1('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -152,7 +154,7 @@ class TestSfixList:
 
         dut = self.A1('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestComplex:
@@ -169,6 +171,7 @@ class TestComplex:
 
     def test_basic(self):
         dut = self.A2('saturate', 'round')
+        dut._pyha_enable_function_profiling_for_types()
 
         dut.main(Sfix(0.1, 2, -27))
 
@@ -183,7 +186,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'round')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_truncate(self):
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
@@ -192,7 +195,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'truncate')
         assert_sim_match(dut, expected, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_saturation(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -200,7 +203,7 @@ class TestComplex:
 
         dut = self.A2('saturate', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_wrap(self):
         x = [0.9, 1.0, 1.5, 2.0]
@@ -208,7 +211,7 @@ class TestComplex:
 
         dut = self.A2('wrap', 'truncate')
         assert_sim_match(dut, expected, x, types=[Sfix(left=2, right=-17)],
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
     def test_full_assign(self):
         """ There shuld be no auto-resize when assigning fully """
@@ -225,7 +228,7 @@ class TestComplex:
         x = [0.012 + 0.234j, -0.256 + 0.689j]
 
         dut = A2('saturate', 'round')
-        sims = simulate(dut, x, simulations=['MODEL', 'PYHA', 'RTL'])
+        sims = simulate(dut, x, simulations=['MODEL', 'HARDWARE', 'RTL'])
         assert sims_close(sims)
 
 
@@ -246,6 +249,7 @@ class TestLazySfix:
 
     def test_basic(self):
         dut = self.A3()
+        dut._pyha_enable_function_profiling_for_types()
 
         with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
@@ -267,7 +271,7 @@ class TestLazySfix:
 
         dut = self.A3()
         assert_sim_match(dut, None, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestLazySfixList:
@@ -287,6 +291,8 @@ class TestLazySfixList:
 
     def test_basic(self):
         dut = self.A4()
+        dut._pyha_enable_function_profiling_for_types()
+
         with AutoResize.enable():
             dut.main(Sfix(0.1, 2, -27))
 
@@ -306,7 +312,7 @@ class TestLazySfixList:
         x = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
         assert_sim_match(self.A4(), None, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 # class TestLazyComplexSfix:
@@ -349,7 +355,7 @@ class TestLazySfixList:
 #
 #         dut = self.A5()
 #         assert_sim_match(dut, None, x,
-#                          simulations=['PYHA', 'RTL', 'GATE'])
+#                          simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestAssignConstant:
@@ -372,6 +378,7 @@ class TestAssignConstant:
 
     def test_basic(self):
         dut = self.A6()
+        dut._pyha_enable_function_profiling_for_types()
 
         with AutoResize.enable():
             dut.main(0)
@@ -396,7 +403,7 @@ class TestAssignConstant:
         x = [1, 2]
 
         dut = self.A6()
-        assert_sim_match(dut, None, x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestLocalsSfix:
@@ -414,7 +421,7 @@ class TestLocalsSfix:
 
         dut = A7B()
         assert_sim_match(dut, None, x,
-                         simulations=['PYHA'])
+                         simulations=['HARDWARE'])
 
     def test_sim(self):
         class A7(Hardware):
@@ -431,4 +438,4 @@ class TestLocalsSfix:
 
         dut = A7()
         assert_sim_match(dut, None, x,
-                         simulations=['PYHA', 'RTL', 'GATE'])
+                         simulations=['HARDWARE', 'RTL', 'NETLIST'])

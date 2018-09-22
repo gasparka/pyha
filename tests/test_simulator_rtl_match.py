@@ -6,7 +6,7 @@ from pyha.common.core import Hardware
 from pyha.common.fixed_point import Sfix, right_index, left_index, resize
 
 # in general GATE could be added here...but it takes ALOT of time
-SIMULATIONS = ['PYHA', 'RTL']
+SIMULATIONS = ['HARDWARE', 'RTL']
 
 
 def test_resize_truncate_saturate():
@@ -166,7 +166,7 @@ def test_sfix_constants(bits):
 
 
 def test_sfix_no_const_ref():
-    if 'GATE' in SIMULATIONS:
+    if 'NETLIST' in SIMULATIONS:
         pytest.xfail('Quartus wants the "bits" parts to be CONTSANT')
     class T8(Hardware):
         def __init__(self, bits):

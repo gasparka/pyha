@@ -17,6 +17,7 @@ class TestBuiltins:
 
     def test_basic(self):
         dut = self.T0()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 1
@@ -67,7 +68,7 @@ class TestBuiltins:
         expected = [[1, 5, 2], [True, False, True]]
 
         dut = self.T0()
-        assert_sim_match(dut, expected, *x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestBuiltinsList:
@@ -86,6 +87,7 @@ class TestBuiltinsList:
 
     def test_basic(self):
         dut = self.T1()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == [1, 2, 3]
@@ -132,7 +134,7 @@ class TestBuiltinsList:
         expected = [[3, 3, 3, 3, 3, 3], [True, False, True, False, True, False]]
 
         dut = self.T1()
-        assert_sim_match(dut, expected, *x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, *x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfix:
@@ -146,6 +148,7 @@ class TestSfix:
 
     def test_basic(self):
         dut = self.T2()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == Sfix(0.1, 0, -17)
@@ -166,7 +169,7 @@ class TestSfix:
         expected = [0.1, 0.1, 0.2]
 
         dut = self.T2()
-        assert_sim_match(dut, expected, x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSfixList:
@@ -181,6 +184,7 @@ class TestSfixList:
 
     def test_basic(self):
         dut = self.T3()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         init = [Sfix(0.1, 0, -17), Sfix(0.2, 0, -17)]
@@ -203,7 +207,7 @@ class TestSfixList:
         expected = [0.2, 0.1, 0.1]
 
         dut = self.T3()
-        assert_sim_match(dut, expected, x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, expected, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSubmodule:
@@ -228,6 +232,7 @@ class TestSubmodule:
 
     def test_basic(self):
         dut = self.T4()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 0
@@ -259,7 +264,7 @@ class TestSubmodule:
         x = [1, 2, 3]
 
         dut = self.T4()
-        assert_sim_match(dut, None, x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])
 
 
 class TestSubmoduleList:
@@ -285,6 +290,7 @@ class TestSubmoduleList:
 
     def test_basic(self):
         dut = self.T5()
+        dut._pyha_enable_function_profiling_for_types()
         dut._pyha_update_registers()
 
         assert dut.i == 0
@@ -328,4 +334,4 @@ class TestSubmoduleList:
         x = [1, 2, 3]
 
         dut = self.T5()
-        assert_sim_match(dut, None, x, simulations=['PYHA', 'RTL', 'GATE'])
+        assert_sim_match(dut, None, x, simulations=['HARDWARE', 'RTL', 'NETLIST'])

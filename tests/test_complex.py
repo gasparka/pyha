@@ -1,6 +1,5 @@
-from pyha import Hardware, simulate, sims_close, Complex, hardware_sims_equal, scalb
+from pyha import Hardware, sims_close, Complex, hardware_sims_equal, scalb, simulate
 import numpy as np
-
 from pyha.common.shift_register import ShiftRegister
 
 
@@ -12,7 +11,7 @@ def test_loopback():
     dut = T()
     inp = np.random.uniform(-1, 1, 2) + np.random.uniform(-1, 1, 2) * 1j
 
-    sims = simulate(dut, inp)
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -20,8 +19,8 @@ def test_loopback():
 def test_register():
     class T(Hardware):
         def __init__(self):
-            self.reg = Complex()  # TODO: this should resize to 0, -17??
             self.DELAY = 1
+            self.reg = Complex()  # TODO: this should resize to 0, -17??
 
         def main(self, x):
             self.reg = x
@@ -31,6 +30,19 @@ def test_register():
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
     sims = simulate(dut, inp)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+
+def test_loopback_negative_left():
+    class T(Hardware):
+        def main(self, x):
+            return x
+
+    dut = T()
+    inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
+    inp *= 0.05
+    sims = simulate(dut, inp, input_types=[Complex(0, -3, -20)], conversion_path='/tmp/pyha_output')
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -48,7 +60,7 @@ def test_old_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -66,7 +78,7 @@ def test_new_shiftreg():
     dut = T()
     inp = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
-    sims = simulate(dut, inp, simulations=['PYHA', 'RTL', 'GATE'])
+    sims = simulate(dut, inp, simulations=['HARDWARE', 'RTL', 'NETLIST'])
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -81,6 +93,20 @@ def test_multiply():
     b = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
 
     sims = simulate(dut, a, b)
+    assert hardware_sims_equal(sims)
+    assert sims_close(sims)
+
+
+def test_multiply_negative_left():
+    class T(Hardware):
+        def main(self, a, b):
+            return a * b
+
+    dut = T()
+    a = np.random.uniform(-0.01, 0.01, 256) + np.random.uniform(-0.01, 0.01, 256) * 1j
+    b = np.random.uniform(-0.01, 0.01, 256) + np.random.uniform(-0.01, 0.01, 256) * 1j
+
+    sims = simulate(dut, a, b, input_types=[Complex(0, -3, -20), Complex(0, -3, -20)], conversion_path='/tmp/pyha_output/src')
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
@@ -260,7 +286,7 @@ def test_sub_uneven_types():
     a = np.random.uniform(-1, 1, 256) + np.random.uniform(-1, 1, 256) * 1j
     b = np.random.uniform(-1, 1, 256)
 
-    sims = simulate(dut, a, b, input_types=[Complex(0, 0, -17), Complex(0, 0, -18)], simulations=['PYHA', 'RTL'],
+    sims = simulate(dut, a, b, input_types=[Complex(0, 0, -17), Complex(0, 0, -18)], simulations=['HARDWARE', 'RTL'],
                     conversion_path='/home/gaspar/git/pyhacores/playground')
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
@@ -295,6 +321,7 @@ def test_floatconst_operations():
     assert hardware_sims_equal(sims)
     assert sims_close(sims)
 
+
 def test_complex_constants():
     class T(Hardware):
         def __init__(self):
@@ -304,14 +331,14 @@ def test_complex_constants():
             self.reg3 = Complex(0, 0, -17)
 
         def main(self, x):
-            self.reg = self.reg + x - (x * x) # this was incorrectly parsed as complex constant!
+            self.reg = self.reg + x - (x * x)  # this was incorrectly parsed as complex constant!
             self.reg2 = 0.0 + 0.5j
-            self.reg3 = 0.0 + 0.5*1j
+            self.reg3 = 0.0 + 0.5 * 1j
             return self.reg, self.reg2
 
     dut = T()
-    inputs = [0+0j, 0.1+0.2j, -0.1+0.3j]
+    inputs = [0 + 0j, 0.1 + 0.2j, -0.1 + 0.3j]
 
-    sims = simulate(dut, inputs, simulations=['PYHA', 'RTL'],
+    sims = simulate(dut, inputs, simulations=['HARDWARE', 'RTL'],
                     conversion_path='/home/gaspar/git/pyhacores/playground')
     assert sims_close(sims)

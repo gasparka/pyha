@@ -19,7 +19,7 @@ class NCO(Hardware):
         self.phase_acc = Sfix(0, 0, -17, wrap_is_ok=True)
         self.out = Complex(0, 0, -17, overflow_style='saturate')
         self.DELAY = self.cordic.ITERATIONS + 1 + 1
-        self.INIT_X = 1.0 / 1.646760  # gets rid of cordic gain, could add amplitude modulation here
+        self.INIT_X = 1.0 / 1.646760  # gets rid of cordic gain, could use for amplitude modulation
 
     def main(self, phase_inc):
         """
@@ -36,7 +36,7 @@ class NCO(Hardware):
         self.out = Complex(x, y)
         return self.out
 
-    def model_main(self, phase_list):
+    def model(self, phase_list):
         p = np.cumsum(np.array(phase_list) * np.pi)
         return np.exp(p * 1j)
 
@@ -60,9 +60,9 @@ def test_nco(period):
     input_signal = np.diff(phase_cumsum) / np.pi
 
     dut = NCO()
-    sims = ['MODEL', 'PYHA', 'RTL']
+    sims = ['MODEL', 'HARDWARE', 'RTL']
     if period == 1:
-        sims.append('GATE')
+        sims.append('NETLIST')
 
     sim_out = simulate(dut, input_signal, simulations=sims)
     assert sims_close(sim_out, rtol=1e-2, atol=1e-4)

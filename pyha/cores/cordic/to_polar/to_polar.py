@@ -29,7 +29,7 @@ class ToPolar(Hardware):
         self.y_angle = angle
         return self.y_abs, self.y_angle
 
-    def model_main(self, cin):
+    def model(self, cin):
         return np.abs(cin), np.angle(cin) / np.pi  # NOTICE, angle is divided by np.pi
 
 
@@ -46,7 +46,7 @@ class Angle(Hardware):
         _, angle = self.core.main(c)
         return angle
 
-    def model_main(self, cin):
+    def model(self, cin):
         # note that angle in -1..1 range
         return np.angle(cin) / np.pi
 
@@ -64,7 +64,7 @@ class Abs(Hardware):
         abs, _ = self.core.main(c)
         return abs
 
-    def model_main(self, cin):
+    def model(self, cin):
         return [np.abs(x) for x in cin]
 
 
@@ -157,7 +157,7 @@ def test_angle_unit():
     expect = np.angle(inputs) / np.pi
 
     dut = Angle()
-    sim_out = simulate(dut, inputs, simulations=['MODEL', 'PYHA'])
+    sim_out = simulate(dut, inputs, simulations=['MODEL', 'HARDWARE'])
     sims_close(sim_out, expected=expect, rtol=1e-2)
 
 

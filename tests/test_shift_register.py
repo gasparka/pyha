@@ -17,11 +17,11 @@ def test_basic():
     N = 128
     dut = T([0] * N)
 
-    sims = simulate(dut, list(range(N * 2)), simulations=['PYHA',
+    sims = simulate(dut, list(range(N * 2)), simulations=['HARDWARE',
                                                           'RTL',
-                                                          'GATE'
+                                                          'NETLIST'
                                                           ])
-    assert sims['PYHA'][0] == sims['PYHA'][1]
+    assert sims['HARDWARE'][0] == sims['HARDWARE'][1]
     assert sims_close(sims)
 
 
@@ -40,11 +40,11 @@ def test_complex():
     dut = T([Complex(0.0 + 0.0j, 0, -17) for _ in range(N)])
 
     inp = np.random.uniform(-1, 1, N * 2) + np.random.uniform(-1, 1, N * 2) * 1j
-    sims = simulate(dut, inp, simulations=['PYHA',
+    sims = simulate(dut, inp, simulations=['HARDWARE',
                                            'RTL',
-                                           'GATE'
+                                           'NETLIST'
                                            ])
-    assert sims['PYHA'][0] == sims['PYHA'][1]
+    assert sims['HARDWARE'][0] == sims['HARDWARE'][1]
     assert sims_close(sims)
 
 
@@ -61,8 +61,8 @@ def test_complex_pure():
     dut = T([Complex(0.0 + 0.0j, 0, -17) for _ in range(N)])
 
     inp = np.random.uniform(-1, 1, N * 2) + np.random.uniform(-1, 1, N * 2) * 1j
-    sims = simulate(dut, inp, simulations=['PYHA',
+    sims = simulate(dut, inp, simulations=['HARDWARE',
                                            'RTL',
-                                           'GATE'
+                                           'NETLIST'
                                            ],)
     assert sims_close(sims)

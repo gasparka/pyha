@@ -78,11 +78,13 @@ class Sfix:
     # Disables all quantization and saturating stuff
     _float_mode = ContextManagerRefCounted()
 
-    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val')
+    __slots__ = ('signed', 'wrap_is_ok', 'round_style', 'overflow_style', 'right', 'left', 'val', 'bits', 'upper_bits')
 
     def __init__(self, val=0.0, left=None, right=None, overflow_style='wrap',
-                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True):
+                 round_style='truncate', init_only=False, wrap_is_ok=False, signed=True, bits=None, size_res=None, upper_bits=None):
 
+        self.upper_bits = upper_bits
+        self.bits = bits
         self.signed = signed
         self.wrap_is_ok = wrap_is_ok
         self.round_style = round_style
@@ -96,6 +98,9 @@ class Sfix:
         if isinstance(left, Sfix):
             self.right = left.right
             self.left = left.left
+        elif size_res is not None:
+            self.right = size_res.right
+            self.left = size_res.left
         else:
             self.right = int(right) if right else right
             self.left = int(left) if left else left
@@ -177,6 +182,7 @@ class Sfix:
         return int(round(self.val / 2 ** self.right))
 
     def __getitem__(self, item):
+    # see https://github.com/gasparka/pyha/issues/323 for why this is commented out!
         if self.right < 0:
             item += abs(self.right)
 
@@ -307,8 +313,8 @@ class Sfix:
     def sign_bit(self):
         s = np.sign(self.val)
         if s in [0, 1]:
-            return 0
-        return 1
+            return False
+        return True
 
     def __rshift__(self, other):
         if self.right is None or Sfix._float_mode.enabled:
@@ -330,7 +336,10 @@ class Sfix:
 
     def scalb(self, i):
         n = 2 ** i
-        return Sfix(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+        try:
+            return Sfix(self.val * n, self.left + i, self.right + i, overflow_style='saturate', round_style='round')
+        except TypeError: # some bound is None
+            return Sfix(self.val * n, overflow_style='saturate', round_style='round')
 
     def __abs__(self):
         return Sfix(abs(self.val),
@@ -363,16 +372,26 @@ class Sfix:
         else:
             return -self.right + self.left
 
-    def __call__(self, x: float):
-        return Sfix(x, self.left, self.right, self.overflow_style,
-                    self.round_style)
+    def __call__(self, x: float, left=None, right=None):
+        if left is None:
+            left = self.left
+
+        if right is None:
+            right = self.right
+
+        return Sfix(float(x), left, right, self.overflow_style,
+                    self.round_style, False, self.wrap_is_ok, self.signed)
 
     def _pyha_to_python_value(self):
         return float(self)
 
+    @staticmethod
+    def default():
+        return default_sfix
+
 
 def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', round_style='truncate', wrap_is_ok=False,
-           signed=True) -> Sfix:
+           signed=None) -> Sfix:
     """
     Resize fixed point number.
 
@@ -398,7 +417,8 @@ def resize(fix: Sfix, left=0, right=-17, size_res=None, overflow_style='wrap', r
 
 
     """
-
+    if signed is None:
+        signed = fix.signed
     try:
         return fix.resize(left, right, size_res, overflow_style=overflow_style, round_style=round_style,
                           wrap_is_ok=wrap_is_ok, signed=signed)
@@ -438,8 +458,13 @@ def right_index(x: Sfix) -> int:
     >>> right_index(a)
     -7
     """
+    if not x.right:
+        return 0
     return x.right
 
+
+def sign_bit(x: Sfix) -> bool:
+    return x.sign_bit()
 
 def scalb(x, i):
     """

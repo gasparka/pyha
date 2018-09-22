@@ -4,6 +4,14 @@ import collections
 import numpy as np
 
 
+def is_complex(x):
+    return isinstance(x, (complex, np.complexfloating))
+
+
+def is_float(x):
+    return isinstance(x, (float, np.floating))
+
+
 def to_twoscomplement(bits, value):
     # https: // stackoverflow.com / questions / 21871829 / twos - complement - of - numbers - in -python
     if value < 0:
@@ -35,8 +43,8 @@ def is_constant(name):
 
 
 def const_filter(x):
-    from pyha.conversion.python_types_vhdl import VHDLList
-    from pyha.conversion.python_types_vhdl import VHDLModule
+    from pyha.conversion.type_transforms import VHDLList
+    from pyha.conversion.type_transforms import VHDLModule
     return is_constant(x._name) or isinstance(x, VHDLModule) or (
             isinstance(x, VHDLList) and not x.not_submodules_list)
 

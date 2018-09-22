@@ -287,19 +287,6 @@ def test_non_unit_resize():
 #     assert b.right == -14
 
 
-def test_BROKEN_SHIT():
-    pytest.skip()
-    # this could pass if number negative, but since it is so close to MAX
-    # it cannot pass as positive value, need extra bit here
-    # is this same for VHDL implementation??
-    assert 0
-    a = 0.00390623013197
-    b = Sfix.auto_size(a, 18)
-    np.isclose(b.val, a)
-    assert b.left == -7
-    assert b.right == -24
-
-
 def test_auto_size_negative_int_bits():
     pytest.skip()
     a = 0.00390623013197
@@ -541,7 +528,7 @@ class TestIndexing:
         fix = np.random.uniform(-1, 1, N)
         index = np.random.uniform(-17, 0, N).astype(int)
 
-        sims = simulate(dut, fix, index, simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_get_fully_int(self):
@@ -554,7 +541,7 @@ class TestIndexing:
         fix = np.random.uniform(0, 2 ** 17, N)
         index = np.random.uniform(0, 17, N).astype(int)
 
-        sims = simulate(dut, fix, index, input_types=[Sfix(0, 17, 0), int], simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 17, 0), int], simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_get_combined(self):
@@ -567,7 +554,7 @@ class TestIndexing:
         fix = np.random.uniform(0, 2 ** 8, N)
         index = np.random.uniform(-8, 8, N).astype(int)
 
-        sims = simulate(dut, fix, index, input_types=[Sfix(0, 8, -8), int], simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, input_types=[Sfix(0, 8, -8), int], simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_set_basic(self):
@@ -582,7 +569,7 @@ class TestIndexing:
         index = [-1]
         bit_val = [True]
 
-        sims = simulate(dut, fix, index, bit_val, simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, bit_val, simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
     def test_set_combined(self):
@@ -598,7 +585,8 @@ class TestIndexing:
         index = np.random.uniform(-8, 8, N).astype(int)
         bit_val = np.random.uniform(0, 1, N).astype(bool)
 
-        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool], simulations=['PYHA', 'RTL', 'GATE'])
+        sims = simulate(dut, fix, index, bit_val, input_types=[Sfix(0, 8, -8), int, bool],
+                        simulations=['HARDWARE', 'RTL', 'NETLIST'])
         assert sims_close(sims)
 
 
@@ -617,6 +605,7 @@ def test_float_bounds():
     sims = simulate(dut, inp)
     assert sims_close(sims)
 
+
 class TestUnsigned:
     def test_wrapping_add(self):
         class Dut(Hardware):
@@ -632,4 +621,23 @@ class TestUnsigned:
         inp = list(range(128))
 
         sims = simulate(dut, inp)
+        assert sims_close(sims)
+
+
+class TestUpperBits:
+    def test_signed(self):
+        class Dut(Hardware):
+            def __init__(self):
+                self.reg = Sfix(upper_bits=15)
+
+            def main(self, inp):
+                self.reg = inp
+                return self.reg
+
+        dut = Dut()
+        inp = np.random.uniform(-1, 1, 32)
+
+        sims = simulate(dut, inp, input_types=[Sfix(left=-3, right=-43)], simulations=['HARDWARE', 'RTL'])
+        assert dut.reg.left == -3
+        assert dut.reg.right == -17
         assert sims_close(sims)

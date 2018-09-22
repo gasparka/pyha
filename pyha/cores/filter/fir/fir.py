@@ -2,7 +2,7 @@ from pyha import Hardware, Sfix, simulate, sims_close
 from scipy import signal
 import numpy as np
 
-
+# TODO: Update to latest Pyha and streaming interface!
 class FIR(Hardware):
     def __init__(self, taps, dtype=Sfix):
         self.DELAY = 2
@@ -21,7 +21,7 @@ class FIR(Hardware):
         self.out = self.acc[-1]
         return self.out
 
-    def model_main(self, x):
+    def model(self, x):
         return signal.lfilter(self.TAPS, [1.0], x)
 
 
