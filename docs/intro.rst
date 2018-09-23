@@ -2,36 +2,24 @@
 Introduction
 ============
 
-.. warning:: Most of this is outdated, i am currently working on the first release.
+Pyha is a Python based HDL language that allows you to describe, simulate and bebug hardware in Python.
 
-~15 years ago Jiri Gaisler released a paper called 'A Structured VHDL Design Method', that tells designers
-to use structrual methods like functions and stuff instead of the regular VHDL 'dataflow' way.
-Many have now adapted this method into everyday work.
-Tho this way method is limited to combinatory logic, for registers one had to still fallback to using
-'dataflow' style i.e. signals and entities.
+Pyha is different from MyHDL in a way that it allow converting Python to VHDL in much higher abstraction level, for
+example you can freely pass around/process lists of composite objects.
 
-Pyha proposes an extension to the 'Structured VHDL method' by allowing defining registers/compononets in structured way.
-Meaning that in VHDL you dont have to use signals and entities at all.
+Migen and Pyha share the same foundation, which is the Gaisler style or in more general a way to separate a design into
+a combinatory and sequantial parts. Migen implements this approach by a domain specific DSL, which is very good for
+building hardware generators, but probably not fun for writing DSP applications and is not debuggable.
 
-It is all good and nice, but VHDL tends to be a little bit verbose, especially for testing. For this reason
-i have created Pyha, which is a Python overlay on the
+Pyha is specialized on DSP systems, or in other ways streaming systems. One center-idea is to build up a library of
+components that could be easily reused.
 
-
-Currently the focus of pyha is on DSP systems, only because that is what i am interested in.
-I am very much interested in supporting users who wish to implement something different, like a processor?
-
-
-Essentially this is a Python to VHDL converter, with a specific focus on implementing DSP systems.
 
 Main features:
 
-    - Simulate in Python. Integration to run RTL and GATE simulations.
+    - Simulate, test and debug Python. Integration to run RTL and NETLIST simulations.
     - Structured, all-sequential and object oriented designs
-    - Fixed point type support(maps to `VHDL fixed point library`_)
-    - Decent quality VHDL output (get what you write, keeps hierarchy)
-    - Integration to Intel Quartus (run GATE level simulations)
-    - Tools to simplify verification
-
+    - Fixed point and complex type support(maps to `VHDL fixed point library`_)
 
 Long term goal is to implement more DSP blocks, especially by using GNURadio blocks as models.
 In future it may be possible to turn GNURadio flow-graphs into FPGA designs, assuming we have matching FPGA blocks available.
