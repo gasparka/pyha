@@ -21,13 +21,13 @@ class MovingAverage(Hardware):
         dtype: Sfix or Complex (applies to real and imag channels separately)
     """
 
-    def __init__(self, window_length, dtype=Sfix):
+    def __init__(self, window_len, dtype=Sfix):
         self._pyha_simulation_input_callback = NumpyToDataValid(dtype=dtype.default())
 
-        self.WINDOW_LENGTH = window_length
-        self.BIT_GROWTH = int(np.log2(window_length))
+        self.WINDOW_LEN = window_len
+        self.BIT_GROWTH = int(np.log2(window_len))
 
-        self.shr = ShiftRegister([dtype()] * self.WINDOW_LENGTH)
+        self.shr = ShiftRegister([dtype()] * self.WINDOW_LEN)
         self.acc = dtype(0.0, self.BIT_GROWTH, -17)
 
         self.output = DataValid(dtype(0, 0, -17, round_style='round')) # negative trend without rounding!
@@ -57,7 +57,7 @@ class MovingAverage(Hardware):
     def model(self, inputs):
         # https://stackoverflow.com/questions/13728392/moving-average-or-running-mean/27681394#27681394
         # can be expressed as FIR filter with special taps:
-        taps = [1 / self.WINDOW_LENGTH] * self.WINDOW_LENGTH
+        taps = [1 / self.WINDOW_LEN] * self.WINDOW_LEN
         return signal.lfilter(taps, [1.0], inputs)
 
 
@@ -66,7 +66,7 @@ class MovingAverage(Hardware):
 @pytest.mark.parametrize("dtype", [Sfix, Complex])
 def test_all(window_len, input_power, dtype):
     np.random.seed(0)
-    dut = MovingAverage(window_length=window_len, dtype=dtype)
+    dut = MovingAverage(window_len=window_len, dtype=dtype)
     N = window_len * 4
     if dtype == Complex:
         input_signal = (np.random.normal(size=N) + np.random.normal(size=N) * 1j)

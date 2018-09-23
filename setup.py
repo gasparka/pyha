@@ -43,6 +43,8 @@ extra_files = package_files('pyha/simulation/sim_include/')
 setup(
     name='HARDWARE',
     version='0.0.13',
+    name='pyha',
+    version='0.0.11',
     description="Pyha",
     long_description=readme,
     author="Gaspar Karm",
