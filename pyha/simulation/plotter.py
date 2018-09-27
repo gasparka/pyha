@@ -141,7 +141,7 @@ def plot_imshow(simulations, rows, transpose=False, name=None):
     inp = exposure.rescale_intensity(inp, in_range=(p2, p98))
 
     ax[1].imshow(inp, interpolation='nearest', aspect='auto', origin='lower')
-    ax[1].set(title=f'PYHA, SQNR={SQNR(simulations["MODEL"], simulations["HARDWARE"]):.2f} dB')
+    ax[1].set(title=f'HARDWARE, SQNR={SQNR(simulations["MODEL"], simulations["HARDWARE"]):.2f} dB')
     ax[1].set_xlabel('Time')
     ax[1].set_ylabel('Magnitude')
 
