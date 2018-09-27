@@ -20,8 +20,8 @@ class SpectrogramLimeSDR(Hardware):
         avg_freq_axis = 16
         avg_time_axis = 8
         window_type = 'hamming'
-        fft_twiddle_bits = 8
-        window_bits = 8
+        fft_twiddle_bits = 9
+        window_bits = 9
         dc_removal_len = 1024
         self.spect = Spectrogram(fft_size, avg_freq_axis, avg_time_axis, window_type, fft_twiddle_bits, window_bits, dc_removal_len)
         # TODO: could be unsigned!
