@@ -23,7 +23,7 @@ class BitreversalFFTshiftAVGPool(Hardware):
     ----------------------------------------
 
     Fixes bitreversal, performs fftshift and applies average pooling, implemented with 2 BRAM blocks.
-    Internal accumulator may overflow, in which case it is saturated.
+    Internal accumulator may be saturated.
 
     Args:
         fft_size:
