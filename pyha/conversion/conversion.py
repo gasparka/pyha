@@ -248,11 +248,13 @@ class RecursiveConverter:
                 conv(self, node)
 
             self.red_node = get_objects_rednode(obj)
-            logger.info(f'{self.class_name} to VHDL ...')
+            convert_name = self.get_module_converted_name(self.datamodel)
+            logger.info(f'{convert_name} to VHDL ...')
+
             self.conv = convert(self.red_node, obj)  # actual conversion happens here
 
             self.vhdl_conversion = str(self.conv)
-            RecursiveConverter.converted_modules[self.get_module_converted_name(self.datamodel)] = (self.datamodel, self.vhdl_conversion)
+            RecursiveConverter.converted_modules[convert_name] = (self.datamodel, self.vhdl_conversion)
             RecursiveConverter.typedefs.extend(self.conv.build_typedefs())
 
     @property

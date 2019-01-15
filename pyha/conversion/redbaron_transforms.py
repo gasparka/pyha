@@ -687,6 +687,7 @@ def convert(red: Node, obj=None):
                     f = red.find('def', name=lambda x: x == k)
                     if not f:
                         continue
+                    logger.warning(f'Not converting function {k}, was not called in simulation!')
                     f.parent.remove(f)
 
 
