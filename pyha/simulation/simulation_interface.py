@@ -247,7 +247,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         logger.info(f'OK!')
 
     if 'HARDWARE' in simulations:
-        if 'RTL' in simulations or 'NETLIST' in simulations:
+        if 'RTL' in simulations or 'NETLIST' in simulations or conversion_path is not None:
             logger.info(f'Simulaton needs to support conversion to VHDL -> major slowdown')
             model._pyha_enable_function_profiling_for_types()
 
@@ -303,7 +303,7 @@ def simulate(model, *args, simulations=None, conversion_path=None, input_types=N
         out['HARDWARE'] = process_outputs(delay_compensate, ret)
         logger.info(f'OK!')
 
-    if 'RTL' in simulations or 'NETLIST' in simulations:
+    if 'RTL' in simulations or 'NETLIST' in simulations or conversion_path is not None:
         converter = Converter(model, output_dir=conversion_path).to_vhdl()
         if 'NETLIST' in simulations:
             make_quartus_project(converter)
