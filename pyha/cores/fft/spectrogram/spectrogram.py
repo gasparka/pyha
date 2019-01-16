@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from scipy.signal import get_window
 
 from pyha import Hardware, simulate, sims_close, Complex, default_complex
 from pyha.cores import DCRemoval, Windower, R2SDF, FFTPower, BitreversalFFTshiftAVGPool
@@ -9,6 +8,7 @@ from pyha.common.datavalid import NumpyToDataValid
 
 def numpy_model(x, fft_size, avg_freq_axis, avg_time_axis, window_type='hanning'):
     """ DC removal here is inferior to the one used in hardware! """
+    from scipy.signal import get_window
     no_dc = x - np.mean(x)
     resh = np.reshape(no_dc, (-1, fft_size))
     windowed = resh * get_window(window_type, fft_size)
