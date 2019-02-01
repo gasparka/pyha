@@ -1,4 +1,4 @@
-redbaron==0.7.1
+redbaron==0.9.1
 scipy==1.1.0
 numpy==1.15.2
 parse==1.8.4
